@@ -1,0 +1,63 @@
+.editable-value-table {
+  width: 100%;
+}
+
+.editable-value-table table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.editable-value-table .value-input {
+  width: 100%;
+  border: none;
+  padding: 4px;
+  font-size: 0.9rem;
+  background: transparent;
+  text-align: end;
+}
+
+.editable-value-table .value-input:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.editable-value-table .value-input::-webkit-outer-spin-button,
+.editable-value-table .value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.editable-value-table .label {
+  padding: 4px;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.editable-value-table .delete-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 1.2rem;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.editable-value-table .delete-btn:hover {
+  background-color: #f8d7da;
+}
+
+.editable-value-table .delete-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editable-value-table thead th {
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}

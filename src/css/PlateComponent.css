@@ -1,0 +1,99 @@
+.plate-grid {
+  display: grid;
+  gap: 1px; /* Adjust the gap size as needed */
+  justify-content: start;
+  width: 100%
+}
+
+.well {
+  background-color: #fff;
+  border: 1px solid #000;
+  aspect-ratio: 1; /* Makes each well square */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.well.selected {
+  background-color: #007bff; /* Bootstrap primary color for selection */
+}
+
+.selection-rectangle {
+  position: absolute;
+  border: 2px dashed blue; 
+  background-color: rgba(135, 206, 235, 0.3); /* Light blue with some transparency */
+  pointer-events: none; /* So it doesn't interfere with other mouse events */
+}
+
+.well-highlighted {
+  outline: 1px solid blue;
+  outline-offset: -1px;
+}
+
+.well::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.well-highlighted::after {
+  outline: 2px solid blue;
+  outline-offset: -1px;
+}
+
+.well .dmso {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 8px 8px;
+  border-color: transparent transparent transparent black;
+  left: 0;
+  top: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.plate-grid-label {
+  text-align: center;
+  width: 100%;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: auto 1fr; /* First column for row labels, second for wells */
+  grid-template-rows: auto 1fr; /* First row for column labels, second for wells */
+  grid-template-areas:
+    "empty colLabels"
+    "rowLabels wells";
+  gap: 4px; /* Adjust gap between labels and wells as needed */
+  height: 100%; /* Or a specific height as needed */
+  width: 100%; /* Fill the parent container */
+}
+
+.col-labels-container {
+  display: grid;
+  font-size: 0.7em;
+  grid-area: colLabels;
+  white-space: nowrap;
+  justify-items: center;
+}
+
+.row-labels-container {
+  font-size: 0.7em;
+  grid-area: rowLabels;
+  display: grid;    
+  align-items: center;
+}
+
+.wells-container {
+  grid-area: wells;
+  display: grid;
+  width: 100%; 
+  height: 100%;
+  gap: 2px;
+}

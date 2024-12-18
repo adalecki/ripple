@@ -1,0 +1,130 @@
+/* Base form field layout */
+.form-field {
+  display: grid;
+  grid-template-columns: [label] 7fr [input] 4fr [unit] 1fr;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Common text styles */
+.form-label,
+.form-check-label {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.form-label {
+  grid-column: label;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unit-label {
+  grid-column: unit;
+  font-size: 0.85rem;
+  color: #6c757d;
+  white-space: nowrap;
+  justify-self: start;
+}
+
+/* Input field styles */
+.form-field-input {
+  width: 100%;
+  grid-column: input;
+  min-width: 0;
+}
+
+.form-field .form-control {
+  width: 100%;
+  height: 32px;
+  text-align: right;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+/* Add specific styling for select elements */
+.form-field .form-select {
+  width: 100%;
+  height: 32px;
+  text-align: right;
+  padding: 0.375rem 2rem 0.375rem 0.75rem;  /* Increased right padding */
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+/* Switch field styles */
+.form-field-switch {
+  grid-template-columns: 1fr;
+  margin-top: 1rem;
+}
+
+.form-field-switch .switch-container {
+  padding: 0.5rem 0;
+}
+
+.switch-container .form-check.form-switch {
+  padding-left: 2.5em;
+}
+
+/* File input specific styles */
+.form-field-file {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.form-field-file .form-control {
+  width: 100%;
+  text-align: left;
+  padding: 0.375rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  background: white;
+}
+
+.form-field-file input[type="file"]::file-selector-button {
+  margin: -0.375rem 0.75rem -0.375rem -0.375rem;
+  padding: 0.375rem 0.75rem;
+  background-color: #e9ecef;
+  border: 0;
+  border-right: 1px solid #ced4da;
+  cursor: pointer;
+}
+
+/* Error state */
+.form-field-error {
+  grid-column: 1 / -1;
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Number input cleanup */
+.form-control[type="number"] {
+  appearance: textfield;
+}
+
+.form-control[type="number"]::-webkit-outer-spin-button,
+.form-control[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .form-field {
+    gap: 0.5rem;
+  }
+  
+  .form-label {
+    font-size: 0.85rem;
+  }
+}

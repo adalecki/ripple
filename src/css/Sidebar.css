@@ -1,0 +1,69 @@
+.sidebar {
+  height: calc(100vh - var(--navbar-height));
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+}/*used*/
+
+.item-list-container {
+  flex-grow: 1;
+  overflow-y: auto;
+}/*used*/
+
+.item-list {
+  margin-bottom: 0;
+}/*used*/
+
+.sidebar-item {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}/*used*/
+
+.sidebar-item:not(.active):hover {
+  background-color: #e9ecef;
+}/*used*/
+
+.item-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}/*used*/
+
+.item-name {
+  font-weight: bold;
+}/*used*/
+
+.item-type {
+  font-size: 0.8rem;
+  color: #6c757d;
+}/*used*/
+
+.item-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #6c757d;
+}/*used*/
+
+/* Scrollbar styling */
+.item-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.item-list-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.item-list-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.item-list-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

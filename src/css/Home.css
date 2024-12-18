@@ -1,0 +1,25 @@
+.tool-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.tool-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.tool-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tool-link:hover {
+  color: inherit;
+}
+
+.tool-icon {
+  transition: color 0.2s ease-in-out;
+}
+
+.tool-card:hover .tool-icon {
+  color: #0445ad !important;  /* Bootstrap primary color */
+}

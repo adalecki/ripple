@@ -1,0 +1,61 @@
+.well-tooltip {
+  position: absolute;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  pointer-events: none;
+  font-size: 0.8rem;
+  max-width: 250px;
+}
+
+.well-id {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.content-section {
+  margin-bottom: 5px;
+}
+
+.content-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+  font-weight: 500;
+  position: relative;
+}
+
+.content-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px dotted #dee2e6;
+  z-index: -1;
+}
+
+.content-item > span {
+  background-color: #f8f9fa;
+  padding-right: 4px;
+}
+
+.content-item > span:last-child {
+  padding-left: 4px;
+  padding-right: 0;
+}
+
+.solvent-label {
+  color: #6c757d;
+}
+
+.volume-section {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid #dee2e6;
+}

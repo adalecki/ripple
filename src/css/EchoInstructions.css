@@ -1,0 +1,90 @@
+.echo-instructions-wrapper {
+  height: calc(100vh - var(--navbar-height) - 60px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.echo-instructions {
+  height: 100%;
+}
+
+.echo-instructions .card-title {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.echo-instructions .card-body {
+  padding: 1.25rem;
+}
+
+.echo-instructions .instruction-step {
+  color: #3498db;
+  margin-bottom: 15px;
+}
+
+.echo-instructions ul, .echo-instructions ol {
+  padding-left: 20px;
+}
+
+.echo-instructions .template-card {
+  list-style-type: none;
+  padding-left: 10;
+}
+
+.echo-instructions .template-card li {
+  padding: 5px 0;
+}
+
+.echo-instructions .template-card li strong {
+  color: #e74c3c;
+}
+
+.echo-instructions .instructions-card {
+  list-style-type: 1;
+  padding-left: 0;
+}
+
+.echo-instructions .download-button {
+  transition: all 0.3s ease;
+}
+
+.echo-instructions .download-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Scrollbar styling */
+.echo-instructions-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.echo-instructions-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.echo-instructions-wrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.echo-instructions-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.example-content h5 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.example-content p {
+  flex-grow: 1;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
