@@ -23,3 +23,13 @@ export interface RangeAnalysis {
   ranges: DilutionRange[];
   hasGaps: boolean;
 }
+
+export interface DilutionSettingsErrors {
+  maxTransferVolume?: string;
+  dropletSize?: string;
+  dmsoLimit?: string;
+  backfillVolume?: string;
+  assayVolume?: string;
+  allowableError?: string;
+  useIntConcs?: string;
+}

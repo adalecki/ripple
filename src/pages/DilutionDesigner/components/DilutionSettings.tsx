@@ -1,115 +1,115 @@
 import React from 'react';
-import { Card, Form, Row } from 'react-bootstrap';
-import { DilutionSettings } from '../types/dilutionTypes';
+import { Card, Row } from 'react-bootstrap';
+import { DilutionSettings, DilutionSettingsErrors } from '../types/dilutionTypes';
+import { FormField } from '../../../components/FormField';
 
 interface DilutionSettingsInputProps {
   settings: DilutionSettings;
-  onSettingsChange: (settings: DilutionSettings) => void;
+  onSettingChange: (field: keyof DilutionSettings, value: any) => void;
+  errors: DilutionSettingsErrors;
 }
 
 export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
   settings,
-  onSettingsChange,
+  onSettingChange,
+  errors
 }) => {
-  const handleSettingChange = (field: keyof DilutionSettings, value: string | boolean) => {
-    // For boolean values (checkboxes), pass through directly
-    if (typeof value === 'boolean') {
-      onSettingsChange({
-        ...settings,
-        [field]: value
-      });
-      return;
-    }
-
-    // For numeric fields, only update if the value is valid
-    const numericValue = value === '' ? 0 : parseFloat(value);
-    if (!isNaN(numericValue)) {
-      onSettingsChange({
-        ...settings,
-        [field]: numericValue
-      });
-    }
-  };
-
   return (
-    <>
-      <Card className="mb-4">
-        <Card.Header>
-          <Row>
-            <h5 className="mb-0">Transfer Settings</h5>
-          </Row>
-        </Card.Header>
-        <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Max Transfer Volume (nL)</Form.Label>
-            <Form.Control
-              type="number"
-              value={settings.maxTransferVolume || ''}
-              onChange={(e) => handleSettingChange('maxTransferVolume', e.target.value)}
-            />
-          </Form.Group>
+    <Card className="mb-4">
+      <Card.Header>
+        <Row>
+          <h5 className="mb-0">Transfer Settings</h5>
+        </Row>
+      </Card.Header>
+      <Card.Body>
+        <FormField
+          id="maxTransferVolume"
+          name="maxTransferVolume"
+          type="number"
+          label="Max Transfer Volume"
+          value={settings.maxTransferVolume}
+          onChange={(value) => onSettingChange('maxTransferVolume', value)}
+          required={true}
+          unit="nL"
+          error={errors.maxTransferVolume}
+        />
 
-          <Form.Group className="mb-3">
-            <Form.Label>Droplet Size (nL)</Form.Label>
-            <Form.Select
-              value={settings.dropletSize || ''}
-              onChange={(e) => handleSettingChange('dropletSize', e.target.value)}
-            >
-              <option value={2.5}>2.5</option>
-              <option value={25}>25</option>
-            </Form.Select>
-          </Form.Group>
+        <FormField
+          id="dropletSize"
+          name="dropletSize"
+          type="select"
+          label="Droplet Size"
+          value={settings.dropletSize}
+          onChange={(value) => onSettingChange('dropletSize', value)}
+          required={true}
+          unit="nL"
+          options={[
+            { value: 2.5, label: '2.5' },
+            { value: 25, label: '25' }
+          ]}
+          error={errors.dropletSize}
+        />
 
-          <Form.Group className="mb-3">
-            <Form.Label>DMSO Limit</Form.Label>
-            <Form.Control
-              type="number"
-              step="0.001"
-              value={settings.dmsoLimit || ''}
-              onChange={(e) => handleSettingChange('dmsoLimit', e.target.value)}
-            />
-          </Form.Group>
+        <FormField
+          id="dmsoLimit"
+          name="dmsoLimit"
+          type="number"
+          label="DMSO Limit"
+          value={settings.dmsoLimit}
+          onChange={(value) => onSettingChange('dmsoLimit', value)}
+          required={true}
+          step={0.001}
+          error={errors.dmsoLimit}
+        />
 
-          <Form.Group className="mb-3">
-            <Form.Label>Backfill Volume (µL)</Form.Label>
-            <Form.Control
-              type="number"
-              value={settings.backfillVolume || ''}
-              onChange={(e) => handleSettingChange('backfillVolume', e.target.value)}
-            />
-          </Form.Group>
+        <FormField
+          id="backfillVolume"
+          name="backfillVolume"
+          type="number"
+          label="Backfill Volume"
+          value={settings.backfillVolume}
+          onChange={(value) => onSettingChange('backfillVolume', value)}
+          required={true}
+          unit="µL"
+          error={errors.backfillVolume}
+        />
 
-          <Form.Group className="mb-3">
-            <Form.Label>Assay Volume (µL)</Form.Label>
-            <Form.Control
-              type="number"
-              value={settings.assayVolume || ''}
-              onChange={(e) => handleSettingChange('assayVolume', e.target.value)}
-            />
-          </Form.Group>
+        <FormField
+          id="assayVolume"
+          name="assayVolume"
+          type="number"
+          label="Assay Volume"
+          value={settings.assayVolume}
+          onChange={(value) => onSettingChange('assayVolume', value)}
+          required={true}
+          unit="µL"
+          error={errors.assayVolume}
+        />
 
-          <Form.Group className="mb-3">
-            <Form.Label>Allowable Error</Form.Label>
-            <Form.Control
-              type="number"
-              value={settings.allowableError || ''}
-              onChange={(e) => handleSettingChange('allowableError', e.target.value)}
-            />
-          </Form.Group>
+        <FormField
+          id="allowableError"
+          name="allowableError"
+          type="number"
+          label="Allowable Error"
+          value={settings.allowableError}
+          onChange={(value) => onSettingChange('allowableError', value)}
+          required={true}
+          step={0.05}
+          error={errors.allowableError}
+        />
 
-          <Form.Group className="mb-3">
-            <Form.Check
-              type="switch"
-              id="use-int-concs"
-              label="Use Intermediate Plates"
-              checked={settings.useIntConcs}
-              onChange={(e) => handleSettingChange('useIntConcs', e.target.checked)}
-            />
-          </Form.Group>
-        </Card.Body>
-      </Card>
-    </>
+        <FormField
+          id="useIntConcs"
+          name="useIntConcs"
+          type="switch"
+          label="Use Intermediate Plates"
+          value={settings.useIntConcs}
+          onChange={(value) => onSettingChange('useIntConcs', value)}
+          error={errors.useIntConcs}
+        />
+      </Card.Body>
+    </Card>
   );
 };
 
-export default DilutionSettingsInput
+export default DilutionSettingsInput;
