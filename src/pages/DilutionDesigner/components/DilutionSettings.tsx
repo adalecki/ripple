@@ -89,6 +89,15 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
+            <Form.Label>Allowable Error</Form.Label>
+            <Form.Control
+              type="number"
+              value={settings.allowableError || ''}
+              onChange={(e) => handleSettingChange('allowableError', e.target.value)}
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
             <Form.Check
               type="switch"
               id="use-int-concs"

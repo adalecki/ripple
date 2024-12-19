@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { usePreferences } from '../../hooks/usePreferences';
-import { analyzeMultipleStockConcentrations } from '../EchoTransfer/utils/echoUtils';
+import { analyzeDilutionPoints } from './utils/dilutionUtils';
 import { DilutionSettings, Point } from './types/dilutionTypes';
 import DilutionSettingsInput from './components/DilutionSettings';
 import DilutionStocksInput from './components/DilutionStocks';
@@ -33,18 +33,19 @@ const DilutionDesigner: React.FC = () => {
     { concentration: 0.1, index: 5 }
   ]);
 
-  // Calculate achievable ranges based on current settings
-  const rangeAnalysis = analyzeMultipleStockConcentrations({
+  // Calculate transfer possibilities for all points
+  const analysisResults = analyzeDilutionPoints({
+    points: points.map(p => p.concentration),
     stockConcentrations: settings.stockConcentrations,
     constraints: {
-      maxTransferVolume: settings.maxTransferVolume,
       dropletSize: settings.dropletSize,
+      maxTransferVolume: settings.maxTransferVolume,
+      assayVolume: settings.assayVolume * 1000, // convert to nL
+      allowableError: settings.allowableError,
       dmsoLimit: settings.dmsoLimit,
-      backfillVolume: settings.backfillVolume * 1000,
-      assayVolume: settings.assayVolume * 1000,
-      allowableError: settings.allowableError
+      backfillVolume: settings.backfillVolume * 1000 // convert to nL
     },
-    maxIntermediateLevels: (settings.useIntConcs ? 2 : 0)
+    useIntConcs: settings.useIntConcs
   });
 
   return (
@@ -73,7 +74,8 @@ const DilutionDesigner: React.FC = () => {
         <Col md={8} className="designer-column">
           <DilutionGraph 
             points={points}
-            ranges={rangeAnalysis.ranges}
+            analysisResults={analysisResults}
+            allowableError={settings.allowableError}
           />
         </Col>
       </Row>

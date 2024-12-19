@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { select, scaleLog, scaleLinear, line, axisBottom, axisLeft } from 'd3';
 import { Card, Row } from 'react-bootstrap';
-import { Point, DilutionRange } from '../types/dilutionTypes';
+import { Point } from '../types/dilutionTypes';
+import { TransferMap } from '../utils/dilutionUtils';
 
 interface DilutionGraphProps {
   points: Point[];
-  ranges: DilutionRange[];
+  analysisResults: Map<number, TransferMap[]>;
+  allowableError: number;
   width?: number;
 }
 
@@ -40,7 +42,8 @@ const generateLogTicks = (min: number, max: number): number[] => {
 
 const DilutionGraph: React.FC<DilutionGraphProps> = ({
   points,
-  ranges,
+  analysisResults,
+  allowableError,
   width: containerWidth = 600
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -49,7 +52,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     height: Math.min(containerWidth * 0.6, 400)
   });
 
-  const chartMargins = { top: 20, right: 30, bottom: 40, left: 60 };
+  const chartMargins = { top: 20, right: 100, bottom: 40, left: 60 };
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -77,18 +80,27 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     const width = dimensions.width - chartMargins.left - chartMargins.right;
     const height = dimensions.height - chartMargins.top - chartMargins.bottom;
 
-    const minX = Math.min(...points.map(p => p.concentration).filter(p => p != 0)) * 0.1
-    const maxX = Math.max(...points.map(p => p.concentration).filter(p => p != 0)) * 10
+    // Find min/max concentrations for domain
+    const allConcentrations = points.flatMap(p => {
+      const transfers = analysisResults.get(p.concentration) || [];
+      return [
+        p.concentration,
+        ...transfers.flatMap(t => t.possibleConcs)
+      ];
+    }).filter(c => c !== 0);
+
+    const minConc = Math.min(...allConcentrations) * 0.1;
+    const maxConc = Math.max(...allConcentrations) * 10;
 
     const xScale = scaleLog()
-      .domain([minX, maxX])
+      .domain([minConc, maxConc])
       .range([0, width]);
 
     const yScale = scaleLinear()
       .domain([0, points.length - 1])
       .range([height, 0]);
 
-    const xTicks = generateLogTicks(minX, maxX);
+    const xTicks = generateLogTicks(minConc, maxConc);
 
     const xAxis = axisBottom(xScale)
       .tickValues(xTicks)
@@ -96,7 +108,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
 
     const yAxis = axisLeft(yScale)
       .ticks(points.length)
-      .tickFormat(d => `Point ${d as number + 1}`);
+      .tickFormat(d => `Point ${(d as number) + 1}`);
 
     const g = svg.append('g')
       .attr('transform', `translate(${chartMargins.left},${chartMargins.top})`);
@@ -109,6 +121,44 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     g.append('g')
       .call(yAxis);
 
+    // Layer 1: Allowable range rectangles
+    const rangesGroup = g.append('g').attr('class', 'ranges');
+    points.forEach((point, _) => {
+      if (point.concentration !== 0) {
+        rangesGroup.append('rect')
+          .attr('x', xScale(point.concentration * (1 - allowableError)))
+          .attr('y', 0)
+          .attr('width', xScale(point.concentration * (1 + allowableError)) - xScale(point.concentration * (1 - allowableError)))
+          .attr('height', height)
+          .attr('fill', '#3498db')
+          .attr('opacity', 0.15);
+      }
+    });
+
+    const colors = {
+      stock: '#ff7700',
+      int1: '#2b00ff',
+      int2: '#29bd1e'
+    };
+
+    // Layer 2: Discrete transfer lines
+    points.forEach((point, _) => {
+      const transfers = analysisResults.get(point.concentration) || [];
+      transfers.forEach(transfer => {
+        transfer.possibleConcs.forEach(conc => {
+          g.append('line')
+            .attr('x1', xScale(conc))
+            .attr('x2', xScale(conc))
+            .attr('y1', 0)
+            .attr('y2', height)
+            .attr('stroke', colors[transfer.sourceType as keyof typeof colors])
+            .attr('stroke-width', 1)
+            .attr('opacity', 1);
+        });
+      });
+    });
+
+    // Layer 3: Target line
     const linePath = line<Point>()
       .x(d => xScale(d.concentration))
       .y(d => yScale(d.index));
@@ -120,29 +170,62 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       .attr('stroke-width', 2)
       .attr('d', linePath);
 
-    g.selectAll('circle')
-      .data(points.filter(p => (p.concentration != 0)))
-      .enter()
-      .append('circle')
-      .attr('cx', d => xScale(d.concentration))
-      .attr('cy', d => yScale(d.index))
-      .attr('r', 5)
-      .attr('fill', '#2c3e50');
+    // Layer 4: Target points (on top)
+    points.filter(p => p.concentration !== 0).forEach((point, _) => {
+      const transfers = analysisResults.get(point.concentration) || [];
+      const hasValidTransfer = transfers.length > 0 && 
+        transfers.some(t => t.possibleConcs.length > 0);
 
-    ranges.forEach(range => {
-      if (!isNaN(range.max) && !isNaN(range.min)) {
-        g.append('rect')
-        .attr('x', Math.max(xScale(range.min), 0))
-        .attr('y', 0)
-        .attr('width', Math.min(xScale(range.max), width) - Math.max(xScale(range.min), 0))
-        .attr('height', height)
-        .attr('fill', '#3498db')
-        .attr('opacity', 0.2);
-      }
+      g.append('circle')
+        .attr('cx', xScale(point.concentration))
+        .attr('cy', yScale(point.index))
+        .attr('r', 5)
+        .attr('fill', hasValidTransfer ? '#2c3e50' : '#c0392b')
 
     });
 
-  }, [dimensions, points, ranges]);
+    // Add legend
+    const legend = g.append('g')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${width - 100}, 20)`);
+
+    const legendData = [
+      { color: '#ff7700', type: 'line', label: 'Direct Transfer' },
+      { color: '#2b00ff', type: 'line', label: 'Via Int. Plate 1' },
+      { color: '#29bd1e', type: 'line', label: 'Via Int. Plate 2' },
+      { color: '#2c3e50', type: 'dot', label: 'Viable Conc' },
+      { color: '#c0392b', type: 'dot', label: 'No Scheme Found' },
+    ];
+
+    legendData.forEach((item, i) => {
+      const legendRow = legend.append('g')
+        .attr('transform', `translate(0, ${i * 20})`);
+      
+      if (item.type == 'line') {
+        legendRow.append('line')
+        .attr('x1', 0)
+        .attr('x2', 20)
+        .attr('y1', 0)
+        .attr('y2', 0)
+        .attr('stroke', item.color)
+        .attr('stroke-width', 2);
+      }
+      else if (item.type == 'dot') {
+        legendRow.append('circle')
+        .attr('cx', 10)
+        .attr('cy', 0)
+        .attr('r', 5)
+        .attr('fill',item.color)
+      }
+
+      legendRow.append('text')
+        .attr('x', 25)
+        .attr('y', 4)
+        .text(item.label)
+        .attr('font-size', '12px');
+    });
+
+  }, [dimensions, points, analysisResults]);
 
   return (
     <Card>
