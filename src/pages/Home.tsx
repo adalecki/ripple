@@ -8,9 +8,9 @@ const Home = () => {
     <Container className="mt-5">
       <Row className="justify-content-center mb-4">
         <Col md={8} className="text-center">
-          <h1 className="mb-4">Welcome to Ripple</h1>
+          <h1 className="mb-4">Ripple</h1>
           <p className="lead text-muted">
-            Acoustic liquid handling transfer calculation and dilution design tools
+            Acoustic liquid handling transfer calculation
           </p>
         </Col>
       </Row>
@@ -44,14 +44,6 @@ const Home = () => {
               </Card.Body>
             </Card>
           </Link>
-        </Col>
-      </Row>
-
-      <Row className="justify-content-center mt-5">
-        <Col md={8} className="text-center">
-          <p className="text-muted">
-            Choose a tool above to get started, or use the navigation menu to access specific features.
-          </p>
         </Col>
       </Row>
     </Container>

@@ -12,6 +12,7 @@ export interface DilutionSettings {
   assayVolume: number;
   allowableError: number;
   useIntConcs: boolean;
+  numIntConcs: number
 }
 
 export interface DilutionRange {
@@ -32,4 +33,5 @@ export interface DilutionSettingsErrors {
   assayVolume?: string;
   allowableError?: string;
   useIntConcs?: string;
+  numIntConcs?: string;
 }

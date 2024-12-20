@@ -8,20 +8,47 @@ function getIntermediateConcs({
   sourceConc,
   dropletSize,
   maxTransferVolume,
-  backfillVolume
+  backfillVolume,
+  volNumber
 }: {
   sourceConc: number;
   dropletSize: number;
   maxTransferVolume: number;
   backfillVolume: number;
+  volNumber: number;
 }): number[] {
-  const minTransferVol = dropletSize;
-  const maxTransferVol = maxTransferVolume;
-  const midTransferVol = (maxTransferVol + minTransferVol) / 2;
+  if (dropletSize <= 0 || maxTransferVolume <= 0 || volNumber <= 0) {
+        return []; // Handle invalid input
+  }
+  if (dropletSize >= maxTransferVolume) {
+        return [dropletSize];
+  }
+  const result: number[] = [];
+  result.push(dropletSize);
 
-  return [minTransferVol, midTransferVol, maxTransferVol].map(volume =>
-    (sourceConc * volume) / (volume + backfillVolume)
-  );
+  let adjustedMaxTransferVolume = Math.floor(maxTransferVolume / dropletSize) * dropletSize;
+  if (adjustedMaxTransferVolume < dropletSize) {
+        return [dropletSize];
+  }
+  if (volNumber === 1) {
+    return [dropletSize];
+  }
+  if (volNumber === 2) {
+      result.push(adjustedMaxTransferVolume);
+    return result;
+  }
+  const numInternalVolumes = Math.min(volNumber - 2, Math.floor((adjustedMaxTransferVolume - dropletSize) / dropletSize) -1);
+  if (numInternalVolumes <=0 ) {
+      result.push(adjustedMaxTransferVolume);
+      return result;
+  }
+  const increment = (adjustedMaxTransferVolume - dropletSize) / (numInternalVolumes + 1);
+    for (let i = 1; i <= numInternalVolumes; i++) {
+       const nextValue = dropletSize + (Math.round(increment * i/dropletSize)*dropletSize);
+            result.push(nextValue);
+    }
+  result.push(adjustedMaxTransferVolume);
+  return result.map(volume => (sourceConc * volume) / (volume + backfillVolume));
 }
 
 function getAllPossibleConcs({
@@ -61,7 +88,8 @@ export function buildConcentrationMap({
   backfillVolume,
   assayVolume,
   dmsoLimit,
-  useIntConcs
+  useIntConcs,
+  numIntConcs
 }: {
   stockConcentrations: number[];
   dropletSize: number;
@@ -70,6 +98,7 @@ export function buildConcentrationMap({
   assayVolume: number;
   dmsoLimit: number;
   useIntConcs: boolean;
+  numIntConcs: number;
 }): Map<string, Map<number, number[]>> {
   const concMap = new Map<string, Map<number, number[]>>();
 
@@ -100,7 +129,8 @@ export function buildConcentrationMap({
         sourceConc: stockConc,
         dropletSize,
         maxTransferVolume,
-        backfillVolume
+        backfillVolume,
+        volNumber: numIntConcs
       });
 
       // Process int1 concentrations
@@ -126,7 +156,8 @@ export function buildConcentrationMap({
         sourceConc: lowestInt1Conc,
         dropletSize,
         maxTransferVolume,
-        backfillVolume
+        backfillVolume,
+        volNumber: numIntConcs
       });
 
       // Process int2 concentrations
@@ -183,7 +214,8 @@ export function analyzeDilutionPoints({
   points,
   stockConcentrations,
   constraints,
-  useIntConcs
+  useIntConcs,
+  numIntConcs
 }: {
   points: number[];
   stockConcentrations: number[];
@@ -196,6 +228,7 @@ export function analyzeDilutionPoints({
     backfillVolume: number;
   },
   useIntConcs: boolean;
+  numIntConcs: number;
 }): Map<number, TransferMap[]> {
   // First build complete concentration map
   const concMap = buildConcentrationMap({
@@ -205,7 +238,8 @@ export function analyzeDilutionPoints({
     backfillVolume: constraints.backfillVolume,
     assayVolume: constraints.assayVolume,
     dmsoLimit: constraints.dmsoLimit,
-    useIntConcs: useIntConcs
+    useIntConcs: useIntConcs,
+    numIntConcs: numIntConcs
   });
 
   // Then find valid transfers for each point

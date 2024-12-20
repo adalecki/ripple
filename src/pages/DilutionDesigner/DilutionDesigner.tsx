@@ -12,7 +12,7 @@ import './css/DilutionDesigner.css'
 
 const DilutionDesigner: React.FC = () => {
   const { preferences } = usePreferences();
-  
+
   const [settings, setSettings] = useState<DilutionSettings>({
     stockConcentrations: [10000],
     maxTransferVolume: preferences.maxTransferVolume as number,
@@ -21,7 +21,8 @@ const DilutionDesigner: React.FC = () => {
     backfillVolume: preferences.defaultBackfill as number,
     assayVolume: preferences.defaultAssayVolume as number,
     allowableError: preferences.defaultAllowedError as number,
-    useIntConcs: preferences.useIntermediatePlates as boolean
+    useIntConcs: preferences.useIntermediatePlates as boolean,
+    numIntConcs: 5 as number
   });
 
   const [errors, setErrors] = useState<DilutionSettingsErrors>({});
@@ -62,6 +63,11 @@ const DilutionDesigner: React.FC = () => {
           return 'Must be between 0 and 1';
         }
         break;
+      case 'numIntConcs':
+        if (newSettings.numIntConcs === undefined || newSettings.numIntConcs <= 0 || newSettings.numIntConcs >= 21) {
+          return 'Must be between 1 and 20 inclusive';
+        }
+        break;
     }
     return undefined;
   };
@@ -71,23 +77,27 @@ const DilutionDesigner: React.FC = () => {
       ...settings,
       [key]: value
     };
-    
+
     const error = validateSettings(newSettings, key);
-    
-    if (error) {
-      setErrors(prevErrors => ({
-        ...prevErrors,
-        [key]: error
-      }));
-    }
 
+    setErrors(prevErrors => {
+      if (error) {
+        return {
+          ...prevErrors,
+          [key]: error,
+        };
+      } else {
+        const { [key as keyof DilutionSettingsErrors]: removedKey, ...rest } =
+          prevErrors;
+        return rest;
+      }
+    });
 
-    // Only update settings if there's no error or if it's a boolean value
     if (!error || typeof value === 'boolean') {
       setSettings(newSettings);
     }
   };
-  // Calculate transfer possibilities for all points only if there are no errors
+  
   const analysisResults = Object.keys(errors).length === 0 ? analyzeDilutionPoints({
     points: points.map(p => p.concentration),
     stockConcentrations: settings.stockConcentrations,
@@ -99,14 +109,15 @@ const DilutionDesigner: React.FC = () => {
       dmsoLimit: settings.dmsoLimit,
       backfillVolume: settings.backfillVolume * 1000
     },
-    useIntConcs: settings.useIntConcs
+    useIntConcs: settings.useIntConcs,
+    numIntConcs: settings.numIntConcs
   }) : new Map();
 
   return (
     <Container fluid className="dilution-designer">
       <Row>
         <Col md={2} className="designer-column">
-          <DilutionSettingsInput 
+          <DilutionSettingsInput
             settings={settings}
             onSettingChange={handleSettingChange}
             errors={errors}
@@ -114,27 +125,27 @@ const DilutionDesigner: React.FC = () => {
         </Col>
         <Col md={2} className="designer-column middle-column">
           <div className="middle-section">
-            <DilutionPointsInput 
+            <DilutionPointsInput
               points={points}
               onPointsChange={setPoints}
             />
           </div>
           <div className="middle-section">
-            <DilutionStocksInput 
+            <DilutionStocksInput
               settings={settings}
               onSettingsChange={setSettings}
             />
           </div>
         </Col>
         <Col md={8} className="designer-column">
-          <DilutionGraph 
+          <DilutionGraph
             points={points}
             analysisResults={analysisResults}
             allowableError={settings.allowableError}
           />
         </Col>
       </Row>
-    </Container> 
+    </Container>
   );
 };
 

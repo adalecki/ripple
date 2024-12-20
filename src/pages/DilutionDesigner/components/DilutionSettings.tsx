@@ -107,6 +107,17 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           onChange={(value) => onSettingChange('useIntConcs', value)}
           error={errors.useIntConcs}
         />
+        <FormField
+          id="numIntConcs"
+          name="numIntConcs"
+          type="number"
+          label="Int Concs to Check"
+          value={settings.numIntConcs}
+          onChange={(value) => onSettingChange('numIntConcs', value)}
+          required={true}
+          step={1}
+          error={errors.numIntConcs}
+        />
       </Card.Body>
     </Card>
   );
