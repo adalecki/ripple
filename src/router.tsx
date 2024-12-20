@@ -25,7 +25,8 @@ const router = createBrowserRouter(
       <Route path="dilutiondesigner" element={<DilutionDesigner />} />
       <Route path="*" element={<NoPage />} />
     </Route>
-  )
+  ),
+  { basename: import.meta.env.BASE_URL}
 );
 
 function Router() {
