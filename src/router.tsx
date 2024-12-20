@@ -4,7 +4,6 @@ import NavbarHeightAdjuster from "./components/NavbarHeightAdjuster";
 import Home from "./pages/Home";
 import NoPage from "./pages/NoPage";
 import EchoTransfer from "./pages/EchoTransfer/EchoTransfer";
-import LogDilution from "./pages/LogDilution/components/LogDilution";
 import DilutionDesigner from "./pages/DilutionDesigner/DilutionDesigner";
 import MobileCheck from "./components/MobileCheck";
 import { PreferencesProvider } from "./hooks/usePreferences";
@@ -24,7 +23,6 @@ const router = createBrowserRouter(
       <Route index element={<Home />} />
       <Route path="echotsfr" element={<EchoTransfer />} />
       <Route path="dilutiondesigner" element={<DilutionDesigner />} />
-      <Route path="logdilution" element={<LogDilution />} />
       <Route path="*" element={<NoPage />} />
     </Route>
   )

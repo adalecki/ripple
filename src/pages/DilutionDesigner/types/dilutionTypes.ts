@@ -12,6 +12,7 @@ export interface DilutionSettings {
   assayVolume: number;
   allowableError: number;
   useIntConcs: boolean;
+  numIntConcs: number
 }
 
 export interface DilutionRange {
@@ -22,4 +23,15 @@ export interface DilutionRange {
 export interface RangeAnalysis {
   ranges: DilutionRange[];
   hasGaps: boolean;
+}
+
+export interface DilutionSettingsErrors {
+  maxTransferVolume?: string;
+  dropletSize?: string;
+  dmsoLimit?: string;
+  backfillVolume?: string;
+  assayVolume?: string;
+  allowableError?: string;
+  useIntConcs?: string;
+  numIntConcs?: string;
 }

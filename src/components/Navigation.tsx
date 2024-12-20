@@ -23,7 +23,6 @@ function Navigation() {
               <NavDropdown title="Utilities" id="utils">
                 <LinkContainer to="echotsfr"><NavDropdown.Item>Echo Transfers</NavDropdown.Item></LinkContainer>
                 <LinkContainer to="dilutiondesigner"><NavDropdown.Item>Dilution Designer</NavDropdown.Item></LinkContainer>
-                <LinkContainer to="logdilution"><NavDropdown.Item>Log Dilution Series</NavDropdown.Item></LinkContainer>
               </NavDropdown>
             </Nav>
             <Nav>

@@ -57,13 +57,13 @@ const Logo = () => {
     >
       <defs>
         <radialGradient id="highlightGradient" cx="50%" cy="40%" r="50%" fx="50%" fy="40%">
-          <stop offset="0%" stop-color="white" stop-opacity="0.5" />
-          <stop offset="100%" stop-color="#91A6C8" stop-opacity="0.1" />
+          <stop offset="0%" stopColor="white" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#91A6C8" stopOpacity="0.1" />
         </radialGradient>
 
         <radialGradient id="shadowGradient" cx="50%" cy="60%" r="50%" fx="50%" fy="60%">
-          <stop offset="0%" stop-color="#404040" stop-opacity="0.3" />
-          <stop offset="100%" stop-color="#0445ad" stop-opacity="0.4" />
+          <stop offset="0%" stopColor="#404040" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#0445ad" stopOpacity="0.4" />
         </radialGradient>
 
       </defs>
