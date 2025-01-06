@@ -44,7 +44,7 @@ const DilutionDesigner: React.FC = () => {
         }
         break;
       case 'dmsoLimit':
-        if (newSettings.dmsoLimit === undefined || newSettings.dmsoLimit <= 0 || newSettings.dmsoLimit >= 1) {
+        if (!newSettings.dmsoLimit || newSettings.dmsoLimit <= 0 || newSettings.dmsoLimit >= 1) {
           return 'Must be between 0 and 1';
         }
         break;
@@ -59,12 +59,12 @@ const DilutionDesigner: React.FC = () => {
         }
         break;
       case 'allowableError':
-        if (newSettings.allowableError === undefined || newSettings.allowableError <= 0 || newSettings.allowableError >= 1) {
+        if (!newSettings.allowableError || newSettings.allowableError <= 0 || newSettings.allowableError >= 1) {
           return 'Must be between 0 and 1';
         }
         break;
       case 'numIntConcs':
-        if (newSettings.numIntConcs === undefined || newSettings.numIntConcs <= 0 || newSettings.numIntConcs >= 21) {
+        if (!newSettings.numIntConcs || newSettings.numIntConcs <= 0 || newSettings.numIntConcs >= 21) {
           return 'Must be between 1 and 20 inclusive';
         }
         break;
@@ -98,7 +98,7 @@ const DilutionDesigner: React.FC = () => {
     }
   };
   
-  const analysisResults = Object.keys(errors).length === 0 ? analyzeDilutionPoints({
+  const analysisResults = analyzeDilutionPoints({
     points: points.map(p => p.concentration),
     stockConcentrations: settings.stockConcentrations,
     constraints: {
@@ -111,7 +111,7 @@ const DilutionDesigner: React.FC = () => {
     },
     useIntConcs: settings.useIntConcs,
     numIntConcs: settings.numIntConcs
-  }) : new Map();
+  });
 
   return (
     <Container fluid className="dilution-designer">
