@@ -63,7 +63,7 @@ const About: React.FC = () => {
                       <p>{example.description}</p>
                       <Button
                         variant="outline-primary"
-                        href={`/data/${example.filename}`}
+                        href={`/ripple/data/${example.filename}`}
                         className="mt-2"
                       >
                         Download {example.name} Example

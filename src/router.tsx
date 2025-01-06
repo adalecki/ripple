@@ -1,4 +1,4 @@
-import { Route, createBrowserRouter, RouterProvider, createRoutesFromElements } from "react-router-dom";
+import { Route, createHashRouter, RouterProvider, createRoutesFromElements } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import NavbarHeightAdjuster from "./components/NavbarHeightAdjuster";
 import Home from "./pages/Home";
@@ -17,7 +17,7 @@ const Layout = () => (
   </PreferencesProvider>
 );
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   createRoutesFromElements(
     <Route path="/" element={<Layout />}>
       <Route index element={<Home />} />

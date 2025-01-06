@@ -42,7 +42,7 @@ const EchoInstructions: React.FC = () => {
 
                 <Button
                   variant="outline-primary"
-                  href="/data/RippleTemplate_Basic.xlsx"
+                  href="/ripple/data/RippleTemplate_Basic.xlsx"
                   className="download-button mb-3"
                 >Download Template</Button>
                 <p>This template is ready to use as-is, no changes necessary. Feel free to upload it using the default settings to get a feel for how the tool works. It consists of four sheets; sheet names and individual sheet headers must exactly match the provided template.</p>
