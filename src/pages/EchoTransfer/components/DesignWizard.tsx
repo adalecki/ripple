@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PlateView from './PlateView';
@@ -6,7 +6,7 @@ import PatternManager from './PatternManager';
 import { Plate } from '../classes/PlateClass';
 import { Pattern } from '../classes/PatternClass';
 import { PatternsContext } from '../contexts/Context';
-import { formatWellBlock, getCoordsFromWellId, mapWellsToConcentrations, numberToLetters } from '../utils/plateUtils';
+import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, mapWellsToConcentrations, numberToLetters } from '../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../utils/wellColors';
 import { generateExcelTemplate } from '../utils/designUtils';
 
@@ -323,6 +323,11 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     height: Math.abs(startPoint.y - endPoint.y),
   };
 
+  
+  const blockBorderMap = useMemo(() => {
+    return calculateBlockBorders(patternPlate);
+  }, [patterns, patternPlate.rows, patternPlate.columns]);
+
   return (
     <Container fluid className='noselect'>
       <div
@@ -341,7 +346,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
               selectedWells={selectedWells}
               handleLabelClick={handleLabelClick}
               handleMouseDown={handleMouseDown}
-
+              blockBorderMap={blockBorderMap}
               selectionStyle={dragging ? selectionStyle : undefined}
               ref={wellsRef}
             />

@@ -18,6 +18,7 @@ interface PlateViewProps {
   handleMouseUp?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   selectionStyle?: React.CSSProperties;
+  blockBorderMap?: Map<string, {top: boolean, right: boolean, bottom: boolean, left: boolean}>;
 }
 
 type PlateViewRef = ((instance: HTMLDivElement[] | null) => void) | MutableRefObject<HTMLDivElement[] | null>;
@@ -29,7 +30,7 @@ interface HoveredWellData {
 }
 
 const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
-  ({ plate, view, colorConfig, handleMaskedWell, selectedWells = [], handleMouseDown, handleMouseMove, handleMouseUp, handleLabelClick, selectionStyle }, ref) => {
+  ({ plate, view, colorConfig, handleMaskedWell, selectedWells = [], handleMouseDown, handleMouseMove, handleMouseUp, handleLabelClick, selectionStyle, blockBorderMap }, ref) => {
     const [hoveredWell, setHoveredWell] = useState<HoveredWellData | null>(null);
 
     const mouseDownHandler = handleMouseDown || (() => { });
@@ -68,30 +69,34 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
       return (ref as MutableRefObject<HTMLDivElement[] | null>).current !== undefined;
     };
     const wellColorArr = wellColors(plate, colorConfig);
-    const wells = wellColorArr.map((well, idx) => (
-      <WellView
-        key={well.wellId}
-        well={plate.getWell(well.wellId)!}
-        bgColors={well.colors}
-        wellId={well.wellId}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClickMask={handleMaskWell}
-        isSelected={selectedWellsArr.includes(well.wellId)}
-        ref={(element: HTMLDivElement | null) => {
-          if (element && ref) {
-            if (isRefObject(ref)) {
-              if (!ref.current) ref.current = [];
-              ref.current[idx] = element;
-            } else {
-              const arr: HTMLDivElement[] = [];
-              arr[idx] = element;
-              ref(arr);
+    const wells = wellColorArr.map((well, idx) => {
+      const borders = (blockBorderMap ? blockBorderMap.get(well.wellId) : undefined)
+      return (
+        <WellView
+          key={well.wellId}
+          well={plate.getWell(well.wellId)!}
+          bgColors={well.colors}
+          wellId={well.wellId}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onClickMask={handleMaskWell}
+          isSelected={selectedWellsArr.includes(well.wellId)}
+          blockBorders={borders}
+          ref={(element: HTMLDivElement | null) => {
+            if (element && ref) {
+              if (isRefObject(ref)) {
+                if (!ref.current) ref.current = [];
+                ref.current[idx] = element;
+              } else {
+                const arr: HTMLDivElement[] = [];
+                arr[idx] = element;
+                ref(arr);
+              }
             }
-          }
-        }}
-      />
-    ));
+          }}
+        />
+      );
+    });
 
     const rowLabels = [];
     const columnLabels = [];

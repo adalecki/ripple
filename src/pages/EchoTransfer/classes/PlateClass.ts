@@ -62,6 +62,14 @@ export class Plate {
       }
     }
 
+    for (const patternName in clonedPlate.patterns) {
+      if (clonedPlate.patterns.hasOwnProperty(patternName)) {
+        const patternData = clonedPlate.patterns[patternName];
+        clonedPlate.patterns[patternName] = Object.create(Pattern.prototype);
+        Object.assign(clonedPlate.patterns[patternName], patternData);
+      }
+    }
+
     return clonedPlate;
   }
 
@@ -162,6 +170,15 @@ export class Plate {
         if (well) {well.applyPattern(pattern.name,concentrations[concIdx])}
       }
     }
+
+    if (!this.patterns[pattern.name]) {
+      this.patterns[pattern.name] = pattern.clone();
+      this.patterns[pattern.name].locations = [wellBlock];
+    } else {
+      if (!this.patterns[pattern.name].locations.includes(wellBlock)) {
+        this.patterns[pattern.name].locations.push(wellBlock);
+      }
+    }
   }
 
   removePattern(wellBlock: string, patternName: string): void {
@@ -169,5 +186,27 @@ export class Plate {
     for (const well of wells) {
       well.removePattern(patternName)
     }
+
+    if (this.patterns[patternName]) {
+      this.patterns[patternName].locations = this.patterns[patternName].locations.filter(
+        block => block !== wellBlock
+      );
+      
+      if (this.patterns[patternName].locations.length === 0) {
+        delete this.patterns[patternName];
+      }
+    }
+  }
+
+  getPatternBlocks(patternName: string): string[] {
+    return this.patterns[patternName]?.locations || [];
+  }
+
+  getAllPatterns(): Pattern[] {
+    return Object.values(this.patterns);
+  }
+
+  hasPattern(patternName: string): boolean {
+    return patternName in this.patterns;
   }
 }

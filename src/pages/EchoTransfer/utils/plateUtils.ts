@@ -181,3 +181,64 @@ export function mapWellsToConcentrations(
 
   return result;
 }
+
+export function calculateBlockBorders(plate: Plate): Map<string, {top: boolean, right: boolean, bottom: boolean, left: boolean}> {
+  const borderMap = new Map<string, {top: boolean, right: boolean, bottom: boolean, left: boolean}>();
+  console.log(plate)
+  
+  // Initialize all wells with no borders
+  for (const well of plate) {
+    if (well) {
+      borderMap.set(well.id, {top: false, right: false, bottom: false, left: false});
+    }
+  }
+  
+  // For each pattern
+  const patternIds = Object.keys(plate.patterns)
+  for (const patternId of patternIds) {
+    const pattern = plate.patterns[patternId]
+    // For each block in the pattern
+    for (const block of pattern.locations) {
+      const wells = plate.getSomeWells(block);
+      const wellIds = wells.map(w => w.id);
+      
+      // For each well in the block
+      for (const wellId of wellIds) {
+        const coords = getCoordsFromWellId(wellId);
+        const borders = borderMap.get(wellId)!;
+        
+        // Check top
+        const topWellId = coords.row > 0 ? 
+          getWellIdFromCoords(coords.row - 1, coords.col) : null;
+        if (!topWellId || !wellIds.includes(topWellId)) {
+          borders.top = true;
+        }
+        
+        // Check right
+        const rightWellId = coords.col < plate.columns - 1 ? 
+          getWellIdFromCoords(coords.row, coords.col + 1) : null;
+        if (!rightWellId || !wellIds.includes(rightWellId)) {
+          borders.right = true;
+        }
+        
+        // Check bottom
+        const bottomWellId = coords.row < plate.rows - 1 ? 
+          getWellIdFromCoords(coords.row + 1, coords.col) : null;
+        if (!bottomWellId || !wellIds.includes(bottomWellId)) {
+          borders.bottom = true;
+        }
+        
+        // Check left
+        const leftWellId = coords.col > 0 ? 
+          getWellIdFromCoords(coords.row, coords.col - 1) : null;
+        if (!leftWellId || !wellIds.includes(leftWellId)) {
+          borders.left = true;
+        }
+        
+        borderMap.set(wellId, borders);
+      }
+    }
+  }
+  
+  return borderMap;
+}

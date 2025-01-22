@@ -9,11 +9,21 @@ interface WellProps {
   onMouseLeave: () => void;
   onClickMask: (wellId: string, e: React.MouseEvent<HTMLDivElement>) => void;
   isSelected: boolean;
+  blockBorders?: {top: boolean, right: boolean, bottom: boolean, left: boolean};
 }
 
 const WellView = React.forwardRef<HTMLDivElement, WellProps>(
-  ({ well, bgColors, wellId, onMouseEnter, onMouseLeave, onClickMask, isSelected }, ref) => {
+  ({ well, bgColors, wellId, onMouseEnter, onMouseLeave, onClickMask, isSelected, blockBorders }, ref) => {
     const classNames = `well ${isSelected ? 'well-highlighted' : ''}`;
+
+    const style = '3px solid rgb(0, 0, 0) '
+
+    const borderStyle = {
+      borderTop: blockBorders?.top ? style : undefined,
+      borderRight: blockBorders?.right ? style : undefined,
+      borderBottom: blockBorders?.bottom ? style : undefined,
+      borderLeft: blockBorders?.left ? style : undefined,
+    };
     
     const renderSegments = () => {
       const segmentCount = bgColors.length;
@@ -47,7 +57,7 @@ const WellView = React.forwardRef<HTMLDivElement, WellProps>(
       <div
         ref={ref}
         className={classNames}
-        style={{ position: 'relative', overflow: 'hidden' }}
+        style={{ position: 'relative', overflow: 'hidden', ...borderStyle }}
         onMouseEnter={(e) => onMouseEnter(wellId, e)}
         onMouseLeave={onMouseLeave}
         onClick={(e) => onClickMask(wellId, e)}
