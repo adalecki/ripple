@@ -87,7 +87,6 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
 
 function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<string, { replicates: number, concentrations: number[] }> {
   const availablePatternNames: Map<string, { replicates: number, concentrations: number[] }> = new Map
-  const combinationDirectionRegex = /^(?:(?:LR|RL)-(?:TB|BT)|(?:TB|BT)-(?:LR|RL))$/;
   for (let idx in inputData['Patterns']) {
     const row = inputData['Patterns'][idx] as { [key: string]: any }
     const patternName = inputData['Patterns'][idx]['Pattern']
@@ -103,8 +102,14 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
     const pattern = availablePatternNames.get(patternName)!
     if (row.Type != 'Solvent') {
       if (row.Type == 'Combination') {
-        if (!combinationDirectionRegex.test(row.Direction)) {
-          errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be LR-TB, RL-BT, etc)`)
+        const directions = row.Direction.split("-")
+        if (directions.length < 2) {
+          errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (only ${directions.length} included, need at least two)`)
+        }
+        for (const dir of directions) {
+          if (!['LR','RL','TB','BT'].includes(dir)) {
+            errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (${dir} must be LR, RL, TB, or BT)`)
+          }
         }
       }
       else {
@@ -281,4 +286,18 @@ export function timeFunction<T>(name: string, fn: () => T): T {
   const executionTime = end - start;
   console.log(`${name} took ${executionTime.toFixed(2)} milliseconds`);
   return result;
+}
+
+export type timeObj = {
+    name: string,
+    time: number
+  }[]
+
+export function timeIt(timeObj: timeObj, step: string) {
+  if (timeObj.length == 0) {timeObj.push({name: 'start',time: performance.now()})}
+  const nowPoint = {name: step, time: performance.now()}
+  const lastPointIdx = timeObj.length - 1
+  timeObj.push(nowPoint)
+  console.log(step,(nowPoint.time - timeObj[lastPointIdx].time))
+  return timeObj
 }

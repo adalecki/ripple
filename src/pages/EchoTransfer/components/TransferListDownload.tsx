@@ -81,6 +81,10 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
       window.URL.revokeObjectURL(url);
       
     } else {
+
+      for (const steps of settings.transferMap.values()) {
+        console.log(steps.length)
+      }
       const allSteps: TransferStep[] = [];
       for (const steps of settings.transferMap.values()) {
         allSteps.push(...steps);

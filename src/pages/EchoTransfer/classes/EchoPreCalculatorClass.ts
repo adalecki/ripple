@@ -1,4 +1,4 @@
-import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern } from '../utils/echoUtils';
+import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations } from '../utils/echoUtils';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { Plate, PlateSize } from './PlateClass';
 import { DilutionPattern } from './PatternClass';
@@ -123,7 +123,7 @@ export class EchoPreCalculator {
           for (const [conc, volume] of result.totalVolumes) {
             innerMap.set(conc, volume);
           }
-          this.destinationWellsCount += (pattern.type == 'Combination' ? result.destinationWellsCount/2 : result.destinationWellsCount)
+          this.destinationWellsCount += result.destinationWellsCount //removed conditional as we're handling combo modifier in calculateTransferVolumes
           if (this.inputData.CommonData.dmsoNormalization) {this.totalDMSOBackfillVol += result.totalDMSOBackfillVol}
           const transferConcentrations = this.calculateTransferConcentrations(pattern, compoundGroup);
           for (const conc of pattern.concentrations) {
@@ -223,7 +223,8 @@ export class EchoPreCalculator {
       //extra handling specifically for combination patterns
       const pattern = this.dilutionPatterns.get(patternName)
       if (pattern && pattern.type == 'Combination') {
-        const combinationCount = (count * (count - 1) / 2) //nCr notation
+        const combinationCount = numberCombinations(count,pattern.fold) //nCr notation
+        console.log(pattern.patternName,count,pattern.fold,combinationCount)
         platesNeeded = Math.ceil(combinationCount / slots)
       }
       maxPlates = Math.max(maxPlates, platesNeeded);
@@ -244,14 +245,16 @@ export class EchoPreCalculator {
     let comboModifier = 1;
     if (pattern.type == 'Combination') {
       this.srcCompoundInventory.entries()
-      comboModifier = Array.from(this.srcCompoundInventory).filter(([_, patternMap]) => patternMap.has(pattern.patternName)).length - 1 //if combination, will use n-1 times
+      let n = Array.from(this.srcCompoundInventory).filter(([_, patternMap]) => patternMap.has(pattern.patternName)).length;
+      let r = pattern.fold; //if combination, should be at least two
+      comboModifier = numberCombinations(n-1, r-1) //nCr; each entity will be used (n-1)C(r-1) times
     }
     const specificSlots = pattern.type == 'Control'
       ? this.calculateControlSlots(pattern.patternName)
       : this.inputData.CommonData.destReplicates * comboModifier;
 
     for (const [_, concInfo] of transferConcentrations.destinationConcentrations) {
-      const newDestWells = pattern.replicates * specificSlots;
+      const newDestWells = pattern.replicates * specificSlots; //we consider replicates in specificSlots; do we need it again here?
       const currentVolume = totalVolumes.get(concInfo.sourceConc) || 0;
       const newVolume = currentVolume + (concInfo.volToTsfr * newDestWells);
       totalVolumes.set(concInfo.sourceConc, newVolume);
@@ -469,7 +472,7 @@ export class EchoPreCalculator {
             maxVolOfPattern = Math.max(maxDMSO, maxVolOfPattern)
           }
         }
-        if (pattern.type == 'Combination') { maxVolOfPattern = maxVolOfPattern * 2 }
+        if (pattern.type == 'Combination') { maxVolOfPattern = maxVolOfPattern * pattern.fold }
         const wells = testPlate.getSomeWells(layoutBlock['Well Block']);
         for (const well of wells) {
           well.bulkFill(maxVolOfPattern)
