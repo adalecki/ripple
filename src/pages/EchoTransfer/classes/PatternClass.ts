@@ -7,8 +7,10 @@ export interface DilutionPattern {
   type: 'Control' | 'Treatment' | 'Combination' | 'Solvent';
   concentrations: number[];
   replicates: number;
-  direction: 'LR' | 'RL' | 'TB' | 'BT';
+  //direction: 'LR' | 'RL' | 'TB' | 'BT';
+  direction: ('LR' | 'RL' | 'TB' | 'BT')[]
   secondaryDirection?: 'LR' | 'RL' | 'TB' | 'BT';
+  fold: number;
 }
 
 export class Pattern {
@@ -21,16 +23,18 @@ export class Pattern {
   color: HslStringType;
   locations: string[];
   secondaryDirection?: DilutionPattern['secondaryDirection'];
+  fold?: number;
   constructor(data: {
     id?: number;
     name: string;
     type: DilutionPattern['type'];
     replicates: number;
-    direction: 'LR' | 'RL' | 'TB' | 'BT';
+    direction: DilutionPattern['direction']
     concentrations: (number | null)[];
     color?: HslStringType;
     locations: string[];
     secondaryDirection?: DilutionPattern['secondaryDirection'];
+    fold?: number;
   }) {
     this.id = data.id || Date.now()
     this.name = data.name;
@@ -41,6 +45,7 @@ export class Pattern {
     this.color = data.color || this.generateRandomColor();
     this.locations = data.locations || []
     this.secondaryDirection = data.secondaryDirection;
+    this.fold = data.fold || 1;
   }
 
   generateRandomColor(): HslStringType {

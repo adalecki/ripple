@@ -1,7 +1,7 @@
 import { Plate } from './PlateClass';
 import { Well } from './WellClass';
 import { formatWellBlock, mapWellsToConcentrations } from '../utils/plateUtils';
-import { calculateCombinationPairs, compoundIdsWithPattern, InputDataType } from '../utils/echoUtils';
+import { compoundIdsWithPattern, getCombinationsOfSizeR, InputDataType } from '../utils/echoUtils';
 import { CompoundGroup, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { DilutionPattern } from './PatternClass';
@@ -31,6 +31,8 @@ type IntermediateWellCache = Map<string,
   >
 >
 
+type PatternLocationCache = Map<string, Map<string, string[]>>;
+
 type ControlCompounds = Map<string,
   {
     memberCompounds: string[],
@@ -52,6 +54,7 @@ export class EchoCalculator {
   echoPreCalc: EchoPreCalculator;
   errors: string[];
   intermediateWellCache: IntermediateWellCache;
+  patternLocationCache: PatternLocationCache;
   checkpointTracker: CheckpointTracker;
 
   constructor(
@@ -69,6 +72,7 @@ export class EchoCalculator {
     this.echoPreCalc = echoPreCalc;
     this.transferSteps = [];
     this.intermediateWellCache = new Map();
+    this.patternLocationCache = new Map();
     this.checkpointTracker = checkpointTracker;
 
     this.sourcePlates = this.prepareSrcPlates()
@@ -76,6 +80,7 @@ export class EchoCalculator {
     this.destinationPlates = this.prepareDestPlates()
     this.fillIntPlates()
     this.fillDestPlates()
+
     if (this.inputData.CommonData.dmsoNormalization) { this.dmsoNormalization() }
 
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates, ...this.destinationPlates]) {
@@ -388,6 +393,7 @@ export class EchoCalculator {
   }
 
   fillDestPlates() {
+    
     const controlCompounds: ControlCompounds = new Map()
     for (const [_, pattern] of this.echoPreCalc.dilutionPatterns) {
       if (pattern.type == 'Control' && !controlCompounds.has(pattern.patternName)) {
@@ -402,35 +408,42 @@ export class EchoCalculator {
       this.destinationPlates.slice(i * platesPerReplicate, (i + 1) * platesPerReplicate)
     );
 
-    for (const [compoundId, compoundGroups] of this.echoPreCalc.srcCompoundInventory) {
-      for (const [patternName, compoundGroup] of compoundGroups) {
-        const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName)
-        if (dilutionPattern && dilutionPattern.type == 'Treatment') {
-          for (const plateGroup of destinationPlateGroups) {
-            const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName)
-            this.transferCompound(plateGroup, destLocation, compoundId, dilutionPattern, compoundGroup)
+    for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex++) {
+      // Clear the location cache when starting a new replicate
+      this.patternLocationCache.clear();
+      
+      const plateGroup = destinationPlateGroups[replicateIndex];
+      
+      // Process treatments
+      for (const [compoundId, compoundGroups] of this.echoPreCalc.srcCompoundInventory) {
+        for (const [patternName, compoundGroup] of compoundGroups) {
+          const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName);
+          if (dilutionPattern && dilutionPattern.type == 'Treatment') {
+            const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName);
+            this.transferCompound(plateGroup, destLocation, compoundId, dilutionPattern, compoundGroup);
           }
-        }
-        else if (dilutionPattern && dilutionPattern.type == 'Control') {
-          const controlPatternInfo = controlCompounds.get(patternName)!
-          if (!controlPatternInfo.memberCompounds.includes(compoundId)) {
-            controlPatternInfo.memberCompounds.push(compoundId)
+          else if (dilutionPattern && dilutionPattern.type == 'Control') {
+            const controlPatternInfo = controlCompounds.get(patternName)!;
+            if (!controlPatternInfo.memberCompounds.includes(compoundId)) {
+              controlPatternInfo.memberCompounds.push(compoundId);
+            }
           }
         }
       }
-    }
-
-    for (const [patternName, dilutionPattern] of this.echoPreCalc.dilutionPatterns) {
-      if (dilutionPattern.type == 'Combination') {
-        const comboCompounds = compoundIdsWithPattern(this.echoPreCalc.srcCompoundInventory, patternName)
-        const combinationPairs = calculateCombinationPairs(comboCompounds)
-        for (const [cpd1, cpd2] of combinationPairs) {
-          for (const plateGroup of destinationPlateGroups) {
-            const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName)
-            const cpdGroup1 = this.echoPreCalc.srcCompoundInventory.get(cpd1)!.get(patternName)!
-            const cpdGroup2 = this.echoPreCalc.srcCompoundInventory.get(cpd2)!.get(patternName)!
-            this.transferCompound(plateGroup, destLocation, cpd1, dilutionPattern, cpdGroup1, false)
-            this.transferCompound(plateGroup, destLocation, cpd2, dilutionPattern, cpdGroup2, true)
+  
+      // Process combinations
+      for (const [patternName, dilutionPattern] of this.echoPreCalc.dilutionPatterns) {
+        if (dilutionPattern.type == 'Combination') {
+          const comboCompounds = compoundIdsWithPattern(this.echoPreCalc.srcCompoundInventory, patternName);
+          
+          const combinations = getCombinationsOfSizeR(comboCompounds, dilutionPattern.fold);
+          
+          for (const combo of combinations) {
+            const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName);
+            for (const [idx, cpd] of combo.entries()) {
+              const cpdGroup = this.echoPreCalc.srcCompoundInventory.get(cpd)!.get(patternName)!;
+              this.transferCompound(plateGroup, destLocation, cpd, dilutionPattern, cpdGroup, idx);
+            }
           }
         }
       }
@@ -486,12 +499,11 @@ export class EchoCalculator {
     }
   }
 
-  transferCompound(destPlates: Plate[], destLocation: { barcode: string, wellBlock: string }, compoundId: string, dilutionPattern: DilutionPattern, compoundGroup: CompoundGroup, isComboSecondary?: boolean) {
-    //const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName)!;
+  transferCompound(destPlates: Plate[], destLocation: { barcode: string, wellBlock: string }, compoundId: string, dilutionPattern: DilutionPattern, compoundGroup: CompoundGroup, dirIdx: number = 0) {
     const transferMap = this.echoPreCalc.calculateTransferConcentrations(dilutionPattern, compoundGroup);
     const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode)
     if (destPlate) {
-      const direction = (isComboSecondary && dilutionPattern.secondaryDirection) ? dilutionPattern.secondaryDirection : dilutionPattern.direction
+      const direction = dilutionPattern.direction[dirIdx]
       const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, dilutionPattern.replicates, direction)
       for (const concIdx in dilutionPattern.concentrations) {
         const conc = dilutionPattern.concentrations[concIdx]
@@ -616,6 +628,90 @@ export class EchoCalculator {
   }
 
   findNextAvailableBlock(plates: Plate[], layout: InputDataType['Layout'], patternName: string): { barcode: string, wellBlock: string } {
+    // Initialize pattern cache if not already created
+    if (!this.patternLocationCache.has(patternName)) {
+      // Pre-calculate all available blocks for this pattern
+      const patternCache = new Map<string, string[]>();
+      
+      // For each plate, build a list of available blocks for this pattern
+      for (const plate of plates) {
+        const availableBlocks: string[] = [];
+        
+        // Get all possible layout blocks for this pattern
+        const possibleLocations = layout.filter((row) => row.Pattern === patternName);
+        
+        // Check each block to see if it's available
+        for (const layoutRow of possibleLocations) {
+          const wellBlock = layoutRow['Well Block'];
+          const wells = plate.getSomeWells(wellBlock);
+          
+          const isAvailable = wells.every(well => {
+            const wellContents = well.getContents();
+            return wellContents.length === 0 || !wellContents.some(content => content.patternName === patternName);
+          });
+          
+          if (isAvailable) {
+            availableBlocks.push(wellBlock);
+          }
+        }
+        
+        // Only add the plate to the cache if it has available blocks
+        if (availableBlocks.length > 0) {
+          patternCache.set(plate.barcode, availableBlocks);
+        }
+      }
+      
+      // Store in the main cache
+      this.patternLocationCache.set(patternName, patternCache);
+    }
+    
+    // Get the pattern cache
+    const patternCache = this.patternLocationCache.get(patternName)!;
+    
+    // Find the first plate with available blocks
+    for (const [barcode, blocks] of patternCache) {
+      if (blocks.length > 0) {
+        // Get the first available block
+        const wellBlock = blocks[0];
+        
+        // Remove this block from the available list
+        blocks.splice(0, 1);
+        
+        // If no more blocks available for this plate, remove the plate entry
+        if (blocks.length === 0) {
+          patternCache.delete(barcode);
+        }
+        
+        return { barcode, wellBlock };
+      }
+    }
+    
+    // If we get here, we've exhausted our cache, but there might be new available blocks
+    // due to changes in plate contents since the cache was built.
+    // Refresh the cache and try again (but only once to avoid infinite recursion)
+    this.patternLocationCache.delete(patternName);
+    
+    // Do a single direct search without using the cache
+    for (const plate of plates) {
+      const possibleLocations = layout.filter((row) => row.Pattern === patternName);
+      for (const layoutRow of possibleLocations) {
+        const wells = plate.getSomeWells(layoutRow['Well Block']);
+        const isAvailable = wells.every(well => {
+          const wellContents = well.getContents();
+          return wellContents.length === 0 || !wellContents.some(content => content.patternName === patternName);
+        });
+  
+        if (isAvailable) {
+          return { barcode: plate.barcode, wellBlock: layoutRow['Well Block'] };
+        }
+      }
+    }
+    
+    // No available blocks found
+    return { barcode: '', wellBlock: '' };
+  }
+
+  findNextAvailableBlockOld(plates: Plate[], layout: InputDataType['Layout'], patternName: string): { barcode: string, wellBlock: string } {
     let barcode = ''
     let wellBlock = ''
     const possibleLocations = layout.filter((row) => row.Pattern == patternName)

@@ -123,8 +123,10 @@ export function analyzeDilutionPatterns(patternRows: any[]) {
       type: row.Type,
       concentrations,
       replicates: parseInt(row.Replicates),
-      direction: row.Type === 'Combination' ? row.Direction.split('-')[0] as 'LR' | 'RL' | 'TB' | 'BT' : row.Direction as 'LR' | 'RL' | 'TB' | 'BT',
-      secondaryDirection: row.Type === 'Combination' ? row.Direction.split('-')[1] as 'LR' | 'RL' | 'TB' | 'BT' : undefined,  
+      //direction: row.Type === 'Combination' ? row.Direction.split('-')[0] as 'LR' | 'RL' | 'TB' | 'BT' : row.Direction as 'LR' | 'RL' | 'TB' | 'BT',
+      direction: row.Type != 'Solvent' ? row.Direction.split('-') : [],
+      secondaryDirection: row.Type === 'Combination' ? row.Direction.split('-')[1] as 'LR' | 'RL' | 'TB' | 'BT' : undefined,
+      fold: row.Type === 'Combination' ? parseInt(row.Direction.split('-').length) : 1
     };
 
     dilutionPatterns.set(pattern.patternName, pattern);
@@ -384,4 +386,79 @@ export function analyzeMultipleStockConcentrations({
   }
   
   return mergeConcentrationRanges(allRanges);
+}
+
+export function fact(n: number) {
+  let res = 1;
+  for (let i = 1; i <= n; i++) {
+      res *= i;
+  }
+  return res;
+}
+
+export function numberCombinations(elements: number, combinations: number) {
+  if (elements < 0 || combinations < 0 || combinations > elements) return 0
+  return Math.round((fact(elements)/(fact(combinations)*fact(elements-combinations))))
+}
+
+export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
+  const combinations: T[][] = [];
+  const n = elements.length;
+
+  // Basic validation
+  if (r < 0 || r > n) {
+    console.warn(`Invalid combination size r=${r} for elements array of size n=${n}. Returning empty array.`);
+    return [];
+  }
+  if (r === 0) {
+    // There is one combination of size 0: the empty set.
+    return [[]];
+  }
+  if (r === n) {
+    // There is one combination of size n: the set itself.
+    return [[...elements]]; // Return a copy
+  }
+
+
+  /**
+   * Recursive helper function to find combinations.
+   * @param startIndex - The index in the elements array to start considering from.
+   * @param currentCombination - The combination being built in the current recursive call.
+   */
+  function findCombinations(startIndex: number, currentCombination: T[]): void {
+    // Base case: If the current combination has the desired size, add it to the results.
+    if (currentCombination.length === r) {
+      combinations.push([...currentCombination]); // Add a copy to avoid modifying it later
+      return;
+    }
+
+    // Optimization (Pruning): If the number of remaining elements
+    // is not enough to reach the target size 'r', stop this branch.
+    // currentCombination.length is how many we have
+    // n - startIndex is how many are left to consider
+    // If currentCombination.length + (n - startIndex) < r, we can't reach r
+    if (currentCombination.length + (n - startIndex) < r) {
+        return; // Prune this path
+    }
+
+
+    // Recursive step: Iterate through the remaining elements starting from startIndex.
+    for (let i = startIndex; i < n; i++) {
+      // 1. Choose the element at index 'i'.
+      currentCombination.push(elements[i]);
+
+      // 2. Recurse: Find combinations for the remaining size (r - currentCombination.length)
+      //    starting from the *next* index (i + 1) to avoid duplicates and ensure order.
+      findCombinations(i + 1, currentCombination);
+
+      // 3. Unchoose (Backtrack): Remove the element at index 'i' to explore other possibilities
+      //    that do not include this element at this position.
+      currentCombination.pop();
+    }
+  }
+
+  // Start the recursion with an empty combination and starting index 0.
+  findCombinations(0, []);
+
+  return combinations;
 }

@@ -1,21 +1,20 @@
 import { Button, Container } from 'react-bootstrap';
 import JSZip from 'jszip';
 import { TransferStep } from '../classes/EchoCalculatorClass';
+import { getCoordsFromWellId } from '../utils/plateUtils';
 
 const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]>, splitOutputCSVs: boolean }) => {
 
   function rowColExport(step: TransferStep) {
-    const sourceRow = step.sourceWellId.charCodeAt(0) - 64
-    const sourceCol = parseInt(step.sourceWellId.slice(1))
-    const destRow = step.destinationWellId.charCodeAt(0) - 64
-    const destCol = parseInt(step.destinationWellId.slice(1))
+    const sourceCoords = getCoordsFromWellId(step.sourceWellId)
+    const destCoords = getCoordsFromWellId(step.destinationWellId)
     return {
       'Source Plate Barcode': step.sourceBarcode,
-      'Source Row': sourceRow,
-      'Source Column': sourceCol,
+      'Source Row': (sourceCoords.row + 1),
+      'Source Column': (sourceCoords.col + 1),
       'Destination Plate Barcode': step.destinationBarcode,
-      'Destination Row': destRow,
-      'Destination Column': destCol,
+      'Destination Row': (destCoords.row + 1),
+      'Destination Column': (destCoords.col + 1),
       'Transfer Volume': step.volume
     };
   }
@@ -81,9 +80,9 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
       window.URL.revokeObjectURL(url);
       
     } else {
-      const allSteps: TransferStep[] = [];
+      let allSteps: TransferStep[] = [];
       for (const steps of settings.transferMap.values()) {
-        allSteps.push(...steps);
+        allSteps = allSteps.concat(steps);
       }
       
       const rows = allSteps.map(step => rowColExport(step));

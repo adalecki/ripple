@@ -34,7 +34,7 @@ const PatternManager: React.FC = () => {
       name: name,
       type: 'Treatment',
       replicates: 1,
-      direction: 'LR',
+      direction: ['LR'],
       concentrations: [null],
       locations: []
     });
@@ -64,7 +64,10 @@ const PatternManager: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (editingPattern) {
-      const value = e.target.name === 'replicates' ? parseInt(e.target.value) : e.target.value;
+      let value: any = e.target.value;
+      if (e.target.name === 'replicates') { value = parseInt(e.target.value) }
+      if (e.target.name === 'direction') { value = [e.target.value] }
+      //const value = e.target.name === 'replicates' ? parseInt(e.target.value) : e.target.value;
       setEditingPattern(new Pattern({ ...editingPattern, [e.target.name]: value }));
     }
   };
@@ -140,7 +143,7 @@ const PatternManager: React.FC = () => {
                 <label>Direction</label>
                 <select
                   name="direction"
-                  value={editingPattern.direction}
+                  value={editingPattern.direction[0]}
                   onChange={handleInputChange}
                   disabled={!isEditing}
                 >
