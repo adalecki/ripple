@@ -169,9 +169,10 @@ export class EchoCalculator {
         }
       }
     }
-
-    const dmsoWellsNeeded = Math.ceil((this.echoPreCalc.totalDMSOBackfillVol - dmsoVolAvailable) / (this.intermediateBackfillVolume - this.echoDeadVolume));
-    totalIntWellsNeeded.level1 += dmsoWellsNeeded;
+    if (dmsoVolAvailable < this.echoPreCalc.totalDMSOBackfillVol) {
+      const dmsoWellsNeeded = Math.ceil((this.echoPreCalc.totalDMSOBackfillVol - dmsoVolAvailable) / (this.intermediateBackfillVolume - this.echoDeadVolume));
+      totalIntWellsNeeded.level1 += dmsoWellsNeeded;
+    }
 
     const intPlatesCount1 = Math.ceil(totalIntWellsNeeded.level1 / 384);
     const intPlatesCount2 = Math.ceil(totalIntWellsNeeded.level2 / 384);
@@ -201,6 +202,7 @@ export class EchoCalculator {
       }
       intPlates.push(newIntPlate);
     }
+    console.log(intPlates, totalIntWellsNeeded,intPlatesCount1,intPlatesCount2)
 
     return intPlates;
   }
