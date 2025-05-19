@@ -5,7 +5,6 @@ import { compoundIdsWithPattern, getCombinationsOfSizeR, InputDataType } from '.
 import { CompoundGroup, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { DilutionPattern } from './PatternClass';
-import { timeIt, timeObj } from '../utils/validationUtils';
 
 // strings recorded instead of class references to avoid object reference issues
 export interface TransferStep {
@@ -76,18 +75,11 @@ export class EchoCalculator {
     this.patternLocationCache = new Map();
     this.checkpointTracker = checkpointTracker;
 
-    let timeObj: timeObj = [{name: 'start',time: performance.now()}]
     this.sourcePlates = this.prepareSrcPlates()
-    timeObj = timeIt(timeObj,'prepareSrc')
     this.intermediatePlates = this.prepareIntPlates();
-    timeObj = timeIt(timeObj,'prepareInt')
     this.destinationPlates = this.prepareDestPlates()
-    timeObj = timeIt(timeObj,'prepareDest')
     this.fillIntPlates()
-    timeObj = timeIt(timeObj,'fillInt')
     this.fillDestPlates()
-    timeObj = timeIt(timeObj,'fillDest')
-    console.log(timeObj)
 
     if (this.inputData.CommonData.dmsoNormalization) { this.dmsoNormalization() }
 
@@ -401,7 +393,6 @@ export class EchoCalculator {
   }
 
   fillDestPlates() {
-    let timeObj: timeObj = [{name: 'start',time: performance.now()}]
     
     const controlCompounds: ControlCompounds = new Map()
     for (const [_, pattern] of this.echoPreCalc.dilutionPatterns) {
@@ -410,7 +401,6 @@ export class EchoCalculator {
         controlCompounds.set(pattern.patternName, { memberCompounds: [], destSlots: controlSlots.length })
       }
     }
-    timeObj = timeIt(timeObj,'ctrlCpds')
 
     const replicates = this.inputData.CommonData.destReplicates;
     const platesPerReplicate = this.destinationPlates.length / replicates;
@@ -445,10 +435,8 @@ export class EchoCalculator {
       for (const [patternName, dilutionPattern] of this.echoPreCalc.dilutionPatterns) {
         if (dilutionPattern.type == 'Combination') {
           const comboCompounds = compoundIdsWithPattern(this.echoPreCalc.srcCompoundInventory, patternName);
-          timeObj = timeIt(timeObj, 'found compounds');
           
           const combinations = getCombinationsOfSizeR(comboCompounds, dilutionPattern.fold);
-          timeObj = timeIt(timeObj, 'calculated combinations');
           
           for (const combo of combinations) {
             const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName);
@@ -457,7 +445,6 @@ export class EchoCalculator {
               this.transferCompound(plateGroup, destLocation, cpd, dilutionPattern, cpdGroup, idx);
             }
           }
-          timeObj = timeIt(timeObj, 'transferred combos');
         }
       }
     }

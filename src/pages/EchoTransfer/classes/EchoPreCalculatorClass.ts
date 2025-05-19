@@ -224,7 +224,6 @@ export class EchoPreCalculator {
       const pattern = this.dilutionPatterns.get(patternName)
       if (pattern && pattern.type == 'Combination') {
         const combinationCount = numberCombinations(count,pattern.fold) //nCr notation
-        console.log(pattern.patternName,count,pattern.fold,combinationCount)
         platesNeeded = Math.ceil(combinationCount / slots)
       }
       maxPlates = Math.max(maxPlates, platesNeeded);
