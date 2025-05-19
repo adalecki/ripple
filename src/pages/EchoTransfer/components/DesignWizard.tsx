@@ -259,7 +259,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
       formatWellBlock(wells),
       concentrations,
       wellsPerConcentration,
-      pattern.direction
+      pattern.direction[0]
     );
 
     // Split into blocks

@@ -184,7 +184,6 @@ export function mapWellsToConcentrations(
 
 export function calculateBlockBorders(plate: Plate): Map<string, {top: boolean, right: boolean, bottom: boolean, left: boolean}> {
   const borderMap = new Map<string, {top: boolean, right: boolean, bottom: boolean, left: boolean}>();
-  console.log(plate)
   
   // Initialize all wells with no borders
   for (const well of plate) {
