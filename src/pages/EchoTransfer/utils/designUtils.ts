@@ -10,7 +10,7 @@ export function generateExcelTemplate(patterns: Pattern[]) {
     const baseData: any = {
       Pattern: pattern.name,
       Type: pattern.type,
-      Direction: pattern.direction,
+      Direction: pattern.direction[0],
       Replicates: pattern.replicates,
     };
 
