@@ -67,7 +67,6 @@ const PatternManager: React.FC = () => {
       let value: any = e.target.value;
       if (e.target.name === 'replicates') { value = parseInt(e.target.value) }
       if (e.target.name === 'direction') { value = [e.target.value] }
-      //const value = e.target.name === 'replicates' ? parseInt(e.target.value) : e.target.value;
       setEditingPattern(new Pattern({ ...editingPattern, [e.target.name]: value }));
     }
   };
