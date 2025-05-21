@@ -51,7 +51,6 @@ export type InputDataType = {
     'maxDMSOFraction': number;
     'intermediateBackfillVolume': number;
     'finalAssayVolume': number;
-    'echoDeadVolume': number;
     'allowableError': number;
     'destReplicates': number;
     'createIntConcs': boolean;
