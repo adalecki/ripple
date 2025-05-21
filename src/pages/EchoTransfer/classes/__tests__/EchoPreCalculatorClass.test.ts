@@ -2,7 +2,6 @@ import { EchoPreCalculator } from '../EchoPreCalculatorClass';
 import { CheckpointTracker } from '../CheckpointTrackerClass';
 import { InputDataType } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
-import { PlateSize } from '../PlateClass';
 
 // Minimal mock for PreferencesState
 const mockPreferences: PreferencesState = {
@@ -196,33 +195,27 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
       expect(checkpoint?.message[0]).toContain('Insufficient source volume of C1 for TestPattern at 10µM');
     });
 
-    it('should use dropletSize as dead volume if plate barcode is unexpectedly missing from plateDeadVolumes', () => {
+    it('should find dead volume even if plate barcode is unexpectedly missing from plateDeadVolumes', () => {
       const compounds: InputDataType['Compounds'] = [
         // P1's dead volume will be missing from plateDeadVolumes map
-        { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 2, 'Concentration (µM)': 10, 'Compound ID': 'C1', 'Pattern': 'TestPattern' },
+        { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 5, 'Concentration (µM)': 10, 'Compound ID': 'C1', 'Pattern': 'TestPattern' },
       ];
-      // Droplet size is 2.5nL. Available: 2000 - 2.5 = 1997.5nL. Required: 1000nL. Should pass.
       const preCalc = setupPreCalcForVolumeChecks(compounds, new Map()); // Empty map means P1 is missing
-      preCalc.dropletSize = 2.5; // Explicitly set for clarity
       
       preCalc.checkSourceVolumes('volumeCheck');
       const checkpoint = preCalc.checkpointTracker.getCheckpoint('volumeCheck');
       expect(checkpoint?.status).toBe('Passed');
 
-      // Now test insufficiency with dropletSize
        const compoundsInsufficient: InputDataType['Compounds'] = [
         { 'Source Barcode': 'P2', 'Well ID': 'A1', 'Volume (µL)': 0.5, 'Concentration (µM)': 10, 'Compound ID': 'C2', 'Pattern': 'TestPattern' },
       ];
       const preCalcInsufficient = setupPreCalcForVolumeChecks(compoundsInsufficient, new Map()); // P2's dead vol is missing
-      preCalcInsufficient.dropletSize = 2.5; // Explicitly set for clarity
-      // Available: 500 - 2.5 = 497.5 nL.
-      // Set required volume to be greater than available.
-      preCalcInsufficient.totalVolumes.get('C2')?.get('TestPattern')?.set(10, 500); // Require 500, have 497.5
+      preCalcInsufficient.totalVolumes.get('C2')?.get('TestPattern')?.set(10, 500);
       
       preCalcInsufficient.checkSourceVolumes('volumeCheckInsufficient');
       const checkpointInsufficient = preCalcInsufficient.checkpointTracker.getCheckpoint('volumeCheckInsufficient');
       expect(checkpointInsufficient?.status).toBe('Warning');
-      expect(checkpointInsufficient?.message[0]).toContain('Insufficient source volume of C2');
+      expect(checkpointInsufficient?.message[0]).toContain('Insufficient uncommitted volume of C2');
     });
 
      it('should correctly use different dead volumes for different plates in checkSourceVolumes', () => {
