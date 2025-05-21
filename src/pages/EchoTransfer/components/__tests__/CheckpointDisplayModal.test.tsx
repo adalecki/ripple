@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CheckpointDisplayModal from '../CheckpointDisplayModal';
@@ -86,8 +85,6 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
         handleContinue={mockHandleContinue}
         setEchoPreCalc={mockSetEchoPreCalc}
         setCheckpointTracker={mockSetCheckpointTracker}
-        initialInputData={createMockInputData()}
-        preferences={mockPreferences}
       />
     );
   };

@@ -541,7 +541,7 @@ export class EchoPreCalculator {
             if (availableVolLocs.length < 1) { break } // don't try to check intermediate concentrations
             // Ensure there's at least one location to get the barcode from
             const plateBarcode = availableVolLocs.length > 0 ? availableVolLocs[0].barcode : undefined;
-            const deadVolume = plateBarcode ? (this.plateDeadVolumes.get(plateBarcode) || this.dropletSize) : this.dropletSize;
+            const deadVolume = plateBarcode ? (this.plateDeadVolumes.get(plateBarcode) || 2500) : 2500;
             const availableVolume = availableVolLocs.reduce((total, location) => total + (location.volume - deadVolume), 0);
             const committedVolume = compoundCommitments?.get(concentration) || 0;
             const uncommittedVolume = Math.max(0, availableVolume - committedVolume);

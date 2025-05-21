@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Row, Col, Button, Card, Accordion, InputGroup, Form } from 'react-bootstrap';
+import { Modal, Row, Col, Button, Card, Accordion, Form } from 'react-bootstrap';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
-import { InputDataType } from '../utils/echoUtils';
-import { PreferencesState } from '../../../hooks/usePreferences';
 
 type CheckStatus = 'Pending' | 'Passed' | 'Failed' | 'Warning';
 interface CheckResult {
@@ -20,8 +18,6 @@ interface CheckpointDisplayProps {
   handleContinue: () => void;
   setEchoPreCalc: React.Dispatch<React.SetStateAction<EchoPreCalculator | null>>;
   setCheckpointTracker: React.Dispatch<React.SetStateAction<CheckpointTracker>>;
-  initialInputData: InputDataType | null;
-  preferences: PreferencesState | null;
 }
 
 interface CheckpointSectionProps {
@@ -93,9 +89,7 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
   handleCancel,
   handleContinue,
   setEchoPreCalc,
-  setCheckpointTracker,
-  initialInputData,
-  preferences
+  setCheckpointTracker
 }) => {
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const [editableDeadVolumes, setEditableDeadVolumes] = useState<Map<string, number>>(new Map());
