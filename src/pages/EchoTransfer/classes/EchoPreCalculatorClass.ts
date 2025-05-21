@@ -85,10 +85,10 @@ export class EchoPreCalculator {
     }
 
     for (const [barcode, maxVolume] of maxVolumesPerPlate) {
-      if (maxVolume > 15000) { // 15uL in nL
+      if (maxVolume > 15000) {
         this.plateDeadVolumes.set(barcode, 15000);
       } else {
-        this.plateDeadVolumes.set(barcode, 2500); // 2.5uL in nL
+        this.plateDeadVolumes.set(barcode, 2500);
       }
     }
   }
@@ -277,9 +277,9 @@ export class EchoPreCalculator {
     }
 
     for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
-      let intermediatePlateDeadVolume = 15000; // Default to 15µL in nL
-      if (this.intermediateBackfillVolume < 15000) { // If backfill volume is less than 15µL (15000 nL)
-        intermediatePlateDeadVolume = 2500; // Assume 2.5µL dead volume (2500 nL)
+      let intermediatePlateDeadVolume = 15000;
+      if (this.intermediateBackfillVolume < 15000) {
+        intermediatePlateDeadVolume = 2500;
       }
       const intWellsNeeded = Math.ceil(
         (totalVolumes.get(intConc) || 0) / 
@@ -539,7 +539,6 @@ export class EchoPreCalculator {
             const compoundCommitments = volumeCommitments.get(compoundId)!;
             const availableVolLocs = compoundGroup.locations.filter(location => location.concentration === concentration)
             if (availableVolLocs.length < 1) { break } // don't try to check intermediate concentrations
-            // Ensure there's at least one location to get the barcode from
             const plateBarcode = availableVolLocs.length > 0 ? availableVolLocs[0].barcode : undefined;
             const deadVolume = plateBarcode ? (this.plateDeadVolumes.get(plateBarcode) || 2500) : 2500;
             const availableVolume = availableVolLocs.reduce((total, location) => total + (location.volume - deadVolume), 0);
