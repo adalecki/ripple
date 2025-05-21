@@ -48,7 +48,6 @@ export class EchoCalculator {
   maxDMSOFraction: number;
   intermediateBackfillVolume: number;
   finalAssayVolume: number;
-  echoDeadVolume: number;
   allowableError: number;
   inputData: InputDataType;
   echoPreCalc: EchoPreCalculator;
@@ -67,7 +66,6 @@ export class EchoCalculator {
     this.maxDMSOFraction = echoPreCalc.maxDMSOFraction;
     this.intermediateBackfillVolume = echoPreCalc.intermediateBackfillVolume;
     this.finalAssayVolume = echoPreCalc.finalAssayVolume;
-    this.echoDeadVolume = echoPreCalc.echoDeadVolume;
     this.allowableError = echoPreCalc.allowableError;
     this.echoPreCalc = echoPreCalc;
     this.transferSteps = [];
@@ -133,6 +131,7 @@ export class EchoCalculator {
   //prepares necessary number of intermediate plates 
   prepareIntPlates(): Plate[] {
     let totalIntWellsNeeded = { level1: 0, level2: 0 };
+    const echoIntDeadVolume = this.intermediateBackfillVolume < 15000 ? 2500 : 15000
 
     for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {
       const middleMap = this.echoPreCalc.totalVolumes.get(compoundId);
@@ -150,7 +149,7 @@ export class EchoCalculator {
         for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
           const concInnerMap = volumeMap.get(intConc);
           if (concInnerMap) {
-            const newWellsNeeded = Math.ceil(concInnerMap / ((this.intermediateBackfillVolume + concInfo.volToTsfr) - this.echoDeadVolume));
+            const newWellsNeeded = Math.ceil(concInnerMap / ((this.intermediateBackfillVolume + concInfo.volToTsfr) - echoIntDeadVolume));
             if (concInfo.sourceType == 'src') {
               totalIntWellsNeeded.level1 += newWellsNeeded;
             } else if (concInfo.sourceType == 'int1') {
@@ -165,12 +164,12 @@ export class EchoCalculator {
     for (const srcPlate of this.sourcePlates) {
       for (const well of srcPlate) {
         if (well?.isSolventOnlyWell('DMSO')) {
-          dmsoVolAvailable += (well.getSolventVolume('DMSO') - this.echoDeadVolume)
+          dmsoVolAvailable += (well.getSolventVolume('DMSO') - echoIntDeadVolume)
         }
       }
     }
     if (dmsoVolAvailable < this.echoPreCalc.totalDMSOBackfillVol) {
-      const dmsoWellsNeeded = Math.ceil((this.echoPreCalc.totalDMSOBackfillVol - dmsoVolAvailable) / (this.intermediateBackfillVolume - this.echoDeadVolume));
+      const dmsoWellsNeeded = Math.ceil((this.echoPreCalc.totalDMSOBackfillVol - dmsoVolAvailable) / (this.intermediateBackfillVolume - echoIntDeadVolume));
       totalIntWellsNeeded.level1 += dmsoWellsNeeded;
     }
 
@@ -194,6 +193,7 @@ export class EchoCalculator {
         plateSize: '384',
         plateRole: i < intPlatesCount1 ? 'intermediate1' : 'intermediate2'
       });
+      this.echoPreCalc.plateDeadVolumes.set(newIntPlate.barcode,echoIntDeadVolume)
 
       for (const well of newIntPlate) {
         if (well) {
@@ -202,13 +202,13 @@ export class EchoCalculator {
       }
       intPlates.push(newIntPlate);
     }
-    console.log(intPlates, totalIntWellsNeeded,intPlatesCount1,intPlatesCount2)
 
     return intPlates;
   }
 
   //fills intermediate plates and records transfer steps
   fillIntPlates() {
+    const echoIntDeadVolume = this.intermediateBackfillVolume < 15000 ? 2500 : 15000
     // First, calculate total intermediate well needs per compound and concentration
     const intermediateNeeds = new Map<string, Map<number, number>>();
 
@@ -240,7 +240,7 @@ export class EchoCalculator {
     // Create and fill all intermediate wells in one pass
     for (const [compoundId, compoundNeeds] of intermediateNeeds) {
       for (const [intConc, totalVolume] of compoundNeeds) {
-        const wellsNeeded = Math.ceil(totalVolume / (this.intermediateBackfillVolume - this.echoDeadVolume)); //ignores actual transfered volume, but that just overestimates so should be fine
+        const wellsNeeded = Math.ceil(totalVolume / (this.intermediateBackfillVolume - echoIntDeadVolume)); //ignores actual transfered volume, but that just overestimates so should be fine
 
         // Find plates with available wells
         // Find suitable source location for this intermediate concentration
@@ -336,7 +336,8 @@ export class EchoCalculator {
       if (!srcPlt) continue
       const srcWell = srcPlt.getWell(location.wellId)
       if (!srcWell) continue
-      if (srcWell.getTotalVolume() >= (sourceInfo.volToTransfer + this.echoDeadVolume)) {
+      const srcDeadVolume = this.echoPreCalc.plateDeadVolumes.get(srcPlt.barcode) || srcWell.getTotalVolume() < 15000 ? 2500 : 15000
+      if (srcWell.getTotalVolume() >= (sourceInfo.volToTransfer + srcDeadVolume)) {
         return {
           plateBarcode: srcPlt.barcode,
           wellId: srcWell.id
@@ -519,7 +520,8 @@ export class EchoCalculator {
                 const plt = this.sourcePlates.find(plate => plate.barcode === loc.barcode)
                 if (plt) {
                   const well = plt.getWell(loc.wellId)
-                  if (well && well.getTotalVolume() >= (concInfo.volToTsfr + this.echoDeadVolume)) {
+                  const srcDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plt.barcode) || (well!.getTotalVolume() < 15000 ? 2500 : 15000)
+                  if (well && well.getTotalVolume() >= (concInfo.volToTsfr + srcDeadVolume)) {
                     const transferStep: TransferStep = {
                       sourceBarcode: plt.barcode,
                       sourceWellId: well.id,
@@ -547,7 +549,8 @@ export class EchoCalculator {
                 if (plt) {
                   for (const intWellId of loc.wellIds) {
                     const well = plt.getWell(intWellId)
-                    if (well && well.getTotalVolume() >= (concInfo.volToTsfr + this.echoDeadVolume)) {
+                    const intDeadVolume = well!.getTotalVolume() < 15000 ? 2500 : 15000
+                    if (well && well.getTotalVolume() >= (concInfo.volToTsfr + intDeadVolume)) {
                       const transferStep: TransferStep = {
                         sourceBarcode: plt.barcode,
                         sourceWellId: well.id,
@@ -588,8 +591,9 @@ export class EchoCalculator {
     //check if last used well is still fine
     let plateIdx = plates.findIndex(plate => plate.barcode == lastUsed.barcode);
     if (plateIdx > -1) {
+      const echoDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plates[plateIdx].barcode) as number
       const well = plates[plateIdx].getWell(lastUsed.wellId);
-      if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + this.echoDeadVolume)) {
+      if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
         return lastUsed;
       }
       //iterate through remaining wells on plate
@@ -600,7 +604,7 @@ export class EchoCalculator {
           wellIds = wellIds.slice(wellIdIdx + 1);
           for (const wellId of wellIds) {
             const well = plates[plateIdx].getWell(wellId);
-            if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + this.echoDeadVolume)) {
+            if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
               return { barcode: lastUsed.barcode, wellId: wellId };
             }
           }
@@ -609,7 +613,7 @@ export class EchoCalculator {
       //if didn't already return, need to do more plates
       for (const plate of plates.slice(plateIdx + 1)) {
         for (const well of plate) {
-          if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + this.echoDeadVolume)) {
+          if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
             return { barcode: plate.barcode, wellId: well.id };
           }
         }
@@ -618,8 +622,9 @@ export class EchoCalculator {
     //start from the beginning and check every well of every plate
     else {
       for (const plate of plates) {
+        const echoDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plate.barcode) as number
         for (const well of plate) {
-          if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + this.echoDeadVolume)) {
+          if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
             return { barcode: plate.barcode, wellId: well.id };
           }
         }
