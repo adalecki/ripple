@@ -4,7 +4,7 @@ export type HslStringType = `hsl(${number},${number}%,${number}%)`
 
 export interface DilutionPattern {
   patternName: string;
-  type: 'Control' | 'Treatment' | 'Combination' | 'Solvent';
+  type: 'Control' | 'Treatment' | 'Combination' | 'Solvent' | 'Unused';
   concentrations: number[];
   replicates: number;
   //direction: 'LR' | 'RL' | 'TB' | 'BT';
@@ -41,7 +41,7 @@ export class Pattern {
     this.type = data.type;
     this.replicates = data.replicates;
     this.direction = data.direction;
-    this.concentrations = data.concentrations;
+    this.concentrations = data.type === 'Unused' ? [] : data.concentrations;
     this.color = data.color || this.generateRandomColor();
     this.locations = data.locations || []
     this.secondaryDirection = data.secondaryDirection;

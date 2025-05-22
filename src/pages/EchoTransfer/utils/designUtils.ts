@@ -10,13 +10,13 @@ export function generateExcelTemplate(patterns: Pattern[]) {
     const baseData: any = {
       Pattern: pattern.name,
       Type: pattern.type,
-      Direction: pattern.direction[0],
-      Replicates: pattern.replicates,
+      Direction: pattern.type === 'Unused' ? '' : pattern.direction[0],
+      Replicates: pattern.type === 'Unused' ? '' : pattern.replicates,
     };
 
     // Add concentration columns up to Conc20
     for (let i = 1; i <= 20; i++) {
-      baseData[`Conc${i}`] = pattern.concentrations[i - 1] || null;
+      baseData[`Conc${i}`] = pattern.type === 'Unused' ? null : (pattern.concentrations[i - 1] || null);
     }
 
     return baseData;

@@ -213,16 +213,37 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
       if (pattern) {
         const newPattern = pattern.clone()
         const newPlate = patternPlate.clone();
+        
+        // Handle Unused pattern differently
+        if (pattern.type === 'Unused') {
+          // For unused patterns, just apply to all selected wells as one block
+          const block = formatWellBlock(selectedWells);
+          
+          // Check for overlaps
+          if (isBlockOverlapping(patternPlate, block, newPattern.locations)) {
+            alert(`The selected wells overlap with existing patterns. Please choose different wells.`);
+            return;
+          }
+          
+          newPlate.applyPattern(block, newPattern);
+          newPattern.locations.push(block);
+          
+          setPatternPlate(newPlate);
+          setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
+          return;
+        }
+        
+        // Original logic for non-Unused patterns
         const patternSize = newPattern.replicates * newPattern.concentrations.length;
-
+  
         //shouldn't be possible, but as a fallback
         if (selectedWells.length % patternSize !== 0) {
           alert(`The number of selected wells must be a multiple of ${patternSize} (replicates * concentrations).`);
           return;
         }
-
+  
         const blocks = splitIntoBlocks(selectedWells, newPattern, patternPlate);
-
+  
         for (const block of blocks) {
           if (isBlockOverlapping(patternPlate, block, newPattern.locations)) {
             alert(`The selected wells overlap with existing patterns. Please choose different wells.`);
@@ -231,14 +252,17 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
           newPlate.applyPattern(block, newPattern);
           newPattern.locations.push(block);
         }
-
+  
         setPatternPlate(newPlate);
         setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
       }
     }
   };
-
+  
   const splitIntoBlocks = (wells: string[], pattern: Pattern, plate: Plate): string[] => {
+    if (pattern.type === 'Unused') {
+      return [formatWellBlock(wells)];
+    }
     const concentrations = pattern.concentrations.filter(c => c != null)
     const concentrationCount = pattern.concentrations.length;
     const wellsPerConcentration = wells.length / concentrationCount;
@@ -353,7 +377,11 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
             <div className='pattern-buttons'>
               <Button
                 onClick={applyPatternToWells}
-                disabled={!selectedPattern || selectedWells.length === 0 || !Number.isInteger(selectedWells.length / (selectedPattern.replicates * selectedPattern.concentrations.length))}
+                disabled={
+                  !selectedPattern || 
+                  selectedWells.length === 0 || 
+                  (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWells.length / (selectedPattern.replicates * selectedPattern.concentrations.length)))
+                }
                 className="mt-3"
               >
                 Apply Pattern to Selected Wells

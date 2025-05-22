@@ -115,11 +115,11 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
       else {
         errors.push(`${patternName} on line ${parseInt(idx) + 2} is already present earlier`)
       }
-    if (!['Control','Treatment','Solvent','Combination'].includes(row.Type)) {
-      errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be Control, Treatment, Solvent, or Combination)`)
+    if (!['Control','Treatment','Solvent','Combination','Unused'].includes(row.Type)) {
+      errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be Control, Treatment, Solvent, Combination, or Unused)`)
     }
     const pattern = availablePatternNames.get(patternName)!
-    if (row.Type != 'Solvent') {
+    if (row.Type != 'Solvent' && row.Type != 'Unused') {
       if (row.Type == 'Combination') {
         const directions = row.Direction.split("-")
         if (directions.length < 2) {
@@ -153,6 +153,10 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
         }
       }
     }
+    else if (row.Type === 'Unused') {
+      pattern.replicates = 1;
+      pattern.concentrations = [];
+    }
   }
   return availablePatternNames
 }
@@ -165,6 +169,8 @@ function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availab
         errors.push(`${inputData['Layout'][idx]['Pattern']} on line ${parseInt(idx) + 2} of Layout tab not present on Patterns tab`)
       }
       else {
+        const patternData = inputData['Patterns'].find(p => p.Pattern === inputData['Layout'][idx]['Pattern']);
+        const isUnusedPattern = patternData && patternData.Type === 'Unused';
         const blockRanges = inputData['Layout'][idx]['Well Block'].split(';');
         const cornerWellIds = blockRanges.flatMap(block => block.split(':'))
         let safeCornerWells = true;
@@ -176,8 +182,10 @@ function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availab
         }
         if (safeCornerWells) {
           const wells = testPlate.getSomeWells(inputData['Layout'][idx]['Well Block'])
-          if (!(wells.length == (pattern!.concentrations!.length * pattern!.replicates!))) {
-            errors.push(`Well block size in line ${parseInt(idx) + 2} of Layout tab does not match with number of concentrations and replicates on Patterns tab`)
+          if (!isUnusedPattern) {
+            if (!(wells.length == (pattern!.concentrations!.length * pattern!.replicates!))) {
+              errors.push(`Well block size in line ${parseInt(idx) + 2} of Layout tab does not match with number of concentrations and replicates on Patterns tab`)
+            }
           }
         }
         else {
