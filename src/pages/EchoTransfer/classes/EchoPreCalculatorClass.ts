@@ -34,7 +34,7 @@ export class EchoPreCalculator {
   maxDMSOFraction: number;
   intermediateBackfillVolume: number;
   finalAssayVolume: number;
-  echoDeadVolume: number;
+  plateDeadVolumes: Map<string, number>;
   allowableError: number;
   destinationPlatesCount: number;
   destinationWellsCount: number;
@@ -59,7 +59,7 @@ export class EchoPreCalculator {
     this.maxDMSOFraction = inputData.CommonData.maxDMSOFraction;
     this.intermediateBackfillVolume = inputData.CommonData.intermediateBackfillVolume * 1000; //convert from µL on form to nL
     this.finalAssayVolume = inputData.CommonData.finalAssayVolume * 1000; //convert from µL on form to nL
-    this.echoDeadVolume = inputData.CommonData.echoDeadVolume * 1000; //convert from µL on form to nL
+    this.plateDeadVolumes = new Map();
     this.allowableError = inputData.CommonData.allowableError;
     this.destinationPlatesCount = 0;
     this.destinationWellsCount = 0;
@@ -74,9 +74,24 @@ export class EchoPreCalculator {
     this.dropletSize = (typeof(preferences.dropletSize) == 'number' ? preferences.dropletSize : 2.5);
     this.srcPltSize = ['384','1536'].includes(preferences.sourcePlateSize as PlateSize) ? preferences.sourcePlateSize as PlateSize : '384';
     this.dstPltSize = ['96','384','1536'].includes(preferences.destinationPlateSize as PlateSize) ? preferences.destinationPlateSize as PlateSize : '384';
+
+    const maxVolumesPerPlate = new Map<string, number>();
+    for (const compound of this.inputData.Compounds) {
+      const barcode = compound['Source Barcode'];
+      const volume = compound['Volume (µL)'] * 1000; // convert to nL
+      if (!maxVolumesPerPlate.has(barcode) || volume > maxVolumesPerPlate.get(barcode)!) {
+        maxVolumesPerPlate.set(barcode, volume);
+      }
+    }
+
+    for (const [barcode, maxVolume] of maxVolumesPerPlate) {
+      if (maxVolume > 15000) {
+        this.plateDeadVolumes.set(barcode, 15000);
+      } else {
+        this.plateDeadVolumes.set(barcode, 2500);
+      }
+    }
   }
-
-
 
   calculateNeeds() {
     const checkpointNames = {
@@ -262,7 +277,14 @@ export class EchoPreCalculator {
     }
 
     for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
-      const intWellsNeeded = Math.ceil((totalVolumes.get(intConc) || 0) / ((this.intermediateBackfillVolume + concInfo.volToTsfr) - this.echoDeadVolume));
+      let intermediatePlateDeadVolume = 15000;
+      if (this.intermediateBackfillVolume < 15000) {
+        intermediatePlateDeadVolume = 2500;
+      }
+      const intWellsNeeded = Math.ceil(
+        (totalVolumes.get(intConc) || 0) / 
+        ((this.intermediateBackfillVolume + concInfo.volToTsfr) - intermediatePlateDeadVolume)
+      );
       const currentVolume = totalVolumes.get(concInfo.sourceConc) || 0;
       const newVolume = currentVolume + (concInfo.volToTsfr * intWellsNeeded);
       totalVolumes.set(concInfo.sourceConc, newVolume);
@@ -517,7 +539,9 @@ export class EchoPreCalculator {
             const compoundCommitments = volumeCommitments.get(compoundId)!;
             const availableVolLocs = compoundGroup.locations.filter(location => location.concentration === concentration)
             if (availableVolLocs.length < 1) { break } // don't try to check intermediate concentrations
-            const availableVolume = availableVolLocs.reduce((total, location) => total + (location.volume - this.echoDeadVolume), 0);
+            const plateBarcode = availableVolLocs.length > 0 ? availableVolLocs[0].barcode : undefined;
+            const deadVolume = plateBarcode ? (this.plateDeadVolumes.get(plateBarcode) || 2500) : 2500;
+            const availableVolume = availableVolLocs.reduce((total, location) => total + (location.volume - deadVolume), 0);
             const committedVolume = compoundCommitments?.get(concentration) || 0;
             const uncommittedVolume = Math.max(0, availableVolume - committedVolume);
 
@@ -552,5 +576,10 @@ export class EchoPreCalculator {
     } else {
       return `Insufficient uncommitted volume of ${compoundId} for ${patternName} at ${concentration}µM; ${requiredVol}nL required, ${availableVolume}nL total available, but only ${uncommittedVolume}nL uncommitted`;
     }
+  }
+
+  public updateDeadVolume(barcode: string, newDeadVolumeNL: number): void {
+    this.plateDeadVolumes.set(barcode, newDeadVolumeNL);
+    this.calculateNeeds(); // Re-run calculations
   }
 }

@@ -51,7 +51,6 @@ export type InputDataType = {
     'maxDMSOFraction': number;
     'intermediateBackfillVolume': number;
     'finalAssayVolume': number;
-    'echoDeadVolume': number;
     'allowableError': number;
     'destReplicates': number;
     'createIntConcs': boolean;
@@ -333,7 +332,7 @@ export function analyzeAchievableRanges({
   return mergeConcentrationRanges(ranges);
 }
 
-function mergeConcentrationRanges(ranges: ConcentrationRange[]): ConcentrationGap {
+export function mergeConcentrationRanges(ranges: ConcentrationRange[]): ConcentrationGap {
   // Sort ranges by max value descending
   ranges.sort((a, b) => b.max - a.max);
   

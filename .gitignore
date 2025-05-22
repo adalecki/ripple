@@ -131,3 +131,6 @@ dist
 
 # opened Excel files
 ~$*
+
+package-lock.json
+test-results.json

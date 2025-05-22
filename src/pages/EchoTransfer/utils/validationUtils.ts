@@ -60,17 +60,17 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
   }
 
   if (errors.length == 0) {
+    inputData = stringConversion(inputData)
     const availablePatternNames = patternsTabValidation(inputData, errors)
     if (errors.length == 0) {
       layoutTabValidation(inputData, dstTestPlate, availablePatternNames, errors)
       const srcBarcodes = compoundsTabValidation(inputData, srcTestPlate, availablePatternNames, errors)
       barcodesTabValidation(inputData, srcBarcodes, errors)
-      if (!isNaN(formValues['DMSO Tolerance']) && !isNaN(formValues['Well Volume (µL)']) && !isNaN(formValues['Backfill (µL)']) && !isNaN(formValues['Echo Dead Volume (µL)']) && !isNaN(formValues['Allowed Error'])) {
+      if (!isNaN(formValues['DMSO Tolerance']) && !isNaN(formValues['Well Volume (µL)']) && !isNaN(formValues['Backfill (µL)']) && !isNaN(formValues['Allowed Error'])) {
         const CommonData: InputDataType['CommonData'] = {
           maxDMSOFraction: parseFloat(formValues['DMSO Tolerance']),
           finalAssayVolume: parseFloat(formValues['Well Volume (µL)']),
           intermediateBackfillVolume: parseFloat(formValues['Backfill (µL)']),
-          echoDeadVolume: parseFloat(formValues['Echo Dead Volume (µL)']),
           allowableError: parseFloat(formValues['Allowed Error']),
           destReplicates: parseInt(formValues['Destination Replicates']),
           createIntConcs: Boolean(formValues['Use Intermediate Plates']),
@@ -83,6 +83,25 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
     }
   }
   return { inputData, errors }
+}
+
+function stringConversion(inputData: InputDataType) {
+  for (let lineIdx in inputData.Layout) {
+    inputData.Layout[lineIdx]['Pattern'] = inputData.Layout[lineIdx]['Pattern'].toString()
+  }
+  for (let lineIdx in inputData.Patterns) {
+    inputData.Patterns[lineIdx]['Pattern'] = inputData.Patterns[lineIdx]['Pattern'].toString()
+  }
+  for (let lineIdx in inputData.Compounds) {
+    inputData.Compounds[lineIdx]['Compound ID'] = inputData.Compounds[lineIdx]['Compound ID'].toString()
+    inputData.Compounds[lineIdx]['Pattern'] = inputData.Compounds[lineIdx]['Pattern'].toString()
+    inputData.Compounds[lineIdx]['Source Barcode'] = inputData.Compounds[lineIdx]['Source Barcode'].toString()
+  }
+  for (let lineIdx in inputData.Barcodes) {
+    if (inputData.Barcodes[lineIdx]['Destination Plate Barcodes']) {inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes'].toString()}
+    if (inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']) {inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'].toString()}
+  }
+  return inputData
 }
 
 function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<string, { replicates: number, concentrations: number[] }> {
@@ -180,7 +199,7 @@ function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, avai
       errors.push(`Line ${parseInt(idx) + 2} of Compounds tab lacks a compound ID`)
       break
     }
-    if (!(cpd['Source Barcode'].length > 0)) {
+    if (!(cpd['Source Barcode'].toString().length > 0)) {
       errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab lacks a source plate barcode`)
     }
     else {

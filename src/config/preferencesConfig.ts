@@ -99,13 +99,6 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         unit: 'µL'
       },
       {
-        prefId: 'defaultEchoDeadVolume',
-        name: 'Echo Dead Volume (µL)',
-        type: 'number',
-        defaultValue: 2.5,
-        unit: 'µL'
-      },
-      {
         prefId: 'defaultAllowedError',
         name: 'Allowed Error',
         type: 'number',

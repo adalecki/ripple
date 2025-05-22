@@ -133,6 +133,8 @@ const EchoCalc: React.FC = () => {
         handleClose={handleClose}
         handleCancel={handleCancel}
         handleContinue={handleContinue}
+        setEchoPreCalc={setEchoPreCalc}
+        setCheckpointTracker={setCheckpointTracker}
       />
       <Row>
         <Col md="3">
