@@ -217,19 +217,25 @@ export class EchoPreCalculator {
   calculateDestinationPlates(): number {
     const patternCounts = new Map<string, number>();
     const patternSlots = new Map<string, number>();
-
+  
     //count compounds per pattern
     for (const [_, compoundPatterns] of this.srcCompoundInventory) {
       for (const [patternName, _] of compoundPatterns) {
-        patternCounts.set(patternName, (patternCounts.get(patternName) || 0) + 1)
+        const pattern = this.dilutionPatterns.get(patternName);
+        if (pattern && pattern.type !== 'Unused') {
+          patternCounts.set(patternName, (patternCounts.get(patternName) || 0) + 1)
+        }
       }
     }
-
+  
     //count slots per pattern
     this.inputData.Layout.forEach((layout: any) => {
-      patternSlots.set(layout.Pattern, (patternSlots.get(layout.Pattern) || 0) + 1);
+      const pattern = this.dilutionPatterns.get(layout.Pattern);
+      if (pattern && pattern.type !== 'Unused') {
+        patternSlots.set(layout.Pattern, (patternSlots.get(layout.Pattern) || 0) + 1);
+      }
     });
-
+  
     //calculate plates needed for each pattern
     let maxPlates = 0;
     for (const [patternName, count] of patternCounts) {
@@ -462,7 +468,6 @@ export class EchoPreCalculator {
   }
 
   maxDMSOVolume(): number {
-    //only calculate if not already done
     if (this.maxDMSOVol === 0) {
       const transferConcentrations = new Map<string, {
         intermediateConcentrations: Map<number, ConcentrationObj>,
@@ -472,7 +477,7 @@ export class EchoPreCalculator {
       for (const [compoundId, patternMap] of this.srcCompoundInventory) {
         for (const [patternName, compoundGroup] of patternMap) {
           const pattern = this.dilutionPatterns.get(patternName);
-          if (pattern) {
+          if (pattern && pattern.type !== 'Unused') {
             const concentrations = this.calculateTransferConcentrations(pattern, compoundGroup);
             transferConcentrations.set(compoundId, concentrations);
           }
@@ -482,8 +487,7 @@ export class EchoPreCalculator {
 
       for (const layoutBlock of this.inputData.Layout) {
         const pattern = this.dilutionPatterns.get(layoutBlock.Pattern);
-        if (!pattern) continue;
-  
+        if (!pattern || pattern.type === 'Unused') continue;
         const compoundsUsingPattern = compoundIdsWithPattern(this.srcCompoundInventory, pattern.patternName)
         let maxVolOfPattern = 0;
         for (const compoundId of compoundsUsingPattern) {
@@ -501,7 +505,7 @@ export class EchoPreCalculator {
       }
       const maxVols: number[] = []
       for (const well of testPlate) {
-        if (!well) continue
+        if (!well || well.getIsUnused()) continue
         maxVols.push(well.getTotalVolume())
       }
       this.maxDMSOVol = Math.max(...maxVols,0)
@@ -511,10 +515,21 @@ export class EchoPreCalculator {
 
   calculateFinalDMSONeeded() {
     const totalDestinationWells = this.destinationPlatesCount * parseInt(this.dstPltSize)
-    const unusedDestinationWells = totalDestinationWells - this.destinationWellsCount
+    
+    // Calculate unused wells count
+    let unusedWellsCount = 0;
+    for (const layout of this.inputData.Layout) {
+      const pattern = this.dilutionPatterns.get(layout.Pattern);
+      if (pattern && pattern.type === 'Unused') {
+        const testPlate = new Plate({ plateSize: this.dstPltSize });
+        const wells = testPlate.getSomeWells(layout['Well Block']);
+        unusedWellsCount += wells.length * this.destinationPlatesCount;
+      }
+    }
+    
+    const unusedDestinationWells = totalDestinationWells - this.destinationWellsCount - unusedWellsCount;
     const additionalDMSOVol = unusedDestinationWells * this.maxDMSOVol
     this.totalDMSOBackfillVol += additionalDMSOVol
-
   }
 
   checkSourceVolumes(checkpointName: string) {

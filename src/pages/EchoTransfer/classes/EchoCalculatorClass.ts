@@ -397,6 +397,18 @@ export class EchoCalculator {
 
   fillDestPlates() {
     
+    for (const plate of this.destinationPlates) {
+      for (const layoutBlock of this.inputData.Layout) {
+        const pattern = this.echoPreCalc.dilutionPatterns.get(layoutBlock.Pattern);
+        if (pattern && pattern.type === 'Unused') {
+          const wells = plate.getSomeWells(layoutBlock['Well Block']);
+          for (const well of wells) {
+            well.markAsUnused();
+          }
+        }
+      }
+    }
+    
     const controlCompounds: ControlCompounds = new Map()
     for (const [_, pattern] of this.echoPreCalc.dilutionPatterns) {
       if (pattern.type == 'Control' && !controlCompounds.has(pattern.patternName)) {
@@ -472,13 +484,13 @@ export class EchoCalculator {
     for (const plate of this.destinationPlates) {
       let maxVolume = 0
       for (const well of plate) {
-        if (well) {
+        if (well && !well.getIsUnused()) {
           const vol = well.getTotalVolume()
           if (vol > maxVolume) { maxVolume = vol }
         }
       }
       for (const well of plate) {
-        if (well) {
+        if (well && !well.getIsUnused()) {
           const volToAdd = (maxVolume - well.getTotalVolume())
           if (volToAdd > 0) {
             srcLocation = this.findNextAvailableDMSOWell([...this.sourcePlates, ...this.intermediatePlates], srcLocation, volToAdd)
@@ -578,7 +590,7 @@ export class EchoCalculator {
 
   hasWellsAvailable(wells: Well[]): boolean {
     for (const well of wells) {
-      if (well.getContents().length != 0) {
+      if (well.getContents().length != 0 && !well.getIsUnused()) {
         return false;
       }
     }
@@ -635,24 +647,19 @@ export class EchoCalculator {
   }
 
   findNextAvailableBlock(plates: Plate[], layout: InputDataType['Layout'], patternName: string): { barcode: string, wellBlock: string } {
-    // Initialize pattern cache if not already created
     if (!this.patternLocationCache.has(patternName)) {
-      // Pre-calculate all available blocks for this pattern
       const patternCache = new Map<string, string[]>();
       
-      // For each plate, build a list of available blocks for this pattern
       for (const plate of plates) {
         const availableBlocks: string[] = [];
-        
-        // Get all possible layout blocks for this pattern
         const possibleLocations = layout.filter((row) => row.Pattern === patternName);
         
-        // Check each block to see if it's available
         for (const layoutRow of possibleLocations) {
           const wellBlock = layoutRow['Well Block'];
           const wells = plate.getSomeWells(wellBlock);
           
           const isAvailable = wells.every(well => {
+            if (well.getIsUnused()) return false;
             const wellContents = well.getContents();
             return wellContents.length === 0 || !wellContents.some(content => content.patternName === patternName);
           });
@@ -662,48 +669,35 @@ export class EchoCalculator {
           }
         }
         
-        // Only add the plate to the cache if it has available blocks
         if (availableBlocks.length > 0) {
           patternCache.set(plate.barcode, availableBlocks);
         }
       }
       
-      // Store in the main cache
       this.patternLocationCache.set(patternName, patternCache);
     }
     
-    // Get the pattern cache
     const patternCache = this.patternLocationCache.get(patternName)!;
-    
-    // Find the first plate with available blocks
+  
     for (const [barcode, blocks] of patternCache) {
       if (blocks.length > 0) {
-        // Get the first available block
         const wellBlock = blocks[0];
-        
-        // Remove this block from the available list
         blocks.splice(0, 1);
-        
-        // If no more blocks available for this plate, remove the plate entry
         if (blocks.length === 0) {
           patternCache.delete(barcode);
         }
-        
         return { barcode, wellBlock };
       }
     }
     
-    // If we get here, we've exhausted our cache, but there might be new available blocks
-    // due to changes in plate contents since the cache was built.
-    // Refresh the cache and try again (but only once to avoid infinite recursion)
     this.patternLocationCache.delete(patternName);
     
-    // Do a single direct search without using the cache
     for (const plate of plates) {
       const possibleLocations = layout.filter((row) => row.Pattern === patternName);
       for (const layoutRow of possibleLocations) {
         const wells = plate.getSomeWells(layoutRow['Well Block']);
         const isAvailable = wells.every(well => {
+          if (well.getIsUnused()) return false;
           const wellContents = well.getContents();
           return wellContents.length === 0 || !wellContents.some(content => content.patternName === patternName);
         });
@@ -714,46 +708,22 @@ export class EchoCalculator {
       }
     }
     
-    // No available blocks found
     return { barcode: '', wellBlock: '' };
-  }
-
-  findNextAvailableBlockOld(plates: Plate[], layout: InputDataType['Layout'], patternName: string): { barcode: string, wellBlock: string } {
-    let barcode = ''
-    let wellBlock = ''
-    const possibleLocations = layout.filter((row) => row.Pattern == patternName)
-    for (const plate of plates) {
-      for (const layoutRow of possibleLocations) {
-        const wells = plate.getSomeWells(layoutRow['Well Block']);
-        const isAvailable = wells.every(well => {
-          const wellContents = well.getContents();
-          // Check if the well is empty or if it doesn't already contain the current pattern
-          return wellContents.length === 0 || !wellContents.some(content => content.patternName == patternName);
-        });
-
-        if (isAvailable) {
-          barcode = plate.barcode;
-          wellBlock = layoutRow['Well Block'];
-          return { barcode: barcode, wellBlock: wellBlock };
-        }
-      }
-    }
-    return { barcode: barcode, wellBlock: wellBlock }
   }
 
   findPlateWithNumWellsAvailable(plates: Plate[], numberWells: number): { barcode: string, wellBlock: string } {
     for (const plate of plates) {
       const availableWells = Object.values(plate.wells)
-        .filter(well => (well.getContents().length == 0))
+        .filter(well => (well.getContents().length == 0 && !well.getIsUnused()))
         .map(well => well.id)
         .sort();
-
+  
       if (availableWells.length >= numberWells) {
         const wellBlock = formatWellBlock(availableWells.slice(0, numberWells));
         return { barcode: plate.barcode, wellBlock };
       }
     }
-
+  
     return { barcode: '', wellBlock: '' }
   }
 

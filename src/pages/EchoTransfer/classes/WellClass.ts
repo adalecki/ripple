@@ -14,20 +14,42 @@ export class Well {
   private contents: WellContent[];
   private solvents: Solvent[];
   private totalVolume: number;
+  private isUnused: boolean; // NEW: Track if well is marked as unused
 
   constructor(config: {
     id: string;
     contents?: WellContent[];
     solvents?: Solvent[];
     totalVolume?: number;
+    isUnused?: boolean; // NEW
   }) {
     this.id = config.id;
     this.contents = config.contents || [];
     this.solvents = config.solvents || [];
     this.totalVolume = config.totalVolume || 0;
+    this.isUnused = config.isUnused || false; // NEW
   }
 
+  markAsUnused(): void {
+    this.isUnused = true;
+    this.clearContents();
+  }
+
+  getIsUnused(): boolean {
+    return this.isUnused;
+  }
+
+  markAsUsed(): void {
+    this.isUnused = false;
+  }
+
+  // Update existing methods to respect unused status
   addContent(newContent: WellContent, volumeToAdd: number, solventInfo: { name: string, fraction: number }): void {
+    if (this.isUnused) {
+      console.warn(`Attempting to add content to unused well ${this.id}`);
+      return;
+    }
+    // ... rest of existing implementation
     const newTotalVolume = this.totalVolume + volumeToAdd;
     const solventVolume = volumeToAdd * solventInfo.fraction;
     // Step 1: Update existing contents
@@ -38,31 +60,27 @@ export class Well {
           concentration: (content.concentration * this.totalVolume) / newTotalVolume
         };
       }
-      return content; // Don't update the concentration of the content being added yet
+      return content;
     });
 
     // Step 2: Add new content
     const existingContentIndex = this.contents.findIndex(c => c.compoundId === newContent.compoundId);
     if (existingContentIndex !== -1) {
-      // Update existing content
       const existingContent = this.contents[existingContentIndex];
       const updatedConcentration =
         ((existingContent.concentration * this.totalVolume) + (newContent.concentration * volumeToAdd)) / newTotalVolume;
       this.contents[existingContentIndex] = {
         ...existingContent,
         concentration: updatedConcentration,
-        patternName: newContent.patternName // Update pattern name if needed
+        patternName: newContent.patternName
       };
     } else {
-      // Add new content
       this.contents.push({
         ...newContent,
         concentration: (newContent.concentration * volumeToAdd) / newTotalVolume
       });
     }
     this.updateSolvent({name: solventInfo.name, volume: solventVolume})
-
-    // Step 3: Update total volume
     this.totalVolume = newTotalVolume;
   }
 
@@ -77,22 +95,25 @@ export class Well {
   }
 
   addSolvent(newSolvent: Solvent): void {
+    if (this.isUnused) {
+      console.warn(`Attempting to add solvent to unused well ${this.id}`);
+      return;
+    }
+    // ... rest of existing implementation
     const newTotalVolume = this.totalVolume + newSolvent.volume;
-
-    // Step 1: Update concentrations of all contents
     this.contents = this.contents.map(content => ({
       ...content,
       concentration: (content.concentration * this.totalVolume) / newTotalVolume
     }));
-
-    // Step 2: Update or add solvent
     this.updateSolvent(newSolvent)
-
-    // Step 3: Update total volume
     this.totalVolume = newTotalVolume;
   }
 
   bulkFill(volume: number, solventName: string = 'DMSO'): void {
+    if (this.isUnused) {
+      console.warn(`Attempting to bulk fill unused well ${this.id}`);
+      return;
+    }
     this.addSolvent({ name: solventName, volume });
   }
 
@@ -119,6 +140,10 @@ export class Well {
   }
 
   applyPattern(patternName: string, concentration: number): void {
+    if (this.isUnused) {
+      console.warn(`Attempting to apply pattern to unused well ${this.id}`);
+      return;
+    }
     const content = this.contents.find(c => c.patternName == patternName)
     if (!content) {
       this.contents.push({concentration: concentration, patternName: patternName})
@@ -168,7 +193,8 @@ export class Well {
       id: this.id,
       contents: this.contents,
       solvents: this.solvents,
-      totalVolume: this.totalVolume
+      totalVolume: this.totalVolume,
+      isUnused: this.isUnused
     };
   }
 
@@ -177,7 +203,8 @@ export class Well {
       id: json.id,
       contents: json.contents,
       solvents: json.solvents,
-      totalVolume: json.totalVolume
+      totalVolume: json.totalVolume,
+      isUnused: json.isUnused
     });
   }
 }

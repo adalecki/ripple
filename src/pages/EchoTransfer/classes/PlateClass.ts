@@ -162,12 +162,19 @@ export class Plate {
   }
 
   applyPattern(wellBlock: string, pattern: Pattern): void {
-    const concentrations = pattern.concentrations.filter(c => c != null)
-    const concentrationArr = mapWellsToConcentrations(this,wellBlock,concentrations,pattern.replicates,pattern.direction[0])
-    for (const concIdx in concentrations) {
-      for (const wellId of concentrationArr[concIdx]) {
-        const well = this.getWell(wellId)
-        if (well) {well.applyPattern(pattern.name,concentrations[concIdx])}
+    if (pattern.type === 'Unused') {
+      const wells = this.getSomeWells(wellBlock);
+      for (const well of wells) {
+        well.markAsUnused();
+      }
+    } else {
+      const concentrations = pattern.concentrations.filter(c => c != null)
+      const concentrationArr = mapWellsToConcentrations(this,wellBlock,concentrations,pattern.replicates,pattern.direction[0])
+      for (const concIdx in concentrations) {
+        for (const wellId of concentrationArr[concIdx]) {
+          const well = this.getWell(wellId)
+          if (well) {well.applyPattern(pattern.name,concentrations[concIdx])}
+        }
       }
     }
 
@@ -185,6 +192,9 @@ export class Plate {
     const wells = this.getSomeWells(wellBlock)
     for (const well of wells) {
       well.removePattern(patternName)
+      if (this.patterns[patternName]?.type === 'Unused') {
+        well.markAsUsed();
+      }
     }
 
     if (this.patterns[patternName]) {

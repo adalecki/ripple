@@ -17,10 +17,16 @@ const WellTooltip: React.FC<WellTooltipProps> = ({ hoveredWell }) => {
 
   const contents = well.getContents();
   const solvents = well.getSolvents();
+  
   return (
     <div className="well-tooltip" style={{ top: position.y, left: position.x, transform }}>
       <div className="well-id">Well {well.id}</div>
-      {contents.length > 0 ? (
+      {well.getIsUnused() ? (
+        <div className="content-item">
+          <span className="label">Status:</span>
+          <span className="value">Unused</span>
+        </div>
+      ) : contents.length > 0 ? (
         <div className="content-section">
           {contents.map((content, index) => (
             <div key={index} className='content-item'>
@@ -35,24 +41,26 @@ const WellTooltip: React.FC<WellTooltipProps> = ({ hoveredWell }) => {
           <span className="value">Empty</span>
         </div>
       )}
-      <div className="volume-section">
-        <div className='content-item'>
-          <span className="label">Total Volume:</span>
-          <span className="value">{well.getTotalVolume().toFixed(1)} nL</span>
-        </div>
-        {solvents.length > 0 && (
-        <div>
-          {solvents.map((solvent, index) => (
-            <div key={index} className="content-item">
-              <span className="solvent-label">{solvent.name}:</span>
-              <span className="solvent-label">
-                {(well.getSolventFraction(solvent.name) * 100).toFixed(2)}%
-              </span>
-            </div>
-          ))}
+      {!well.getIsUnused() && (
+        <div className="volume-section">
+          <div className='content-item'>
+            <span className="label">Total Volume:</span>
+            <span className="value">{well.getTotalVolume().toFixed(1)} nL</span>
+          </div>
+          {solvents.length > 0 && (
+          <div>
+            {solvents.map((solvent, index) => (
+              <div key={index} className="content-item">
+                <span className="solvent-label">{solvent.name}:</span>
+                <span className="solvent-label">
+                  {(well.getSolventFraction(solvent.name) * 100).toFixed(2)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         </div>
       )}
-      </div>
     </div>
   );
 };
