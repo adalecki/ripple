@@ -190,6 +190,7 @@ export class Plate {
 
   removePattern(wellBlock: string, patternName: string): void {
     const wells = this.getSomeWells(wellBlock)
+    console.log(wells)
     for (const well of wells) {
       well.removePattern(patternName)
       if (this.patterns[patternName]?.type === 'Unused') {

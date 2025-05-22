@@ -319,11 +319,17 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
       const newPlate = patternPlate.clone();
       const wellsToCheck = patternPlate.getSomeWells(selectedWells.join(';'))
       const patternNamesToCheck = [...new Set(wellsToCheck.flatMap(w => w.getPatterns()))]
+      if (wellsToCheck.some(w => w.getIsUnused() == true)) {
+        const unusedPatterns = patterns.filter(p => p.type === 'Unused')
+        patternNamesToCheck.push(...unusedPatterns.map(p => p.name))
+      }
       const newPatternArr: Pattern[] = []
       for (const patternName of patternNamesToCheck) {
         const pattern = patterns.find(p => p.name == patternName)
+        console.log(pattern,patterns)
         if (pattern) {
           const newPattern = pattern.clone()
+          console.log(newPattern)
           for (const loc of pattern.locations) {
             if (isBlockOverlapping(newPlate, selectedWells.join(';'), [loc])) {
               newPlate.removePattern(loc, patternName)
@@ -334,6 +340,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
           //setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
         }
       }
+      console.log(patterns)
       const newPatterns = patterns.map(p => newPatternArr.find(n => n.id == p.id) ? newPatternArr.find(n => n.id == p.id)! : p)
       setPatterns(newPatterns)
       setPatternPlate(newPlate)
