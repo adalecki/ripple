@@ -98,8 +98,8 @@ function stringConversion(inputData: InputDataType) {
     inputData.Compounds[lineIdx]['Source Barcode'] = inputData.Compounds[lineIdx]['Source Barcode'].toString()
   }
   for (let lineIdx in inputData.Barcodes) {
-    inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes'].toString()
-    inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'].toString()
+    if (inputData.Barcodes[lineIdx]['Destination Plate Barcodes']) {inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes'].toString()}
+    if (inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']) {inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'].toString()}
   }
   return inputData
 }
@@ -195,7 +195,6 @@ function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, avai
   const usedWellIdsMap: Map<string, string[]> = new Map();
   for (let idx in inputData['Compounds']) {
     const cpd = inputData['Compounds'][idx]
-    console.log(cpd['Source Barcode'].toString(),cpd['Source Barcode'].toString().length)
     if (!(cpd['Compound ID'].length > 0)) {
       errors.push(`Line ${parseInt(idx) + 2} of Compounds tab lacks a compound ID`)
       break
