@@ -29,6 +29,7 @@ const EchoInstructions: React.FC = () => {
                 <li><strong>Treatment:</strong> Each treatment compound is stamped once to an available slot for its pattern, creating new destination plates until all compounds are accounted for. May produce empty blocks on some destination plates if not all blocks are needed.</li>
                 <li><strong>Control:</strong> Present equally on all destination plates. Will always fill slots. If multiple different compounds are assigned to one control pattern, the tool will rotate between them when assigning.</li>
                 <li><strong>Solvent:</strong> Used to signal DMSO wells on source plates. Currently limited to DMSO only as a solvent. Pattern name must be "DMSO", type must be "Solvent".</li>
+                <li><strong>Unused:</strong> Marks wells that should remain empty and not receive any transfers, including DMSO normalization. Useful for creating empty borders or specific unused well patterns.</li>
                 <li><strong>Combination:</strong> Not currently implemented.</li>
                   
                 </ul>
@@ -50,10 +51,10 @@ const EchoInstructions: React.FC = () => {
                   <li><strong>Patterns:</strong> Specify dilution series and replicates.
                     <ul>
                       <li><b>Pattern:</b> Name your patterns here. Names must be unique.</li>
-                      <li><b>Type:</b> Must be either "Treatment", "Control", "Solvent", or "Combination".</li>
-                      <li><b>Direction:</b> Choose dose response direction. Valid options are "LR" (left to right), "RL", "TB" (top to bottom), and "BT" (bottom to top).</li>
-                      <li><b>Replicates:</b> The number of replicates for each concentration.</li>
-                      <li><b>Conc[1|2|3|...]:</b> Individual desired concentrations for a dose response curve. Arbitrary concentrations are supported, not just 1:2 or 1:3 dilutions. Twenty columns are provided; leave columns blank if using fewer than twenty concentrations.</li>
+                      <li><b>Type:</b> Must be either "Treatment", "Control", "Solvent", "Unused", or "Combination".</li>
+                      <li><b>Direction:</b> Choose dose response direction. Valid options are "LR" (left to right), "RL", "TB" (top to bottom), and "BT" (bottom to top). Not required for Unused patterns.</li>
+                      <li><b>Replicates:</b> The number of replicates for each concentration. Not required for Unused patterns.</li>
+                      <li><b>Conc[1|2|3|...]:</b> Individual desired concentrations for a dose response curve. Arbitrary concentrations are supported, not just 1:2 or 1:3 dilutions. Twenty columns are provided; leave columns blank if using fewer than twenty concentrations. Not required for Unused patterns.</li>
                     </ul>
                   </li>
                   <li><strong>Layout:</strong> The specific plate layout. This represents one destination plate; multiple destination plates will be created, if needed, to accommodate all treatments.
@@ -69,23 +70,23 @@ const EchoInstructions: React.FC = () => {
                       <li><b>Concentration (µM):</b> Stock concentration in micromolar.</li>
                       <li><b>Compound ID</b> Compound identifier. Repeating compounds is supported, if combined volume of multiple wells is needed for a run.</li>
                       <li><b>Volume (µL)</b> Volume of liquid in well in microliters. Critical for calculating when a well is depleted for larger transfers.</li>
-                      <li><b>Pattern:</b> The pattern the compound is associated with. It must be present on the Patterns sheet. Compounds can have multiple patterns, separated by a semicolon (;).</li>
+                      <li><b>Pattern:</b> The pattern the compound is associated with. It must be present on the Patterns sheet. Compounds can have multiple patterns, separated by a semicolon (;). Unused patterns do not need compounds assigned.</li>
                     </ul>
                   </li>
                   <li><strong>Barcodes:</strong> Provide barcodes for intermediate and destination plates. The tool will use barcodes sequentially as provided. If not enough are provided, it will autogenerate barcodes.
-                    <ul>
-                      <li><b>Intermediate Plate Barcodes:</b> Available barcodes for intermediate plates.</li>
-                      <li><b>Destination Plate Barcodes:</b> Available barcodes for destination plates.</li>
-                    </ul>
-                  </li>
-                </ul>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    </div>
-  );
+                   <ul>
+                     <li><b>Intermediate Plate Barcodes:</b> Available barcodes for intermediate plates.</li>
+                     <li><b>Destination Plate Barcodes:</b> Available barcodes for destination plates.</li>
+                   </ul>
+                 </li>
+               </ul>
+             </Card.Body>
+           </Card>
+         </Col>
+       </Row>
+     </Container>
+   </div>
+ );
 };
 
 export default EchoInstructions;

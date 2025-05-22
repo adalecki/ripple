@@ -14,7 +14,7 @@ interface WellProps {
 
 const WellView = React.forwardRef<HTMLDivElement, WellProps>(
   ({ well, bgColors, wellId, onMouseEnter, onMouseLeave, onClickMask, isSelected, blockBorders }, ref) => {
-    const classNames = `well ${isSelected ? 'well-highlighted' : ''}`;
+    const classNames = `well ${isSelected ? 'well-highlighted' : ''} ${well.getIsUnused() ? 'well-unused' : ''}`; // NEW
 
     const style = '3px solid rgb(0, 0, 0) '
 
@@ -63,7 +63,7 @@ const WellView = React.forwardRef<HTMLDivElement, WellProps>(
         onClick={(e) => onClickMask(wellId, e)}
         data-wellid={wellId}
       >
-        {(well.getSolvents().some(s => s.name == 'DMSO') ? <div className='dmso'></div> : '')}
+        {(well.getSolvents().some(s => s.name == 'DMSO') && !well.getIsUnused() ? <div className='dmso'></div> : '')}
         {renderSegments()}
       </div>
     );

@@ -67,6 +67,10 @@ export function wellColors(plate: Plate, config: ColorConfig) {
 }
 
 function getCompoundColor(well: Well, config: ColorConfig): HslStringType[] {
+  if (well.getIsUnused()) {
+    return ['hsl(0,0%,95%)' as HslStringType];
+  }
+  
   const regex = /(\d+\.?\d*)%?/g;
   const contents = well.getContents().filter(content => content.compoundId)
   let colors = ['hsl(0,0%,100%)' as HslStringType]
@@ -84,7 +88,12 @@ function getCompoundColor(well: Well, config: ColorConfig): HslStringType[] {
   return colors
 }
 
+
 function getPatternColor(well: Well, config: ColorConfig): HslStringType[] {
+  if (well.getIsUnused()) {
+    return ['hsl(0,0%,95%)' as HslStringType];
+  }
+  
   const regex = /(\d+\.?\d*)%?/g;
   const contents = well.getContents().filter(content => !(content.compoundId))
   const colors = contents.map(content => {
