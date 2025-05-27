@@ -6,9 +6,9 @@ import PatternManager from './PatternManager';
 import { Plate } from '../classes/PlateClass';
 import { Pattern } from '../classes/PatternClass';
 import { PatternsContext } from '../contexts/Context';
-import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, mapWellsToConcentrations, numberToLetters } from '../utils/plateUtils';
+import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, numberToLetters, splitIntoBlocks } from '../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../utils/wellColors';
-import { generateExcelTemplate } from '../utils/designUtils';
+import { generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations } from '../utils/designUtils';
 
 import '../../../css/PlateComponent.css'
 import '../../../css/DesignWizard.css'
@@ -207,6 +207,8 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     return wellArr;
   };
 
+
+
   const applyPatternToWells = () => {
     if (selectedPatternId && selectedWells.length > 0) {
       const pattern = patterns.find(p => p.id == selectedPatternId)
@@ -214,26 +216,29 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
         const newPattern = pattern.clone()
         const newPlate = patternPlate.clone();
         
-        // Handle Unused pattern differently
         if (pattern.type === 'Unused') {
-          // For unused patterns, just apply to all selected wells as one block
-          const block = formatWellBlock(selectedWells);
-          
-          // Check for overlaps
-          if (isBlockOverlapping(patternPlate, block, newPattern.locations)) {
-            alert(`The selected wells overlap with existing patterns. Please choose different wells.`);
-            return;
+          for (const wellId of selectedWells) {
+            const well = newPlate.getWell(wellId);
+            if (well && well.getContents().length > 0) {
+              alert(`Cannot mark wells as unused - they contain other patterns. Please clear them first.`);
+              return;
+            }
           }
+          const mergedBlock = mergeUnusedPatternLocations(newPattern, newPlate, selectedWells);
           
-          newPlate.applyPattern(block, newPattern);
-          newPattern.locations.push(block);
+          for (const location of newPattern.locations) {
+            newPlate.removePattern(location, newPattern.name);
+          }
+          newPattern.locations = [];
+          
+          newPlate.applyPattern(mergedBlock, newPattern);
+          newPattern.locations = [mergedBlock];
           
           setPatternPlate(newPlate);
           setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
           return;
         }
         
-        // Original logic for non-Unused patterns
         const patternSize = newPattern.replicates * newPattern.concentrations.length;
   
         //shouldn't be possible, but as a fallback
@@ -258,91 +263,62 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
       }
     }
   };
-  
-  const splitIntoBlocks = (wells: string[], pattern: Pattern, plate: Plate): string[] => {
-    if (pattern.type === 'Unused') {
-      return [formatWellBlock(wells)];
-    }
-    const concentrations = pattern.concentrations.filter(c => c != null)
-    const concentrationCount = pattern.concentrations.length;
-    const wellsPerConcentration = wells.length / concentrationCount;
-
-    if (wellsPerConcentration % 1 !== 0) {
-      throw new Error("The number of wells must be divisible by the number of concentrations.");
-    }
-
-    const patternReplicates = wellsPerConcentration / pattern.replicates;
-
-    if (patternReplicates % 1 !== 0) {
-      throw new Error("The number of wells per concentration must be divisible by the original number of replicates.");
-    }
-
-    // Map wells to concentrations based on the pattern
-    const wellConcentrationArr = mapWellsToConcentrations(
-      plate,
-      formatWellBlock(wells),
-      concentrations,
-      wellsPerConcentration,
-      pattern.direction[0]
-    );
-
-    // Split into blocks
-    const blocks: string[] = [];
-
-    for (let i = 0; i < patternReplicates; i++) {
-      const block: string[] = [];
-      for (const concIdx in concentrations) {
-        const startIndex = i * pattern.replicates;
-        const endIndex = startIndex + pattern.replicates;
-        block.push(...wellConcentrationArr[concIdx].slice(startIndex, endIndex))
-      }
-      blocks.push(formatWellBlock(block));
-    }
-    return blocks;
-  };
-
-  const isBlockOverlapping = (plate: Plate, newBlock: string, existingLocations: string[]): boolean => {
-    const newWells = plate.getSomeWells(newBlock)
-    for (const location of existingLocations) {
-      const existingWells = plate.getSomeWells(location)
-      for (const well of existingWells) {
-        if (newWells.includes(well)) {
-          return true
-        }
-      }
-    }
-    return false;
-  };
 
   const clearPatternFromWells = () => {
     if (selectedWells.length > 0) {
       const newPlate = patternPlate.clone();
       const wellsToCheck = patternPlate.getSomeWells(selectedWells.join(';'))
       const patternNamesToCheck = [...new Set(wellsToCheck.flatMap(w => w.getPatterns()))]
-      if (wellsToCheck.some(w => w.getIsUnused() == true)) {
-        const unusedPatterns = patterns.filter(p => p.type === 'Unused')
-        patternNamesToCheck.push(...unusedPatterns.map(p => p.name))
-      }
+      
+      const unusedPatterns = patterns.filter(p => p.type === 'Unused')
+      const unusedPatternNames = unusedPatterns.map(p => p.name);
+      
+      const hasUnusedWells = wellsToCheck.some(w => w.getIsUnused());
+      
       const newPatternArr: Pattern[] = []
-      for (const patternName of patternNamesToCheck) {
-        const pattern = patterns.find(p => p.name == patternName)
-        console.log(pattern,patterns)
-        if (pattern) {
-          const newPattern = pattern.clone()
-          console.log(newPattern)
-          for (const loc of pattern.locations) {
-            if (isBlockOverlapping(newPlate, selectedWells.join(';'), [loc])) {
-              newPlate.removePattern(loc, patternName)
-              newPattern.locations = newPattern.locations.filter(l => !(l == loc))
-            }
+      
+      for (const unusedPattern of unusedPatterns) {
+        if (hasUnusedWells) {
+          const newPattern = unusedPattern.clone();
+          const allUnusedWells = getPatternWells(newPattern, newPlate);
+          const remainingUnusedWells = allUnusedWells.filter(wellId => !selectedWells.includes(wellId));
+          
+          for (const location of newPattern.locations) {
+            newPlate.removePattern(location, newPattern.name);
           }
-          newPatternArr.push(newPattern)
-          //setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
+          newPattern.locations = [];
+          
+          if (remainingUnusedWells.length > 0) {
+            const mergedBlock = formatWellBlock(remainingUnusedWells);
+            newPlate.applyPattern(mergedBlock, newPattern);
+            newPattern.locations = [mergedBlock];
+          }
+          
+          newPatternArr.push(newPattern);
         }
       }
-      console.log(patterns)
-      const newPatterns = patterns.map(p => newPatternArr.find(n => n.id == p.id) ? newPatternArr.find(n => n.id == p.id)! : p)
-      setPatterns(newPatterns)
+      
+      for (const patternName of patternNamesToCheck) {
+        if (!unusedPatternNames.includes(patternName)) {
+          const pattern = patterns.find(p => p.name == patternName)
+          if (pattern) {
+            const newPattern = pattern.clone()
+            for (const loc of pattern.locations) {
+              if (isBlockOverlapping(newPlate, selectedWells.join(';'), [loc])) {
+                newPlate.removePattern(loc, patternName)
+                newPattern.locations = newPattern.locations.filter(l => !(l == loc))
+              }
+            }
+            newPatternArr.push(newPattern)
+          }
+        }
+      }
+      
+      const updatedPatternIds = newPatternArr.map(p => p.id);
+      const unchangedPatterns = patterns.filter(p => !updatedPatternIds.includes(p.id));
+      const finalPatterns = [...unchangedPatterns, ...newPatternArr];
+      
+      setPatterns(finalPatterns);
       setPatternPlate(newPlate)
     }
   }
