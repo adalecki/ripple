@@ -313,12 +313,8 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
           }
         }
       }
-      
-      const updatedPatternIds = newPatternArr.map(p => p.id);
-      const unchangedPatterns = patterns.filter(p => !updatedPatternIds.includes(p.id));
-      const finalPatterns = [...unchangedPatterns, ...newPatternArr];
-      
-      setPatterns(finalPatterns);
+
+      setPatterns(patterns.map(p => newPatternArr.some(nP => nP.id == p.id) ? newPatternArr.find(nP => nP.id == p.id) as Pattern : p));
       setPatternPlate(newPlate)
     }
   }
