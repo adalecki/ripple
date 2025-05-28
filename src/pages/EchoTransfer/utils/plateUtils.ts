@@ -157,61 +157,96 @@ export function mapWellsToConcentrations(
     return result;
   }
 
-  wells.sort((a, b) => {
-    const coordsA = getCoordsFromWellId(a.id);
-    const coordsB = getCoordsFromWellId(b.id);
-
-    switch (direction) {
-      case 'LR':
-        return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
-      case 'RL':
-        return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsB.col - coordsA.col;
-      case 'TB':
-        return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsA.row - coordsB.row;
-      case 'BT':
-        return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsB.row - coordsA.row;
-    }
-  });
-
-  // Get the unique rows and columns within the selected block
+  // Get the coordinates and determine the block dimensions
   const coordsList = wells.map(w => getCoordsFromWellId(w.id));
   const uniqueRows = [...new Set(coordsList.map(c => c.row))].sort((a, b) => a - b);
   const uniqueCols = [...new Set(coordsList.map(c => c.col))].sort((a, b) => a - b);
-
-  // Iterate over each well and assign it to a concentration based on its coordinates
+  
+  // Create a 2D array to represent the block
+  const blockArray: string[][] = Array(uniqueRows.length)
+    .fill(null)
+    .map(() => Array(uniqueCols.length).fill(null));
+  
+  // Fill the block array with well IDs
   for (const well of wells) {
     const coords = getCoordsFromWellId(well.id);
-    let concentrationIndex: number;
+    const rowIdx = uniqueRows.indexOf(coords.row);
+    const colIdx = uniqueCols.indexOf(coords.col);
+    blockArray[rowIdx][colIdx] = well.id;
+  }
 
-    switch (direction) {
-      case 'LR': {
-        const colIndex = uniqueCols.indexOf(coords.col);
-        concentrationIndex = colIndex % numConcs;
-        break;
+  // Create a linear sequence of wells based on direction
+  const wellSequence: string[] = [];
+  
+  switch (direction) {
+    case 'TB': {
+      // Primary: left to right across columns, Secondary: top to bottom across rows
+      for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
+        for (let rowIdx = 0; rowIdx < uniqueRows.length; rowIdx++) {
+          if (blockArray[rowIdx][colIdx]) {
+            wellSequence.push(blockArray[rowIdx][colIdx]);
+          }
+        }
       }
-      case 'RL': {
-        const colIndex = uniqueCols.indexOf(coords.col);
-        const effectiveIndex = (uniqueCols.length - 1) - colIndex;
-        concentrationIndex = effectiveIndex % numConcs;
-        break;
-      }
-      case 'TB': {
-        const rowIndex = uniqueRows.indexOf(coords.row);
-        concentrationIndex = rowIndex % numConcs;
-        break;
-      }
-      case 'BT': {
-        const rowIndex = uniqueRows.indexOf(coords.row);
-        const effectiveIndex = (uniqueRows.length - 1) - rowIndex;
-        concentrationIndex = effectiveIndex % numConcs;
-        break;
-      }
+      break;
     }
-    
-    // Assign the well ID to the correct concentration array
-    if (result[concentrationIndex]) {
-        result[concentrationIndex].push(well.id);
+    case 'BT': {
+      // Primary: right to left across columns, Secondary: top to bottom across rows
+      for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
+        for (let rowIdx = uniqueRows.length - 1; rowIdx >= 0; rowIdx--) {
+          if (blockArray[rowIdx][colIdx]) {
+            wellSequence.push(blockArray[rowIdx][colIdx]);
+          }
+        }
+      }
+      break;
     }
+    case 'LR': {
+      // Primary: top to bottom across rows, Secondary: left to right across columns
+      for (let rowIdx = 0; rowIdx < uniqueRows.length; rowIdx++) {
+        for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
+          if (blockArray[rowIdx][colIdx]) {
+            wellSequence.push(blockArray[rowIdx][colIdx]);
+          }
+        }
+      }
+      break;
+    }
+    case 'RL': {
+      // Primary: bottom to top across rows, Secondary: left to right across columns
+      for (let rowIdx = 0; rowIdx < uniqueRows.length; rowIdx++) {
+        for (let colIdx = uniqueCols.length - 1; colIdx >= 0; colIdx--) {
+          if (blockArray[rowIdx][colIdx]) {
+            wellSequence.push(blockArray[rowIdx][colIdx]);
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  // Distribute wells to concentrations in sequence
+  for (let i = 0; i < wellSequence.length; i++) {
+
+    const concentrationIndex = i % numConcs;
+    result[concentrationIndex].push(wellSequence[i]);
+  }
+  for (const concIdx in result) {
+    result[concIdx].sort((a,b) => {
+      const coordsA = getCoordsFromWellId(a);
+      const coordsB = getCoordsFromWellId(b);
+  
+      switch (direction) {
+        case 'LR':
+          return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
+        case 'RL':
+          return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsB.col - coordsA.col;
+        case 'TB':
+          return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsA.row - coordsB.row;
+        case 'BT':
+          return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsB.row - coordsA.row;
+      }
+    })
   }
 
   return result;
@@ -301,7 +336,6 @@ export const splitIntoBlocks = (wells: string[], pattern: Pattern, plate: Plate)
     concentrations,
     pattern.direction[0]
   );
-  console.log(wellConcentrationArr)
 
   // Split into blocks
   const blocks: string[] = [];
@@ -315,6 +349,5 @@ export const splitIntoBlocks = (wells: string[], pattern: Pattern, plate: Plate)
     }
     blocks.push(formatWellBlock(block));
   }
-  console.log(blocks)
   return blocks;
 };

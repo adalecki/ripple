@@ -122,7 +122,7 @@ export function analyzeDilutionPatterns(patternRows: any[]) {
       type: row.Type,
       concentrations,
       replicates: parseInt(row.Replicates),
-      direction: row.Type !in ['Solvent','Unused'] ? row.Direction.split('-') : [],
+      direction: ['Solvent','Unused'].includes(row.Type) ? [] : row.Direction.split('-'),
       secondaryDirection: row.Type === 'Combination' ? row.Direction.split('-')[1] as 'LR' | 'RL' | 'TB' | 'BT' : undefined,
       fold: row.Type === 'Combination' ? parseInt(row.Direction.split('-').length) : 1
     };

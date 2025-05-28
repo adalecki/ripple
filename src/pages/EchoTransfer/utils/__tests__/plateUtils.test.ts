@@ -401,6 +401,15 @@ describe('mapWellsToConcentrations', () => {
     const expectation = [['A01','A02'],['B01','B02'],['C01','C02'],['D01','D02'],['E01','E02'],['F01','F02'],['G01','G02'],['H01','H02'],['I01','I02'],['J01','J02']]
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
+
+  test('LR with spillover to next row', () => {
+    const wellBlock = 'A01:C02';
+    const concentrations = [3,2,1];
+    const direction = 'LR';
+    const expectation = [['A01','B02'],['C01','A02'],['B01','C02']];
+    console.log(mapWellsToConcentrations(plate,wellBlock,concentrations,direction))
+    expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation)
+  })
 });
 
 describe('calculateBlockBorders', () => {
