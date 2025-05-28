@@ -519,7 +519,7 @@ export class EchoCalculator {
     const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode)
     if (destPlate) {
       const direction = dilutionPattern.direction[dirIdx]
-      const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, dilutionPattern.replicates, direction)
+      const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, direction)
       for (const concIdx in dilutionPattern.concentrations) {
         const conc = dilutionPattern.concentrations[concIdx]
         const concInfo = transferMap.destinationConcentrations.get(conc)

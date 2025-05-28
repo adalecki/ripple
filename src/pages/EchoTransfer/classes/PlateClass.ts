@@ -169,7 +169,7 @@ export class Plate {
       }
     } else {
       const concentrations = pattern.concentrations.filter(c => c != null)
-      const concentrationArr = mapWellsToConcentrations(this,wellBlock,concentrations,pattern.replicates,pattern.direction[0])
+      const concentrationArr = mapWellsToConcentrations(this,wellBlock,concentrations,pattern.direction[0])
       for (const concIdx in concentrations) {
         for (const wellId of concentrationArr[concIdx]) {
           const well = this.getWell(wellId)
@@ -190,7 +190,6 @@ export class Plate {
 
   removePattern(wellBlock: string, patternName: string): void {
     const wells = this.getSomeWells(wellBlock)
-    console.log(wells)
     for (const well of wells) {
       well.removePattern(patternName)
       if (this.patterns[patternName]?.type === 'Unused') {

@@ -1,5 +1,7 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
 import { Pattern } from '../classes/PatternClass';
+import { Plate } from '../classes/PlateClass';
+import { formatWellBlock } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
   // Create a new workbook
@@ -57,3 +59,31 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   const fileName = `Echo_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
   writeFile(wb, fileName);
 }
+
+export const getPatternWells = (pattern: Pattern, plate: Plate): string[] => {
+  const allWells: string[] = [];
+  for (const location of pattern.locations) {
+    const wells = plate.getSomeWells(location);
+    allWells.push(...wells.map(w => w.id));
+  }
+  return allWells;
+};
+
+export const mergeUnusedPatternLocations = (pattern: Pattern, plate: Plate, newWells: string[]): string => {
+  const existingWells = getPatternWells(pattern, plate);
+  const allWells = [...new Set([...existingWells, ...newWells])];
+  return formatWellBlock(allWells);
+};
+
+export const isBlockOverlapping = (plate: Plate, newBlock: string, existingLocations: string[]): boolean => {
+  const newWells = plate.getSomeWells(newBlock)
+  for (const location of existingLocations) {
+    const existingWells = plate.getSomeWells(location)
+    for (const well of existingWells) {
+      if (newWells.includes(well)) {
+        return true
+      }
+    }
+  }
+  return false;
+};
