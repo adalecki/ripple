@@ -274,7 +274,6 @@ function barcodesTabValidation(inputData: InputDataType, srcBarcodes: string[], 
   const barcodes = { int: [] as string[], dest: [] as string[] }
   for (let idx in inputData['Barcodes']) {
     const row = inputData['Barcodes'][idx]
-    console.log(row)
     if (row['Destination Plate Barcodes']) {
       if (srcBarcodes.includes(row['Destination Plate Barcodes'])) { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a a Destination barcode listed as a Source on the Compounds tab`) }
       if (!barcodes.dest.includes(row['Destination Plate Barcodes'])) { barcodes.dest.push(row['Destination Plate Barcodes']) }
@@ -286,7 +285,6 @@ function barcodesTabValidation(inputData: InputDataType, srcBarcodes: string[], 
       else { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a repeated Intermediate barcode`) }
     }
   }
-  console.log(barcodes)
 }
 
 //@ts-ignore
