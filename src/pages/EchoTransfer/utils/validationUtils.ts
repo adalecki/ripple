@@ -274,13 +274,19 @@ function barcodesTabValidation(inputData: InputDataType, srcBarcodes: string[], 
   const barcodes = { int: [] as string[], dest: [] as string[] }
   for (let idx in inputData['Barcodes']) {
     const row = inputData['Barcodes'][idx]
-    if (srcBarcodes.includes(row['Intermediate Plate Barcodes'])) { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a an Intermediate barcode listed as a Source on the Compounds tab`) }
-    if (srcBarcodes.includes(row['Destination Plate Barcodes'])) { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a a Destination barcode listed as a Source on the Compounds tab`) }
-    if (!barcodes.int.includes(row['Intermediate Plate Barcodes'])) { barcodes.int.push(row['Intermediate Plate Barcodes']) }
-    else { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a repeated Intermediate barcode`) }
-    if (!barcodes.dest.includes(row['Destination Plate Barcodes'])) { barcodes.dest.push(row['Destination Plate Barcodes']) }
-    else { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a repeated Destination barcode`) }
+    console.log(row)
+    if (row['Destination Plate Barcodes']) {
+      if (srcBarcodes.includes(row['Destination Plate Barcodes'])) { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a a Destination barcode listed as a Source on the Compounds tab`) }
+      if (!barcodes.dest.includes(row['Destination Plate Barcodes'])) { barcodes.dest.push(row['Destination Plate Barcodes']) }
+      else { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a repeated Destination barcode`) }
+    }
+    if (row['Intermediate Plate Barcodes']) {
+      if (srcBarcodes.includes(row['Intermediate Plate Barcodes'])) { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a an Intermediate barcode listed as a Source on the Compounds tab`) }
+      if (!barcodes.int.includes(row['Intermediate Plate Barcodes'])) { barcodes.int.push(row['Intermediate Plate Barcodes']) }
+      else { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a repeated Intermediate barcode`) }
+    }
   }
+  console.log(barcodes)
 }
 
 //@ts-ignore
