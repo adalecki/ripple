@@ -1,0 +1,12 @@
+.apply-tooltip {
+  position: absolute;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  pointer-events: none;
+  font-size: 0.8rem;
+  max-width: 250px;
+}
