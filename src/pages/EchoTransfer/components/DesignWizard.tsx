@@ -8,10 +8,11 @@ import { Pattern } from '../classes/PatternClass';
 import { PatternsContext } from '../contexts/Context';
 import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, numberToLetters, splitIntoBlocks } from '../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../utils/wellColors';
-import { generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations } from '../utils/designUtils';
+import { generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../utils/designUtils';
 
 import '../../../css/PlateComponent.css'
 import '../../../css/DesignWizard.css'
+import ApplyTooltip from './ApplyTooltip';
 
 interface DesignWizardProps {
   patternPlate: Plate;
@@ -26,6 +27,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
   const [startPoint, setStartPoint] = useState<Point>({ x: 0, y: 0 });
   const [endPoint, setEndPoint] = useState<Point>({ x: 0, y: 0 });
   const [selectedWells, setSelectedWells] = useState<string[]>([]);
+  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
   const wellsRef = useRef<(HTMLDivElement)[]>([]);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     if (wellsRef.current.length != newPlateSize) {
       wellsRef.current = [];
     }
-  },[patternPlate.columns,patternPlate.rows])
+  }, [patternPlate.columns, patternPlate.rows])
 
   useEffect(() => {
     let maxConcentration: number | null = null;
@@ -64,6 +66,15 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
   useEffect(() => {
     setSelectedPattern(patterns.find(p => p.id == selectedPatternId))
   }, [selectedPatternId, patterns])
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const msgArr = sensibleWellSelection(selectedWells, patterns.find(p => p.id == selectedPatternId)!, patternPlate)
+    setApplyPopup({ event: e, msgArr: msgArr })
+  };
+
+  const handleMouseLeave = () => {
+    setApplyPopup({ event: null, msgArr: [] });
+  };
 
   const handlePageDblClick = (e: any) => {
     if (e.detail > 1) {
@@ -215,7 +226,6 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
       if (pattern) {
         const newPattern = pattern.clone()
         const newPlate = patternPlate.clone();
-        
         if (pattern.type === 'Unused') {
           for (const wellId of selectedWells) {
             const well = newPlate.getWell(wellId);
@@ -225,30 +235,23 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
             }
           }
           const mergedBlock = mergeUnusedPatternLocations(newPattern, newPlate, selectedWells);
-          
           for (const location of newPattern.locations) {
             newPlate.removePattern(location, newPattern.name);
           }
           newPattern.locations = [];
-          
           newPlate.applyPattern(mergedBlock, newPattern);
           newPattern.locations = [mergedBlock];
-          
           setPatternPlate(newPlate);
           setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
           return;
         }
-        
         const patternSize = newPattern.replicates * newPattern.concentrations.length;
-  
         //shouldn't be possible, but as a fallback
         if (selectedWells.length % patternSize !== 0) {
           alert(`The number of selected wells must be a multiple of ${patternSize} (replicates * concentrations).`);
           return;
         }
-  
         const blocks = splitIntoBlocks(selectedWells, newPattern, patternPlate);
-  
         for (const block of blocks) {
           if (isBlockOverlapping(patternPlate, block, newPattern.locations)) {
             alert(`The selected wells overlap with existing patterns. Please choose different wells.`);
@@ -257,54 +260,54 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
           newPlate.applyPattern(block, newPattern);
           newPattern.locations.push(block);
         }
-  
         setPatternPlate(newPlate);
         setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
       }
     }
   };
 
-  const clearPatternFromWells = () => {
-    if (selectedWells.length > 0) {
+  const clearPatternFromWells = (clearAll?: boolean) => {
+    if (clearAll || selectedWells.length > 0) {
+      const wellSelection = clearAll ? patternPlate.getWellIds() : [...selectedWells]
       const newPlate = patternPlate.clone();
-      const wellsToCheck = patternPlate.getSomeWells(selectedWells.join(';'))
+      const wellsToCheck = patternPlate.getSomeWells(wellSelection.join(';'))
       const patternNamesToCheck = [...new Set(wellsToCheck.flatMap(w => w.getPatterns()))]
-      
+
       const unusedPatterns = patterns.filter(p => p.type === 'Unused')
       const unusedPatternNames = unusedPatterns.map(p => p.name);
-      
+
       const hasUnusedWells = wellsToCheck.some(w => w.getIsUnused());
-      
+
       const newPatternArr: Pattern[] = []
-      
+
       for (const unusedPattern of unusedPatterns) {
         if (hasUnusedWells) {
           const newPattern = unusedPattern.clone();
           const allUnusedWells = getPatternWells(newPattern, newPlate);
-          const remainingUnusedWells = allUnusedWells.filter(wellId => !selectedWells.includes(wellId));
-          
+          const remainingUnusedWells = allUnusedWells.filter(wellId => !wellSelection.includes(wellId));
+
           for (const location of newPattern.locations) {
             newPlate.removePattern(location, newPattern.name);
           }
           newPattern.locations = [];
-          
+
           if (remainingUnusedWells.length > 0) {
             const mergedBlock = formatWellBlock(remainingUnusedWells);
             newPlate.applyPattern(mergedBlock, newPattern);
             newPattern.locations = [mergedBlock];
           }
-          
+
           newPatternArr.push(newPattern);
         }
       }
-      
+
       for (const patternName of patternNamesToCheck) {
         if (!unusedPatternNames.includes(patternName)) {
           const pattern = patterns.find(p => p.name == patternName)
           if (pattern) {
             const newPattern = pattern.clone()
             for (const loc of pattern.locations) {
-              if (isBlockOverlapping(newPlate, selectedWells.join(';'), [loc])) {
+              if (isBlockOverlapping(newPlate, wellSelection.join(';'), [loc])) {
                 newPlate.removePattern(loc, patternName)
                 newPattern.locations = newPattern.locations.filter(l => !(l == loc))
               }
@@ -326,7 +329,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     height: Math.abs(startPoint.y - endPoint.y),
   };
 
-  
+
   const blockBorderMap = useMemo(() => {
     return calculateBlockBorders(patternPlate);
   }, [patterns, patternPlate.rows, patternPlate.columns]);
@@ -353,38 +356,57 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
               selectionStyle={dragging ? selectionStyle : undefined}
               ref={wellsRef}
             />
-            <div className='pattern-buttons'>
-              <Button
-                onClick={applyPatternToWells}
-                disabled={
-                  !selectedPattern || 
-                  selectedWells.length === 0 || 
-                  (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWells.length / (selectedPattern.replicates * selectedPattern.concentrations.length)))
-                }
-                className="mt-3"
-              >
-                Apply Pattern to Selected Wells
-              </Button>
-              <Button
-                onClick={clearPatternFromWells}
-                disabled={selectedWells.length === 0}
-                className="mt-3"
-                variant='danger'
-              >
-                Clear Patterns from Selected Wells
-              </Button>
-              <Button
-                onClick={() => generateExcelTemplate(patterns)}
-                className="mt-3"
-                disabled={patterns.length < 1}
-                variant='success'
-              >
-                Generate Excel Template
-              </Button>
-            </div>
+            <Container>
+              <Row>
+                <Col>
+                  <Button
+                    onClick={applyPatternToWells}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    disabled={
+                      !selectedPattern ||
+                      selectedWells.length === 0 ||
+                      (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWells.length / (selectedPattern.replicates * selectedPattern.concentrations.length)))
+                    }
+                    className="mt-3 h-75"
+                  >
+                    Apply Pattern to Selected Wells
+                  </Button>
+                </Col>
+                <Col >
+                  <Button
+                    onClick={() => clearPatternFromWells() }
+                    disabled={selectedWells.length === 0}
+                    className="mt-3 h-75"
+                    variant='danger'
+                  >
+                    Clear Patterns from Selected Wells
+                  </Button>
+                </Col>
+                <Col >
+                  <Button
+                    onClick={() => clearPatternFromWells(true) }
+                    className="mt-3 h-75"
+                    variant='danger'
+                  >
+                    Clear Patterns from All Wells
+                  </Button>
+                </Col>
+                <Col >
+                  <Button
+                    onClick={() => generateExcelTemplate(patterns)}
+                    className="mt-3 h-75"
+                    disabled={patterns.length < 1}
+                    variant='success'
+                  >
+                    Generate Excel Template
+                  </Button>
+                </Col>
+              </Row>
+            </Container>
           </Col>
-
         </Row>
+        {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup}/> : ''}
       </div>
     </Container>
   );

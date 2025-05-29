@@ -1,7 +1,7 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
 import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
-import { formatWellBlock } from './plateUtils';
+import { formatWellBlock, getCoordsFromWellId, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
   // Create a new workbook
@@ -60,7 +60,7 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   writeFile(wb, fileName);
 }
 
-export const getPatternWells = (pattern: Pattern, plate: Plate): string[] => {
+export function getPatternWells(pattern: Pattern, plate: Plate): string[] {
   const allWells: string[] = [];
   for (const location of pattern.locations) {
     const wells = plate.getSomeWells(location);
@@ -69,13 +69,13 @@ export const getPatternWells = (pattern: Pattern, plate: Plate): string[] => {
   return allWells;
 };
 
-export const mergeUnusedPatternLocations = (pattern: Pattern, plate: Plate, newWells: string[]): string => {
+export function mergeUnusedPatternLocations(pattern: Pattern, plate: Plate, newWells: string[]): string {
   const existingWells = getPatternWells(pattern, plate);
   const allWells = [...new Set([...existingWells, ...newWells])];
   return formatWellBlock(allWells);
 };
 
-export const isBlockOverlapping = (plate: Plate, newBlock: string, existingLocations: string[]): boolean => {
+export function isBlockOverlapping(plate: Plate, newBlock: string, existingLocations: string[]): boolean {
   const newWells = plate.getSomeWells(newBlock)
   for (const location of existingLocations) {
     const existingWells = plate.getSomeWells(location)
@@ -87,3 +87,40 @@ export const isBlockOverlapping = (plate: Plate, newBlock: string, existingLocat
   }
   return false;
 };
+
+export function sensibleWellSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
+  const msgArr: string[] = [];
+  if (pattern.type === 'Unused') return msgArr
+  const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
+  
+  for (const block of blocks) {
+    const rects = block.split(";");
+    if (rects.length > 1) {
+      msgArr.push(`Non-contiguous rectangles in block ${block}`);
+      continue
+    }
+    for (const rect of rects) {
+      const startWell = rect.split(':')[0];
+      const endWell = rect.split(':')[1];
+      if (!startWell || !endWell) {
+        continue
+      }
+      const startCoords = getCoordsFromWellId(startWell);
+      const endCoords = getCoordsFromWellId(endWell);
+      const rectWidth = endCoords.col - startCoords.col + 1;
+      const rectHeight = endCoords.row - startCoords.row + 1;
+      
+      switch (pattern.direction[0]) {
+        case "LR": case "RL": {
+          if (rectWidth != pattern.concentrations.length) {msgArr.push(`${rect} width doesn't match concentration number!`)}
+          break
+        }
+        case "TB": case "BT": {
+          if (rectHeight != pattern.concentrations.length) {msgArr.push(`${rect} height doesn't match concentration number!`)}
+          break
+        }
+      }
+    }
+  }
+  return msgArr
+}
