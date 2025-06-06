@@ -12,7 +12,7 @@ function arraysMatch(arr1: any[], arr2: any[]) {
   return true
 }
 
-function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
+export function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
   let headers = []
   for (let key in ws) {
     let regEx = new RegExp("^\(\\w\)\(1\){1}$")

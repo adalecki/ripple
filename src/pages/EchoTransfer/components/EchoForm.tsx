@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import { Form, Button, Alert } from 'react-bootstrap';
 import { usePreferences } from '../../../hooks/usePreferences';
 import { PREFERENCES_CONFIG } from '../../../config/preferencesConfig';
 import { FormField } from '../../../components/FormField';
 import '../../../css/EchoForm.css';
+import { read, utils, WorkBook } from 'xlsx';
+import { fileHeaders } from '../utils/validationUtils';
 
 interface EchoFormProps {
   onSubmit: (formData: FormData) => Promise<void>;
@@ -21,6 +23,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { preferences } = usePreferences();
   const [formValues, setFormValues] = useState<{ [key: string]: number | boolean | string }>({});
+  const [showAlert, setShowAlert] = useState<string[]>([])
 
   const fields = PREFERENCES_CONFIG.find(p => p.id === 'calculator-defaults')?.settings || [];
 
@@ -45,9 +48,25 @@ const EchoForm: React.FC<EchoFormProps> = ({
     setValidated(true);
   };
 
-  const handleFileChange = (files: FileList | null) => {
+  const handleFileChange = async (files: FileList | null) => {
     if (files && files.length === 1) {
       setFile(files[0]);
+      const ab = await files[0].arrayBuffer()
+      let wb = read(ab, { type: 'array' }) as WorkBook;
+      const fieldNames = fields.map(f => f.name)
+      const changedFields: string[] = []
+      if (wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting','Value'])) {
+        const assayNumbers: {'Setting': string, 'Value': number}[] = utils.sheet_to_json(wb.Sheets['Assay'])
+        for (const line of assayNumbers) {
+          if (fieldNames.includes(line.Setting) && !isNaN(line.Value)) {
+            handleFieldChange(line.Setting,line.Value)
+            changedFields.push(line.Setting)
+          }
+        }
+      }
+      if (changedFields.length > 0) {
+        setShowAlert(changedFields)
+      }
     } else {
       setFile(null);
     }
@@ -77,6 +96,8 @@ const EchoForm: React.FC<EchoFormProps> = ({
   };
 
   return (
+    <>
+    <Alert variant='warning' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>alert?</Alert>
     <Form noValidate validated={validated} onSubmit={handleSubmit}>
       <FormField
         id="inputFile"
@@ -110,6 +131,8 @@ const EchoForm: React.FC<EchoFormProps> = ({
         <Button variant="outline-danger" onClick={handleClearForm}>Clear Plates</Button>
       </div>
     </Form>
+    
+    </>
   );
 };
 

@@ -11,23 +11,23 @@ export interface Solvent {
 
 export class Well {
   id: string;
-  private contents: WellContent[];
-  private solvents: Solvent[];
-  private totalVolume: number;
-  private isUnused: boolean; // NEW: Track if well is marked as unused
+  contents: WellContent[];
+  solvents: Solvent[];
+  totalVolume: number;
+  isUnused: boolean;
 
   constructor(config: {
     id: string;
     contents?: WellContent[];
     solvents?: Solvent[];
     totalVolume?: number;
-    isUnused?: boolean; // NEW
+    isUnused?: boolean;
   }) {
     this.id = config.id;
     this.contents = config.contents || [];
     this.solvents = config.solvents || [];
     this.totalVolume = config.totalVolume || 0;
-    this.isUnused = config.isUnused || false; // NEW
+    this.isUnused = config.isUnused || false;
   }
 
   markAsUnused(): void {
@@ -49,7 +49,6 @@ export class Well {
       console.warn(`Attempting to add content to unused well ${this.id}`);
       return;
     }
-    // ... rest of existing implementation
     const newTotalVolume = this.totalVolume + volumeToAdd;
     const solventVolume = volumeToAdd * solventInfo.fraction;
     // Step 1: Update existing contents

@@ -106,10 +106,6 @@ const EchoCalc: React.FC = () => {
       compounds = Array.from(new Set(compounds))
       setCompoundColorMap(generateCompoundColors(compounds))
       const sortedTransferMap = customSort(structuredClone(calc.transferSteps), calc)
-      let sortedTransferList2: TransferStep[] = []
-      for (const [_, steps] of sortedTransferMap) {
-        sortedTransferList2 = sortedTransferList2.concat(steps)
-      }
       setTransferMap(sortedTransferMap)
       console.log(calc, echoPreCalc)
     }

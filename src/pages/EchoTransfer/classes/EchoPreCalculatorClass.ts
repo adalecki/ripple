@@ -1,4 +1,4 @@
-import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations } from '../utils/echoUtils';
+import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations, buildSrcCompoundInventory } from '../utils/echoUtils';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { Plate, PlateSize } from './PlateClass';
 import { DilutionPattern } from './PatternClass';
@@ -110,7 +110,7 @@ export class EchoPreCalculator {
       }
     }
     try {
-      this.srcCompoundInventory = this.buildSrcCompoundInventory()
+      this.srcCompoundInventory = buildSrcCompoundInventory(this.inputData,this.srcPltSize)
       this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Passed")
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -177,41 +177,6 @@ export class EchoPreCalculator {
         else { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Failed", [msg]) }
       }
     }
-  }
-
-  buildSrcCompoundInventory(): CompoundInventory {
-    const srcCompoundInventory: CompoundInventory = new Map();
-    const testPlate = new Plate({ plateSize: this.srcPltSize })
-
-    for (const compound of this.inputData.Compounds) {
-      const compoundId = compound['Compound ID'];
-      const patternNames = compound['Pattern'].split(';').map(g => g.trim());
-
-      if (!srcCompoundInventory.has(compoundId)) {
-        srcCompoundInventory.set(compoundId, new Map());
-      }
-
-      const compoundPatterns = srcCompoundInventory.get(compoundId)!;
-
-      for (const patternName of patternNames) {
-        if (!compoundPatterns.has(patternName)) {
-          compoundPatterns.set(patternName, { locations: [] });
-        }
-
-        const compoundGroup = compoundPatterns.get(patternName)!;
-
-        const wells = testPlate.getSomeWells(compound['Well ID'])
-        for (const well of wells) {
-          compoundGroup.locations.push({
-            barcode: compound['Source Barcode'],
-            wellId: well.id,
-            volume: compound['Volume (µL)'] * 1000, //convert uL to nL
-            concentration: compound['Concentration (µM)']
-          });
-        }
-      }
-    }
-    return srcCompoundInventory;
   }
 
   calculateDestinationPlates(): number {
