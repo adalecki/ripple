@@ -1,7 +1,7 @@
 import { Plate } from './PlateClass';
 import { Well } from './WellClass';
 import { formatWellBlock, mapWellsToConcentrations } from '../utils/plateUtils';
-import { compoundIdsWithPattern, getCombinationsOfSizeR, InputDataType } from '../utils/echoUtils';
+import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
 import { CompoundGroup, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { DilutionPattern } from './PatternClass';
@@ -57,7 +57,6 @@ export class EchoCalculator {
   checkpointTracker: CheckpointTracker;
 
   constructor(
-    //inputData: InputDataType,
     echoPreCalc: EchoPreCalculator,
     checkpointTracker: CheckpointTracker,
   ) {
@@ -73,7 +72,7 @@ export class EchoCalculator {
     this.patternLocationCache = new Map();
     this.checkpointTracker = checkpointTracker;
 
-    this.sourcePlates = this.prepareSrcPlates()
+    this.sourcePlates = prepareSrcPlates(this.echoPreCalc.srcCompoundInventory,this.echoPreCalc.srcPltSize,this.echoPreCalc.dilutionPatterns)
     this.intermediatePlates = this.prepareIntPlates();
     this.destinationPlates = this.prepareDestPlates()
     this.fillIntPlates()
@@ -85,47 +84,6 @@ export class EchoCalculator {
       this.findPlateMaxConcentration(plate)
     }
 
-  }
-
-  //prepares and fills contents on source plates
-  prepareSrcPlates(): Plate[] {
-    const srcPlates: Plate[] = [];
-    for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {
-      const patternNames: string[] = []
-      patternMap.forEach((_, patternName) => patternNames.push(patternName))
-      const patternNameCombined = patternNames.join(';')
-      for (const [_, compoundGroup] of patternMap) {
-        for (const location of compoundGroup.locations) {
-          const srcBarcode = location.barcode;
-          let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
-          if (!srcPlate) {
-            srcPlate = new Plate({ barcode: srcBarcode, plateSize: this.echoPreCalc.srcPltSize, plateRole: 'source' });
-            srcPlates.push(srcPlate);
-          }
-          const well = srcPlate.getWell(location.wellId);
-          // only support a single content per source plate for now as they're made from user input, not dynamically
-          // only support DMSO as solvent, though could eventually move to 
-          if (well && well.getContents().length === 0) {
-            const pattern = this.echoPreCalc.dilutionPatterns.get(patternNameCombined) // only works if solvent pattern name is solo without another name included
-            if (pattern && pattern.type == 'Solvent') {
-              well.addSolvent({ name: pattern.patternName, volume: location.volume })
-            }
-            else {
-              well.addContent(
-                {
-                  compoundId: compoundId,
-                  concentration: location.concentration,
-                  patternName: patternNameCombined
-                },
-                location.volume,
-                { name: 'DMSO', fraction: 1 }
-              );
-            }
-          }
-        }
-      }
-    }
-    return srcPlates;
   }
 
   //prepares necessary number of intermediate plates 
@@ -295,7 +253,7 @@ export class EchoCalculator {
           }
           this.intermediateWellCache.get(compoundId)!.set(intConc, cacheArr);
 
-          this.executeAndRecordTransfer(transferStep, transferInfo);
+          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
         }
       }
     }
@@ -381,7 +339,7 @@ export class EchoCalculator {
     if (this.echoPreCalc.destinationPlatesCount > barcodes.length) {
       const extraNumNeeded = this.echoPreCalc.destinationPlatesCount - barcodes.length
       for (let i = 1; i <= extraNumNeeded; i++) {
-        const barcode = `DestPlate_${i}`
+        const barcode = `DestPlate_${i.toString().padStart(this.echoPreCalc.destinationPlatesCount.toString().length, '0')}` //padding for sorting of transfer list
         barcodes.push(barcode)
       }
     }
@@ -506,7 +464,7 @@ export class EchoCalculator {
                 transferType: 'solvent',
                 solventName: 'DMSO'
               }
-              this.executeAndRecordTransfer(transferStep, transferInfo)
+              executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
             }
           }
         }
@@ -546,7 +504,7 @@ export class EchoCalculator {
                       compoundName: compoundId,
                       patternName: dilutionPattern.patternName,
                     }
-                    this.executeAndRecordTransfer(transferStep, transferInfo)
+                    executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
                     break
                   }
                 }
@@ -575,7 +533,7 @@ export class EchoCalculator {
                         compoundName: compoundId,
                         patternName: dilutionPattern.patternName,
                       }
-                      this.executeAndRecordTransfer(transferStep, transferInfo)
+                      executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
                       break
                     }
                   }
@@ -745,39 +703,6 @@ export class EchoCalculator {
     }
 
     plate.metadata.globalMaxConcentration = maxConcentration;
-  }
-
-  executeAndRecordTransfer(transferStep: TransferStep, transferInfo: TransferInfo) {
-    const srcPlate = [...this.sourcePlates, ...this.intermediatePlates].find(plate => plate.barcode == transferStep.sourceBarcode);
-    const destPlate = [...this.intermediatePlates, ...this.destinationPlates].find(plate => plate.barcode == transferStep.destinationBarcode);
-
-    if (srcPlate && destPlate) {
-      const srcWell = srcPlate.getWell(transferStep.sourceWellId);
-      const destWell = destPlate.getWell(transferStep.destinationWellId);
-
-      if (srcWell && destWell) {
-        if (transferInfo.transferType === 'compound' && transferInfo.patternName) {
-          const srcContents = srcWell.getContents().find(content => content.compoundId === transferInfo.compoundName);
-          if (srcContents) {
-            destWell.addContent(
-              {
-                compoundId: srcContents.compoundId,
-                concentration: srcContents.concentration,
-                patternName: transferInfo.patternName
-              },
-              transferStep.volume,
-              { name: 'DMSO', fraction: 1 }
-            );
-            srcWell.removeVolume(transferStep.volume);
-          }
-        } else if (transferInfo.transferType === 'solvent' && transferInfo.solventName) {
-          destWell.addSolvent({ name: transferInfo.solventName, volume: transferStep.volume });
-          srcWell.removeVolume(transferStep.volume);
-        }
-
-        this.transferSteps.push(transferStep);
-      }
-    }
   }
 
   getTransferSteps(): TransferStep[] {

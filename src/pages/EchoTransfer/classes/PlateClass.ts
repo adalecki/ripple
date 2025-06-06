@@ -3,7 +3,6 @@ import { Pattern } from "./PatternClass";
 import { Well } from "./WellClass";
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
 export type PlateSize = '12' | '24' | '48' | '96' | '384' | '1536';
-export type PlateType = 'LDV' | 'PP' | 'other'
 
 export class Plate {
   id: number;
@@ -21,7 +20,6 @@ export class Plate {
     metadata?: any;
     plateSize?: PlateSize;
     plateRole?: PlateRole;
-    plateType?: PlateType;
   }) {
     this.id = config.id || Date.now();
     this.barcode = config.barcode || '';
@@ -107,7 +105,13 @@ export class Plate {
 
 
   getWell(wellId: string): Well | null {
-    return this.wells[wellId] || null;
+    let paddedWellId = wellId
+    const splitWell = wellId.match(/([A-Z]+)(\d+)/)
+    
+    if (splitWell && splitWell[2].length === 1) {
+      paddedWellId = `${splitWell[1]}${splitWell[2].toString().padStart(2, '0')}`
+    }
+    return this.wells[paddedWellId] || null;
   }
 
   getWells(): { [key: string]: Well } {
