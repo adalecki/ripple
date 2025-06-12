@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Col, Row } from 'react-bootstrap';
+import { Col, Container, Row } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -27,7 +27,7 @@ const EchoCalc: React.FC = () => {
   const [echoPreCalc, setEchoPreCalc] = useState<EchoPreCalculator | null>(null);
   const [checkpointTracker, setCheckpointTracker] = useState(new CheckpointTracker());
   const [compoundColorMap, setCompoundColorMap] = useState<Map<string, HslStringType>>(new Map());
-  const [transferMap, setTransferMap] = useState<Map<number,TransferStep[]>>(new Map())
+  const [transferMap, setTransferMap] = useState<Map<number, TransferStep[]>>(new Map())
   const { preferences } = usePreferences()
 
   const handleClose = () => setShowModal(false);
@@ -56,7 +56,7 @@ const EchoCalc: React.FC = () => {
     formValues['Use Intermediate Plates'] = formData.get('Use Intermediate Plates') === 'on';
     formValues['DMSO Normalization'] = formData.get('DMSO Normalization') === 'on';
 
-    const ab = await formValues.inputFile.arrayBuffer()
+    const ab = await formValues.excelFile.arrayBuffer()
 
     const fileCheckpointName = "File Validation";
     const mutableCheckpointTracker = checkpointTracker.clone();
@@ -121,7 +121,7 @@ const EchoCalc: React.FC = () => {
   }
 
   return (
-    <div>
+    <Container>
       <CheckpointDisplayModal
         showModal={showModal}
         checkpointTracker={checkpointTracker}
@@ -132,16 +132,24 @@ const EchoCalc: React.FC = () => {
         setEchoPreCalc={setEchoPreCalc}
         setCheckpointTracker={setCheckpointTracker}
       />
+      <Row className="mb-3">
+        <Col md={12}>
+          <h4>Transfer Calculator</h4>
+          <p>Upload formatted Excel template to calculate transfers</p>
+        </Col>
+      </Row>
       <Row>
-        <Col md="3">
+
+        <Col md={3}>
           <EchoForm
             onSubmit={handleSubmit}
-            file={file}
-            setFile={setFile}
+            excelFile={file}
+            setExcelFile={setFile}
+            submitText='Submit form'
             handleClear={handleClear}
           />
         </Col>
-        <Col md="7">
+        <Col md={9}>
           {(plate && compoundColorMap) ?
             <PlateView
               plate={plate}
@@ -152,7 +160,7 @@ const EchoCalc: React.FC = () => {
           {transferMap.size > 0 && echoPreCalc && <TransferListDownload transferMap={transferMap} splitOutputCSVs={preferences.splitOutputCSVs as boolean} />}
         </Col>
       </Row>
-    </div>
+    </Container>
   );
 };
 
