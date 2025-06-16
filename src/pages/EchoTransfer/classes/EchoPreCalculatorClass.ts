@@ -111,7 +111,27 @@ export class EchoPreCalculator {
     }
     try {
       this.srcCompoundInventory = buildSrcCompoundInventory(this.inputData,this.srcPltSize)
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Passed")
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Pending")
+      const missingPatterns: string[] = []
+      for (const [patternName, pattern] of this.dilutionPatterns) {
+        if (pattern.type !== 'Solvent' && pattern.type !== 'Unused') {
+          let hasCompounds = false
+          for (const [_, compoundPatterns] of this.srcCompoundInventory) {
+            if (compoundPatterns.has(patternName)) {
+              hasCompounds = true
+              break
+            }
+          }
+          if (!hasCompounds) {
+            missingPatterns.push(patternName)
+          }
+        }
+      }
+      if (missingPatterns.length > 0) {
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Warning",missingPatterns.map(p => `Pattern '${p}' has no compounds associated with it`))
+      }
+      else { this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Passed") }
+      
     } catch (err: unknown) {
       if (err instanceof Error) {
         this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Failed", [err.message])

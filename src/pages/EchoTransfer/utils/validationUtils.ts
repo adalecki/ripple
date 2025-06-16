@@ -87,19 +87,19 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
 
 function stringConversion(inputData: InputDataType) {
   for (let lineIdx in inputData.Layout) {
-    inputData.Layout[lineIdx]['Pattern'] = inputData.Layout[lineIdx]['Pattern'].toString()
+    inputData.Layout[lineIdx]['Pattern'] = (inputData.Layout[lineIdx]['Pattern']?.toString() || '');
   }
   for (let lineIdx in inputData.Patterns) {
-    inputData.Patterns[lineIdx]['Pattern'] = inputData.Patterns[lineIdx]['Pattern'].toString()
+    inputData.Patterns[lineIdx]['Pattern'] = (inputData.Patterns[lineIdx]['Pattern']?.toString() || '');
   }
   for (let lineIdx in inputData.Compounds) {
-    inputData.Compounds[lineIdx]['Compound ID'] = inputData.Compounds[lineIdx]['Compound ID'].toString()
-    inputData.Compounds[lineIdx]['Pattern'] = inputData.Compounds[lineIdx]['Pattern'].toString()
-    inputData.Compounds[lineIdx]['Source Barcode'] = inputData.Compounds[lineIdx]['Source Barcode'].toString()
+    inputData.Compounds[lineIdx]['Compound ID'] = (inputData.Compounds[lineIdx]['Compound ID']?.toString() || '');
+    inputData.Compounds[lineIdx]['Pattern'] = (inputData.Compounds[lineIdx]['Pattern']?.toString() || '');
+    inputData.Compounds[lineIdx]['Source Barcode'] = (inputData.Compounds[lineIdx]['Source Barcode']?.toString() || '');
   }
   for (let lineIdx in inputData.Barcodes) {
-    if (inputData.Barcodes[lineIdx]['Destination Plate Barcodes']) {inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes'].toString()}
-    if (inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']) {inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'].toString()}
+    if (inputData.Barcodes[lineIdx]['Destination Plate Barcodes']) {(inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes']?.toString() || '');}
+    if (inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']) {(inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']?.toString() || '');}
   }
   return inputData
 }

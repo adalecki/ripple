@@ -60,10 +60,10 @@ const EchoForm: React.FC<EchoFormProps> = ({
     if (files && files.length === 1) {
       setExcelFile(files[0]);
       const ab = await files[0].arrayBuffer()
-      let wb = read(ab, { type: 'array' }) as WorkBook;
+      const wb = read(ab, { type: 'array' }) as WorkBook;
       const fieldNames = fields.map(f => f.name)
       const changedFields: string[] = []
-      if (wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
+      if (wb && wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
         const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay'])
         for (const line of assayNumbers) {
           if (fieldNames.includes(line.Setting) && !isNaN(line.Value) && formValues[line.Setting] != line.Value) {
@@ -154,7 +154,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
           <Button variant="outline-danger" onClick={handleClearForm}>Clear Plates</Button>
         </div>
         <br />
-        <Alert variant='warning' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>The following values were imported from the file: <ul>{showAlert.map(alert => <li>{alert}</li>)}</ul></Alert>
+        <Alert variant='warning' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>The following values were imported from the file: <ul>{showAlert.map((alert, idx)=> <li key={idx}>{alert}</li>)}</ul></Alert>
 
       </Form>
 
