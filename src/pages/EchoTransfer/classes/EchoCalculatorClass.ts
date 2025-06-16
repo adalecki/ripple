@@ -429,7 +429,10 @@ export class EchoCalculator {
         for (let i = 0; i < ctrlTransfers; i++) {
           const ctrlIdx = i % controlPatternInfo.memberCompounds.length
           const compoundId = controlPatternInfo.memberCompounds[ctrlIdx]
-          const compoundGroup = this.echoPreCalc.srcCompoundInventory.get(compoundId)!.get(patternName)!
+          const srcCompound = this.echoPreCalc.srcCompoundInventory.get(compoundId)
+          if (!srcCompound) continue
+          const compoundGroup = srcCompound.get(patternName)
+          if (!compoundGroup) continue
           const destLocation = this.findNextAvailableBlock(this.destinationPlates, this.inputData.Layout, patternName)
           this.transferCompound(this.destinationPlates, destLocation, compoundId, dilutionPattern, compoundGroup)
         }

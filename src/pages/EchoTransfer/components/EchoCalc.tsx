@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -121,7 +121,7 @@ const EchoCalc: React.FC = () => {
   }
 
   return (
-    <Container>
+    <>
       <CheckpointDisplayModal
         showModal={showModal}
         checkpointTracker={checkpointTracker}
@@ -160,7 +160,7 @@ const EchoCalc: React.FC = () => {
           {transferMap.size > 0 && echoPreCalc && <TransferListDownload transferMap={transferMap} splitOutputCSVs={preferences.splitOutputCSVs as boolean} />}
         </Col>
       </Row>
-    </Container>
+    </>
   );
 };
 

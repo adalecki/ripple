@@ -407,7 +407,6 @@ describe('mapWellsToConcentrations', () => {
     const concentrations = [3,2,1];
     const direction = 'LR';
     const expectation = [['A01','B02'],['C01','A02'],['B01','C02']];
-    console.log(mapWellsToConcentrations(plate,wellBlock,concentrations,direction))
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation)
   })
 });
