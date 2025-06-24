@@ -79,6 +79,12 @@ const EchoInstructions: React.FC = () => {
                      <li><b>Destination Plate Barcodes:</b> Available barcodes for destination plates.</li>
                    </ul>
                  </li>
+                 <li><strong>Assay:</strong> Encode assay parameters to preserve experimental metadata, and automatically update the input form upon upload.
+                   <ul>
+                    <li><b>Setting:</b> The form value name ("DMSO Tolerance", "Well Volume (µL)", etc)</li>
+                    <li><b>Value:</b> The numerical value for the form. In the case of binary settings (e.g., "Use Intermediate Plates"), this is a 1 (true) or 0 (false).</li>
+                   </ul>
+                 </li>
                </ul>
              </Card.Body>
            </Card>
