@@ -1,6 +1,6 @@
 import { EchoPreCalculator } from '../EchoPreCalculatorClass';
 import { CheckpointTracker } from '../CheckpointTrackerClass';
-import { InputDataType } from '../../utils/echoUtils';
+import { buildSrcCompoundInventory, InputDataType } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
 
 // Minimal mock for PreferencesState
@@ -127,7 +127,7 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
 
       // Manually build srcCompoundInventory and dilutionPatterns as calculateNeeds() is complex to fully mock/run
       // For these tests, we primarily care that checkSourceVolumes uses the dead volumes correctly.
-      preCalc.srcCompoundInventory = preCalc.buildSrcCompoundInventory();
+      preCalc.srcCompoundInventory = buildSrcCompoundInventory(mockInput,preCalc.srcPltSize)
       
       // Ensure dilutionPatterns are created for patterns present in the compounds
       preCalc.dilutionPatterns = new Map();
@@ -262,7 +262,7 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
       // Available: 6000 - 2500 = 3500 nL.
       // Assuming totalVolumes will require 3000 nL for C1 TestPattern @ 10uM.
       preCalc.totalVolumes = new Map([['C1', new Map([['TestPattern', new Map([[10, 3000]])]])]]);
-      preCalc.srcCompoundInventory = preCalc.buildSrcCompoundInventory(); // Ensure inventory is built
+      preCalc.srcCompoundInventory = buildSrcCompoundInventory(mockInput,preCalc.srcPltSize); // Ensure inventory is built
       // Ensure mock dilutionPatterns are set up before checkSourceVolumes is called or calculateNeeds is mocked/run
       if (!preCalc.dilutionPatterns.has('TestPattern') && preCalc.srcCompoundInventory.has('C1') && preCalc.srcCompoundInventory.get('C1')!.has('TestPattern')) {
         preCalc.dilutionPatterns.set('TestPattern', {

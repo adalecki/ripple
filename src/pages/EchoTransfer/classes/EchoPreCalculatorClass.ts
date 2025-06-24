@@ -1,4 +1,4 @@
-import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations } from '../utils/echoUtils';
+import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations, buildSrcCompoundInventory } from '../utils/echoUtils';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { Plate, PlateSize } from './PlateClass';
 import { DilutionPattern } from './PatternClass';
@@ -110,8 +110,28 @@ export class EchoPreCalculator {
       }
     }
     try {
-      this.srcCompoundInventory = this.buildSrcCompoundInventory()
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Passed")
+      this.srcCompoundInventory = buildSrcCompoundInventory(this.inputData,this.srcPltSize)
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Pending")
+      const missingPatterns: string[] = []
+      for (const [patternName, pattern] of this.dilutionPatterns) {
+        if (pattern.type !== 'Solvent' && pattern.type !== 'Unused') {
+          let hasCompounds = false
+          for (const [_, compoundPatterns] of this.srcCompoundInventory) {
+            if (compoundPatterns.has(patternName)) {
+              hasCompounds = true
+              break
+            }
+          }
+          if (!hasCompounds) {
+            missingPatterns.push(patternName)
+          }
+        }
+      }
+      if (missingPatterns.length > 0) {
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Warning",missingPatterns.map(p => `Pattern '${p}' has no compounds associated with it`))
+      }
+      else { this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Passed") }
+      
     } catch (err: unknown) {
       if (err instanceof Error) {
         this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Failed", [err.message])
@@ -177,41 +197,6 @@ export class EchoPreCalculator {
         else { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Failed", [msg]) }
       }
     }
-  }
-
-  buildSrcCompoundInventory(): CompoundInventory {
-    const srcCompoundInventory: CompoundInventory = new Map();
-    const testPlate = new Plate({ plateSize: this.srcPltSize })
-
-    for (const compound of this.inputData.Compounds) {
-      const compoundId = compound['Compound ID'];
-      const patternNames = compound['Pattern'].split(';').map(g => g.trim());
-
-      if (!srcCompoundInventory.has(compoundId)) {
-        srcCompoundInventory.set(compoundId, new Map());
-      }
-
-      const compoundPatterns = srcCompoundInventory.get(compoundId)!;
-
-      for (const patternName of patternNames) {
-        if (!compoundPatterns.has(patternName)) {
-          compoundPatterns.set(patternName, { locations: [] });
-        }
-
-        const compoundGroup = compoundPatterns.get(patternName)!;
-
-        const wells = testPlate.getSomeWells(compound['Well ID'])
-        for (const well of wells) {
-          compoundGroup.locations.push({
-            barcode: compound['Source Barcode'],
-            wellId: well.id,
-            volume: compound['Volume (µL)'] * 1000, //convert uL to nL
-            concentration: compound['Concentration (µM)']
-          });
-        }
-      }
-    }
-    return srcCompoundInventory;
   }
 
   calculateDestinationPlates(): number {
