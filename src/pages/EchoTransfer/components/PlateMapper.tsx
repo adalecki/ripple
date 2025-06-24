@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Row, Col, Alert } from 'react-bootstrap';
+import { Row, Col, Alert, Container } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 import { Plate, PlateSize } from '../classes/PlateClass';
 import { HslStringType } from '../classes/PatternClass';
@@ -234,7 +234,7 @@ const PlateMapper: React.FC = () => {
   }
 
   return (
-    <>
+    <Container fluid>
       <Row className="mb-3">
         <Col md={12}>
           <h4>Plate Mapper</h4>
@@ -254,7 +254,7 @@ const PlateMapper: React.FC = () => {
             handleClear={handleClear}
           />
         </Col>
-        <Col md={9}>
+        <Col md={8}>
               {mappedPlates.length > 0 && plate && (
                 <PlateView
                   plate={plate}
@@ -276,7 +276,7 @@ const PlateMapper: React.FC = () => {
           </Col>
         </Row>
       )}
-    </>
+    </Container>
   );
 };
 

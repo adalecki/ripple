@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Col, Row } from 'react-bootstrap';
+import { Col, Container, Row } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -121,7 +121,7 @@ const EchoCalc: React.FC = () => {
   }
 
   return (
-    <>
+    <Container fluid>
       <CheckpointDisplayModal
         showModal={showModal}
         checkpointTracker={checkpointTracker}
@@ -139,7 +139,6 @@ const EchoCalc: React.FC = () => {
         </Col>
       </Row>
       <Row>
-
         <Col md={3}>
           <EchoForm
             onSubmit={handleSubmit}
@@ -149,7 +148,7 @@ const EchoCalc: React.FC = () => {
             handleClear={handleClear}
           />
         </Col>
-        <Col md={9}>
+        <Col md={8}>
           {(plate && compoundColorMap) ?
             <PlateView
               plate={plate}
@@ -160,7 +159,7 @@ const EchoCalc: React.FC = () => {
           {transferMap.size > 0 && echoPreCalc && <TransferListDownload transferMap={transferMap} splitOutputCSVs={preferences.splitOutputCSVs as boolean} />}
         </Col>
       </Row>
-    </>
+    </Container>
   );
 };
 

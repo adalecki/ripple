@@ -62,6 +62,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
       const ab = await files[0].arrayBuffer()
       const wb = read(ab, { type: 'array' }) as WorkBook;
       const fieldNames = fields.map(f => f.name)
+      console.log(fieldNames)
       const changedFields: string[] = []
       if (wb && wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
         const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay'])
