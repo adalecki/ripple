@@ -510,6 +510,7 @@ export function executeAndRecordTransfer(transferStep: TransferStep, transferInf
     const destWell = destPlate.getWell(transferStep.destinationWellId);
 
     if (srcWell && destWell) {
+      if (srcWell.getTotalVolume() < transferStep.volume) return false
       if (transferInfo.transferType === 'compound') {
         const wellContents = srcWell.getContents() //for cases when there are multiple contents in one source well
         if (wellContents.length > 0) {
