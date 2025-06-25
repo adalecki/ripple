@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Col, Row, Tabs, Tab } from 'react-bootstrap';
-import { PlatesContext, PatternsContext } from './contexts/Context.ts';
+import { PlatesContext, PatternsContext, MappedPlatesContext } from './contexts/Context.ts';
 import { Plate, PlateSize } from './classes/PlateClass.ts';
 import { Pattern } from './classes/PatternClass.ts';
 import Sidebar from './components/Sidebar.tsx';
@@ -11,6 +11,7 @@ import About from './components/About.tsx';
 import { usePreferences } from '../../hooks/usePreferences';
 
 import '../../css/Sidebar.css'
+import PlateMapper from './components/PlateMapper.tsx';
 
 const EchoTransfer: React.FC = () => {
   const { preferences } = usePreferences()
@@ -20,6 +21,8 @@ const EchoTransfer: React.FC = () => {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [curPlateId, setCurPlateId] = useState<number | null>(null);
   const [selectedPatternId, setSelectedPatternId] = useState<number | null>(null);
+  const [mappedPlates, setMappedPlates] = useState<Plate[]>([]);
+  const [curMappedPlateId, setCurMappedPlateId] = useState<number | null>(null);
 
   useEffect(() => {
     //not doing extra type checking as even if a user somehow got an invalid plate size,
@@ -104,6 +107,24 @@ const EchoTransfer: React.FC = () => {
         />
       );
     }
+    else if (tabKey === 'mapper') {
+      return (
+        <Sidebar
+          items={mappedPlates.map(plate => ({
+            id: plate.id,
+            name: plate.barcode || `Plate ${plate.id}`,
+            type: plate.plateRole,
+            details: {
+              items: Object.values(plate.wells).filter(well => well.getContents().length > 0).length,
+            },
+          }))}
+          selectedItemId={curMappedPlateId}
+          setSelectedItemId={setCurMappedPlateId}
+          filterOptions={['source', 'intermediate1', 'intermediate2', 'destination']}
+          title="Plates"
+        />
+      );
+    }
     return (
       <Sidebar
         items={[]}
@@ -119,28 +140,33 @@ const EchoTransfer: React.FC = () => {
   return (
     <PlatesContext.Provider value={{ plates, setPlates, curPlateId, setCurPlateId }}>
       <PatternsContext.Provider value={{ patterns, setPatterns, selectedPatternId, setSelectedPatternId }}>
-        <Row>
-          <Col md="2">{renderSidebar()}</Col>
-          <Col md="10" className="d-flex flex-column">
-            <Tabs id="echo-tab-select" activeKey={tabKey} onSelect={handleSelect} className='mb-3'>
-              <Tab eventKey="instructions" title="Instructions">
-                <EchoInstructions />
-              </Tab>
-              <Tab eventKey="echo" title="Calculator">
-                <EchoCalc />
-              </Tab>
-              <Tab eventKey="design" title="Design">
-                <DesignWizard
-                  patternPlate={patternPlate}
-                  setPatternPlate={setPatternPlate}
-                />
-              </Tab>
-              <Tab eventKey="about" title="About">
-                <About />
-              </Tab>
-            </Tabs>
-          </Col>
-        </Row>
+        <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
+          <Row>
+            <Col md="2">{renderSidebar()}</Col>
+            <Col md="10" className="d-flex flex-column">
+              <Tabs id="echo-tab-select" activeKey={tabKey} onSelect={handleSelect} className='mb-3'>
+                <Tab eventKey="instructions" title="Instructions">
+                  <EchoInstructions />
+                </Tab>
+                <Tab eventKey="design" title="Design">
+                  <DesignWizard
+                    patternPlate={patternPlate}
+                    setPatternPlate={setPatternPlate}
+                  />
+                </Tab>
+                <Tab eventKey="echo" title="Calculator">
+                  <EchoCalc />
+                </Tab>
+                <Tab eventKey="mapper" title="Plate Mapper">
+                  <PlateMapper />
+                </Tab>
+                <Tab eventKey="about" title="About">
+                  <About />
+                </Tab>
+              </Tabs>
+            </Col>
+          </Row>
+        </MappedPlatesContext.Provider>
       </PatternsContext.Provider>
     </PlatesContext.Provider>
   )

@@ -1,8 +1,8 @@
-import { EchoCalculator, TransferStep } from '../classes/EchoCalculatorClass';
+import { EchoCalculator, TransferInfo, TransferStep } from '../classes/EchoCalculatorClass';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { DilutionPattern } from '../classes/PatternClass';
 import { CompoundInventory } from '../classes/EchoPreCalculatorClass';
-import { Plate } from '../classes/PlateClass';
+import { Plate, PlateSize } from '../classes/PlateClass';
 
 export type InputDataType = {
   'Layout': {
@@ -73,7 +73,7 @@ interface ConcentrationRange {
 interface ConcentrationGap {
   ranges: ConcentrationRange[];
   // If true, ranges are ordered high to low with gaps between
-  hasGaps: boolean;  
+  hasGaps: boolean;
 }
 
 interface CalculationConstraints {
@@ -122,7 +122,7 @@ export function analyzeDilutionPatterns(patternRows: any[]) {
       type: row.Type,
       concentrations,
       replicates: parseInt(row.Replicates),
-      direction: ['Solvent','Unused'].includes(row.Type) ? [] : row.Direction.split('-'),
+      direction: ['Solvent', 'Unused'].includes(row.Type) ? [] : row.Direction.split('-'),
       secondaryDirection: row.Type === 'Combination' ? row.Direction.split('-')[1] as 'LR' | 'RL' | 'TB' | 'BT' : undefined,
       fold: row.Type === 'Combination' ? parseInt(row.Direction.split('-').length) : 1
     };
@@ -188,7 +188,7 @@ export function customSort(arr: TransferStep[], echoCalc: EchoCalculator): Map<n
   const plateArr = [...echoCalc.sourcePlates, ...echoCalc.intermediatePlates, ...echoCalc.destinationPlates]
   const tsfrMap: Map<number, TransferStep[]> = new Map()
   for (let i = 0; i < 6; i++) {
-    tsfrMap.set(i+1,[])
+    tsfrMap.set(i + 1, [])
   }
   for (const step of arr) {
     const sourceRole = getRole(step.sourceBarcode, plateArr);
@@ -196,23 +196,23 @@ export function customSort(arr: TransferStep[], echoCalc: EchoCalculator): Map<n
 
     const priority = getPriority(sourceRole, destRole);
     const m = tsfrMap.get(priority)
-    if (m) {m.push(step)}
+    if (m) { m.push(step) }
 
   }
   for (const [prio, steps] of tsfrMap) {
-    const sorted = steps.sort((a,b) => {
-    if (a.sourceBarcode !== b.sourceBarcode) {
-      return a.sourceBarcode.localeCompare(b.sourceBarcode);
-    }
+    const sorted = steps.sort((a, b) => {
+      if (a.sourceBarcode !== b.sourceBarcode) {
+        return a.sourceBarcode.localeCompare(b.sourceBarcode);
+      }
 
-    return a.destinationBarcode.localeCompare(b.destinationBarcode);
+      return a.destinationBarcode.localeCompare(b.destinationBarcode);
     })
-    tsfrMap.set(prio,sorted)
+    tsfrMap.set(prio, sorted)
   }
   return tsfrMap
 }
 
-export function calculateCombinationPairs(compounds: string[]): [string,string][] {
+export function calculateCombinationPairs(compounds: string[]): [string, string][] {
   const combinations: [string, string][] = [];
   for (let i = 0; i < compounds.length - 1; i++) {
     for (let j = i + 1; j < compounds.length; j++) {
@@ -223,7 +223,7 @@ export function calculateCombinationPairs(compounds: string[]): [string,string][
 }
 
 export function compoundIdsWithPattern(srcCompoundInventory: CompoundInventory, patternName: string): string[] {
-  return Array.from(srcCompoundInventory).filter(([_,patternMap]) => patternMap.has(patternName)).map((c) => c[0])
+  return Array.from(srcCompoundInventory).filter(([_, patternMap]) => patternMap.has(patternName)).map((c) => c[0])
 }
 
 export function calculateFinalAchievableConcentration({
@@ -242,15 +242,15 @@ export function calculateFinalAchievableConcentration({
   intermediateSteps: number;   // Number of intermediate plate steps
 }): number {
   const intermediateDilutionFactor = intTransferVolume / (intTransferVolume + backfillVolume);
-  
+
   const finalDilutionFactor = finTransferVolume / (finTransferVolume + assayVolume);
-  
+
   // Calculate final concentration
   // C₀ × (T ÷ (T + B))ⁿ × (T ÷ (T + A))
-  const finalConcentration = stockConcentration * 
-    Math.pow(intermediateDilutionFactor, intermediateSteps) * 
+  const finalConcentration = stockConcentration *
+    Math.pow(intermediateDilutionFactor, intermediateSteps) *
     finalDilutionFactor;
-    
+
   return finalConcentration;
 }
 
@@ -334,10 +334,10 @@ export function analyzeAchievableRanges({
 export function mergeConcentrationRanges(ranges: ConcentrationRange[]): ConcentrationGap {
   // Sort ranges by max value descending
   ranges.sort((a, b) => b.max - a.max);
-  
+
   const mergedRanges: ConcentrationRange[] = [];
   let currentRange = ranges[0];
-  
+
   for (let i = 1; i < ranges.length; i++) {
     if (ranges[i].max <= currentRange.max && ranges[i].min >= currentRange.min) {
       // Range is completely contained in current range, skip it
@@ -354,9 +354,9 @@ export function mergeConcentrationRanges(ranges: ConcentrationRange[]): Concentr
       };
     }
   }
-  
+
   mergedRanges.push(currentRange);
-  
+
   return {
     ranges: mergedRanges,
     hasGaps: mergedRanges.length > 1
@@ -373,7 +373,7 @@ export function analyzeMultipleStockConcentrations({
   maxIntermediateLevels?: number;
 }): ConcentrationGap {
   const allRanges: ConcentrationRange[] = [];
-  
+
   for (const stockConc of stockConcentrations) {
     const result = analyzeAchievableRanges({
       stockConcentration: stockConc,
@@ -382,21 +382,21 @@ export function analyzeMultipleStockConcentrations({
     });
     allRanges.push(...result.ranges);
   }
-  
+
   return mergeConcentrationRanges(allRanges);
 }
 
 export function fact(n: number) {
   let res = 1;
   for (let i = 1; i <= n; i++) {
-      res *= i;
+    res *= i;
   }
   return res;
 }
 
 export function numberCombinations(elements: number, combinations: number) {
   if (elements < 0 || combinations < 0 || combinations > elements) return 0
-  return Math.round((fact(elements)/(fact(combinations)*fact(elements-combinations))))
+  return Math.round((fact(elements) / (fact(combinations) * fact(elements - combinations))))
 }
 
 export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
@@ -436,7 +436,7 @@ export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
     // n - startIndex is how many are left to consider
     // If currentCombination.length + (n - startIndex) < r, we can't reach r
     if (currentCombination.length + (n - startIndex) < r) {
-        return; // Prune this path
+      return; // Prune this path
     }
 
 
@@ -459,4 +459,120 @@ export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
   findCombinations(0, []);
 
   return combinations;
+}
+
+export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateSize: PlateSize, dilutionPatterns: Map<string, DilutionPattern>): Plate[] {
+  const srcPlates: Plate[] = [];
+  for (const [compoundId, patternMap] of srcCompoundInventory) {
+    const patternNames: string[] = []
+    patternMap.forEach((_, patternName) => patternNames.push(patternName))
+    const patternNameCombined = patternNames.join(';')
+    for (const [_, compoundGroup] of patternMap) {
+      for (const location of compoundGroup.locations) {
+        const srcBarcode = location.barcode;
+        let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
+        if (!srcPlate) {
+          srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source' });
+          srcPlates.push(srcPlate)
+        }
+        const well = srcPlate.getWell(location.wellId);
+        // only support a single content per source plate for now as they're made from user input, not dynamically
+        // only support DMSO as solvent, though could eventually move to 
+        if (well && well.getContents().length === 0) {
+          const pattern = dilutionPatterns.get(patternNameCombined) // only works if solvent pattern name is solo without another name included
+          if (pattern && pattern.type == 'Solvent') {
+            well.addSolvent({ name: pattern.patternName, volume: location.volume })
+          }
+          else {
+            well.addContent(
+              {
+                compoundId: compoundId,
+                concentration: location.concentration,
+                patternName: patternNameCombined
+              },
+              location.volume,
+              { name: 'DMSO', fraction: 1 }
+            );
+          }
+        }
+      }
+    }
+  }
+  return srcPlates;
+}
+
+export function executeAndRecordTransfer(transferStep: TransferStep, transferInfo: TransferInfo, sourcePlates: Plate[], intermediatePlates: Plate[], destinationPlates: Plate[]): boolean {
+  const srcPlate = [...sourcePlates, ...intermediatePlates].find(plate => plate.barcode == transferStep.sourceBarcode);
+  const destPlate = [...intermediatePlates, ...destinationPlates].find(plate => plate.barcode == transferStep.destinationBarcode);
+
+  if (srcPlate && destPlate) {
+    const srcWell = srcPlate.getWell(transferStep.sourceWellId);
+    const destWell = destPlate.getWell(transferStep.destinationWellId);
+
+    if (srcWell && destWell) {
+      if (srcWell.getTotalVolume() < transferStep.volume) return false
+      if (transferInfo.transferType === 'compound') {
+        const wellContents = srcWell.getContents() //for cases when there are multiple contents in one source well
+        if (wellContents.length > 0) {
+          for (const content of wellContents) { //perform one 'transfer' for each content, at volume/n_contents
+            const newConc = content.concentration * wellContents.length
+            const newVol = transferStep.volume / wellContents.length
+
+            destWell.addContent(
+              {
+                compoundId: content.compoundId,
+                concentration: newConc,
+                patternName: content.patternName
+              },
+              newVol,
+              { name: 'DMSO', fraction: 1 }
+            );
+            srcWell.removeVolume(newVol);
+          }
+
+        }
+      } else if (transferInfo.transferType === 'solvent' && transferInfo.solventName) {
+        destWell.addSolvent({ name: transferInfo.solventName, volume: transferStep.volume });
+        srcWell.removeVolume(transferStep.volume);
+      }
+
+      return true
+    }
+  }
+  return false
+}
+
+export function buildSrcCompoundInventory(inputData: InputDataType, plateSize: PlateSize): CompoundInventory {
+  const srcCompoundInventory: CompoundInventory = new Map();
+  const testPlate = new Plate({ plateSize: plateSize })
+
+  for (const compound of inputData.Compounds) {
+    const compoundId = compound['Compound ID'];
+    const patternNames = compound['Pattern'].split(';').map(g => g.trim());
+
+    if (!srcCompoundInventory.has(compoundId)) {
+      srcCompoundInventory.set(compoundId, new Map());
+    }
+
+    const compoundPatterns = srcCompoundInventory.get(compoundId)!;
+
+    for (const patternName of patternNames) {
+      if (!compoundPatterns.has(patternName)) {
+        compoundPatterns.set(patternName, { locations: [] });
+      }
+
+      const compoundGroup = compoundPatterns.get(patternName)!;
+
+      const wells = testPlate.getSomeWells(compound['Well ID'])
+      for (const well of wells) {
+        compoundGroup.locations.push({
+          barcode: compound['Source Barcode'],
+          wellId: well.id,
+          volume: compound['Volume (µL)'] * 1000, //convert uL to nL
+          concentration: compound['Concentration (µM)']
+        });
+      }
+    }
+  }
+  return srcCompoundInventory;
 }

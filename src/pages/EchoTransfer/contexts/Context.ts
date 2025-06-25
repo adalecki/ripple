@@ -9,7 +9,6 @@ export type PlatesContextType = {
   setCurPlateId: React.Dispatch<React.SetStateAction<number | null>>;
 };
 
-// Create the context with the correct type
 export const PlatesContext = createContext<PlatesContextType>({
   plates: [],
   setPlates: () => {},
@@ -29,4 +28,18 @@ export const PatternsContext = createContext<PatternsContextType>({
   setPatterns: () => {},
   selectedPatternId: null,
   setSelectedPatternId: () => {},
+});
+
+export type MappedPlatesContextType = {
+  mappedPlates: Plate[];
+  setMappedPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
+  curMappedPlateId: number | null;
+  setCurMappedPlateId: React.Dispatch<React.SetStateAction<number | null>>;
+};
+
+export const MappedPlatesContext = createContext<MappedPlatesContextType>({
+  mappedPlates: [],
+  setMappedPlates: () => {},
+  curMappedPlateId: null,
+  setCurMappedPlateId: () => {},
 });
