@@ -33,7 +33,12 @@ const EchoForm: React.FC<EchoFormProps> = ({
   const [formValues, setFormValues] = useState<{ [key: string]: number | boolean | string }>({});
   const [showAlert, setShowAlert] = useState<string[]>([])
 
-  const fields = PREFERENCES_CONFIG.find(p => p.id === 'calculator-defaults')?.settings || [];
+  let fields = PREFERENCES_CONFIG.find(p => p.id === 'calculator-defaults')?.settings || [];
+  if (setTransferFile) {
+    const retainedSettingsNames = ['Well Volume (µL)','Backfill (µL)']
+    fields = fields.filter(s => retainedSettingsNames.includes(s.name))
+
+  }
 
   useEffect(() => {
     const newValues: { [key: string]: number | boolean | string } = {};
@@ -62,7 +67,6 @@ const EchoForm: React.FC<EchoFormProps> = ({
       const ab = await files[0].arrayBuffer()
       const wb = read(ab, { type: 'array' }) as WorkBook;
       const fieldNames = fields.map(f => f.name)
-      console.log(fieldNames)
       const changedFields: string[] = []
       if (wb && wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
         const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay'])
