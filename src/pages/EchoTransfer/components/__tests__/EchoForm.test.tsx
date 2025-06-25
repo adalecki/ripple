@@ -80,7 +80,7 @@ describe('EchoForm', () => {
     excelFile: null,
     setExcelFile: mockSetExcelFile,
     transferFile: null,
-    setTransferFile: mockSetTransferFile,
+    setTransferFile: undefined,
     submitText: 'Test Submit',
     handleClear: mockHandleClear,
   };
@@ -94,8 +94,7 @@ describe('EchoForm', () => {
   });
 
   it('renders correctly without optional transfer file props', () => {
-    const propsWithoutTransfer = { ...defaultProps, transferFile: undefined, setTransferFile: undefined };
-    render(<EchoForm {...propsWithoutTransfer} />);
+    render(<EchoForm {...defaultProps} />);
     expect(screen.getByLabelText(/Input File \(Excel\)/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Transfer Log \(CSV\)/i)).not.toBeInTheDocument();
   });
@@ -109,7 +108,8 @@ describe('EchoForm', () => {
   });
 
   it('calls setTransferFile when Transfer Log file input changes', async () => {
-    render(<EchoForm {...defaultProps} />);
+    const propsWithTransfer = { ...defaultProps, setTransferFile: mockSetTransferFile };
+    render(<EchoForm {...propsWithTransfer} />);
     const transferInput = screen.getByLabelText(/Transfer Log \(CSV\)/i);
     const testFile = new File(['csv content'], 'test.csv', { type: 'text/csv' });
     await act(async () => { fireEvent.change(transferInput, { target: { files: [testFile] } }); })
@@ -125,6 +125,7 @@ describe('EchoForm', () => {
       {...defaultProps}
       excelFile={excelFile}
       transferFile={transferFile}
+      setTransferFile={mockSetTransferFile}
     />);
 
     const excelFileInput = screen.getByLabelText('Input File (Excel)');
@@ -163,6 +164,7 @@ describe('EchoForm', () => {
       ...defaultProps,
       excelFile: new File(['excel'], 'excel.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
       transferFile: null, 
+      setTransferFile: mockSetTransferFile
     };
     render(<EchoForm {...propsWithoutTransfer} />);
     const submitButton = screen.getByText('Test Submit');
