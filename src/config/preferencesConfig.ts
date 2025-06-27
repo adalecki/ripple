@@ -122,6 +122,12 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'DMSO Normalization',
         type: 'switch',
         defaultValue: true
+      },
+      {
+        prefId: 'evenDepletion',
+        name: 'Evenly Deplete Source Wells',
+        type: 'switch',
+        defaultValue: false
       }
     ]
   }

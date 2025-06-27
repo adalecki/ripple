@@ -88,7 +88,7 @@ export class Plate {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.columns; col++) {
         const wellId = getWellIdFromCoords(row, col);
-        wells[wellId] = new Well({ id: wellId });
+        wells[wellId] = new Well({ id: wellId, parentBarcode: this.barcode });
       }
     }
     return wells;

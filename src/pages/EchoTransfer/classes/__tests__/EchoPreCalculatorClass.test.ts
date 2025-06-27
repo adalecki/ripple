@@ -34,6 +34,7 @@ const createMockInputData = (compounds: InputDataType['Compounds']): InputDataTy
     destReplicates: 1,
     createIntConcs: true,
     dmsoNormalization: true,
+    evenDepletion: false
   },
 });
 
@@ -116,6 +117,7 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         destReplicates: 1,
         createIntConcs: false, // Simplify by not creating intermediate concs for these tests
         dmsoNormalization: false,
+        evenDepletion: false
       };
 
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
