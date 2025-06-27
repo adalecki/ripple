@@ -17,7 +17,7 @@ export interface CompoundGroup {
 
 export type CompoundInventory = Map<string, Map<string, CompoundGroup>>;
 
-interface ConcentrationObj {
+export interface ConcentrationObj {
   sourceConc: number;
   sourceType: string;
   volToTsfr: number;
@@ -477,11 +477,15 @@ export class EchoPreCalculator {
         let maxVolOfPattern = 0;
         for (const compoundId of compoundsUsingPattern) {
           const transferInfo = transferConcentrations.get(compoundId)
-          if (transferInfo) {
-            const maxDMSO = Math.max(...Array.from(transferInfo.destinationConcentrations.values()).map(info => info.volToTsfr))
-            maxVolOfPattern = Math.max(maxDMSO, maxVolOfPattern)
+          if (!transferInfo) continue
+          for (const conc of pattern.concentrations) {
+            const patternDestConc = transferInfo.destinationConcentrations.get(conc)
+            if (patternDestConc) {maxVolOfPattern = Math.max(patternDestConc.volToTsfr, maxVolOfPattern)}
           }
+            //const maxDMSO = Math.max(...Array.from(transferInfo.destinationConcentrations.values()).map(info => info.volToTsfr))
+            //maxVolOfPattern = Math.max(maxDMSO, maxVolOfPattern)
         }
+        
         if (pattern.type == 'Combination') { maxVolOfPattern = maxVolOfPattern * pattern.fold }
         const wells = testPlate.getSomeWells(layoutBlock['Well Block']);
         for (const well of wells) {

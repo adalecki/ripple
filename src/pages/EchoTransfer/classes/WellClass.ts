@@ -11,6 +11,7 @@ export interface Solvent {
 
 export class Well {
   id: string;
+  parentBarcode: string;
   contents: WellContent[];
   solvents: Solvent[];
   totalVolume: number;
@@ -18,12 +19,14 @@ export class Well {
 
   constructor(config: {
     id: string;
+    parentBarcode: string;
     contents?: WellContent[];
     solvents?: Solvent[];
     totalVolume?: number;
     isUnused?: boolean;
   }) {
     this.id = config.id;
+    this.parentBarcode = config.parentBarcode;
     this.contents = config.contents || [];
     this.solvents = config.solvents || [];
     this.totalVolume = config.totalVolume || 0;
@@ -190,6 +193,7 @@ export class Well {
   toJSON(): object {
     return {
       id: this.id,
+      parentBarcode: this.parentBarcode,
       contents: this.contents,
       solvents: this.solvents,
       totalVolume: this.totalVolume,
@@ -200,6 +204,7 @@ export class Well {
   static fromJSON(json: any): Well {
     return new Well({
       id: json.id,
+      parentBarcode: json.parentBarcode,
       contents: json.contents,
       solvents: json.solvents,
       totalVolume: json.totalVolume,
