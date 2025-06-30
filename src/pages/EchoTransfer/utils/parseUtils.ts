@@ -114,7 +114,7 @@ export function performTransfers(newPlates: { "source": Plate[], "intermediate":
       }
     }
     const success = executeAndRecordTransfer(transfer, transferInfo, newPlates['source'], newPlates['intermediate'], newPlates['destination'])
-    if (!success) failures.push(`${transfer.sourceBarcode} ${transfer.sourceWellId} - well vol (${sourceWell.getTotalVolume()}) less than reported transfer vol (${transfer.volume})`)
+    if (!success) failures.push(`${transfer.sourceBarcode} ${transfer.sourceWellId} to ${transfer.destinationBarcode} ${transfer.destinationWellId} - well (${sourceWell.getTotalVolume()}) less than tsfr (${transfer.volume})`)
   }
   for (let i = 0; i < allPlates.length; i++) {
     allPlates[i].id = i + 1;
