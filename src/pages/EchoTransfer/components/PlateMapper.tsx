@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Row, Col, Alert, Container } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 import { HslStringType } from '../classes/PatternClass';
@@ -18,7 +18,30 @@ const PlateMapper: React.FC = () => {
   const [transferFile, setTransferFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [compoundColorMap, setCompoundColorMap] = useState<Map<string, HslStringType>>(new Map());
-  const { preferences } = usePreferences()
+  const [alertMaxHeight, setAlertMaxHeight] = useState<number>(200);
+  const { preferences } = usePreferences();
+  
+  const alertContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const calculateAlertMaxHeight = () => {
+      if (!alertContainerRef.current) return;
+
+      const alertContainer = alertContainerRef.current;
+      const rect = alertContainer.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const availableHeight = viewportHeight - rect.top - 20;
+      
+      setAlertMaxHeight(Math.max(100, availableHeight));
+    };
+
+    if (errors.length > 0) {
+      setTimeout(calculateAlertMaxHeight, 0);
+    }
+
+    window.addEventListener('resize', calculateAlertMaxHeight);
+    return () => window.removeEventListener('resize', calculateAlertMaxHeight);
+  }, [errors]);
 
   const handleSubmit = async (formData: FormData) => {
     setErrors([])
@@ -86,11 +109,21 @@ const PlateMapper: React.FC = () => {
             handleClear={handleClear}
           />
           {errors.length > 0 && (
-            <Alert variant="danger">
-              {errors.map((error, idx) => (
-                <div key={idx}>{error}</div>
-              ))}
-            </Alert>
+            <div ref={alertContainerRef}>
+              <Alert 
+                variant="danger"
+                style={{
+                  maxHeight: `${alertMaxHeight}px`,
+                  overflowY: 'auto',
+                  marginBottom: 0,
+                  fontSize: '0.9rem'
+                }}
+              >
+                {errors.map((error, idx) => (
+                  <div key={idx}>{error}</div>
+                ))}
+              </Alert>
+            </div>
           )}
         </Col>
         <Col md={8}>
