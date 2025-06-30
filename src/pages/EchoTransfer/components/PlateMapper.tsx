@@ -64,8 +64,9 @@ const PlateMapper: React.FC = () => {
       setErrors(errors)
       return
     }
-    const transfers = await parseTransferLog(transferFile);
-    const { newPlates, compoundMap } = constructPlatesFromTransfers(inputData, transfers, preferences)
+    const { transfers, surveyedVolumes } = await parseTransferLog(transferFile);
+    console.log(surveyedVolumes)
+    const { newPlates, compoundMap } = constructPlatesFromTransfers(inputData, transfers, preferences, surveyedVolumes)
     const { allPlates, colorMap, failures } = performTransfers(newPlates, transfers, compoundMap)
     if (failures) setErrors(prev => [...prev, ...failures])
     setCompoundColorMap(colorMap)

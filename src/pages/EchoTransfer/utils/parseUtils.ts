@@ -6,7 +6,7 @@ import { Plate, PlateSize } from "../classes/PlateClass";
 import { buildSrcCompoundInventory, analyzeDilutionPatterns, prepareSrcPlates, InputDataType, executeAndRecordTransfer } from "./echoUtils";
 import { generateCompoundColors } from "./wellColors";
 
-export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStep[], preferences: PreferencesState): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
+export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStep[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
   const newPlates: { 'source': Plate[], 'intermediate': Plate[], 'destination': Plate[] } = {
     'source': [],
     'intermediate': [],
@@ -88,6 +88,17 @@ export function constructPlatesFromTransfers(inputData: InputDataType, transfers
     }
     newPlates['destination'].push(plate)
   }
+  if (inputData.CommonData.updateFromSurveyVolumes) {
+    for (const plate of newPlates['source']) {
+      const plateSurvey = surveyedVolumes.get(plate.barcode)
+      if (!plateSurvey) continue
+      for (const [wellId, volume] of plateSurvey) {
+        const well = plate.getWell(wellId)
+        if (!well || isNaN(volume)) continue
+        well.updateVolume(volume * 1000)
+      }
+    }
+  }
   return { newPlates, compoundMap }
 };
 
@@ -131,7 +142,8 @@ export function performTransfers(newPlates: { "source": Plate[], "intermediate":
   return { allPlates, colorMap, failures }
 }
 
-export async function parseTransferLog(file: File): Promise<TransferStep[]> {
+export async function parseTransferLog(file: File): Promise<{transfers: TransferStep[], surveyedVolumes: Map<string, Map<string, number>>}> {
+  const surveyedVolumes: Map<string, Map<string, number>> = new Map() //barcode, then wellId
   const text = await file.text();
   const lines = text.split('\n').filter(line => line.trim());
 
@@ -146,11 +158,11 @@ export async function parseTransferLog(file: File): Promise<TransferStep[]> {
   const destBarcodeIdx = headers.findIndex(h => h === 'Destination Plate Barcode');
   const destWellIdx = headers.findIndex(h => h === 'Destination Well')
   const volumeIdx = headers.findIndex(h => h === 'Actual Volume');
+  const surveyedIdx = headers.findIndex(h => h === 'Survey Fluid Volume')
 
   if ([sourceBarcodeIdx, sourceWellIdx, destBarcodeIdx, destWellIdx, volumeIdx].includes(-1)) {
     console.log([sourceBarcodeIdx, sourceWellIdx, destBarcodeIdx, destWellIdx, volumeIdx])
     throw new Error('Transfer log is missing required columns');
-
   }
 
   const transfers: TransferStep[] = [];
@@ -163,6 +175,7 @@ export async function parseTransferLog(file: File): Promise<TransferStep[]> {
 
     if (isNaN(parseFloat(cols[volumeIdx]))) continue;
 
+
     transfers.push({
       sourceBarcode: cols[sourceBarcodeIdx],
       sourceWellId: cols[sourceWellIdx],
@@ -170,7 +183,14 @@ export async function parseTransferLog(file: File): Promise<TransferStep[]> {
       destinationWellId: cols[destWellIdx],
       volume: parseFloat(cols[volumeIdx])
     });
+    let barcodeMap = surveyedVolumes.get(cols[sourceBarcodeIdx])
+    if (!barcodeMap) {
+      surveyedVolumes.set(cols[sourceBarcodeIdx], new Map())
+      barcodeMap = surveyedVolumes.get(cols[sourceBarcodeIdx])
+    }
+    if (!barcodeMap) continue //shouldn't happen
+    if (!barcodeMap.has(cols[sourceWellIdx])) {barcodeMap.set(cols[sourceWellIdx],parseFloat(cols[surveyedIdx]))}
   }
 
-  return transfers;
+  return {transfers, surveyedVolumes};
 };
