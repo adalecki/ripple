@@ -35,9 +35,11 @@ const EchoForm: React.FC<EchoFormProps> = ({
 
   let fields = PREFERENCES_CONFIG.find(p => p.id === 'calculator-defaults')?.settings || [];
   if (setTransferFile) {
-    const retainedSettingsNames = ['Well Volume (µL)','Backfill (µL)']
+    const retainedSettingsNames = ['Well Volume (µL)','Backfill (µL)','Use Source Survey Volumes']
     fields = fields.filter(s => retainedSettingsNames.includes(s.name))
-
+  }
+  else {
+    fields = fields.filter(s => s.name != 'Use Source Survey Volumes')
   }
 
   useEffect(() => {

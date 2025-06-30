@@ -56,6 +56,7 @@ export type InputDataType = {
     'createIntConcs': boolean;
     'dmsoNormalization': boolean;
     'evenDepletion': boolean;
+    'updateFromSurveyVolumes': boolean;
   }
 }
 

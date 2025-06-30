@@ -128,6 +128,12 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'Evenly Deplete Source Wells',
         type: 'switch',
         defaultValue: false
+      },
+      {
+        prefId: 'useSurveyVols',
+        name: 'Use Source Survey Volumes',
+        type: 'switch',
+        defaultValue: false
       }
     ]
   }
