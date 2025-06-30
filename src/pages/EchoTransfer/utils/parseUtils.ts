@@ -1,3 +1,4 @@
+import { WorkBook, read, utils, writeFile } from "xlsx";
 import { PreferencesState } from "../../../hooks/usePreferences";
 import { TransferInfo, TransferStep } from "../classes/EchoCalculatorClass";
 import { CompoundInventory } from "../classes/EchoPreCalculatorClass";
@@ -5,6 +6,7 @@ import { HslStringType } from "../classes/PatternClass";
 import { Plate, PlateSize } from "../classes/PlateClass";
 import { buildSrcCompoundInventory, analyzeDilutionPatterns, prepareSrcPlates, InputDataType, executeAndRecordTransfer } from "./echoUtils";
 import { generateCompoundColors } from "./wellColors";
+import { formatWellBlock } from "./plateUtils";
 
 export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStep[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
   const newPlates: { 'source': Plate[], 'intermediate': Plate[], 'destination': Plate[] } = {
@@ -142,7 +144,7 @@ export function performTransfers(newPlates: { "source": Plate[], "intermediate":
   return { allPlates, colorMap, failures }
 }
 
-export async function parseTransferLog(file: File): Promise<{transfers: TransferStep[], surveyedVolumes: Map<string, Map<string, number>>}> {
+export async function parseTransferLog(file: File): Promise<{ transfers: TransferStep[], surveyedVolumes: Map<string, Map<string, number>> }> {
   const surveyedVolumes: Map<string, Map<string, number>> = new Map() //barcode, then wellId
   const text = await file.text();
   const lines = text.split('\n').filter(line => line.trim());
@@ -189,8 +191,50 @@ export async function parseTransferLog(file: File): Promise<{transfers: Transfer
       barcodeMap = surveyedVolumes.get(cols[sourceBarcodeIdx])
     }
     if (!barcodeMap) continue //shouldn't happen
-    if (!barcodeMap.has(cols[sourceWellIdx])) {barcodeMap.set(cols[sourceWellIdx],parseFloat(cols[surveyedIdx]))}
+    if (!barcodeMap.has(cols[sourceWellIdx])) { barcodeMap.set(cols[sourceWellIdx], parseFloat(cols[surveyedIdx])) }
   }
 
-  return {transfers, surveyedVolumes};
+  return { transfers, surveyedVolumes };
 };
+
+export async function generateNewExcelTemplate(originalFile: File | null, mappedPlates: Plate[]) {
+  if (!originalFile) return
+  const newObj: InputDataType['Compounds'] = []
+  const xAb = await originalFile.arrayBuffer();
+  const xWb = read(xAb, { type: 'array' }) as WorkBook;
+  const sheetNames = xWb.SheetNames
+  if (!sheetNames.includes('Compounds')) return
+  const xWs = utils.sheet_to_json(xWb.Sheets['Compounds']) as InputDataType['Compounds']
+  for (const line of xWs) {
+    const plate = mappedPlates.find(p => p.barcode == line["Source Barcode"])
+    if (!plate) continue
+    const newWells: Map<number, string[]> = new Map() //tracking volumes within a well block
+    const wells = plate.getSomeWells(line["Well ID"])
+    for (const well of wells) {
+      const finalVol = well.getTotalVolume()
+      if (newWells.has(finalVol)) {
+        newWells.set(finalVol, [...newWells.get(finalVol)!, well.id])
+      }
+      else {
+        newWells.set(finalVol, [well.id])
+      }
+    }
+    for (const [volume, wellIds] of newWells) {
+      const wellBlock = formatWellBlock(wellIds)
+      newObj.push({ 'Source Barcode': line["Source Barcode"], 'Well ID': wellBlock, 'Concentration (µM)': line["Concentration (µM)"], 'Compound ID': line["Compound ID"], 'Volume (µL)': volume/1000, 'Pattern': line.Pattern })
+    }
+
+  }
+  const newCompoundWs = utils.json_to_sheet(newObj);
+
+  const compoundsHeaders = [
+    'Source Barcode', 'Well ID', 'Concentration (µM)', 'Compound ID', 'Volume (µL)', 'Pattern'
+  ];
+  utils.sheet_add_aoa(newCompoundWs, [compoundsHeaders], { origin: "A1" });
+
+  //utils.book_append_sheet(xWb, newCompoundWs, "NewCompounds");
+  xWb.Sheets['Compounds'] = newCompoundWs
+
+  const fileName = `testEcho_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
+  writeFile(xWb, fileName);
+}

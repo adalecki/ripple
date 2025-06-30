@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Row, Col, Alert, Container } from 'react-bootstrap';
+import { Row, Col, Alert, Container, Button } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 import { HslStringType } from '../classes/PatternClass';
 import PlateView from './PlateView';
@@ -9,7 +9,7 @@ import { echoInputValidation } from '../utils/validationUtils';
 import { usePreferences } from '../../../hooks/usePreferences';
 import { MappedPlatesContext } from '../contexts/Context';
 import { currentPlate } from '../utils/plateUtils';
-import { constructPlatesFromTransfers, parseTransferLog, performTransfers } from '../utils/parseUtils';
+import { constructPlatesFromTransfers, generateNewExcelTemplate, parseTransferLog, performTransfers } from '../utils/parseUtils';
 import EchoForm from './EchoForm';
 
 const PlateMapper: React.FC = () => {
@@ -20,7 +20,7 @@ const PlateMapper: React.FC = () => {
   const [compoundColorMap, setCompoundColorMap] = useState<Map<string, HslStringType>>(new Map());
   const [alertMaxHeight, setAlertMaxHeight] = useState<number>(200);
   const { preferences } = usePreferences();
-  
+
   const alertContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ const PlateMapper: React.FC = () => {
       const rect = alertContainer.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const availableHeight = viewportHeight - rect.top - 20;
-      
+
       setAlertMaxHeight(Math.max(100, availableHeight));
     };
 
@@ -111,7 +111,7 @@ const PlateMapper: React.FC = () => {
           />
           {errors.length > 0 && (
             <div ref={alertContainerRef}>
-              <Alert 
+              <Alert
                 variant="danger"
                 style={{
                   maxHeight: `${alertMaxHeight}px`,
@@ -127,15 +127,31 @@ const PlateMapper: React.FC = () => {
             </div>
           )}
         </Col>
-        <Col md={8}>
-          {mappedPlates.length > 0 && plate && (
+
+        {mappedPlates.length > 0 && plate && (
+          <Col md={8}>
             <PlateView
               plate={plate}
               view="plateMapper"
               colorConfig={colorConfig}
             />
-          )}
-        </Col>
+            <Row>
+              <Col >
+                <Button
+                  onClick={() => {generateNewExcelTemplate(originalFile,mappedPlates)}}
+                  className="mt-3 h-75"
+                  disabled={!originalFile}
+                  variant='success'
+                >
+                  Updated Input File (Volumes)
+                </Button>
+              </Col>
+            </Row>
+          </Col>
+        )}
+
+
+
       </Row>
     </Container >
   );
