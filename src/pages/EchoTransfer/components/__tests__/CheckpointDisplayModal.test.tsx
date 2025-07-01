@@ -29,7 +29,7 @@ const createMockInputData = (): InputDataType => ({
   Compounds: [], Patterns: [], Layout: [], Barcodes: [],
   CommonData: {
     maxDMSOFraction: 0.005, finalAssayVolume: 25000, intermediateBackfillVolume: 10000,
-    allowableError: 0.1, destReplicates: 1, createIntConcs: true, dmsoNormalization: true, evenDepletion: false
+    allowableError: 0.1, destReplicates: 1, createIntConcs: true, dmsoNormalization: true, evenDepletion: false, updateFromSurveyVolumes: false
   },
 });
 
