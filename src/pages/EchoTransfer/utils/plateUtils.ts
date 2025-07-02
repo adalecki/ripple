@@ -1,5 +1,6 @@
 import { Pattern } from "../classes/PatternClass";
 import { Plate } from "../classes/PlateClass"
+import { Well } from "../classes/WellClass";
 import { PlatesContextType } from "../contexts/Context"
 
 export function numberToLetters(num: number): string {
@@ -312,7 +313,7 @@ export function calculateBlockBorders(plate: Plate): Map<string, { top: boolean,
   return borderMap;
 }
 
-export const splitIntoBlocks = (wells: string[], pattern: Pattern, plate: Plate): string[] => {
+export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate): string[] {
   if (pattern.type === 'Unused') {
     return [formatWellBlock(wells)];
   }
@@ -351,3 +352,12 @@ export const splitIntoBlocks = (wells: string[], pattern: Pattern, plate: Plate)
   }
   return blocks;
 };
+
+export function getWellFromBarcodeAndId(barcode: string, wellId: string, plates: Plate[], curPlate?: Plate): Well | null {
+  if (curPlate && curPlate.barcode === barcode) {
+    return curPlate.getWell(wellId)
+  }
+  const plate = plates.find(p => p.barcode === barcode)
+  if (!plate) return null
+  return plate.getWell(wellId)
+}

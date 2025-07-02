@@ -17,7 +17,7 @@ export interface CompoundGroup {
 
 export type CompoundInventory = Map<string, Map<string, CompoundGroup>>;
 
-interface ConcentrationObj {
+export interface ConcentrationObj {
   sourceConc: number;
   sourceType: string;
   volToTsfr: number;
@@ -393,7 +393,7 @@ export class EchoPreCalculator {
       const transferVolume = roundToInc({ val: (this.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'both', inc: this.dropletSize })
       const transferVolumeHi = roundToInc({ val: (this.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'up', inc: this.dropletSize })
       const transferVolumeLo = roundToInc({ val: (this.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'down', inc: this.dropletSize })
-      const transferVolumeMax = roundToInc({ val: (this.finalAssayVolume * this.maxDMSOFraction) })
+      const transferVolumeMax = roundToInc({ val: (this.finalAssayVolume * this.maxDMSOFraction)/(1 - this.maxDMSOFraction) })
       for (let vol of [transferVolume, transferVolumeHi, transferVolumeLo, transferVolumeMax, dropletVolume]) { // max and droplet included as last ditch attempts
         if (this.concentrationPasses(sourceConcentration, conc, vol, dropletVolume)) {
           transferMap.set(conc, { sourceConc: sourceConcentration, sourceType: sourceType, volToTsfr: vol })
@@ -477,11 +477,15 @@ export class EchoPreCalculator {
         let maxVolOfPattern = 0;
         for (const compoundId of compoundsUsingPattern) {
           const transferInfo = transferConcentrations.get(compoundId)
-          if (transferInfo) {
-            const maxDMSO = Math.max(...Array.from(transferInfo.destinationConcentrations.values()).map(info => info.volToTsfr))
-            maxVolOfPattern = Math.max(maxDMSO, maxVolOfPattern)
+          if (!transferInfo) continue
+          for (const conc of pattern.concentrations) {
+            const patternDestConc = transferInfo.destinationConcentrations.get(conc)
+            if (patternDestConc) {maxVolOfPattern = Math.max(patternDestConc.volToTsfr, maxVolOfPattern)}
           }
+            //const maxDMSO = Math.max(...Array.from(transferInfo.destinationConcentrations.values()).map(info => info.volToTsfr))
+            //maxVolOfPattern = Math.max(maxDMSO, maxVolOfPattern)
         }
+        
         if (pattern.type == 'Combination') { maxVolOfPattern = maxVolOfPattern * pattern.fold }
         const wells = testPlate.getSomeWells(layoutBlock['Well Block']);
         for (const well of wells) {

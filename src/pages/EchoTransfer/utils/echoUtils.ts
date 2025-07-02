@@ -55,6 +55,8 @@ export type InputDataType = {
     'destReplicates': number;
     'createIntConcs': boolean;
     'dmsoNormalization': boolean;
+    'evenDepletion': boolean;
+    'updateFromSurveyVolumes': boolean;
   }
 }
 

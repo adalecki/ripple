@@ -11,6 +11,7 @@ export interface Solvent {
 
 export class Well {
   id: string;
+  parentBarcode: string;
   contents: WellContent[];
   solvents: Solvent[];
   totalVolume: number;
@@ -18,12 +19,14 @@ export class Well {
 
   constructor(config: {
     id: string;
+    parentBarcode: string;
     contents?: WellContent[];
     solvents?: Solvent[];
     totalVolume?: number;
     isUnused?: boolean;
   }) {
     this.id = config.id;
+    this.parentBarcode = config.parentBarcode;
     this.contents = config.contents || [];
     this.solvents = config.solvents || [];
     this.totalVolume = config.totalVolume || 0;
@@ -43,7 +46,6 @@ export class Well {
     this.isUnused = false;
   }
 
-  // Update existing methods to respect unused status
   addContent(newContent: WellContent, volumeToAdd: number, solventInfo: { name: string, fraction: number }): void {
     if (this.isUnused) {
       console.warn(`Attempting to add content to unused well ${this.id}`);
@@ -62,7 +64,6 @@ export class Well {
       return content;
     });
 
-    // Step 2: Add new content
     const existingContentIndex = this.contents.findIndex(c => c.compoundId === newContent.compoundId);
     if (existingContentIndex !== -1) {
       const existingContent = this.contents[existingContentIndex];
@@ -92,13 +93,22 @@ export class Well {
       this.solvents.push({ ...solvent });
     }
   }
+  
+  //crude update of overall volume, used for echo survey
+  //only for updating solvents and totalVolume, doesn't touch contents
+  updateVolume(volume: number): void {
+    const solventCorrectionFactor = volume/this.getTotalVolume()
+    for (const solvent of this.getSolvents()) {
+      solvent.volume = (solvent.volume * solventCorrectionFactor)
+    }
+    this.totalVolume = volume;
+  }
 
   addSolvent(newSolvent: Solvent): void {
     if (this.isUnused) {
       console.warn(`Attempting to add solvent to unused well ${this.id}`);
       return;
     }
-    // ... rest of existing implementation
     const newTotalVolume = this.totalVolume + newSolvent.volume;
     this.contents = this.contents.map(content => ({
       ...content,
@@ -190,6 +200,7 @@ export class Well {
   toJSON(): object {
     return {
       id: this.id,
+      parentBarcode: this.parentBarcode,
       contents: this.contents,
       solvents: this.solvents,
       totalVolume: this.totalVolume,
@@ -200,6 +211,7 @@ export class Well {
   static fromJSON(json: any): Well {
     return new Well({
       id: json.id,
+      parentBarcode: json.parentBarcode,
       contents: json.contents,
       solvents: json.solvents,
       totalVolume: json.totalVolume,

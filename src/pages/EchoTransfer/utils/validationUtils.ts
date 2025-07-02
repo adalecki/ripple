@@ -74,7 +74,9 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
           allowableError: parseFloat(formValues['Allowed Error']),
           destReplicates: parseInt(formValues['Destination Replicates']),
           createIntConcs: Boolean(formValues['Use Intermediate Plates']),
-          dmsoNormalization: Boolean(formValues['DMSO Normalization'])
+          dmsoNormalization: Boolean(formValues['DMSO Normalization']),
+          evenDepletion: Boolean(formValues['Evenly Deplete Source Wells']),
+          updateFromSurveyVolumes: Boolean(formValues['Use Source Survey Volumes'])
         }
         inputData.CommonData = CommonData
     

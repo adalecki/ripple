@@ -181,14 +181,14 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     bottom: number;
   }
 
-  const rectanglesOverlap = (rect1: Rectangle, rect2: Rectangle): boolean => {
+  function rectanglesOverlap(rect1: Rectangle, rect2: Rectangle): boolean {
     return !(rect1.right < rect2.left ||
       rect1.left > rect2.right ||
       rect1.bottom < rect2.top ||
       rect1.top > rect2.bottom);
   };
 
-  const checkWellsInSelection = (): string[] => {
+  function checkWellsInSelection(): string[] {
     const wellArr: string[] = [];
     const selectionRect: Rectangle = {
       left: Math.min(startPoint.x, endPoint.x),
