@@ -14,8 +14,8 @@ import {
   calculateBlockBorders,
   splitIntoBlocks
 } from "../plateUtils";
-import { Plate } from "../../classes/PlateClass";
-import { Pattern } from "../../classes/PatternClass";
+import { Plate } from "../../../../classes/PlateClass";
+import { Pattern } from "../../../../classes/PatternClass";
 
 describe('numberToLetters', () => {
   test('converts numbers to single letters', () => {

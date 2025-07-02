@@ -1,6 +1,6 @@
-import { Plate } from "../classes/PlateClass";
-import { Well } from "../classes/WellClass";
-import { HslStringType, Pattern } from "../classes/PatternClass";
+import { Plate } from "../../../classes/PlateClass";
+import { Well } from "../../../classes/WellClass";
+import { HslStringType, Pattern } from "../../../classes/PatternClass";
 
 export interface HslType {
   h: number;

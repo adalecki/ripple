@@ -1,6 +1,6 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
-import { Pattern } from '../classes/PatternClass';
-import { Plate } from '../classes/PlateClass';
+import { Pattern } from '../../../classes/PatternClass';
+import { Plate } from '../../../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {

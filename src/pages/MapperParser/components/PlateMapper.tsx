@@ -1,16 +1,16 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Row, Col, Alert, Container, Button } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
-import { HslStringType } from '../classes/PatternClass';
-import PlateView from './PlateView';
-import { ColorConfig } from '../utils/wellColors';
+import { HslStringType } from '../../../classes/PatternClass';
+import PlateView from '../../../components/PlateView';
+import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
 import '../../../css/PlateComponent.css';
-import { echoInputValidation } from '../utils/validationUtils';
+import { echoInputValidation } from '../../EchoTransfer/utils/validationUtils';
 import { usePreferences } from '../../../hooks/usePreferences';
-import { MappedPlatesContext } from '../contexts/Context';
-import { currentPlate } from '../utils/plateUtils';
-import { constructPlatesFromTransfers, generateNewExcelTemplate, parseTransferLog, performTransfers } from '../utils/parseUtils';
-import EchoForm from './EchoForm';
+import { MappedPlatesContext } from '../../../contexts/Context';
+import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
+import { constructPlatesFromTransfers, generateNewExcelTemplate, parseTransferLog, performTransfers } from '../../EchoTransfer/utils/parseUtils';
+import EchoForm from '../../EchoTransfer/components/EchoForm';
 
 const PlateMapper: React.FC = () => {
   const { mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext)

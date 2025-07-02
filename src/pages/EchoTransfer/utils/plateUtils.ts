@@ -1,7 +1,7 @@
-import { Pattern } from "../classes/PatternClass";
-import { Plate } from "../classes/PlateClass"
-import { Well } from "../classes/WellClass";
-import { PlatesContextType } from "../contexts/Context"
+import { Pattern } from "../../../classes/PatternClass";
+import { Plate } from "../../../classes/PlateClass"
+import { Well } from "../../../classes/WellClass";
+import { PlatesContextType } from "../../../contexts/Context";
 
 export function numberToLetters(num: number): string {
   let result = '';
