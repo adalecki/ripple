@@ -393,7 +393,7 @@ export class EchoPreCalculator {
       const transferVolume = roundToInc({ val: (this.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'both', inc: this.dropletSize })
       const transferVolumeHi = roundToInc({ val: (this.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'up', inc: this.dropletSize })
       const transferVolumeLo = roundToInc({ val: (this.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'down', inc: this.dropletSize })
-      const transferVolumeMax = roundToInc({ val: (this.finalAssayVolume * this.maxDMSOFraction) })
+      const transferVolumeMax = roundToInc({ val: (this.finalAssayVolume * this.maxDMSOFraction)/(1 - this.maxDMSOFraction) })
       for (let vol of [transferVolume, transferVolumeHi, transferVolumeLo, transferVolumeMax, dropletVolume]) { // max and droplet included as last ditch attempts
         if (this.concentrationPasses(sourceConcentration, conc, vol, dropletVolume)) {
           transferMap.set(conc, { sourceConc: sourceConcentration, sourceType: sourceType, volToTsfr: vol })
