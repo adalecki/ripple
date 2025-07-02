@@ -1,4 +1,4 @@
-import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../utils/plateUtils";
+import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../pages/EchoTransfer/utils/plateUtils";
 import { Pattern } from "./PatternClass";
 import { Well } from "./WellClass";
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
@@ -51,7 +51,6 @@ export class Plate {
     const clonedPlate = Object.create(Plate.prototype);
     Object.assign(clonedPlate, clonedData);
 
-    // Reconstruct Well instances
     for (const wellId in clonedPlate.wells) {
       if (clonedPlate.wells.hasOwnProperty(wellId)) {
         const wellData = clonedPlate.wells[wellId];
@@ -151,11 +150,9 @@ export class Plate {
       return wellIDs;
     };
 
-    // Split the input into block ranges and process each one
     const blockRanges = rawRange.split(';');
     const wellIDs: string[] = blockRanges.flatMap(blockRange => getWellsFromRange(blockRange.trim()));
 
-    // Convert well IDs to Well objects
     return wellIDs.map(wellID => {
       const well = this.wells[wellID];
       if (!well) {

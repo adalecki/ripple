@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
-import PlateView from './PlateView';
+import PlateView from '../../../components/PlateView';
 import PatternManager from './PatternManager';
-import { Plate } from '../classes/PlateClass';
-import { Pattern } from '../classes/PatternClass';
-import { PatternsContext } from '../contexts/Context';
+import { Plate } from '../../../classes/PlateClass';
+import { Pattern } from '../../../classes/PatternClass';
+import { PatternsContext } from '../../../contexts/Context';
 import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, numberToLetters, splitIntoBlocks } from '../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../utils/wellColors';
 import { generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../utils/designUtils';

@@ -2,8 +2,8 @@ import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from '../EchoPreCa
 import { CheckpointTracker } from '../CheckpointTrackerClass';
 import { buildSrcCompoundInventory, InputDataType } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
-import { PlateSize } from '../PlateClass';
-import { DilutionPattern } from '../PatternClass';
+import { PlateSize } from '../../../../classes/PlateClass';
+import { DilutionPattern } from '../../../../classes/PatternClass';
 
 // Minimal mock for PreferencesState
 const mockPreferences: PreferencesState = {

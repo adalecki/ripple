@@ -53,7 +53,6 @@ export class Well {
     }
     const newTotalVolume = this.totalVolume + volumeToAdd;
     const solventVolume = volumeToAdd * solventInfo.fraction;
-    // Step 1: Update existing contents
     this.contents = this.contents.map(content => {
       if (content.compoundId !== newContent.compoundId) {
         return {

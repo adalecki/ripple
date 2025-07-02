@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ListGroup, Form, Button } from 'react-bootstrap';
 
-import '../../../css/Sidebar.css'
+import '../css/Sidebar.css'
 
 interface SidebarItem {
   id: number;

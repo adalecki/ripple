@@ -1,5 +1,5 @@
 import { utils, WorkBook, WorkSheet } from 'xlsx'
-import { Plate, PlateSize } from '../classes/PlateClass';
+import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { InputDataType } from './echoUtils';
 import { PreferencesState } from '../../../hooks/usePreferences';
 import { getCoordsFromWellId } from './plateUtils';
