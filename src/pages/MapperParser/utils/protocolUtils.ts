@@ -11,9 +11,9 @@ export const defaultProtocols: Protocol[] = [
     parseStrategy: {
       format: 'Table',
       plateSize: 384,
-      xLabels: 'F1:DA1',
-      wellIDs: 'E2:E385',
-      rawData: 'F2:DA385',
+      xLabels: 'F01:DA01',
+      wellIDs: 'E02:E385',
+      rawData: 'F02:DA385',
       plateBarcodeLocation: 'filename'
     },
     metadataFields: [
@@ -53,11 +53,11 @@ export const defaultProtocols: Protocol[] = [
     parseStrategy: {
       format: 'Matrix',
       plateSize: 384,
-      xLabels: 'A9:X9',
+      xLabels: 'A09:X09',
       yLabels: 'A10:A25',
       rawData: 'B10:Y25',
       plateBarcodeLocation: 'cell',
-      plateBarcodeCell: 'A1'
+      plateBarcodeCell: 'A01'
     },
     metadataFields: [
       {
@@ -149,9 +149,11 @@ export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
 }
 
 export function duplicateProtocol(protocol: Protocol): Protocol {
+  const newId = Date.now();
+  
   return {
     ...JSON.parse(JSON.stringify(protocol)), // Deep clone
-    id: `protocol-${Date.now()}`,
+    id: newId,
     name: `${protocol.name} (Copy)`,
     createdAt: new Date(),
     updatedAt: new Date()
