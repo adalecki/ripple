@@ -7,7 +7,7 @@ interface SidebarItem {
   id: number;
   name: string;
   type: string;
-  details: { [key: string]: string | number };
+  details?: { [key: string]: string | number };
 }
 
 interface SidebarProps {
@@ -87,11 +87,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div className="item-details">
                 <span className="item-type">{item.type}</span>
-                {Object.entries(item.details).map(([key, value]) => (
+                { item.details ? Object.entries(item.details).map(([key, value]) => (
                   <span key={key} className="item-count">
                     {key}: {value}
                   </span>
-                ))}
+                )) : ''}
               </div>
 
             </ListGroup.Item>
