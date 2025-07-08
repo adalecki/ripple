@@ -16,6 +16,8 @@ export class Well {
   solvents: Solvent[];
   totalVolume: number;
   isUnused: boolean;
+  rawResponse: number | null;
+  normalizedResponse: number | null;
 
   constructor(config: {
     id: string;
@@ -24,6 +26,8 @@ export class Well {
     solvents?: Solvent[];
     totalVolume?: number;
     isUnused?: boolean;
+    rawResponse?: number | null;
+    normalizedResponse?: number | null;
   }) {
     this.id = config.id;
     this.parentBarcode = config.parentBarcode;
@@ -31,6 +35,8 @@ export class Well {
     this.solvents = config.solvents || [];
     this.totalVolume = config.totalVolume || 0;
     this.isUnused = config.isUnused || false;
+    this.rawResponse = config.rawResponse || null;
+    this.normalizedResponse = config.normalizedResponse || null;
   }
 
   markAsUnused(): void {
@@ -196,6 +202,19 @@ export class Well {
     return (this.getContents().length === 0 && this.getSolvents().length === 1 && solvent != undefined)
   }
 
+  applyRawResponse(response: number) {
+    this.rawResponse = response;
+  }
+
+  applyNormalizedResponse(response: number) {
+    this.normalizedResponse = response;
+  }
+
+  clearResponse() {
+    this.rawResponse = null;
+    this.normalizedResponse = null;
+  }
+
   toJSON(): object {
     return {
       id: this.id,
@@ -203,7 +222,9 @@ export class Well {
       contents: this.contents,
       solvents: this.solvents,
       totalVolume: this.totalVolume,
-      isUnused: this.isUnused
+      isUnused: this.isUnused,
+      rawResponse: this.rawResponse,
+      normalizedResponse: this.normalizedResponse
     };
   }
 
@@ -214,7 +235,9 @@ export class Well {
       contents: json.contents,
       solvents: json.solvents,
       totalVolume: json.totalVolume,
-      isUnused: json.isUnused
+      isUnused: json.isUnused,
+      rawResponse: json.rawResponse,
+      normalizedResponse: json.normalizedResponse
     });
   }
 }
