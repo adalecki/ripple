@@ -1,7 +1,7 @@
-export const PARSE_FORMATS = ['eh', 'Matrix', 'Table'] as const;
-export const CONTROL_TYPES = ['pretest', 'MaxCtrl', 'MinCtrl', 'PosCtrl', 'NegCtrl', 'Reference', 'Test'] as const;
-export const NORMALIZATION_TYPES = ['PctOfCtrl','midnorm', 'None'] as const;
-export const FIELD_TYPES = ['Free Text','midtest', 'PickList'] as const;
+export const PARSE_FORMATS = ['Matrix', 'Table'] as const;
+export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'PosCtrl', 'NegCtrl', 'Reference'] as const;
+export const NORMALIZATION_TYPES = ['PctOfCtrl', 'None'] as const;
+export const FIELD_TYPES = ['Free Text', 'PickList'] as const;
 export const PLATE_SIZES = [96, 384, 1536] as const;
 export const BARCODE_LOCATIONS = ['filename', 'cell'] as const;
 

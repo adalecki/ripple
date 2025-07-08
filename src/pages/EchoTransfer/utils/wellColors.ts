@@ -1,6 +1,7 @@
 import { Plate } from "../../../classes/PlateClass";
 import { Well } from "../../../classes/WellClass";
 import { HslStringType, Pattern } from "../../../classes/PatternClass";
+import * as d3 from 'd3'
 
 export interface HslType {
   h: number;
@@ -37,7 +38,10 @@ export function generatePatternColors(patterns: Pattern[]) {
   return colorMap;
 }
 
-export function wellColors(plate: Plate, config: ColorConfig) {
+export function wellColors(plate: Plate, config: ColorConfig): { wellId: string; colors: HslStringType[] }[] {
+  if (config.scheme === 'response') {
+    return wellColorsResponse(plate);
+  }
   const wellColors = [];
 
   for (const well of plate) {
@@ -51,9 +55,6 @@ export function wellColors(plate: Plate, config: ColorConfig) {
         break;
       case 'pattern':
         colors = getPatternColor(well, config);
-        break;
-      case 'response':
-        //color = getResponseColor(well, config.responseRange);
         break;
     }
 
@@ -105,28 +106,6 @@ function getPatternColor(well: Well, config: ColorConfig): HslStringType[] {
   return colors
 }
 
-export function wellColorsOld(plate: Plate, colorMap: Map<string, string>, maxConcentration: number): { wellId: string; colors: string[]; }[] {
-  const wellColors = [];
-  const regex = /(\d+\.?\d*)%?/g;
-
-  for (const well of plate) {
-    if (well) {
-      const contents = well.getContents().filter(content => content.compoundId)
-      const colors = contents.map(content => {
-        const baseColor = colorMap.get(content.compoundId!) || '#cccccc';
-        let nums = baseColor.match(regex)
-        let lightness = wellLightness(well, content.concentration!, maxConcentration)
-        return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` : '#ffffff')
-      });
-      wellColors.push({
-        wellId: well.id,
-        colors: colors
-      });
-    }
-  }
-  return wellColors;
-}
-
 function wellLightness(well: Well, concentration: number, maxValue: number) {
   let start = 40
   let end = 95
@@ -152,18 +131,7 @@ function buildHues(count: number): number[] {
 
   return hues;
 }
-//@ts-ignore
-function buildHuesOld(count: number): number[] {
-  let stepSize = 251 //arbitrary, seems to generate a nice spectrum
-  //let stepSize = 70 + (360 / count)
-  let hues = []
-  for (let i = 0; i < count; i++) {
 
-    let hue = (stepSize * i) % 360
-    hues.push(hue)
-  }
-  return hues
-}
 //@ts-ignore
 function parseHSL(color: `hsl(${number},${number}%,${number}%)`): { h: number, s: number, l: number } | null {
   const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
@@ -178,4 +146,38 @@ function parseHSL(color: `hsl(${number},${number}%,${number}%)`): { h: number, s
 
 export function hslToString(hsl: HslType): `hsl(${number},${number}%,${number}%)` {
   return `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`
+}
+
+export function wellColorsResponse(plate: Plate): { wellId: string; colors: HslStringType[] }[] {
+  const wellColorArr: { wellId: string; colors: HslStringType[] }[] = [];
+  
+  // Get min/max from plate metadata
+  const minResponse = plate.metadata.globalMinResponse || 0;
+  const maxResponse = plate.metadata.globalMaxResponse || 100;
+  
+  // Create color scale
+  const colorScale = d3
+    .scaleSequential()
+    .interpolator(d3.interpolateViridis)
+    .domain([minResponse, maxResponse]);
+  
+  for (const well of plate) {
+    if (!well) continue;
+    
+    let colors: HslStringType[] = [];
+    
+    if (well.getIsUnused()) {
+      colors = ['hsl(0,0%,95%)' as HslStringType]; // Gray for unused wells
+    } else if (well.rawResponse !== null) {
+      const color = colorScale(well.rawResponse);
+      //colors = [d3.color(color)?.formatHex()];
+      colors = [d3.color(color)?.formatHsl() as HslStringType]
+    } else {
+      colors = ['hsl(0,0%,100%)']; // White for wells without data
+    }
+    
+    wellColorArr.push({ wellId: well.id, colors });
+  }
+  
+  return wellColorArr;
 }

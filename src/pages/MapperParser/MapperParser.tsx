@@ -6,6 +6,7 @@ import { Protocol } from '../../types/mapperTypes';
 import Sidebar from '../../components/Sidebar.tsx';
 import PlateMapper from './components/PlateMapper.tsx';
 import ProtocolManager from './components/ProtocolManager.tsx';
+import DataParser from './components/DataParser.tsx';
 import { loadProtocols, saveProtocols } from './utils/protocolUtils';
 
 import '../../css/Sidebar.css'
@@ -81,9 +82,7 @@ const MapperParser: React.FC = () => {
                 <ProtocolManager />
               </Tab>
               <Tab eventKey="parser" title="Data Parser">
-                <div className="text-center py-5">
-                  <p className="text-muted">Data Parser - Coming Soon</p>
-                </div>
+                <DataParser />
               </Tab>
               <Tab eventKey="results" title="Results">
                 <div className="text-center py-5">
