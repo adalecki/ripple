@@ -10,11 +10,12 @@ export const defaultProtocols: Protocol[] = [
     description: 'Standard table-based data format',
     parseStrategy: {
       format: 'Table',
-      plateSize: 384,
+      plateSize: '384',
       xLabels: 'F01:DA01',
       wellIDs: 'E02:E385',
       rawData: 'F02:DA385',
-      plateBarcodeLocation: 'filename'
+      plateBarcodeLocation: 'filename',
+      autoParse: false
     },
     metadataFields: [
       {
@@ -52,12 +53,13 @@ export const defaultProtocols: Protocol[] = [
     description: 'Matrix format for biochemical assays',
     parseStrategy: {
       format: 'Matrix',
-      plateSize: 384,
+      plateSize: '384',
       xLabels: 'A09:X09',
       yLabels: 'A10:A25',
       rawData: 'B10:Y25',
       plateBarcodeLocation: 'cell',
-      plateBarcodeCell: 'A01'
+      plateBarcodeCell: 'A01',
+      autoParse: true
     },
     metadataFields: [
       {
@@ -133,10 +135,11 @@ export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
     name: `New Protocol ${existingProtocols.length + 1}`,
     description: '',
     parseStrategy: {
-      format: 'Table',
-      plateSize: 384,
+      format: 'Matrix',
+      plateSize: '384',
       rawData: '',
-      plateBarcodeLocation: 'filename'
+      plateBarcodeLocation: 'filename',
+      autoParse: false
     },
     metadataFields: [],
     dataProcessing: {
