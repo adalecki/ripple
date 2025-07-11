@@ -7,6 +7,7 @@ import Sidebar from '../../components/Sidebar.tsx';
 import PlateMapper from './components/PlateMapper.tsx';
 import ProtocolManager from './components/ProtocolManager.tsx';
 import DataParser from './components/DataParser.tsx';
+import ResultsTab from './components/Results.tsx'; // Import the new ResultsTab component
 import { loadProtocols, saveProtocols } from './utils/protocolUtils';
 
 import '../../css/Sidebar.css'
@@ -31,8 +32,10 @@ const MapperParser: React.FC = () => {
 
   const renderSidebar = () => {
     if (tabKey === 'mapper' || tabKey === 'parser' || tabKey === 'results') {
+      const initialFilter = tabKey === 'mapper' ? 'all' : 'destination';
       return (
         <Sidebar
+          key={tabKey}
           items={mappedPlates.map(plate => ({
             id: plate.id,
             name: plate.barcode || `Plate ${plate.id}`,
@@ -45,6 +48,7 @@ const MapperParser: React.FC = () => {
           setSelectedItemId={setCurMappedPlateId}
           filterOptions={['source', 'intermediate1', 'intermediate2', 'destination']}
           title="Plates"
+          initialFilter={initialFilter}
         />
       );
     }
@@ -85,9 +89,7 @@ const MapperParser: React.FC = () => {
                 <DataParser />
               </Tab>
               <Tab eventKey="results" title="Results">
-                <div className="text-center py-5">
-                  <p className="text-muted">Results Display - Coming Soon</p>
-                </div>
+                <ResultsTab />
               </Tab>
             </Tabs>
           </Col>

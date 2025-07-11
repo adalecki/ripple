@@ -17,6 +17,7 @@ interface SidebarProps {
   filterOptions: string[];
   title: string;
   onDeleteItem?: (id: number) => void;
+  initialFilter?: string
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -25,9 +26,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   setSelectedItemId,
   filterOptions,
   title,
-  onDeleteItem
+  onDeleteItem,
+  initialFilter
 }) => {
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>(initialFilter || 'all');
 
   const filteredItems = items.filter(item =>
     filter === 'all' ? true : item.type === filter

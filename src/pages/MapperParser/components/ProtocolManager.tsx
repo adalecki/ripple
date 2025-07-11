@@ -1,26 +1,30 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Button, Form, Card, Row, Col, Accordion } from 'react-bootstrap';
 import { Plus, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
-import { 
-  Protocol, 
-  MetadataField, 
-  ControlDefinition, 
-  ParseFormat, 
-  NormalizationType, 
-  ControlType, 
+import {
+  Protocol,
+  MetadataField,
+  ControlDefinition,
+  ParseFormat,
+  NormalizationType,
+  ControlType,
   FieldType,
   PARSE_FORMATS,
   PLATE_SIZES,
   BARCODE_LOCATIONS,
   FIELD_TYPES,
   NORMALIZATION_TYPES,
-  CONTROL_TYPES
+  CONTROL_TYPES,
+  ParseStrategy
 } from '../../../types/mapperTypes';
 import { ProtocolsContext } from '../../../contexts/Context';
 import { createNewProtocol, duplicateProtocol, updateProtocol, deleteProtocol, getCurrentProtocol } from '../utils/protocolUtils';
 import ExportProtocolsModal from './ExportProtocolsModal';
 import ImportProtocolsModal from './ImportProtocolsModal';
+import InteractiveDataMapper from './InteractiveDataMapper';
 import '../../../css/ProtocolManager.css';
+import { PlateSize } from '../../../classes/PlateClass';
+import InfoTooltip from '../../../components/InfoTooltip';
 
 const ProtocolManager: React.FC = () => {
   const { protocols, setProtocols, selectedProtocolId, setSelectedProtocolId } = useContext(ProtocolsContext);
@@ -29,6 +33,7 @@ const ProtocolManager: React.FC = () => {
   const [editingProtocol, setEditingProtocol] = useState<Protocol | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showInteractiveMapper, setShowInteractiveMapper] = useState(false);
 
   useEffect(() => {
     const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
@@ -155,6 +160,28 @@ const ProtocolManager: React.FC = () => {
     }
   };
 
+  const handleOpenInteractiveMapper = () => {
+    if (!editingProtocol) return;
+    setShowInteractiveMapper(true);
+  };
+
+  const handleConfirmInteractiveMap = (newStrategyRanges: Partial<ParseStrategy>) => {
+    if (editingProtocol) {
+      setEditingProtocol(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          parseStrategy: {
+            ...prev.parseStrategy,
+            ...newStrategyRanges // Merge the new ranges
+          }
+        };
+      });
+    }
+    setShowInteractiveMapper(false);
+  };
+
+
   return (
     <div className="protocol-manager">
       <Row>
@@ -204,7 +231,7 @@ const ProtocolManager: React.FC = () => {
                           />
                         </Form.Group>
                       </Col>
-                      <Col md={4}>
+                      <Col md={3}>
                         <Form.Group className="mb-3">
                           <Form.Label>Format</Form.Label>
                           <Form.Select
@@ -224,7 +251,8 @@ const ProtocolManager: React.FC = () => {
                           </Form.Select>
                         </Form.Group>
                       </Col>
-                      <Col md={4}>
+
+                      <Col md={3}>
                         <Form.Group className="mb-3">
                           <Form.Label>Plate Size</Form.Label>
                           <Form.Select
@@ -233,7 +261,7 @@ const ProtocolManager: React.FC = () => {
                               ...editingProtocol,
                               parseStrategy: {
                                 ...editingProtocol.parseStrategy,
-                                plateSize: parseInt(e.target.value) as 96 | 384 | 1536
+                                plateSize: e.target.value as PlateSize
                               }
                             })}
                             disabled={!isEditing}
@@ -242,6 +270,23 @@ const ProtocolManager: React.FC = () => {
                               <option key={size} value={size}>{size}</option>
                             ))}
                           </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col md={2}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Auto-Parse?</Form.Label><span style={{float: 'right'}}><InfoTooltip text='Attempts to find the most likely matrix present in a file, biasing toward full plates and proportion of numeric cells.'/></span>
+                          <Form.Switch
+                            checked={editingProtocol.parseStrategy.autoParse}
+                            onChange={(e) => setEditingProtocol({
+                              ...editingProtocol,
+                              parseStrategy: {
+                                ...editingProtocol.parseStrategy,
+                                autoParse: e.target.checked
+                              }
+                            })}
+                            disabled={!isEditing}
+                            id="autoParseSwitch"
+                          />
                         </Form.Group>
                       </Col>
                     </Row>
@@ -256,6 +301,18 @@ const ProtocolManager: React.FC = () => {
                         disabled={!isEditing}
                       />
                     </Form.Group>
+
+                    {isEditing && editingProtocol.parseStrategy.format == 'Matrix' && (
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        className="mb-3"
+                        onClick={handleOpenInteractiveMapper}
+                      >
+                        Define Data Layout Interactively
+                      </Button>
+                    )}
+
                     <Row>
                       <Col md={6}>
                         <Form.Group className="mb-3">
@@ -300,81 +357,84 @@ const ProtocolManager: React.FC = () => {
                         </Col>
                       )}
                     </Row>
+                    {!editingProtocol.parseStrategy.autoParse ? (
+                      <>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Raw Data Range</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="e.g., B10:Y25"
+                            value={editingProtocol.parseStrategy.rawData}
+                            onChange={(e) => setEditingProtocol({
+                              ...editingProtocol,
+                              parseStrategy: {
+                                ...editingProtocol.parseStrategy,
+                                rawData: e.target.value
+                              }
+                            })}
+                            disabled={!isEditing}
+                          />
+                        </Form.Group>
 
-                    <Form.Group className="mb-3">
-                      <Form.Label>Raw Data Range</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="e.g., B10:Y25"
-                        value={editingProtocol.parseStrategy.rawData}
-                        onChange={(e) => setEditingProtocol({
-                          ...editingProtocol,
-                          parseStrategy: {
-                            ...editingProtocol.parseStrategy,
-                            rawData: e.target.value
-                          }
-                        })}
-                        disabled={!isEditing}
-                      />
-                    </Form.Group>
-
-                    {editingProtocol.parseStrategy.format === 'Matrix' ? (
-                      <Row>
-                        <Col md={6}>
+                        {editingProtocol.parseStrategy.format === 'Matrix' ? (
+                          <Row>
+                            <Col md={6}>
+                              <Form.Group className="mb-3">
+                                <Form.Label>X Labels (Columns)</Form.Label><span style={{float: 'right'}}><InfoTooltip text='Only necessary if reading a partial plate'/></span>
+                                <Form.Control
+                                  type="text"
+                                  placeholder="e.g., A09:X09"
+                                  value={editingProtocol.parseStrategy.xLabels || ''}
+                                  onChange={(e) => setEditingProtocol({
+                                    ...editingProtocol,
+                                    parseStrategy: {
+                                      ...editingProtocol.parseStrategy,
+                                      xLabels: e.target.value
+                                    }
+                                  })}
+                                  disabled={!isEditing}
+                                />
+                              </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                              <Form.Group className="mb-3">
+                                <Form.Label>Y Labels (Rows)</Form.Label><span style={{float: 'right'}}><InfoTooltip text='Only necessary if reading a partial plate'/></span>
+                                <Form.Control
+                                  type="text"
+                                  placeholder="e.g., A10:A25"
+                                  value={editingProtocol.parseStrategy.yLabels || ''}
+                                  onChange={(e) => setEditingProtocol({
+                                    ...editingProtocol,
+                                    parseStrategy: {
+                                      ...editingProtocol.parseStrategy,
+                                      yLabels: e.target.value
+                                    }
+                                  })}
+                                  disabled={!isEditing}
+                                />
+                              </Form.Group>
+                            </Col>
+                          </Row>
+                        ) : (
                           <Form.Group className="mb-3">
-                            <Form.Label>X Labels (Columns)</Form.Label>
+                            <Form.Label>Well IDs Column</Form.Label>
                             <Form.Control
                               type="text"
-                              placeholder="e.g., A09:X09"
-                              value={editingProtocol.parseStrategy.xLabels || ''}
+                              placeholder="e.g., E02:E385"
+                              value={editingProtocol.parseStrategy.wellIDs || ''}
                               onChange={(e) => setEditingProtocol({
                                 ...editingProtocol,
                                 parseStrategy: {
                                   ...editingProtocol.parseStrategy,
-                                  xLabels: e.target.value
+                                  wellIDs: e.target.value
                                 }
                               })}
                               disabled={!isEditing}
                             />
                           </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>Y Labels (Rows)</Form.Label>
-                            <Form.Control
-                              type="text"
-                              placeholder="e.g., A10:A25"
-                              value={editingProtocol.parseStrategy.yLabels || ''}
-                              onChange={(e) => setEditingProtocol({
-                                ...editingProtocol,
-                                parseStrategy: {
-                                  ...editingProtocol.parseStrategy,
-                                  yLabels: e.target.value
-                                }
-                              })}
-                              disabled={!isEditing}
-                            />
-                          </Form.Group>
-                        </Col>
-                      </Row>
-                    ) : (
-                      <Form.Group className="mb-3">
-                        <Form.Label>Well IDs Column</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder="e.g., E02:E385"
-                          value={editingProtocol.parseStrategy.wellIDs || ''}
-                          onChange={(e) => setEditingProtocol({
-                            ...editingProtocol,
-                            parseStrategy: {
-                              ...editingProtocol.parseStrategy,
-                              wellIDs: e.target.value
-                            }
-                          })}
-                          disabled={!isEditing}
-                        />
-                      </Form.Group>
-                    )}
+                        )}
+                      </>
+                    ) : ''}
                   </Accordion.Body>
                 </Accordion.Item>
 
@@ -573,24 +633,24 @@ const ProtocolManager: React.FC = () => {
                   <Plus size={16} className="me-1" />
                   New Protocol
                 </Button>
-                
+
                 <hr className="my-3" />
-                
-                <Button 
-                  variant="primary" 
+
+                <Button
+                  variant="primary"
                   onClick={() => setShowExportModal(true)}
                   disabled={protocols.length === 0}
                 >
                   <Download size={16} className="me-1" />
                   Export Protocols
                 </Button>
-                
+
                 <Button variant="outline-primary" onClick={() => setShowImportModal(true)}>
                   <Upload size={16} className="me-1" />
                   Import Protocols
                 </Button>
               </div>
-              
+
               {protocols.length === 0 && (
                 <div className="text-center mt-3">
                   <small className="text-muted">
@@ -604,18 +664,27 @@ const ProtocolManager: React.FC = () => {
         </Col>
       </Row>
 
-      <ExportProtocolsModal 
+      <ExportProtocolsModal
         show={showExportModal}
         onHide={() => setShowExportModal(false)}
         protocols={protocols}
       />
 
-      <ImportProtocolsModal 
+      <ImportProtocolsModal
         show={showImportModal}
         onHide={() => setShowImportModal(false)}
         onImport={handleImportProtocols}
         existingProtocols={protocols}
       />
+
+      {editingProtocol && (
+        <InteractiveDataMapper
+          show={showInteractiveMapper}
+          onHide={() => setShowInteractiveMapper(false)}
+          currentParseStrategy={editingProtocol.parseStrategy}
+          onConfirm={handleConfirmInteractiveMap}
+        />
+      )}
     </div>
   );
 };
