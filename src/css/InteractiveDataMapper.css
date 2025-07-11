@@ -1,0 +1,70 @@
+.data-grid-container {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid #dee2e6;
+}
+
+.data-grid {
+  font-size: 0.7rem;
+  white-space: nowrap;
+  
+}
+
+.data-grid th,
+.data-grid td {
+  padding: 0.25rem;
+  text-align: left;
+  vertical-align: top;
+  cursor: pointer;
+  min-width: 20px;
+  max-width: 100px;
+  overflow-x: hidden
+}
+
+.data-grid th {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1; /* Keep headers above content */
+}
+
+.data-grid td:first-child,
+.data-grid th:first-child {
+  position: sticky;
+  left: 0;
+  background-color: #f8f9fa;
+  z-index: 2; /* Keep row numbers above headers when scrolling horizontally */
+}
+
+.data-grid td.cell-selected {
+  background-color: #cfe2ff;
+  outline: 1px solid #0d6efd;
+  outline-offset: -1px;
+}
+
+.data-grid td.range-raw-data {
+  background-color: rgba(25, 135, 84, 0.2);
+  border-left: 2px solid #198754;
+  border-right: 2px solid #198754;
+}
+
+.data-grid td.range-x-labels {
+  background-color: rgba(108, 117, 125, 0.2);
+}
+
+.data-grid td.range-y-labels {
+  background-color: rgba(108, 117, 125, 0.3);
+}
+
+.data-grid td.range-well-ids {
+  background-color: rgba(220, 53, 69, 0.2);
+}
+
+.data-grid td.range-barcode-cell {
+  background-color: rgba(13, 202, 240, 0.2);
+  outline: 1px dashed #0dcaf0;
+}
+
+.controls-toolbar {
+  background-color: #f8f9fa;
+}

@@ -1,0 +1,25 @@
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: help;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.info-tooltip {
+  position: absolute;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  pointer-events: none;
+  font-size: 0.8rem;
+  max-width: 250px;
+}

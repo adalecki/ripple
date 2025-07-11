@@ -1,3 +1,4 @@
+import { PlateSize } from "../classes/PlateClass";
 export const PARSE_FORMATS = ['Matrix', 'Table'] as const;
 export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'PosCtrl', 'NegCtrl', 'Reference'] as const;
 export const NORMALIZATION_TYPES = ['PctOfCtrl', 'None'] as const;
@@ -9,7 +10,7 @@ export type ParseFormat = typeof PARSE_FORMATS[number];
 export type ControlType = typeof CONTROL_TYPES[number];
 export type NormalizationType = typeof NORMALIZATION_TYPES[number];
 export type FieldType = typeof FIELD_TYPES[number];
-export type PlateSize = typeof PLATE_SIZES[number];
+//export type PlateSize = typeof PLATE_SIZES[number];
 export type BarcodeLocation = typeof BARCODE_LOCATIONS[number];
 
 export interface MetadataField {
@@ -32,6 +33,7 @@ export interface DataProcessing {
 
 export interface ParseStrategy {
   format: ParseFormat;
+  autoParse: boolean;
   plateSize: PlateSize;
   rawData: string;
   xLabels?: string; // For Matrix format

@@ -7,7 +7,7 @@ import { parseDataFile, applyParsedDataToPlates, ParsedData } from '../utils/par
 import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
 import PlateView from '../../../components/PlateView';
 import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
-//import '../../../css/DataParser.css';
+import '../../../css/DataParser.css';
 
 interface FileUploadStatus {
   file: File;
@@ -24,7 +24,7 @@ const DataParser: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadStatus[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [showNormalized, setShowNormalized] = useState(false);
+  //const [showNormalized, setShowNormalized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const plate = currentPlate(mappedPlates, curMappedPlateId);
@@ -220,13 +220,13 @@ const DataParser: React.FC = () => {
               >
                 <Upload size={48} className="mb-2" />
                 <p>Drag and drop files here or click to browse</p>
-                <small className="text-muted">Excel files (.xlsx, .xls)</small>
+                <small className="text-muted">(.csv, .tsv, .txt)</small>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".xlsx,.xls"
+                accept=".csv,.tsv,.txt"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
