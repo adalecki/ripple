@@ -67,7 +67,33 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
   
   let barcode = '';
   if (protocol.parseStrategy.plateBarcodeLocation === 'filename') {
-    barcode = filename.replace(/\.[^/.]+$/, '');
+    const filenameWithoutExtension = filename.replace(/\.[^/.]+$/, '');
+    console.log(protocol.parseStrategy)
+    
+    if (protocol.parseStrategy.barcodeDelimiter == null) {
+      barcode = filenameWithoutExtension;
+    } else {
+      const delimiter = protocol.parseStrategy.barcodeDelimiter;
+      const chunkIndex = protocol.parseStrategy.barcodeChunk ? protocol.parseStrategy.barcodeChunk - 1 : 0; //user inputs 1-indexed number; convert to 0 indexed number
+      
+      if (delimiter === '') {
+        barcode = filenameWithoutExtension;
+      } else {
+        const chunks = filenameWithoutExtension.split(delimiter);
+        
+        if (chunkIndex < 0 || chunkIndex >= chunks.length) {
+          errors.push(`Barcode chunk index ${chunkIndex} is out of range. Filename "${filenameWithoutExtension}" split by "${delimiter}" has ${chunks.length} chunks (0-${chunks.length - 1}).`);
+          return { errors };
+        }
+        
+        barcode = chunks[chunkIndex].trim();
+        
+        if (barcode === '') {
+          errors.push(`Barcode chunk ${chunkIndex} is empty after splitting filename "${filenameWithoutExtension}" by delimiter "${delimiter}".`);
+          return { errors };
+        }
+      }
+    }
   } else if (protocol.parseStrategy.plateBarcodeLocation === 'cell' && protocol.parseStrategy.plateBarcodeCell) {
     const barcodeCell = sheet[protocol.parseStrategy.plateBarcodeCell];
     if (barcodeCell && barcodeCell.v) {

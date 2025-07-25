@@ -73,8 +73,8 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ plotData, treatmentKey }) => 
       const tooltip = d3.select('body').append('div')
         .attr('class', 'd3-tooltip')
         .style('position', 'absolute')
+        .style('display','none')
         .style('z-index', '10')
-        .style('visibility', 'hidden')
         .style('padding', '10px')
         .style('background', 'rgba(0,0,0,0.7)')
         .style('color', '#fff')
@@ -91,15 +91,20 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ plotData, treatmentKey }) => 
         .attr('r', 5)
         .style('fill', 'steelblue')
         .on('mouseover', (_, d) => {
+          
+          const scatterDiv = d3.select('div#scatter-plot-div').node() as HTMLDivElement
+          const scatterDivRect = scatterDiv.getBoundingClientRect()
+          console.log(scatterDivRect,window)
           tooltip.html(`Well: ${d.wellId}<br/>Index: ${d.index}<br/>Response: ${d.response.toFixed(2)}`)
-            .style('visibility', 'visible');
+            .style('display','flex')
+            .style(window.innerWidth - scatterDivRect!.right > 200 ? 'translate(0%, -100%)' : 'translate(-100%, -100%)')
         })
         .on('mousemove', (event) => {
           tooltip.style('top', (event.pageY - 10) + 'px')
                  .style('left', (event.pageX + 10) + 'px');
         })
         .on('mouseout', () => {
-          tooltip.style('visibility', 'hidden');
+          tooltip.style('display', 'none');
         });
 
     }
@@ -107,14 +112,14 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ plotData, treatmentKey }) => 
     return () => {
       d3.select('.d3-tooltip').remove();
     };
-  }, [plotData, treatmentKey]); // Redraw chart if data or key changes
+  }, [plotData, treatmentKey]);
 
   if (!plotData || plotData.length === 0) {
     return <p>No data available for this treatment to display scatter plot.</p>;
   }
 
   return (
-    <div style={{ width: '100%', height: '400px' }}>
+    <div style={{ width: '100%', height: '400px' }} id='scatter-plot-div'>
       <svg ref={d3Container} width="100%" height="100%" />
     </div>
   );

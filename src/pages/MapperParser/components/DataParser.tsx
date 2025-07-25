@@ -1,9 +1,10 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Alert, Card, ListGroup, Badge } from 'react-bootstrap';
-import { Upload, FileText, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, AlertTriangle, Download } from 'lucide-react';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
 import { Protocol } from '../../../types/mapperTypes';
 import { parseDataFile, applyParsedDataToPlates, ParsedData } from '../utils/parserUtils';
+import { exportDestinationPlatesCSV, getDestinationPlates } from '../utils/exportUtils';
 import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
 import PlateView from '../../../components/PlateView';
 import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
@@ -14,6 +15,24 @@ interface FileUploadStatus {
   status: 'pending' | 'success' | 'error';
   message?: string;
   parsedData?: ParsedData[];
+}
+
+function hasResponseData(plates: any[]): boolean {
+  const destinationPlates = getDestinationPlates(plates);
+  return destinationPlates.some(plate => 
+    Object.values(plate.getWells()).some((well: any) => 
+      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+    )
+  );
+}
+
+function getPlatesWithResponseData(plates: any[]) {
+  const destinationPlates = getDestinationPlates(plates);
+  return destinationPlates.filter(plate => 
+    Object.values(plate.getWells()).some((well: any) => 
+      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+    )
+  );
 }
 
 const DataParser: React.FC = () => {
@@ -30,8 +49,11 @@ const DataParser: React.FC = () => {
   const plate = currentPlate(mappedPlates, curMappedPlateId);
 
   useEffect(() => {
-    // Set default protocol if available
-    if (protocols.length > 0 && !selectedProtocol) {
+    if (selectedProtocol) {
+      const curPro = protocols.find(p => p.id == selectedProtocol!.id)
+      if (curPro) setSelectedProtocol(curPro)
+    }
+    else if (protocols.length > 0 && !selectedProtocol) {
       setSelectedProtocol(protocols[0]);
     }
   }, [protocols]);
@@ -107,10 +129,7 @@ const DataParser: React.FC = () => {
 
   function handleApplyData() {
     if (!selectedProtocol) return;
-    
     setErrors([]);
-    
-    // Collect all parsed data
     const allParsedData: ParsedData[] = [];
     uploadedFiles.forEach(fileStatus => {
       if (fileStatus.status === 'success' && fileStatus.parsedData) {
@@ -123,7 +142,6 @@ const DataParser: React.FC = () => {
       return;
     }
     
-    // Apply to plates
     const { updatedPlates, errors: applyErrors } = applyParsedDataToPlates(
       mappedPlates,
       allParsedData,
@@ -138,6 +156,21 @@ const DataParser: React.FC = () => {
     }
   }
 
+  function handleExportCSV() {
+    if (!selectedProtocol) {
+      setErrors(['Please select a protocol before exporting']);
+      return;
+    }
+    
+    const platesWithData = getPlatesWithResponseData(mappedPlates);
+    if (platesWithData.length === 0) {
+      setErrors(['No destination plates with response data found for export']);
+      return;
+    }
+    
+    exportDestinationPlatesCSV(platesWithData, selectedProtocol);
+  }
+
   function handleClearFiles() {
     setUploadedFiles([]);
     setErrors([]);
@@ -150,7 +183,9 @@ const DataParser: React.FC = () => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   }
 
-  // Color configuration for response heatmap
+  const showExportButton = hasResponseData(mappedPlates) && selectedProtocol;
+  const platesWithDataCount = getPlatesWithResponseData(mappedPlates).length;
+
   const colorConfig: ColorConfig = {
     scheme: 'response',
     colorMap: new Map(),
@@ -159,9 +194,10 @@ const DataParser: React.FC = () => {
       : undefined
   };
 
-  const hasResponseData = plate && Object.values(plate.getWells()).some(well => 
+  const hasResponseDataForPlate = plate && Object.values(plate.getWells()).some(well => 
     well.rawResponse !== null || well.normalizedResponse !== null
   );
+
 
   return (
     <Container fluid>
@@ -284,6 +320,27 @@ const DataParser: React.FC = () => {
             </Card>
           )}
 
+          {showExportButton && (
+            <Card className="mb-3">
+              <Card.Header>Export Results</Card.Header>
+              <Card.Body>
+                <div className="mb-2">
+                  <small className="text-muted">
+                    {platesWithDataCount} destination plate{platesWithDataCount !== 1 ? 's' : ''} with response data
+                  </small>
+                </div>
+                <Button
+                  variant="success"
+                  className="w-100"
+                  onClick={handleExportCSV}
+                >
+                  <Download size={16} className="me-1" />
+                  Export to CSV
+                </Button>
+              </Card.Body>
+            </Card>
+          )}
+
           {errors.length > 0 && (
             <Alert variant="danger" dismissible onClose={() => setErrors([])}>
               <AlertTriangle size={16} className="me-1" />
@@ -300,18 +357,18 @@ const DataParser: React.FC = () => {
         <Col md={8}>
           {plate ? (
             <>
-                  <PlateView
-                    plate={plate}
-                    view="response"
-                    colorConfig={colorConfig}
-                  />
-                  {hasResponseData && colorConfig.responseRange && (
-                    <div className="mt-3 text-center">
-                      <small className="text-muted">
-                        Response Range: {colorConfig.responseRange.min.toFixed(2)} - {colorConfig.responseRange.max.toFixed(2)}
-                      </small>
-                    </div>
-                  )}
+              <PlateView
+                plate={plate}
+                view="response"
+                colorConfig={colorConfig}
+              />
+              {hasResponseDataForPlate && colorConfig.responseRange && (
+                <div className="mt-3 text-center">
+                  <small className="text-muted">
+                    Response Range: {colorConfig.responseRange.min.toFixed(2)} - {colorConfig.responseRange.max.toFixed(2)}
+                  </small>
+                </div>
+              )}
             </>
           ) : (
             <Card>

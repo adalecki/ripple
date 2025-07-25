@@ -9,8 +9,6 @@ import DesignWizard from './components/DesignWizard.tsx';
 import EchoInstructions from './components/EchoInstructions.tsx';
 import About from './components/About.tsx';
 import { usePreferences } from '../../hooks/usePreferences';
-
-import '../../css/Sidebar.css'
 import PlateMapper from '../MapperParser/components/PlateMapper.tsx';
 
 const EchoTransfer: React.FC = () => {

@@ -15,6 +15,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@observablehq/plot": "^0.6.17",
     "@types/color-convert": "^2.0.3",
     "bootstrap": "^5.3.3",
     "color-convert": "^2.0.1",
