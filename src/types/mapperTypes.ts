@@ -10,7 +10,6 @@ export type ParseFormat = typeof PARSE_FORMATS[number];
 export type ControlType = typeof CONTROL_TYPES[number];
 export type NormalizationType = typeof NORMALIZATION_TYPES[number];
 export type FieldType = typeof FIELD_TYPES[number];
-//export type PlateSize = typeof PLATE_SIZES[number];
 export type BarcodeLocation = typeof BARCODE_LOCATIONS[number];
 
 export interface MetadataField {
@@ -18,7 +17,7 @@ export interface MetadataField {
   type: FieldType;
   required: boolean;
   defaultValue?: string | number | boolean;
-  values?: string[]; // For PickList types
+  values?: string[];
 }
 
 export interface ControlDefinition {
@@ -41,6 +40,8 @@ export interface ParseStrategy {
   wellIDs?: string; // For Table format
   plateBarcodeLocation: BarcodeLocation;
   plateBarcodeCell?: string; // Required when plateBarcodeLocation is 'cell'
+  barcodeDelimiter?: string | null; // Required when plateBarcodeLocation is 'filename'
+  barcodeChunk?: number; // Required when plateBarcodeLocation is 'filename'
 }
 
 export interface Protocol {

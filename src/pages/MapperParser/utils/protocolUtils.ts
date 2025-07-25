@@ -15,6 +15,8 @@ export const defaultProtocols: Protocol[] = [
       wellIDs: 'E02:E385',
       rawData: 'F02:DA385',
       plateBarcodeLocation: 'filename',
+      barcodeDelimiter: null,
+      barcodeChunk: 0,
       autoParse: false
     },
     metadataFields: [
@@ -59,6 +61,8 @@ export const defaultProtocols: Protocol[] = [
       rawData: 'B10:Y25',
       plateBarcodeLocation: 'cell',
       plateBarcodeCell: 'A01',
+      barcodeDelimiter: null,
+      barcodeChunk: 0,
       autoParse: true
     },
     metadataFields: [

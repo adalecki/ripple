@@ -1,133 +1,356 @@
-import React, { useContext, useState, useMemo, useEffect } from 'react';
-import { Form, Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
+import React, { useContext, useMemo, useState } from 'react';
+import { Container, Row, Col, Card, Accordion, Button } from 'react-bootstrap';
 import { MappedPlatesContext } from '../../../contexts/Context';
-import { Plate } from '../../../classes/PlateClass';
-import { groupDataByTreatment, identifyAssayType, PlottingData, AssayType } from '../utils/resultsUtils'
-import ScatterPlot from './ScatterPlot';
-import DoseResponseCurve from './DoseResponseCurve';
-import { currentPlate } from '../../EchoTransfer/utils/plateUtils'; // Assuming this utility function exists and is appropriate
+import { curveFit } from '../utils/curveFit';
+import * as Plot from '@observablehq/plot';
+import { getTreatmentKey } from '../utils/resultsUtils';
+
+interface TreatmentData {
+  compoundId: string;
+  concentrations: number[];
+  responses: number[];
+  wellIds: string[];
+  plateBarcode: string;
+  isSinglePoint: boolean;
+}
+
+interface DoseResponseData extends TreatmentData {
+  curveParams?: number[];
+  ec50?: number;
+}
 
 const ResultsTab: React.FC = () => {
-  const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
-  
-  const [selectedTreatmentKey, setSelectedTreatmentKey] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { mappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext);
+  const [expandedAccordions, setExpandedAccordions] = useState<string[]>([]);
 
-  const activePlate: Plate | null = useMemo(() => {
-    return currentPlate(mappedPlates, curMappedPlateId);
+  // Filter plates based on selection
+  const activePlates = useMemo(() => {
+    if (curMappedPlateId !== null) {
+      const selectedPlate = mappedPlates.find(p => p.id === curMappedPlateId);
+      return selectedPlate ? [selectedPlate] : [];
+    }
+    return mappedPlates;
   }, [mappedPlates, curMappedPlateId]);
 
-  const treatmentDataMap: Map<string, PlottingData> | null = useMemo(() => {
-    if (!activePlate) return null;
-    setIsLoading(true);
-    try {
-      const data = groupDataByTreatment(activePlate);
-      return data;
-    } catch (error) {
-      console.error("Error grouping data by treatment:", error);
-      return null;
-    } finally {
-      // A slight delay to ensure UI updates if processing is very fast
-      setTimeout(() => setIsLoading(false), 100);
-    }
-  }, [activePlate]);
+  // Extract and process treatment data
+  const { doseResponseData, singlePointData } = useMemo(() => {
+    const treatmentMap = new Map<string, TreatmentData>();
 
-  // Reset selected treatment if plate changes or data reloads
-  useEffect(() => {
-    setSelectedTreatmentKey(undefined);
-    if (treatmentDataMap && treatmentDataMap.size > 0) {
-      // Select the first treatment by default
-      setSelectedTreatmentKey(treatmentDataMap.keys().next().value);
-    }
-  }, [treatmentDataMap]);
+    // Collect all well data grouped by compound
+    activePlates.forEach(plate => {
+      for (const well of plate) {
+        if (!well || well.getIsUnused() || well.rawResponse === null) continue;
+        const key = getTreatmentKey(well);
+        if (!treatmentMap.has(key)) {
+            treatmentMap.set(key, {
+              compoundId: key,
+              concentrations: [],
+              responses: [],
+              wellIds: [],
+              plateBarcode: plate.barcode,
+              isSinglePoint: false
+            });
+          }
+        const treatment = treatmentMap.get(key)!;
+        (well.getContents().length > 0 ? treatment.concentrations.push(well.getContents()[0].concentration) : treatment.concentrations.push(0));
+        treatment.responses.push(well.rawResponse!);
+        treatment.wellIds.push(well.id);
+      }
+    });
 
-  const currentTreatmentPlotData: PlottingData | null = useMemo(() => {
-    if (!treatmentDataMap || !selectedTreatmentKey) return null;
-    return treatmentDataMap.get(selectedTreatmentKey) || null;
-  }, [treatmentDataMap, selectedTreatmentKey]);
+    // Separate single point vs dose response data
+    const drData: DoseResponseData[] = [];
+    const spData: TreatmentData[] = [];
 
-  const currentAssayType: AssayType | null = useMemo(() => {
-    if (!currentTreatmentPlotData) return null;
-    return identifyAssayType(currentTreatmentPlotData);
-  }, [currentTreatmentPlotData]);
+    treatmentMap.forEach(treatment => {
+      const uniqueConcentrations = [...new Set(treatment.concentrations)].sort((a, b) => a - b);
+      
+      if (uniqueConcentrations.length >= 4) {
+        // Dose response: aggregate responses for each concentration
+        const concentrationResponseMap = new Map<number, number[]>();
+        
+        treatment.concentrations.forEach((conc, idx) => {
+          if (!concentrationResponseMap.has(conc)) {
+            concentrationResponseMap.set(conc, []);
+          }
+          concentrationResponseMap.get(conc)!.push(treatment.responses[idx]);
+        });
 
-  const handleTreatmentChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTreatmentKey(event.target.value);
+        // Calculate mean response for each concentration
+        const avgConcentrations: number[] = [];
+        const avgResponses: number[] = [];
+        
+        concentrationResponseMap.forEach((responses, conc) => {
+          avgConcentrations.push(conc);
+          avgResponses.push(responses.reduce((sum, r) => sum + r, 0) / responses.length);
+        });
+
+        // Fit curve and calculate EC50
+        let curveParams: number[] | undefined;
+        let ec50: number | undefined;
+        
+        try {
+          curveParams = curveFit(avgConcentrations, avgResponses);
+          if (curveParams && curveParams.length >= 4) {
+            // EC50 is parameter C from 4PL fit: (A - D) / (1 + (x/C)^B) + D
+            ec50 = curveParams[2];
+          }
+        } catch (error) {
+          console.warn(`Curve fitting failed for ${treatment.compoundId}:`, error);
+        }
+
+        drData.push({
+          ...treatment,
+          concentrations: avgConcentrations,
+          responses: avgResponses,
+          curveParams,
+          ec50,
+          isSinglePoint: false
+        });
+      } else {
+        spData.push({
+          ...treatment,
+          isSinglePoint: true
+        });
+      }
+    });
+
+    return { doseResponseData: drData, singlePointData: spData };
+  }, [activePlates]);
+
+  // Handle accordion expansion
+  const handleToggleAccordion = (compoundId: string) => {
+    setExpandedAccordions(prev => 
+      prev.includes(compoundId)
+        ? prev.filter(id => id !== compoundId)
+        : [...prev, compoundId]
+    );
   };
 
-  if (!activePlate) {
-    return <Alert variant="info">Please select a plate from the sidebar to view results.</Alert>;
+  const handleExpandAll = () => {
+    setExpandedAccordions(doseResponseData.map(d => d.compoundId));
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedAccordions([]);
+  };
+
+  const clearPlateSelection = () => {
+    setCurMappedPlateId(null);
+  };
+
+  // Create dose response plot
+  function createDoseResponsePlot(data: DoseResponseData): HTMLElement {
+    const plotData = data.concentrations.map((conc, idx) => ({
+      concentration: conc,
+      response: data.responses[idx],
+      type: 'observed'
+    }));
+
+    // Add fitted curve points if available
+    if (data.curveParams) {
+      const [A, B, C, D] = data.curveParams;
+      const logMin = Math.log10(Math.min(...data.concentrations));
+      const logMax = Math.log10(Math.max(...data.concentrations));
+      const curvePoints = Array.from({ length: 100 }, (_, i) => {
+        const logConc = logMin + (i / 99) * (logMax - logMin);
+        const conc = Math.pow(10, logConc);
+        const response = (A - D) / (1 + Math.pow(conc / C, B)) + D;
+        return {
+          concentration: conc,
+          response,
+          type: 'fitted'
+        };
+      });
+      plotData.push(...curvePoints);
+    }
+
+    return Plot.plot({
+      title: `${data.compoundId} Dose Response`,
+      width: 400,
+      height: 300,
+      x: {
+        type: "log",
+        label: "Concentration (µM)"
+      },
+      y: {
+        label: "Response"
+      },
+      marks: [
+        Plot.dot(plotData.filter(d => d.type === 'observed'), {
+          x: "concentration",
+          y: "response",
+          fill: "steelblue",
+          r: 4
+        }),
+        data.curveParams ? Plot.line(plotData.filter(d => d.type === 'fitted'), {
+          x: "concentration",
+          y: "response",
+          stroke: "red",
+          strokeWidth: 2
+        }) : null
+      ].filter(Boolean)
+    }) as HTMLElement;
   }
 
-  if (isLoading) {
+  // Create single point scatter plot
+  function createSinglePointPlot(): HTMLElement | null {
+    if (singlePointData.length === 0) return null;
+
+    const plotData = singlePointData.flatMap(treatment =>
+      treatment.responses.map((response, idx) => ({
+        compoundId: treatment.compoundId,
+        concentration: treatment.concentrations[idx],
+        response,
+        wellId: treatment.wellIds[idx]
+      }))
+    );
+
+    return Plot.plot({
+      title: "Single Point Data",
+      width: 500,
+      height: 400,
+      x: {
+        label: "Compound"
+      },
+      y: {
+        label: "Response"
+      },
+      color: {
+        legend: true
+      },
+      marks: [
+        Plot.dot(plotData, {
+          x: "compoundId",
+          y: "response",
+          fill: "compoundId",
+          r: 5,
+          title: d => `${d.compoundId}\nConc: ${d.concentration.toFixed(2)} µM\nResponse: ${d.response.toFixed(2)}\nWell: ${d.wellId}`
+        })
+      ]
+    }) as HTMLElement;
+  }
+
+  // Render plot in React component
+  const PlotComponent: React.FC<{ plotFn: () => HTMLElement | null }> = ({ plotFn }) => {
+    const plotRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+      const plot = plotFn();
+      if (plot && plotRef.current) {
+        plotRef.current.innerHTML = '';
+        plotRef.current.appendChild(plot);
+      }
+    }, [plotFn]);
+
+    return <div ref={plotRef} />;
+  };
+
+  if (activePlates.length === 0) {
     return (
-      <Container className="text-center py-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading results...</span>
-        </Spinner>
-        <p className="mt-2">Processing plate data...</p>
+      <Container fluid>
+        <Row>
+          <Col>
+            <Card>
+              <Card.Body className="text-center py-5">
+                <p className="text-muted">No plates available with response data.</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </Container>
     );
-  }
-  
-  if (!treatmentDataMap || treatmentDataMap.size === 0) {
-    return <Alert variant="warning">No parsable treatment data found on this plate, or the plate has no wells with responses.</Alert>;
   }
 
   return (
     <Container fluid>
       <Row className="mb-3">
         <Col>
+          <div className="d-flex justify-content-between align-items-center">
+            <h4>Results Analysis</h4>
+            <div>
+              {curMappedPlateId && (
+                <Button variant="outline-secondary" onClick={clearPlateSelection} className="me-2">
+                  Show All Plates
+                </Button>
+              )}
+              <span className="text-muted">
+                {curMappedPlateId 
+                  ? `Showing: ${activePlates[0]?.barcode || 'Selected Plate'}`
+                  : `Showing: All Plates (${activePlates.length})`
+                }
+              </span>
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      <Row>
+        <Col md={7}>
           <Card>
             <Card.Header>
-              <Row className="align-items-center">
-                <Col md={8}>
-                  <Card.Title as="h5" className="mb-0">Results for Plate: {activePlate.barcode || `ID ${activePlate.id}`}</Card.Title>
-                </Col>
-                <Col md={4}>
-                  <Form.Group controlId="treatmentSelector">
-                    <Form.Label className="me-2 sr-only">Select Treatment:</Form.Label>
-                    <Form.Select onChange={handleTreatmentChange} value={selectedTreatmentKey || ''}>
-                      <option value="" disabled>Select a treatment...</option>
-                      {Array.from(treatmentDataMap.keys()).map(key => (
-                        <option key={key} value={key}>
-                          {key} ({treatmentDataMap.get(key)?.concentrations.length || 0} wells)
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-              </Row>
+              <div className="d-flex justify-content-between align-items-center">
+                <h6 className="mb-0">Dose Response Curves ({doseResponseData.length})</h6>
+                <div>
+                  <Button size="sm" variant="outline-primary" onClick={handleExpandAll} className="me-2">
+                    Expand All
+                  </Button>
+                  <Button size="sm" variant="outline-secondary" onClick={handleCollapseAll}>
+                    Collapse All
+                  </Button>
+                </div>
+              </div>
             </Card.Header>
-            <Card.Body style={{ minHeight: '550px' }}> {/* Ensure Card Body has enough height for charts */}
-              {selectedTreatmentKey && currentTreatmentPlotData ? (
-                <>
-                  {currentAssayType === 'singlePoint' && (
-                    <ScatterPlot 
-                      plotData={currentTreatmentPlotData.concentrations.map((conc, index) => ({
-                        x: conc, // For scatter, x is concentration, but plot uses index.
-                                // The ScatterPlot component itself will use index for X-axis.
-                        y: currentTreatmentPlotData.responses[index],
-                        wellId: currentTreatmentPlotData.wellIds[index]
-                      }))}
-                      treatmentKey={selectedTreatmentKey} 
-                    />
-                  )}
-                  {currentAssayType === 'doseResponse' && (
-                    <DoseResponseCurve 
-                      plotData={currentTreatmentPlotData.concentrations.map((conc, index) => ({
-                        x: conc, // For DR, x is concentration.
-                        y: currentTreatmentPlotData.responses[index],
-                        wellId: currentTreatmentPlotData.wellIds[index]
-                      }))}
-                      treatmentKey={selectedTreatmentKey}
-                    />
-                  )}
-                </>
+            <Card.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+              {doseResponseData.length === 0 ? (
+                <p className="text-muted text-center">No dose response data available (requires ≥4 concentrations)</p>
               ) : (
-                <p className="text-center text-muted">
-                  {treatmentDataMap.size > 0 ? 'Please select a treatment to view its results.' : 'No treatments available to display.'}
-                </p>
+                <Accordion>
+                  {doseResponseData.map(data => (
+                    <Accordion.Item key={data.compoundId} eventKey={data.compoundId}>
+                      <Accordion.Header 
+                        onClick={() => handleToggleAccordion(data.compoundId)}
+                      >
+                        <div className="w-100 d-flex justify-content-between align-items-center me-3">
+                          <span>{data.compoundId}</span>
+                          <div className="text-muted small">
+                            {data.ec50 ? `EC50: ${data.ec50.toFixed(2)} µM` : 'Curve fit failed'}
+                            <span className="ms-2">({data.concentrations.length} points)</span>
+                          </div>
+                        </div>
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        <PlotComponent plotFn={() => createDoseResponsePlot(data)} />
+                        {data.curveParams && (
+                          <div className="mt-3 small text-muted">
+                            <strong>Curve Parameters:</strong> 
+                            <span className="ms-2">
+                              A={data.curveParams[0]?.toFixed(2)}, 
+                              B={data.curveParams[1]?.toFixed(2)}, 
+                              C={data.curveParams[2]?.toFixed(2)}, 
+                              D={data.curveParams[3]?.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={5}>
+          <Card>
+            <Card.Header>
+              <h6 className="mb-0">Single Point Data ({singlePointData.length} compounds)</h6>
+            </Card.Header>
+            <Card.Body>
+              {singlePointData.length === 0 ? (
+                <p className="text-muted text-center">No single point data available</p>
+              ) : (
+                <PlotComponent plotFn={createSinglePointPlot} />
               )}
             </Card.Body>
           </Card>

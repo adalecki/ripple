@@ -7,19 +7,16 @@ import Sidebar from '../../components/Sidebar.tsx';
 import PlateMapper from './components/PlateMapper.tsx';
 import ProtocolManager from './components/ProtocolManager.tsx';
 import DataParser from './components/DataParser.tsx';
-import ResultsTab from './components/Results.tsx'; // Import the new ResultsTab component
+import ResultsTab from './components/Results.tsx';
 import { loadProtocols, saveProtocols } from './utils/protocolUtils';
 
-import '../../css/Sidebar.css'
-
 const MapperParser: React.FC = () => {
-  const [tabKey, setTabKey] = useState<string>('mapper');
+  const [tabKey, setTabKey] = useState<string>('protocols');
   const [mappedPlates, setMappedPlates] = useState<Plate[]>([]);
   const [curMappedPlateId, setCurMappedPlateId] = useState<number | null>(null);
   const [protocols, setProtocols] = useState<Protocol[]>(() => loadProtocols());
   const [selectedProtocolId, setSelectedProtocolId] = useState<number | null>(null);
 
-  // Save protocols whenever they change
   useEffect(() => {
     saveProtocols(protocols);
   }, [protocols]);
@@ -55,6 +52,7 @@ const MapperParser: React.FC = () => {
     else if (tabKey === 'protocols') {
       return (
         <Sidebar
+          key={tabKey}
           items={protocols.map(protocol => ({
             id: protocol.id,
             name: protocol.name,
@@ -62,7 +60,7 @@ const MapperParser: React.FC = () => {
           }))}
           selectedItemId={selectedProtocolId}
           setSelectedItemId={setSelectedProtocolId}
-          filterOptions={['Table','Matrix']}
+          filterOptions={['Table', 'Matrix']}
           title="Protocols"
         />
       )
@@ -79,11 +77,11 @@ const MapperParser: React.FC = () => {
           </Col>
           <Col md="10" className="d-flex flex-column">
             <Tabs id="mapper-parser-tab-select" activeKey={tabKey} onSelect={handleSelect} className='mb-3'>
-              <Tab eventKey="mapper" title="Plate Mapper">
-                <PlateMapper />
-              </Tab>
               <Tab eventKey="protocols" title="Protocol Manager">
                 <ProtocolManager />
+              </Tab>
+              <Tab eventKey="mapper" title="Plate Mapper">
+                <PlateMapper />
               </Tab>
               <Tab eventKey="parser" title="Data Parser">
                 <DataParser />

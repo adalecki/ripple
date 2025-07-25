@@ -4,13 +4,6 @@ export function curveFit(x: number[] = [],y: number[] = []) {
   //x = [50, 25.1, 12.6, 6.3, 3.16, 1.58, 0.794, 0.398, 0.199, 0.1]
   //y = [186.55, 187.13, 163.96, 103.18, 82.57, 21.84, 4.67, 3.04, -0.93, -1.32]
 
-  
-  // Normalize response values to scale from 0 - 100
-  // Jules: The problem description says "The curveFit function normalizes y values, 
-  // so I will always pass raw response values to it."
-  // However, this normalization within curveFit might be intended.
-  // I will keep it as provided. If the user wants to pass already normalized values,
-  // this internal normalization might need adjustment or removal.
   let maxY = Math.max(...y)
   let minY = Math.min(...y)
   // Add a check for cases where maxY and minY are the same to avoid division by zero

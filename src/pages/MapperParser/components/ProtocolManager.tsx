@@ -4,17 +4,17 @@ import { Plus, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
 import {
   Protocol,
   MetadataField,
-  ControlDefinition,
+  //ControlDefinition,
   ParseFormat,
-  NormalizationType,
-  ControlType,
+  //NormalizationType,
+  //ControlType,
   FieldType,
   PARSE_FORMATS,
   PLATE_SIZES,
   BARCODE_LOCATIONS,
   FIELD_TYPES,
-  NORMALIZATION_TYPES,
-  CONTROL_TYPES,
+  //NORMALIZATION_TYPES,
+  //CONTROL_TYPES,
   ParseStrategy
 } from '../../../types/mapperTypes';
 import { ProtocolsContext } from '../../../contexts/Context';
@@ -47,6 +47,14 @@ const ProtocolManager: React.FC = () => {
     }
     setIsNewProtocol(false);
   }, [selectedProtocolId, protocols]);
+
+  const handleCancelEdit = () => {
+    const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
+    if (selectedProtocol) {
+      setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol)));
+    }
+    setIsEditing(false);
+  };
 
   const handleAddProtocol = () => {
     const newProtocol = createNewProtocol(protocols);
@@ -118,7 +126,7 @@ const ProtocolManager: React.FC = () => {
     }
   };
 
-  const handleAddControl = () => {
+  /*const handleAddControl = () => {
     if (editingProtocol) {
       const newControl: ControlDefinition = {
         type: 'MaxCtrl',
@@ -158,7 +166,7 @@ const ProtocolManager: React.FC = () => {
         }
       });
     }
-  };
+  };*/
 
   const handleOpenInteractiveMapper = () => {
     if (!editingProtocol) return;
@@ -181,6 +189,127 @@ const ProtocolManager: React.FC = () => {
     setShowInteractiveMapper(false);
   };
 
+  const renderBarcodeLocationFields = () => {
+    if (!editingProtocol) return null;
+
+    const { parseStrategy } = editingProtocol;
+
+    const barcodeLocationCol = (
+      <Col md={6} key="barcode-location">
+        <Form.Group className="mb-3">
+          <Form.Label>Barcode Location</Form.Label>
+          <Form.Select
+            value={parseStrategy.plateBarcodeLocation || 'filename'}
+            onChange={(e) => setEditingProtocol({
+              ...editingProtocol,
+              parseStrategy: {
+                ...parseStrategy,
+                plateBarcodeLocation: e.target.value as 'filename' | 'cell'
+              }
+            })}
+            disabled={!isEditing}
+          >
+            {BARCODE_LOCATIONS.map(location => (
+              <option key={location} value={location}>
+                {location === 'filename' ? 'Filename' : 'Cell in file'}
+              </option>
+            ))}
+          </Form.Select>
+        </Form.Group>
+      </Col>
+    );
+
+    let additionalCols: JSX.Element[] = [];
+
+    if (parseStrategy.plateBarcodeLocation === 'cell') {
+      additionalCols.push(
+        <Col md={6} key="barcode-cell">
+          <Form.Group className="mb-3">
+            <Form.Label>Barcode Cell</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="e.g., A01"
+              value={parseStrategy.plateBarcodeCell || ''}
+              onChange={(e) => setEditingProtocol({
+                ...editingProtocol,
+                parseStrategy: {
+                  ...parseStrategy,
+                  plateBarcodeCell: e.target.value
+                }
+              })}
+              disabled={!isEditing}
+            />
+          </Form.Group>
+        </Col>
+      );
+    } else {
+      additionalCols.push(
+        <Col md={2} key="full-filename">
+          <Form.Group className="mb-3">
+            <Form.Label>Full filename?</Form.Label>
+            <Form.Switch
+              checked={parseStrategy.barcodeDelimiter == null}
+              onChange={(e) => setEditingProtocol({
+                ...editingProtocol,
+                parseStrategy: {
+                  ...parseStrategy,
+                  barcodeDelimiter: e.target.checked ? null : ''
+                }
+              })}
+              disabled={!isEditing}
+              id="fullFilenameSwitch"
+            />
+          </Form.Group>
+        </Col>
+      );
+
+      if (parseStrategy.barcodeDelimiter != null) {
+        additionalCols.push(
+          <Col md={2} key="delimiter">
+            <Form.Group className="mb-3">
+              <Form.Label>Delimiter</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g., _"
+                value={parseStrategy.barcodeDelimiter || ''}
+                onChange={(e) => setEditingProtocol({
+                  ...editingProtocol,
+                  parseStrategy: {
+                    ...parseStrategy,
+                    barcodeDelimiter: e.target.value
+                  }
+                })}
+                disabled={!isEditing}
+              />
+            </Form.Group>
+          </Col>,
+          <Col md={2} key="chunk">
+            <Form.Group className="mb-3">
+              <Form.Label>Chunk</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="0"
+                value={parseStrategy.barcodeChunk || 1}
+                onChange={(e) =>
+                  setEditingProtocol({
+                    ...editingProtocol,
+                    parseStrategy: {
+                      ...parseStrategy,
+                      barcodeChunk: parseInt(e.target.value)
+                    }
+                  })}
+
+                disabled={!isEditing}
+              />
+            </Form.Group>
+          </Col>
+        );
+      }
+    }
+
+    return [barcodeLocationCol, ...additionalCols];
+  };
+
 
   return (
     <div className="protocol-manager">
@@ -196,7 +325,7 @@ const ProtocolManager: React.FC = () => {
                       <Button size="sm" variant="success" onClick={handleSaveProtocol} className="me-2">
                         Save
                       </Button>
-                      <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>
+                      <Button size="sm" variant="secondary" onClick={handleCancelEdit}>
                         Cancel
                       </Button>
                     </>
@@ -274,7 +403,7 @@ const ProtocolManager: React.FC = () => {
                       </Col>
                       <Col md={2}>
                         <Form.Group className="mb-3">
-                          <Form.Label>Auto-Parse?</Form.Label><span style={{float: 'right'}}><InfoTooltip text='Attempts to find the most likely matrix present in a file, biasing toward full plates and proportion of numeric cells.'/></span>
+                          <Form.Label>Auto-Parse?</Form.Label><span style={{ float: 'right' }}><InfoTooltip text='Attempts to find the most likely matrix present in a file, biasing toward full plates and proportion of numeric cells.' /></span>
                           <Form.Switch
                             checked={editingProtocol.parseStrategy.autoParse}
                             onChange={(e) => setEditingProtocol({
@@ -301,8 +430,8 @@ const ProtocolManager: React.FC = () => {
                         disabled={!isEditing}
                       />
                     </Form.Group>
-
-                    {isEditing && editingProtocol.parseStrategy.format == 'Matrix' && (
+                    <Row>{renderBarcodeLocationFields()}</Row>
+                    {isEditing && editingProtocol.parseStrategy.format == 'Matrix' && !editingProtocol.parseStrategy.autoParse && (
                       <Button
                         variant="outline-primary"
                         size="sm"
@@ -312,51 +441,6 @@ const ProtocolManager: React.FC = () => {
                         Define Data Layout Interactively
                       </Button>
                     )}
-
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Barcode Location</Form.Label>
-                          <Form.Select
-                            value={editingProtocol.parseStrategy.plateBarcodeLocation || 'filename'}
-                            onChange={(e) => setEditingProtocol({
-                              ...editingProtocol,
-                              parseStrategy: {
-                                ...editingProtocol.parseStrategy,
-                                plateBarcodeLocation: e.target.value as 'filename' | 'cell'
-                              }
-                            })}
-                            disabled={!isEditing}
-                          >
-                            {BARCODE_LOCATIONS.map(location => (
-                              <option key={location} value={location}>
-                                {location === 'filename' ? 'Filename' : 'Cell in file'}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        </Form.Group>
-                      </Col>
-                      {editingProtocol.parseStrategy.plateBarcodeLocation === 'cell' && (
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>Barcode Cell</Form.Label>
-                            <Form.Control
-                              type="text"
-                              placeholder="e.g., A01"
-                              value={editingProtocol.parseStrategy.plateBarcodeCell || ''}
-                              onChange={(e) => setEditingProtocol({
-                                ...editingProtocol,
-                                parseStrategy: {
-                                  ...editingProtocol.parseStrategy,
-                                  plateBarcodeCell: e.target.value
-                                }
-                              })}
-                              disabled={!isEditing}
-                            />
-                          </Form.Group>
-                        </Col>
-                      )}
-                    </Row>
                     {!editingProtocol.parseStrategy.autoParse ? (
                       <>
                         <Form.Group className="mb-3">
@@ -380,7 +464,7 @@ const ProtocolManager: React.FC = () => {
                           <Row>
                             <Col md={6}>
                               <Form.Group className="mb-3">
-                                <Form.Label>X Labels (Columns)</Form.Label><span style={{float: 'right'}}><InfoTooltip text='Only necessary if reading a partial plate'/></span>
+                                <Form.Label>X Labels (Columns)</Form.Label><span style={{ float: 'right' }}><InfoTooltip text='Only necessary if reading a partial plate' /></span>
                                 <Form.Control
                                   type="text"
                                   placeholder="e.g., A09:X09"
@@ -398,7 +482,7 @@ const ProtocolManager: React.FC = () => {
                             </Col>
                             <Col md={6}>
                               <Form.Group className="mb-3">
-                                <Form.Label>Y Labels (Rows)</Form.Label><span style={{float: 'right'}}><InfoTooltip text='Only necessary if reading a partial plate'/></span>
+                                <Form.Label>Y Labels (Rows)</Form.Label><span style={{ float: 'right' }}><InfoTooltip text='Only necessary if reading a partial plate' /></span>
                                 <Form.Control
                                   type="text"
                                   placeholder="e.g., A10:A25"
@@ -533,8 +617,8 @@ const ProtocolManager: React.FC = () => {
                 </Accordion.Item>
 
                 <Accordion.Item eventKey="2">
-                  <Accordion.Header>Data Processing</Accordion.Header>
-                  <Accordion.Body>
+                  <Accordion.Header>Data Processing - Coming Soon</Accordion.Header>
+                  {/*<Accordion.Body>
                     <Form.Group className="mb-1">
                       <Form.Label>Normalization</Form.Label>
                       <Form.Select
@@ -609,7 +693,7 @@ const ProtocolManager: React.FC = () => {
                         <Plus size={16} /> Add Control
                       </Button>
                     )}
-                  </Accordion.Body>
+                  </Accordion.Body>*/}
                 </Accordion.Item>
               </Accordion>
             </>
