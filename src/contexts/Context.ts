@@ -1,6 +1,7 @@
 import React, { createContext } from 'react';
 import { Plate } from '../classes/PlateClass';
 import { Pattern } from '../classes/PatternClass';
+import { Protocol } from '../types/mapperTypes';
 
 export type PlatesContextType = {
   plates: Plate[];
@@ -42,4 +43,18 @@ export const MappedPlatesContext = createContext<MappedPlatesContextType>({
   setMappedPlates: () => {},
   curMappedPlateId: null,
   setCurMappedPlateId: () => {},
+});
+
+export type ProtocolsContextType = {
+  protocols: Protocol[];
+  setProtocols: React.Dispatch<React.SetStateAction<Protocol[]>>;
+  selectedProtocolId: number | null;
+  setSelectedProtocolId: React.Dispatch<React.SetStateAction<number | null>>;
+};
+
+export const ProtocolsContext = createContext<ProtocolsContextType>({
+  protocols: [],
+  setProtocols: () => {},
+  selectedProtocolId: null,
+  setSelectedProtocolId: () => {},
 });

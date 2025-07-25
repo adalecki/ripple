@@ -1,8 +1,8 @@
 import { EchoCalculator, TransferInfo, TransferStep } from '../classes/EchoCalculatorClass';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
-import { DilutionPattern } from '../classes/PatternClass';
+import { DilutionPattern } from '../../../classes/PatternClass';
 import { CompoundInventory } from '../classes/EchoPreCalculatorClass';
-import { Plate, PlateSize } from '../classes/PlateClass';
+import { Plate, PlateSize } from '../../../classes/PlateClass';
 
 export type InputDataType = {
   'Layout': {

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import { Calculator, ChartColumnIncreasing } from 'lucide-react';
+import { Calculator, ChartColumnIncreasing, MapIcon } from 'lucide-react';
 import '../css/Home.css'
 
 const Home = () => {
@@ -16,7 +16,7 @@ const Home = () => {
       </Row>
 
       <Row className="justify-content-center g-4">
-        <Col md={5}>
+        <Col md={4}>
           <Link to="/echotsfr" className="tool-link">
             <Card className="h-100 shadow-sm tool-card">
               <Card.Body className="d-flex flex-column align-items-center text-center p-4">
@@ -31,7 +31,22 @@ const Home = () => {
           </Link>
         </Col>
 
-        <Col md={5}>
+        <Col md={4}>
+          <Link to="/mapperparser" className="tool-link">
+            <Card className="h-100 shadow-sm tool-card">
+              <Card.Body className="d-flex flex-column align-items-center text-center p-4">
+                <MapIcon size={48} className="mb-3 tool-icon text-muted" />
+                <Card.Title className="mb-3">Plate Mapper/Data Parser</Card.Title>
+                <Card.Text className="text-muted">
+                  Map plates from Echo transfer logs, showing only what actually transfered.
+                  Then, upload raw data files to parse and analyze your results (in progress).
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Link>
+        </Col>
+
+        <Col md={4}>
           <Link to="/dilutiondesigner" className="tool-link">
             <Card className="h-100 shadow-sm tool-card">
               <Card.Body className="d-flex flex-column align-items-center text-center p-4">

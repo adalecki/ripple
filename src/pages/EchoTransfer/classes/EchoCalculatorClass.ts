@@ -1,10 +1,10 @@
-import { Plate } from './PlateClass';
-import { Well } from './WellClass';
+import { Plate } from '../../../classes/PlateClass';
+import { Well } from '../../../classes/WellClass';
 import { formatWellBlock, getWellFromBarcodeAndId, mapWellsToConcentrations } from '../utils/plateUtils';
 import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
 import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
-import { DilutionPattern } from './PatternClass';
+import { DilutionPattern } from '../../../classes/PatternClass';
 
 // strings recorded instead of class references to avoid object reference issues
 export interface TransferStep {

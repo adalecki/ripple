@@ -1,7 +1,7 @@
 import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations, buildSrcCompoundInventory } from '../utils/echoUtils';
 import { CheckpointTracker } from './CheckpointTrackerClass';
-import { Plate, PlateSize } from './PlateClass';
-import { DilutionPattern } from './PatternClass';
+import { Plate, PlateSize } from '../../../classes/PlateClass';
+import { DilutionPattern } from '../../../classes/PatternClass';
 import { PreferencesState } from '../../../hooks/usePreferences';
 
 export interface CompoundLocation {

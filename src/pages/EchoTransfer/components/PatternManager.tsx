@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Button } from 'react-bootstrap';
-import { Pattern } from '../classes/PatternClass';
-import { PatternsContext } from '../contexts/Context';
+import { Pattern } from '../../../classes/PatternClass';
+import { PatternsContext } from '../../../contexts/Context';
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
 

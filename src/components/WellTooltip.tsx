@@ -1,6 +1,6 @@
 import React from 'react';
 import { Well } from '../classes/WellClass';
-import '../../../css/WellTooltip.css'
+import '../css/WellTooltip.css'
 
 interface HoveredWellData {
   well: Well;
@@ -20,7 +20,10 @@ const WellTooltip: React.FC<WellTooltipProps> = ({ hoveredWell }) => {
   
   return (
     <div className="well-tooltip" style={{ top: position.y, left: position.x, transform }}>
-      <div className="well-id">Well {well.id}</div>
+      <div className='header-section'>
+        <span>Well {well.id}</span>
+        {well.rawResponse ? <span>{well.rawResponse}</span> : ''}
+      </div>
       {well.getIsUnused() ? (
         <div className="content-item">
           <span className="label">Status:</span>

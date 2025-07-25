@@ -1,11 +1,11 @@
 import React, { useState, MutableRefObject } from 'react';
 import WellTooltip from './WellTooltip';
-import '../../../css/PlateComponent.css'
-import { wellColors } from '../utils/wellColors';
+import { wellColors } from '../pages/EchoTransfer/utils/wellColors';
 import { Plate } from '../classes/PlateClass';
 import { Well as WellType } from '../classes/WellClass';
-import { ColorConfig } from '../utils/wellColors';
+import { ColorConfig } from '../pages/EchoTransfer/utils/wellColors';
 import WellView from './WellView';
+import '../css/PlateComponent.css'
 
 interface PlateViewProps {
   plate: Plate;

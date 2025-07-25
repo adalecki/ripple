@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Col, Row, Tabs, Tab } from 'react-bootstrap';
-import { PlatesContext, PatternsContext, MappedPlatesContext } from './contexts/Context.ts';
-import { Plate, PlateSize } from './classes/PlateClass.ts';
-import { Pattern } from './classes/PatternClass.ts';
-import Sidebar from './components/Sidebar.tsx';
+import { PlatesContext, PatternsContext, MappedPlatesContext } from '../../contexts/Context.ts';
+import { Plate, PlateSize } from '../../classes/PlateClass.ts';
+import { Pattern } from '../../classes/PatternClass.ts';
+import Sidebar from '../../components/Sidebar.tsx';
 import EchoCalc from './components/EchoCalc.tsx';
 import DesignWizard from './components/DesignWizard.tsx';
 import EchoInstructions from './components/EchoInstructions.tsx';
 import About from './components/About.tsx';
 import { usePreferences } from '../../hooks/usePreferences';
-
-import '../../css/Sidebar.css'
-import PlateMapper from './components/PlateMapper.tsx';
+import PlateMapper from '../MapperParser/components/PlateMapper.tsx';
 
 const EchoTransfer: React.FC = () => {
   const { preferences } = usePreferences()

@@ -1,0 +1,50 @@
+.protocol-manager .list-group-item {
+  transition: background-color 0.2s;
+}
+
+/* Style for metadata field cards */
+.protocol-manager .sub-card {
+  background-color: #fafbfc;
+  border: 1px solid #e9ecef;
+}
+
+/* Validation error styling */
+.protocol-validation-errors {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.protocol-validation-errors ul {
+  padding-left: 1.5rem;
+  margin-bottom: 0;
+}
+
+.protocol-validation-errors li {
+  margin-bottom: 0.25rem;
+}
+
+/* Badge styles for overwrite warnings */
+.badge.bg-warning {
+  color: #000 !important;
+}
+
+/* Loading spinner for file processing */
+.protocol-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.protocol-loading .spinner-border {
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* Success message styling */
+.protocol-success-message {
+  color: #198754;
+  font-weight: 500;
+}

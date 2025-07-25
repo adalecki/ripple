@@ -7,6 +7,7 @@ import EchoTransfer from "./pages/EchoTransfer/EchoTransfer";
 import DilutionDesigner from "./pages/DilutionDesigner/DilutionDesigner";
 import MobileCheck from "./components/MobileCheck";
 import { PreferencesProvider } from "./hooks/usePreferences";
+import MapperParser from "./pages/MapperParser/MapperParser";
 
 const Layout = () => (
   <PreferencesProvider>
@@ -23,6 +24,7 @@ const router = createHashRouter(
       <Route index element={<Home />} />
       <Route path="echotsfr" element={<EchoTransfer />} />
       <Route path="dilutiondesigner" element={<DilutionDesigner />} />
+      <Route path="mapperparser" element={<MapperParser />} />
       <Route path="*" element={<NoPage />} />
     </Route>
   )

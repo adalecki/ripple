@@ -11,10 +11,14 @@
   max-width: 250px;
 }
 
-.well-id {
-  font-weight: bold;
+.header-section {
   margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  position: relative;
   color: #2c3e50;
+  font-weight: bold;
 }
 
 .content-section {
@@ -26,7 +30,6 @@
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 2px;
-  font-weight: 500;
   position: relative;
 }
 

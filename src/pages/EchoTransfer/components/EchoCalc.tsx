@@ -9,14 +9,14 @@ import { customSort, InputDataType } from '../utils/echoUtils';
 import { echoInputValidation } from '../utils/validationUtils';
 import { currentPlate } from '../utils/plateUtils';
 import { ColorConfig, generateCompoundColors } from '../utils/wellColors';
-import { PlatesContext } from '../contexts/Context';
-import { HslStringType } from '../classes/PatternClass';
+import { PlatesContext } from '../../../contexts/Context';
+import { HslStringType } from '../../../classes/PatternClass';
 import { usePreferences } from '../../../hooks/usePreferences';
 
 import CheckpointDisplayModal from './CheckpointDisplayModal';
 import EchoForm from './EchoForm';
 import TransferListDownload from './TransferListDownload';
-import PlateView from './PlateView';
+import PlateView from '../../../components/PlateView';
 
 
 const EchoCalc: React.FC = () => {
