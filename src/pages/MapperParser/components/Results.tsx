@@ -1,4 +1,7 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React from 'react'
+import { Container } from 'react-bootstrap';
+
+/*import React, { useContext, useMemo, useState } from 'react';
 import { Container, Row, Col, Card, Accordion, Button } from 'react-bootstrap';
 import { MappedPlatesContext } from '../../../contexts/Context';
 import { curveFit } from '../utils/curveFit';
@@ -17,10 +20,10 @@ interface TreatmentData {
 interface DoseResponseData extends TreatmentData {
   curveParams?: number[];
   ec50?: number;
-}
+}*/
 
 const ResultsTab: React.FC = () => {
-  const { mappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext);
+  /*const { mappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext);
   const [expandedAccordions, setExpandedAccordions] = useState<string[]>([]);
 
   // Filter plates based on selection
@@ -139,7 +142,6 @@ const ResultsTab: React.FC = () => {
     setCurMappedPlateId(null);
   };
 
-  // Create dose response plot
   function createDoseResponsePlot(data: DoseResponseData): HTMLElement {
     const plotData = data.concentrations.map((conc, idx) => ({
       concentration: conc,
@@ -193,7 +195,6 @@ const ResultsTab: React.FC = () => {
     }) as HTMLElement;
   }
 
-  // Create single point scatter plot
   function createSinglePointPlot(): HTMLElement | null {
     if (singlePointData.length === 0) return null;
 
@@ -231,7 +232,6 @@ const ResultsTab: React.FC = () => {
     }) as HTMLElement;
   }
 
-  // Render plot in React component
   const PlotComponent: React.FC<{ plotFn: () => HTMLElement | null }> = ({ plotFn }) => {
     const plotRef = React.useRef<HTMLDivElement>(null);
 
@@ -260,10 +260,12 @@ const ResultsTab: React.FC = () => {
         </Row>
       </Container>
     );
-  }
+  }*/
 
   return (
     <Container fluid>
+      Coming soon!
+      {/*
       <Row className="mb-3">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
@@ -356,6 +358,7 @@ const ResultsTab: React.FC = () => {
           </Card>
         </Col>
       </Row>
+      */}
     </Container>
   );
 };

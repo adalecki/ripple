@@ -72,7 +72,15 @@ export function generateDestinationPlatesCSV(
       
       if (protocol) {
         for (const field of protocol.metadataFields) {
-          row.push(field.defaultValue?.toString() || '');
+          // Use metadata from plate, fallback to protocol default, then empty string
+          const plateMetadataValue = plate.metadata[field.name];
+          if (plateMetadataValue !== undefined) {
+            row.push(plateMetadataValue.toString());
+          } else if (field.defaultValue !== undefined) {
+            row.push(field.defaultValue.toString());
+          } else {
+            row.push('');
+          }
         }
       }
       
