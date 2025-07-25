@@ -1,0 +1,91 @@
+[
+    {
+        "Name": "Table Based",
+        "Parse Strategy": {
+            "Format": "Table",
+            "Plate Size": 384,
+            "xLabels": "F1:DA1",
+            "yLabels": null,
+            "wellIDs": "E2:E385",
+            "rawData": "F2:DA385"
+        },
+        "Fields": [
+            {
+                "Name": "Protocol",
+                "Type": "PickList",
+                "Required": false,
+                "Default": "v2.1",
+                "Values": [
+                    "v2.0",
+                    "v2.1"
+                ]
+            },
+            {
+                "Name": "Person",
+                "Type": "PickList",
+                "Required": true,
+                "Default": "John Smith",
+                "Values": [
+                    "John Smith",
+                    "Jane Doe"
+                ]
+            },
+            {
+                "Name": "Cell Line",
+                "Type": "PickList",
+                "Required": true,
+                "Default": "CHO",
+                "Values": [
+                    "CHO",
+                    "HEK-293T"
+                ]
+            }
+        ]
+    },
+    {
+        "Name": "Biochemical",
+        "Parse Strategy": {
+            "Format": "Matrix",
+            "Plate Size": 384,
+            "xLabels": "A9:X9",
+            "yLabels": "A10:A25",
+            "wellIDs": null,
+            "rawData": "B10:Y25"
+        },
+        "Fields": [
+            {
+                "Name": "Protocol",
+                "Type": "PickList",
+                "Required": false,
+                "Default": "v2.1",
+                "Values": [
+                    "v2.0",
+                    "v2.1"
+                ]
+            },
+            {
+                "Name": "Person",
+                "Type": "PickList",
+                "Required": true,
+                "Default": "John Smith",
+                "Values": [
+                    "John Smith",
+                    "Jane Doe"
+                ]
+            },
+            {
+                "Name": "Species",
+                "Type": "PickList",
+                "Required": false,
+                "Default": "Human",
+                "Values": [
+                    "Dog",
+                    "Human",
+                    "Monkey",
+                    "Mouse",
+                    "Rat"
+                ]
+            }
+        ]
+    }
+]
