@@ -16,7 +16,7 @@ export interface MetadataField {
   name: string;
   type: FieldType;
   required: boolean;
-  defaultValue?: string | number | boolean;
+  defaultValue?: string | number;
   values?: string[];
 }
 

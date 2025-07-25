@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import { Container, Row, Col, Form, Button, Alert, Card, ListGroup, Badge } from 'react-bootstrap';
-import { Upload, FileText, CheckCircle, XCircle, AlertTriangle, Download } from 'lucide-react';
+import { Container, Row, Col, Form, Button, Alert, Card, Badge, Accordion } from 'react-bootstrap';
+import { Upload, FileText, CheckCircle, XCircle, AlertTriangle, Download, Settings } from 'lucide-react';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
 import { Protocol } from '../../../types/mapperTypes';
 import { parseDataFile, applyParsedDataToPlates, ParsedData } from '../utils/parserUtils';
@@ -15,6 +15,10 @@ interface FileUploadStatus {
   status: 'pending' | 'success' | 'error';
   message?: string;
   parsedData?: ParsedData[];
+}
+
+interface MetadataValues {
+  [fieldName: string]: string | number;
 }
 
 function hasResponseData(plates: any[]): boolean {
@@ -43,7 +47,7 @@ const DataParser: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadStatus[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  //const [showNormalized, setShowNormalized] = useState(false);
+  const [metadataValues, setMetadataValues] = useState<MetadataValues>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const plate = currentPlate(mappedPlates, curMappedPlateId);
@@ -57,6 +61,17 @@ const DataParser: React.FC = () => {
       setSelectedProtocol(protocols[0]);
     }
   }, [protocols]);
+
+  // Initialize metadata values when protocol changes
+  useEffect(() => {
+    if (selectedProtocol) {
+      const newMetadataValues: MetadataValues = {};
+      selectedProtocol.metadataFields.forEach(field => {
+        newMetadataValues[field.name] = field.defaultValue || '';
+      });
+      setMetadataValues(newMetadataValues);
+    }
+  }, [selectedProtocol]);
 
   function handleDragEnter(e: React.DragEvent) {
     e.preventDefault();
@@ -104,7 +119,6 @@ const DataParser: React.FC = () => {
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
     
-    // Parse each file
     for (let i = 0; i < newFiles.length; i++) {
       const fileStatus = newFiles[i];
       const result = await parseDataFile(fileStatus.file, selectedProtocol);
@@ -127,9 +141,39 @@ const DataParser: React.FC = () => {
     }
   }
 
+  function handleMetadataChange(fieldName: string, value: string | number) {
+    setMetadataValues(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  }
+
+  function validateMetadata(): string[] {
+    const validationErrors: string[] = [];
+    if (selectedProtocol) {
+      selectedProtocol.metadataFields.forEach(field => {
+        if (field.required) {
+          const value = metadataValues[field.name];
+          if (value === undefined || value === null || value === '') {
+            validationErrors.push(`${field.name} is required`);
+          }
+        }
+      });
+    }
+    return validationErrors;
+  }
+
   function handleApplyData() {
     if (!selectedProtocol) return;
     setErrors([]);
+    
+    // Validate metadata
+    const metadataErrors = validateMetadata();
+    if (metadataErrors.length > 0) {
+      setErrors(metadataErrors);
+      return;
+    }
+    
     const allParsedData: ParsedData[] = [];
     uploadedFiles.forEach(fileStatus => {
       if (fileStatus.status === 'success' && fileStatus.parsedData) {
@@ -151,7 +195,28 @@ const DataParser: React.FC = () => {
     if (applyErrors.length > 0) {
       setErrors(applyErrors);
     } else {
-      setMappedPlates(updatedPlates);
+      const currentParsedBarcodes = new Set(
+        allParsedData.map(data => data.barcode)
+      );
+      
+      const platesCopy = updatedPlates.map(plate => {
+        const plateCopy = plate.clone();
+        
+        if (currentParsedBarcodes.has(plateCopy.barcode)) {
+          const hasResponseData = Object.values(plateCopy.getWells()).some(well => 
+            well && well.rawResponse !== null
+          );
+          
+          if (hasResponseData) {
+            Object.entries(metadataValues).forEach(([fieldName, value]) => {
+              plateCopy.metadata[fieldName] = value;
+            });
+          }
+        }
+        return plateCopy;
+      });
+      
+      setMappedPlates(platesCopy);
       setUploadedFiles([]); // Clear files after successful application
     }
   }
@@ -198,6 +263,56 @@ const DataParser: React.FC = () => {
     well.rawResponse !== null || well.normalizedResponse !== null
   );
 
+  const renderMetadataForm = () => {
+    if (!selectedProtocol || selectedProtocol.metadataFields.length === 0) {
+      return null;
+    }
+
+    return (
+      <Accordion className="mb-3">
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>
+            <Settings size={16} className="me-2" />
+            Metadata ({selectedProtocol.metadataFields.length} fields)
+          </Accordion.Header>
+          <Accordion.Body>
+            <Row>
+              {selectedProtocol.metadataFields.map(field => (
+                <Col md={6} key={field.name} className="mb-2">
+                  <Form.Group >
+                    <Form.Label className="small">
+                      {field.name}
+                      {field.required && <span className="text-danger ms-1">*</span>}
+                    </Form.Label>
+                    {field.type === 'PickList' && field.values ? (
+                      <Form.Select
+                        size="sm"
+                        value={metadataValues[field.name] || ''}
+                        onChange={(e) => handleMetadataChange(field.name, e.target.value)}
+                      >
+                        <option value="">Select...</option>
+                        {field.values.map(value => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </Form.Select>
+                    ) : (
+                      <Form.Control
+                        size="sm"
+                        type="text"
+                        value={metadataValues[field.name] || ''}
+                        onChange={(e) => handleMetadataChange(field.name, e.target.value)}
+                        placeholder={field.defaultValue?.toString() || ''}
+                      />
+                    )}
+                  </Form.Group>
+                </Col>
+              ))}
+            </Row>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
+    );
+  };
 
   return (
     <Container fluid>
@@ -209,13 +324,14 @@ const DataParser: React.FC = () => {
       </Row>
 
       <Row>
-        <Col md={3}>
-          <Card className="mb-3">
-            <Card.Header>Protocol Selection</Card.Header>
-            <Card.Body>
+        <Col md={4}>
+          {/* Protocol Selection - Compact */}
+          <Row className="mb-3">
+            <Col>
               <Form.Group>
-                <Form.Label>Select Protocol</Form.Label>
+                <Form.Label className="small fw-bold">Protocol</Form.Label>
                 <Form.Select
+                  size="sm"
                   value={selectedProtocol?.id || ''}
                   onChange={(e) => {
                     const protocol = protocols.find(p => p.id === parseInt(e.target.value));
@@ -223,40 +339,50 @@ const DataParser: React.FC = () => {
                   }}
                   disabled={uploadedFiles.length > 0}
                 >
-                  <option value="">Select a protocol...</option>
+                  <option value="">Select protocol...</option>
                   {protocols.map(protocol => (
                     <option key={protocol.id} value={protocol.id}>
-                      {protocol.name} ({protocol.parseStrategy.format})
+                      {protocol.name}
                     </option>
                   ))}
                 </Form.Select>
+                {selectedProtocol && (
+                  <Form.Text className="text-muted">
+                    {selectedProtocol.parseStrategy.format} | {selectedProtocol.parseStrategy.plateSize} wells
+                  </Form.Text>
+                )}
               </Form.Group>
-              {selectedProtocol && (
-                <div className="mt-2">
-                  <small className="text-muted">
-                    Format: {selectedProtocol.parseStrategy.format}<br />
-                    Plate Size: {selectedProtocol.parseStrategy.plateSize} wells<br />
-                    Barcode: {selectedProtocol.parseStrategy.plateBarcodeLocation === 'filename' ? 'From filename' : `Cell ${selectedProtocol.parseStrategy.plateBarcodeCell}`}
-                  </small>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
+            </Col>
+          </Row>
 
+          {/* Metadata Form */}
+          {renderMetadataForm()}
+
+          {/* File Upload and List Combined */}
           <Card className="mb-3">
-            <Card.Header>File Upload</Card.Header>
-            <Card.Body>
+            <Card.Header className="py-2">
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="small fw-bold">Data Files</span>
+                {uploadedFiles.length > 0 && (
+                  <Button size="sm" variant="outline-danger" onClick={handleClearFiles}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </Card.Header>
+            <Card.Body className="p-2">
               <div
-                className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+                className={`drop-zone ${isDragging ? 'dragging' : ''} mb-2`}
+                style={{ padding: '1rem' }}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Upload size={48} className="mb-2" />
-                <p>Drag and drop files here or click to browse</p>
-                <small className="text-muted">(.csv, .tsv, .txt)</small>
+                <Upload size={24} className="mb-1" />
+                <div className="small">Drop files or click</div>
+                <small className="text-muted">.csv, .tsv, .txt</small>
               </div>
               <input
                 ref={fileInputRef}
@@ -266,90 +392,86 @@ const DataParser: React.FC = () => {
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
-            </Card.Body>
-          </Card>
-
-          {uploadedFiles.length > 0 && (
-            <Card className="mb-3">
-              <Card.Header>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span>Uploaded Files</span>
-                  <Button size="sm" variant="outline-danger" onClick={handleClearFiles}>
-                    Clear All
-                  </Button>
+              
+              {uploadedFiles.length > 0 && (
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {uploadedFiles.map((fileStatus, index) => (
+                    <div key={index} className="d-flex align-items-center p-1 border-bottom">
+                      <FileText size={16} className="me-2 text-muted" />
+                      <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                        <div className="small text-truncate">{fileStatus.file.name}</div>
+                        {fileStatus.message && (
+                          <div className={`small ${fileStatus.status === 'error' ? 'text-danger' : 'text-success'}`}>
+                            {fileStatus.message}
+                          </div>
+                        )}
+                      </div>
+                      <div className="ms-2">
+                        {fileStatus.status === 'pending' && <Badge bg="secondary" className="small">...</Badge>}
+                        {fileStatus.status === 'success' && <CheckCircle size={16} className="text-success" />}
+                        {fileStatus.status === 'error' && <XCircle size={16} className="text-danger" />}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="link"
+                        className="text-danger ms-1 p-0"
+                        onClick={() => removeFile(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              </Card.Header>
-              <ListGroup variant="flush">
-                {uploadedFiles.map((fileStatus, index) => (
-                  <ListGroup.Item key={index} className="d-flex align-items-center">
-                    <FileText size={20} className="me-2" />
-                    <div className="flex-grow-1">
-                      <div>{fileStatus.file.name}</div>
-                      {fileStatus.message && (
-                        <small className={fileStatus.status === 'error' ? 'text-danger' : 'text-success'}>
-                          {fileStatus.message}
-                        </small>
-                      )}
-                    </div>
-                    <div className="ms-2">
-                      {fileStatus.status === 'pending' && <Badge bg="secondary">Parsing...</Badge>}
-                      {fileStatus.status === 'success' && <CheckCircle size={20} className="text-success" />}
-                      {fileStatus.status === 'error' && <XCircle size={20} className="text-danger" />}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="link"
-                      className="text-danger ms-2"
-                      onClick={() => removeFile(index)}
-                    >
-                      ×
-                    </Button>
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
-              <Card.Body>
+              )}
+              
+              {uploadedFiles.length > 0 && (
                 <Button
+                  size="sm"
                   variant="primary"
-                  className="w-100"
+                  className="w-100 mt-2"
                   onClick={handleApplyData}
                   disabled={!uploadedFiles.some(f => f.status === 'success')}
                 >
                   Apply Data to Plates
                 </Button>
-              </Card.Body>
-            </Card>
-          )}
+              )}
+            </Card.Body>
+          </Card>
 
+          {/* Export */}
           {showExportButton && (
             <Card className="mb-3">
-              <Card.Header>Export Results</Card.Header>
-              <Card.Body>
-                <div className="mb-2">
+              <Card.Body className="p-2">
+                <div className="mb-1">
                   <small className="text-muted">
-                    {platesWithDataCount} destination plate{platesWithDataCount !== 1 ? 's' : ''} with response data
+                    {platesWithDataCount} plate{platesWithDataCount !== 1 ? 's' : ''} with data
                   </small>
                 </div>
                 <Button
+                  size="sm"
                   variant="success"
                   className="w-100"
                   onClick={handleExportCSV}
                 >
-                  <Download size={16} className="me-1" />
-                  Export to CSV
+                  <Download size={14} className="me-1" />
+                  Export CSV
                 </Button>
               </Card.Body>
             </Card>
           )}
 
+          {/* Errors */}
           {errors.length > 0 && (
-            <Alert variant="danger" dismissible onClose={() => setErrors([])}>
-              <AlertTriangle size={16} className="me-1" />
-              <strong>Errors:</strong>
-              <ul className="mb-0 mt-2">
-                {errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
+            <Alert variant="danger" dismissible onClose={() => setErrors([])} className="p-2">
+              <div className="d-flex align-items-start">
+                <AlertTriangle size={16} className="me-2 mt-1" />
+                <div>
+                  <div className="small fw-bold">Errors:</div>
+                  {errors.map((error, index) => (
+                    <div key={index} className="small">{error}</div>
+                  ))}
+                </div>
+              </div>
             </Alert>
           )}
         </Col>

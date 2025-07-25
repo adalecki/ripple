@@ -590,17 +590,56 @@ const ProtocolManager: React.FC = () => {
                           </Row>
                           {field.type === 'PickList' && (
                             <Row className="mt-2">
-                              <Col>
+                              <Col md={4}>
                                 <Form.Group>
-                                  <Form.Label>Values (comma-separated)</Form.Label>
+                                  <Form.Label>Add Value</Form.Label>
                                   <Form.Control
                                     type="text"
-                                    value={field.values?.join(', ') || ''}
-                                    onChange={(e) => handleUpdateMetadataField(index, {
-                                      values: e.target.value.split(',').map(v => v.trim()).filter(v => v)
-                                    })}
+                                    placeholder="Type value and press Enter"
                                     disabled={!isEditing}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' || e.key === 'Return') {
+                                        e.preventDefault();
+                                        const input = e.target as HTMLInputElement;
+                                        const newValue = input.value.trim();
+                                        if (newValue && !(field.values || []).includes(newValue)) {
+                                          handleUpdateMetadataField(index, {
+                                            values: [...(field.values || []), newValue]
+                                          });
+                                          input.value = '';
+                                        }
+                                      }
+                                    }}
                                   />
+                                </Form.Group>
+                              </Col>
+                              <Col md={8}>
+                                <Form.Group>
+                                  <Form.Label>Current Values</Form.Label>
+                                  <div className="d-flex flex-wrap gap-1 p-2 border rounded" style={{ minHeight: '38px', alignItems: 'flex-start' }}>
+                                    {(field.values || []).map((value, valueIndex) => (
+                                      <span
+                                        key={valueIndex}
+                                        className="badge bg-secondary d-flex align-items-center"
+                                        style={{ fontSize: '0.75rem' }}
+                                      >
+                                        {value}
+                                        {isEditing && (
+                                          <button
+                                            type="button"
+                                            className="btn-close btn-close-white ms-1"
+                                            style={{ fontSize: '0.5rem', padding: '0', margin: '0' }}
+                                            onClick={() => handleUpdateMetadataField(index, {
+                                              values: field.values?.filter((_, i) => i !== valueIndex) || []
+                                            })}
+                                          />
+                                        )}
+                                      </span>
+                                    ))}
+                                    {(!field.values || field.values.length === 0) && (
+                                      <span className="text-muted small">No values added</span>
+                                    )}
+                                  </div>
                                 </Form.Group>
                               </Col>
                             </Row>
