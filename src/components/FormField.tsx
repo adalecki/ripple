@@ -19,7 +19,7 @@ export interface FormFieldProps {
   disabled?: boolean;
   placeholder?: string;
   options?: FormFieldOption[];
-  unit?: string;
+  unit?: string | React.ReactNode;
   step?: number;
   accept?: string;
   className?: string;

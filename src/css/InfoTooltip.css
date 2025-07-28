@@ -22,4 +22,5 @@
   pointer-events: none;
   font-size: 0.8rem;
   max-width: 250px;
+  text-wrap: wrap;
 }

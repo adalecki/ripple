@@ -235,6 +235,6 @@ export async function generateNewExcelTemplate(originalFile: File | null, mapped
   //utils.book_append_sheet(xWb, newCompoundWs, "NewCompounds");
   xWb.Sheets['Compounds'] = newCompoundWs
 
-  const fileName = `testEcho_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const fileName = `Echo_UpdatedTemplate_${new Date().toISOString().split('T')[0]}.xlsx`;
   writeFile(xWb, fileName);
 }

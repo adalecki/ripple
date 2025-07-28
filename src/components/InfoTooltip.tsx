@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import '../css/InfoTooltip.css';
 
-interface InfoTooltipProps {
+export interface InfoTooltipProps {
   text: string;
   size?: number;
   className?: string;
@@ -33,7 +33,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
   const updatePosition = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const tooltipX = rect.right + window.scrollX + 8; // 8px offset from icon
+    const tooltipX = rect.right + window.scrollX + 8;
     const tooltipY = rect.top + window.scrollY;
     
     setPosition({ x: tooltipX, y: tooltipY });
@@ -53,7 +53,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
       {isVisible && (
         <div 
           className="info-tooltip" 
-          style={{ 
+          style={{
             top: position.y, 
             left: position.x,
             transform: window.innerWidth - position.x > 250 
