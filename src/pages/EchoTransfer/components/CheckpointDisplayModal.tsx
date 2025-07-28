@@ -61,6 +61,16 @@ const CheckpointSummary: React.FC<CheckpointSummaryProps> = ({ echoPreCalc }) =>
 
   if (!echoPreCalc) return null;
 
+  let totalCompounds = 0;
+  for (const [_,patternGroup] of echoPreCalc.srcCompoundInventory) {
+    for (const [_,compoundGroup] of patternGroup) {
+      if (compoundGroup.locations.some(l => l.concentration != 0)) {
+        totalCompounds += 1
+        break
+      }
+    }
+  }
+
   return (
     <Card className="mt-4">
       <Card.Header as="h5">Calculation Summary</Card.Header>
@@ -72,7 +82,7 @@ const CheckpointSummary: React.FC<CheckpointSummaryProps> = ({ echoPreCalc }) =>
             <p><strong>Estimated Max DMSO per Well:</strong> {echoPreCalc.maxDMSOVol.toFixed(2)} nL</p>
           </Col>
           <Col md={6}>
-            <p><strong>Total Compounds:</strong> {echoPreCalc.srcCompoundInventory.size}</p>
+            <p><strong>Total Compounds:</strong> {totalCompounds}</p>
             <p><strong>Total Patterns:</strong> {echoPreCalc.dilutionPatterns.size}</p>
           </Col>
         </Row>
