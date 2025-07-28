@@ -10,9 +10,9 @@ export interface Setting {
   name: string;
   type: SettingType;
   defaultValue: any;
-  unit?: string;
+  unit?: string | React.ReactNode;
   step?: number;
-  options?: SettingOption[];  // For select types
+  options?: SettingOption[];
 }
 
 export interface SettingCategory {

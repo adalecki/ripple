@@ -1,4 +1,4 @@
-# Change "Submit" on calculator to clear previous plates, then resubmit using new form values, instead of requiring user to manually clear plates.
-# "Total compounds" number on the checkpoint modal shouldn't report solvents as a compound
-# Updated src vols sheet needs to pull name dynamically; apparently hardcoded to "testEcho?"
-# Add tooltip to DMSO and allowable error saying they're fractions not percentages
+#x Change "Submit" on calculator to clear previous plates, then resubmit using new form values, instead of requiring user to manually clear plates.
+#x "Total compounds" number on the checkpoint modal shouldn't report solvents as a compound
+#x Updated src vols sheet needs to pull name dynamically; apparently hardcoded to "testEcho?"
+#x Add tooltip to DMSO and allowable error saying they're fractions not percentages

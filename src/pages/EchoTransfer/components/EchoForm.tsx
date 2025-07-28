@@ -3,6 +3,7 @@ import { Form, Button, Alert } from 'react-bootstrap';
 import { usePreferences } from '../../../hooks/usePreferences';
 import { PREFERENCES_CONFIG } from '../../../config/preferencesConfig';
 import { FormField } from '../../../components/FormField';
+import InfoTooltip from '../../../components/InfoTooltip';
 import '../../../css/EchoForm.css';
 import { read, utils, WorkBook } from 'xlsx';
 import { fileHeaders } from '../utils/validationUtils';
@@ -40,6 +41,11 @@ const EchoForm: React.FC<EchoFormProps> = ({
   }
   else {
     fields = fields.filter(s => s.name != 'Use Source Survey Volumes')
+    const infoFieldIds = ['defaultDMSOTolerance','defaultAllowedError']
+    for (const fieldId of infoFieldIds) {
+      const field = fields.find(f => f.prefId == fieldId)
+      if (field) {field.unit = <InfoTooltip text='Input a real number, not a percentage, e.g., "0.1" for 10%'/>}
+    }
   }
 
   useEffect(() => {
@@ -113,6 +119,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
     setShowAlert([])
     handleClear();
   };
+  console.log(fields)
 
   const disabled: boolean = (!excelFile || (setTransferFile ? !transferFile : false))
   return (
