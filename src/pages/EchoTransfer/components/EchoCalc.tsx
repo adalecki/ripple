@@ -89,16 +89,12 @@ const EchoCalc: React.FC = () => {
       const calc = new EchoCalculator(echoPreCalc, mutableCheckpointTracker);
       setCheckpointTracker(mutableCheckpointTracker);
       const newPlates = [...calc.sourcePlates, ...calc.intermediatePlates, ...calc.destinationPlates];
-      const prevPlates = [...plates]
-      for (let newPlate of newPlates) {
-        const id = prevPlates.length > 0 ? Math.max(...prevPlates.map(p => p.id)) + 1 : 1
-        newPlate.id = id
-        if (!prevPlates.find((plate) => plate.barcode == newPlate.barcode)) {
-          prevPlates.push(newPlate)
-        }
-        if (prevPlates.length === 1) { setCurPlateId(newPlate.id) }
+      for (let i=0; i < newPlates.length; i++) {
+        let newPlate = newPlates[i]
+        newPlate.id = i + 1
       }
-      setPlates(prevPlates)
+      setCurPlateId(1)
+      setPlates(newPlates)
       let compounds: string[] = []
       for (let cpd of input.inputData.Compounds) {
         compounds.push(cpd['Compound ID'])
