@@ -13,7 +13,7 @@ import { constructPlatesFromTransfers, generateNewExcelTemplate, parseTransferLo
 import EchoForm from '../../EchoTransfer/components/EchoForm';
 
 const PlateMapper: React.FC = () => {
-  const { mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext)
+  const { mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [transferFile, setTransferFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -24,7 +24,7 @@ const PlateMapper: React.FC = () => {
   const alertContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const calculateAlertMaxHeight = () => {
+    function calculateAlertMaxHeight() {
       if (!alertContainerRef.current) return;
 
       const alertContainer = alertContainerRef.current;
@@ -44,49 +44,62 @@ const PlateMapper: React.FC = () => {
   }, [errors]);
 
   const handleSubmit = async (formData: FormData) => {
-    setErrors([])
-    //never should happen, should be prevented by form validation and disabled button, but as a fallback
+    setErrors([]);
+    
     if (!originalFile || !transferFile) {
       setErrors(['Please select both files']);
-      return
+      return;
     }
+
     const formValues: { [key: string]: any } = {};
     for (let [key, value] of formData.entries()) {
       formValues[key] = value;
     }
-    formValues['DMSO Tolerance'] = preferences.defaultDMSOTolerance
-    formValues['Allowed Error'] = preferences.defaultAllowedError
+    formValues['DMSO Tolerance'] = preferences.defaultDMSOTolerance;
+    formValues['Allowed Error'] = preferences.defaultAllowedError;
 
-    const xAb = await formValues.excelFile.arrayBuffer();
-    const xWb = read(xAb, { type: 'array' }) as WorkBook;
-    const { inputData, errors } = echoInputValidation(xWb, formValues, preferences)
-    if (errors.length > 0) {
-      setErrors(errors)
-      return
+    try {
+      const xAb = await originalFile.arrayBuffer();
+      const xWb = read(xAb, { type: 'array' }) as WorkBook;
+      const { inputData, errors } = echoInputValidation(xWb, formValues, preferences);
+      
+      if (errors.length > 0) {
+        setErrors(errors);
+        return;
+      }
+
+      const { transfers, surveyedVolumes } = await parseTransferLog(transferFile);
+      const { newPlates, compoundMap } = constructPlatesFromTransfers(inputData, transfers, preferences, surveyedVolumes);
+      const { allPlates, colorMap, failures } = performTransfers(newPlates, transfers, compoundMap);
+      
+      if (failures.length > 0) {
+        setErrors(prev => [...prev, ...failures]);
+      }
+      
+      setCompoundColorMap(colorMap);
+      setMappedPlates(allPlates);
+      if (allPlates.length > 0) {
+        setCurMappedPlateId(allPlates[0].id);
+      }
+    } catch (error) {
+      setErrors([`Error processing files: ${error instanceof Error ? error.message : 'Unknown error'}`]);
     }
-    const { transfers, surveyedVolumes } = await parseTransferLog(transferFile);
-    const { newPlates, compoundMap } = constructPlatesFromTransfers(inputData, transfers, preferences, surveyedVolumes)
-    const { allPlates, colorMap, failures } = performTransfers(newPlates, transfers, compoundMap)
-    if (failures) setErrors(prev => [...prev, ...failures])
-    setCompoundColorMap(colorMap)
-    setMappedPlates(allPlates)
-    allPlates.length > 0 ? setCurMappedPlateId(allPlates[0].id) : null
-  }
+  };
 
   const handleClear = () => {
-    setOriginalFile(null)
-    setTransferFile(null)
-    setErrors([])
-    setCompoundColorMap(new Map())
-    setMappedPlates([])
-  }
+    setOriginalFile(null);
+    setTransferFile(null);
+    setErrors([]);
+    setCompoundColorMap(new Map());
+    setMappedPlates([]);
+  };
 
-  const plate = currentPlate(mappedPlates, curMappedPlateId)
+  const plate = currentPlate(mappedPlates, curMappedPlateId);
   const colorConfig: ColorConfig = {
     scheme: 'compound',
     colorMap: compoundColorMap,
     maxConcentration: plate?.metadata.globalMaxConcentration
-  }
+  };
 
   return (
     <Container fluid>
@@ -108,6 +121,7 @@ const PlateMapper: React.FC = () => {
             submitText='Build Plate Maps'
             handleClear={handleClear}
           />
+
           {errors.length > 0 && (
             <div ref={alertContainerRef}>
               <Alert
@@ -127,7 +141,7 @@ const PlateMapper: React.FC = () => {
           )}
         </Col>
 
-        {mappedPlates.length > 0 && plate && (
+        {mappedPlates.length > 0 && plate && originalFile && (
           <Col md={8}>
             <PlateView
               plate={plate}
@@ -135,10 +149,10 @@ const PlateMapper: React.FC = () => {
               colorConfig={colorConfig}
             />
             <Row>
-              <Col >
+              <Col>
                 <Button
-                  onClick={() => {generateNewExcelTemplate(originalFile,mappedPlates)}}
-                  className="mt-3 h-75"
+                  onClick={() => generateNewExcelTemplate(originalFile, mappedPlates)}
+                  className="mt-3"
                   disabled={!originalFile}
                   variant='success'
                 >
@@ -148,11 +162,8 @@ const PlateMapper: React.FC = () => {
             </Row>
           </Col>
         )}
-
-
-
       </Row>
-    </Container >
+    </Container>
   );
 };
 

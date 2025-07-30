@@ -68,7 +68,6 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
   let barcode = '';
   if (protocol.parseStrategy.plateBarcodeLocation === 'filename') {
     const filenameWithoutExtension = filename.replace(/\.[^/.]+$/, '');
-    console.log(protocol.parseStrategy)
     
     if (protocol.parseStrategy.barcodeDelimiter == null) {
       barcode = filenameWithoutExtension;
