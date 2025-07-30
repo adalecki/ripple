@@ -1,6 +1,6 @@
-import React, { useContext, useState, useRef, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Alert, Card, Badge, Accordion } from 'react-bootstrap';
-import { Upload, FileText, CheckCircle, XCircle, AlertTriangle, Download, Settings } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, AlertTriangle, Download, Settings } from 'lucide-react';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
 import { Protocol } from '../../../types/mapperTypes';
 import { parseDataFile, applyParsedDataToPlates, ParsedData } from '../utils/parserUtils';
@@ -9,6 +9,7 @@ import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
 import PlateView from '../../../components/PlateView';
 import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
 import '../../../css/DataParser.css';
+import FileUploadCard from '../../../components/FileUploadCard';
 
 interface FileUploadStatus {
   file: File;
@@ -23,8 +24,8 @@ interface MetadataValues {
 
 function hasResponseData(plates: any[]): boolean {
   const destinationPlates = getDestinationPlates(plates);
-  return destinationPlates.some(plate => 
-    Object.values(plate.getWells()).some((well: any) => 
+  return destinationPlates.some(plate =>
+    Object.values(plate.getWells()).some((well: any) =>
       well && (well.rawResponse !== null || well.normalizedResponse !== null)
     )
   );
@@ -32,8 +33,8 @@ function hasResponseData(plates: any[]): boolean {
 
 function getPlatesWithResponseData(plates: any[]) {
   const destinationPlates = getDestinationPlates(plates);
-  return destinationPlates.filter(plate => 
-    Object.values(plate.getWells()).some((well: any) => 
+  return destinationPlates.filter(plate =>
+    Object.values(plate.getWells()).some((well: any) =>
       well && (well.rawResponse !== null || well.normalizedResponse !== null)
     )
   );
@@ -42,14 +43,11 @@ function getPlatesWithResponseData(plates: any[]) {
 const DataParser: React.FC = () => {
   const { mappedPlates, setMappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
   const { protocols } = useContext(ProtocolsContext);
-  
+
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadStatus[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [metadataValues, setMetadataValues] = useState<MetadataValues>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const plate = currentPlate(mappedPlates, curMappedPlateId);
 
   useEffect(() => {
@@ -73,63 +71,30 @@ const DataParser: React.FC = () => {
     }
   }, [selectedProtocol]);
 
-  function handleDragEnter(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    handleFiles(files);
-  }
-
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      handleFiles(files);
-    }
-  }
-
   async function handleFiles(files: File[]) {
     if (!selectedProtocol) {
       setErrors(['Please select a protocol before uploading files']);
       return;
     }
-    
+
     const newFiles: FileUploadStatus[] = files.map(file => ({
       file,
       status: 'pending' as const
     }));
-    
+
     setUploadedFiles(prev => [...prev, ...newFiles]);
-    
+
     for (let i = 0; i < newFiles.length; i++) {
       const fileStatus = newFiles[i];
       const result = await parseDataFile(fileStatus.file, selectedProtocol);
-      
+
       const updatedStatus: FileUploadStatus = {
         ...fileStatus,
         status: result.success ? 'success' : 'error',
         message: result.success ? `Parsed ${result.data?.length || 0} plate(s)` : result.errors.join(', '),
         parsedData: result.data
       };
-      
+
       setUploadedFiles(prev => {
         const updated = [...prev];
         const index = prev.findIndex(f => f.file === fileStatus.file);
@@ -166,47 +131,47 @@ const DataParser: React.FC = () => {
   function handleApplyData() {
     if (!selectedProtocol) return;
     setErrors([]);
-    
+
     // Validate metadata
     const metadataErrors = validateMetadata();
     if (metadataErrors.length > 0) {
       setErrors(metadataErrors);
       return;
     }
-    
+
     const allParsedData: ParsedData[] = [];
     uploadedFiles.forEach(fileStatus => {
       if (fileStatus.status === 'success' && fileStatus.parsedData) {
         allParsedData.push(...fileStatus.parsedData);
       }
     });
-    
+
     if (allParsedData.length === 0) {
       setErrors(['No successfully parsed data to apply']);
       return;
     }
-    
+
     const { updatedPlates, errors: applyErrors } = applyParsedDataToPlates(
       mappedPlates,
       allParsedData,
       selectedProtocol.dataProcessing.normalization
     );
-    
+
     if (applyErrors.length > 0) {
       setErrors(applyErrors);
     } else {
       const currentParsedBarcodes = new Set(
         allParsedData.map(data => data.barcode)
       );
-      
+
       const platesCopy = updatedPlates.map(plate => {
         const plateCopy = plate.clone();
-        
+
         if (currentParsedBarcodes.has(plateCopy.barcode)) {
-          const hasResponseData = Object.values(plateCopy.getWells()).some(well => 
+          const hasResponseData = Object.values(plateCopy.getWells()).some(well =>
             well && well.rawResponse !== null
           );
-          
+
           if (hasResponseData) {
             Object.entries(metadataValues).forEach(([fieldName, value]) => {
               plateCopy.metadata[fieldName] = value;
@@ -215,7 +180,7 @@ const DataParser: React.FC = () => {
         }
         return plateCopy;
       });
-      
+
       setMappedPlates(platesCopy);
       setUploadedFiles([]); // Clear files after successful application
     }
@@ -226,22 +191,14 @@ const DataParser: React.FC = () => {
       setErrors(['Please select a protocol before exporting']);
       return;
     }
-    
+
     const platesWithData = getPlatesWithResponseData(mappedPlates);
     if (platesWithData.length === 0) {
       setErrors(['No destination plates with response data found for export']);
       return;
     }
-    
-    exportDestinationPlatesCSV(platesWithData, selectedProtocol);
-  }
 
-  function handleClearFiles() {
-    setUploadedFiles([]);
-    setErrors([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    exportDestinationPlatesCSV(platesWithData, selectedProtocol);
   }
 
   function removeFile(index: number) {
@@ -259,11 +216,55 @@ const DataParser: React.FC = () => {
       : undefined
   };
 
-  const hasResponseDataForPlate = plate && Object.values(plate.getWells()).some(well => 
+  const hasResponseDataForPlate = plate && Object.values(plate.getWells()).some(well =>
     well.rawResponse !== null || well.normalizedResponse !== null
   );
 
-  const renderMetadataForm = () => {
+  function renderFileInformation() {
+    if (uploadedFiles.length < 1) return null;
+
+    return (
+      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+        {uploadedFiles.map((fileStatus, index) => (
+          <div key={index} className="d-flex align-items-center p-1 border-bottom">
+            <FileText size={12} className="me-2 text-muted" />
+            <div className="flex-grow-1" style={{ minWidth: 0 }}>
+              <div className="small text-truncate">{fileStatus.file.name}</div>
+              {fileStatus.message && (
+                <div className={`small ${fileStatus.status === 'error' ? 'text-danger' : 'text-success'}`}>
+                  {fileStatus.message}
+                </div>
+              )}
+            </div>
+            <div className="ms-2">
+              {fileStatus.status === 'pending' && <Badge bg="secondary" className="small">...</Badge>}
+              {fileStatus.status === 'success' && <CheckCircle size={16} className="text-success" />}
+              {fileStatus.status === 'error' && <XCircle size={16} className="text-danger" />}
+            </div>
+            <Button
+              size="sm"
+              variant="link"
+              className="text-danger ms-1 p-0"
+              onClick={() => removeFile(index)}
+            >
+              x
+            </Button>
+          </div>
+        ))}
+        <Button
+          size="sm"
+          variant="primary"
+          className="w-100 mt-2"
+          onClick={handleApplyData}
+          disabled={!uploadedFiles.some(f => f.status === 'success')}
+        >
+          Apply Data to Plates
+        </Button>
+      </div>
+    )
+  }
+
+  function renderMetadataForm() {
     if (!selectedProtocol || selectedProtocol.metadataFields.length === 0) {
       return null;
     }
@@ -325,7 +326,6 @@ const DataParser: React.FC = () => {
 
       <Row>
         <Col md={4}>
-          {/* Protocol Selection - Compact */}
           <Row className="mb-3">
             <Col>
               <Form.Group>
@@ -355,90 +355,10 @@ const DataParser: React.FC = () => {
             </Col>
           </Row>
 
-          {/* Metadata Form */}
           {renderMetadataForm()}
 
-          {/* File Upload and List Combined */}
-          <Card className="mb-3">
-            <Card.Header className="py-2">
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="small fw-bold">Data Files</span>
-                {uploadedFiles.length > 0 && (
-                  <Button size="sm" variant="outline-danger" onClick={handleClearFiles}>
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </Card.Header>
-            <Card.Body className="p-2">
-              <div
-                className={`drop-zone ${isDragging ? 'dragging' : ''} mb-2`}
-                style={{ padding: '1rem' }}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload size={24} className="mb-1" />
-                <div className="small">Drop files or click</div>
-                <small className="text-muted">.csv, .tsv, .txt</small>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".csv,.tsv,.txt"
-                onChange={handleFileSelect}
-                style={{ display: 'none' }}
-              />
-              
-              {uploadedFiles.length > 0 && (
-                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                  {uploadedFiles.map((fileStatus, index) => (
-                    <div key={index} className="d-flex align-items-center p-1 border-bottom">
-                      <FileText size={16} className="me-2 text-muted" />
-                      <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                        <div className="small text-truncate">{fileStatus.file.name}</div>
-                        {fileStatus.message && (
-                          <div className={`small ${fileStatus.status === 'error' ? 'text-danger' : 'text-success'}`}>
-                            {fileStatus.message}
-                          </div>
-                        )}
-                      </div>
-                      <div className="ms-2">
-                        {fileStatus.status === 'pending' && <Badge bg="secondary" className="small">...</Badge>}
-                        {fileStatus.status === 'success' && <CheckCircle size={16} className="text-success" />}
-                        {fileStatus.status === 'error' && <XCircle size={16} className="text-danger" />}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="link"
-                        className="text-danger ms-1 p-0"
-                        onClick={() => removeFile(index)}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {uploadedFiles.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="primary"
-                  className="w-100 mt-2"
-                  onClick={handleApplyData}
-                  disabled={!uploadedFiles.some(f => f.status === 'success')}
-                >
-                  Apply Data to Plates
-                </Button>
-              )}
-            </Card.Body>
-          </Card>
+          <FileUploadCard onFilesSelected={handleFiles} title='Raw Data Files'>{renderFileInformation()}</FileUploadCard>
 
-          {/* Export */}
           {showExportButton && (
             <Card className="mb-3">
               <Card.Body className="p-2">

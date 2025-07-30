@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Form, Button, Alert } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Alert, Col, Row } from 'react-bootstrap';
 import { usePreferences } from '../../../hooks/usePreferences';
 import { PREFERENCES_CONFIG } from '../../../config/preferencesConfig';
 import { FormField } from '../../../components/FormField';
-import InfoTooltip from '../../../components/InfoTooltip';
+import FileUploadCard from '../../../components/FileUploadCard';
 import '../../../css/EchoForm.css';
 import { read, utils, WorkBook } from 'xlsx';
 import { fileHeaders } from '../utils/validationUtils';
@@ -28,24 +28,18 @@ const EchoForm: React.FC<EchoFormProps> = ({
   handleClear
 }) => {
   const [validated, setValidated] = useState(false);
-  const excelInputRef = useRef<HTMLInputElement>(null);
-  const transferInputRef = useRef<HTMLInputElement>(null);
   const { preferences } = usePreferences();
   const [formValues, setFormValues] = useState<{ [key: string]: number | boolean | string }>({});
   const [showAlert, setShowAlert] = useState<string[]>([])
+  const [clearKey, setClearKey] = useState(0)
 
   let fields = PREFERENCES_CONFIG.find(p => p.id === 'calculator-defaults')?.settings || [];
   if (setTransferFile) {
-    const retainedSettingsNames = ['Well Volume (µL)','Backfill (µL)','Use Source Survey Volumes']
+    const retainedSettingsNames = ['Well Volume (µL)', 'Backfill (µL)', 'Use Source Survey Volumes']
     fields = fields.filter(s => retainedSettingsNames.includes(s.name))
   }
   else {
     fields = fields.filter(s => s.name != 'Use Source Survey Volumes')
-    const infoFieldIds = ['defaultDMSOTolerance','defaultAllowedError']
-    for (const fieldId of infoFieldIds) {
-      const field = fields.find(f => f.prefId == fieldId)
-      if (field) {field.unit = <InfoTooltip text='Input a real number, not a percentage, e.g., "0.1" for 10%'/>}
-    }
   }
 
   useEffect(() => {
@@ -69,13 +63,16 @@ const EchoForm: React.FC<EchoFormProps> = ({
     setValidated(true);
   };
 
-  const handleExcelFileChange = async (files: FileList | null) => {
-    if (files && files.length === 1) {
-      setExcelFile(files[0]);
-      const ab = await files[0].arrayBuffer()
+  const handleExcelFileSelected = async (files: File[]) => {
+    if (files.length === 1) {
+      const file = files[0];
+      setExcelFile(file);
+
+      const ab = await file.arrayBuffer()
       const wb = read(ab, { type: 'array' }) as WorkBook;
       const fieldNames = fields.map(f => f.name)
       const changedFields: string[] = []
+
       if (wb && wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
         const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay'])
         for (const line of assayNumbers) {
@@ -85,19 +82,24 @@ const EchoForm: React.FC<EchoFormProps> = ({
           }
         }
       }
+
       if (changedFields.length > 0) {
         setShowAlert(changedFields)
       }
-    } else {
+    } else if (files.length === 0) {
       setExcelFile(null);
     }
   };
 
-  const handleTransferFileChange = async (files: FileList | null) => {
-    if (setTransferFile && files && files.length === 1) {
-      setTransferFile(files[0])
+  const handleTransferFileSelected = (files: File[]) => {
+    if (setTransferFile) {
+      if (files.length === 1) {
+        setTransferFile(files[0]);
+      } else if (files.length === 0) {
+        setTransferFile(null);
+      }
     }
-  }
+  };
 
   const handleFieldChange = (fieldName: string, value: number | boolean) => {
     setFormValues(prev => ({
@@ -107,45 +109,63 @@ const EchoForm: React.FC<EchoFormProps> = ({
   };
 
   const handleClearForm = () => {
-    if (excelInputRef.current) {
-      excelInputRef.current.value = '';
-    }
-    if (transferInputRef.current) {
-      transferInputRef.current.value = '';
-    }
     setExcelFile(null);
     if (setTransferFile) setTransferFile(null)
     setValidated(false);
     setShowAlert([])
+    setClearKey(prev => prev + 1)
     handleClear();
   };
-  console.log(fields)
 
   const disabled: boolean = (!excelFile || (setTransferFile ? !transferFile : false))
   return (
     <>
       <Form noValidate validated={validated} onSubmit={handleSubmit}>
-        <FormField
-          id="excelFile"
-          name="excelFile"
-          type="file"
-          label="Input File (Excel)"
-          onChange={handleExcelFileChange}
-          required={true}
-          accept=".xlsx,.xls"
-          ref={excelInputRef}
-        />
-        {setTransferFile ?
-          <FormField
-            id="transferFile"
-            name="transferFile"
-            type="file"
-            label="Transfer Log (CSV)"
-            onChange={handleTransferFileChange}
-            required={true}
-            accept=".csv"
-            ref={transferInputRef}
-          /> : ''}
+        <Row>
+          <Col md={(setTransferFile ? '6' : '12')}>
+            <FileUploadCard
+              key={`excel-${clearKey}`}
+              onFilesSelected={handleExcelFileSelected}
+              acceptedTypes=".xlsx, .xls"
+              title="Ripple Input File (Excel)"
+              description="Select original Ripple file"
+              multiple={false}
+              name='excelFile'
+            >
+              {excelFile && (
+                <div className="mt-2">
+                  <small className="text-success">
+                    Selected: {excelFile.name}
+                  </small>
+                </div>
+              )}
+            </FileUploadCard>
+          </Col>
+          {setTransferFile && (
+            <Col md='6'>
+              <FileUploadCard
+                key={`transfer-${clearKey}`}
+                onFilesSelected={handleTransferFileSelected}
+                acceptedTypes=".csv"
+                title="Transfer Log (CSV)"
+                description="Select Echo transfer log output"
+                multiple={false}
+                name='transferFile'
+              >
+                {transferFile && (
+                  <div className="mt-2">
+                    <small className="text-success">
+                      Selected: {transferFile.name}
+                    </small>
+                  </div>
+                )}
+              </FileUploadCard>
+            </Col>
+          )}
+        </Row>
+
+
+
 
         {fields.map((field) => (
           <FormField
@@ -168,10 +188,13 @@ const EchoForm: React.FC<EchoFormProps> = ({
           <Button variant="outline-danger" onClick={handleClearForm}>Clear Plates</Button>
         </div>
         <br />
-        <Alert variant='warning' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>The following values were imported from the file: <ul>{showAlert.map((alert, idx)=> <li key={idx}>{alert}</li>)}</ul></Alert>
-
+        <Alert variant='warning' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
+          The following values were imported from the file:
+          <ul>
+            {showAlert.map((alert, idx) => <li key={idx}>{alert}</li>)}
+          </ul>
+        </Alert>
       </Form>
-
     </>
   );
 };

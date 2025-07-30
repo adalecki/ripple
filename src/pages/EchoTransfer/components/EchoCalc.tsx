@@ -53,8 +53,6 @@ const EchoCalc: React.FC = () => {
     for (let [key, value] of formData.entries()) {
       formValues[key] = value;
     }
-    formValues['Use Intermediate Plates'] = formData.get('Use Intermediate Plates') === 'on';
-    formValues['DMSO Normalization'] = formData.get('DMSO Normalization') === 'on';
 
     const ab = await formValues.excelFile.arrayBuffer()
 

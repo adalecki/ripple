@@ -9,7 +9,6 @@ import DesignWizard from './components/DesignWizard.tsx';
 import EchoInstructions from './components/EchoInstructions.tsx';
 import About from './components/About.tsx';
 import { usePreferences } from '../../hooks/usePreferences';
-import PlateMapper from '../MapperParser/components/PlateMapper.tsx';
 
 const EchoTransfer: React.FC = () => {
   const { preferences } = usePreferences()
@@ -105,24 +104,6 @@ const EchoTransfer: React.FC = () => {
         />
       );
     }
-    else if (tabKey === 'mapper') {
-      return (
-        <Sidebar
-          items={mappedPlates.map(plate => ({
-            id: plate.id,
-            name: plate.barcode || `Plate ${plate.id}`,
-            type: plate.plateRole,
-            details: {
-              items: Object.values(plate.wells).filter(well => well.getContents().length > 0).length,
-            },
-          }))}
-          selectedItemId={curMappedPlateId}
-          setSelectedItemId={setCurMappedPlateId}
-          filterOptions={['source', 'intermediate1', 'intermediate2', 'destination']}
-          title="Plates"
-        />
-      );
-    }
     return (
       <Sidebar
         items={[]}
@@ -154,9 +135,6 @@ const EchoTransfer: React.FC = () => {
                 </Tab>
                 <Tab eventKey="echo" title="Calculator">
                   <EchoCalc />
-                </Tab>
-                <Tab eventKey="mapper" title="Plate Mapper">
-                  <PlateMapper />
                 </Tab>
                 <Tab eventKey="about" title="About">
                   <About />

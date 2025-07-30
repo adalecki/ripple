@@ -143,10 +143,8 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       }
     };
 
-    //const baseClassName = `form-field${type === 'file' ? '-file' : ''} ${type === 'switch' ? 'form-field-switch' : ''} ${className}`;
     const baseClassName = `form-field ${type === 'switch' ? 'form-field-switch' : ''} ${type === 'file' ? 'form-field-file' : ''} ${className}`;
 
-    // For switch type, we don't need the extra label since it's included in the switch component
     return type === 'switch' ? (
       <div className={baseClassName}>
         {renderInput()}
