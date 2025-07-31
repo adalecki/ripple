@@ -1,0 +1,17 @@
+.interactive-control-mapper-modal .modal-dialog {
+  max-width: 90vw;
+}
+
+.interactive-control-mapper-modal .modal-body {
+  padding: 1rem;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.interactive-control-mapper-modal .selection-rectangle {
+  position: absolute;
+  border: 2px dashed #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+  pointer-events: none;
+  z-index: 1000;
+}

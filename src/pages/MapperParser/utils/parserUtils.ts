@@ -1,7 +1,8 @@
 import { utils, read, WorkSheet } from 'xlsx';
-import { Protocol } from '../../../types/mapperTypes';
+import { ControlDefinition, Protocol } from '../../../types/mapperTypes';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { getWellIdFromCoords, numberToLetters } from '../../EchoTransfer/utils/plateUtils';
+import { getDestinationPlates } from './exportUtils';
 
 export interface ParsedData {
   barcode: string;
@@ -12,6 +13,12 @@ export interface ParseResult {
   success: boolean;
   data?: ParsedData[];
   errors: string[];
+}
+
+interface NormalizationParams {
+  maxCtrl?: number;
+  minCtrl?: number;
+  blank?: number;
 }
 
 //utility function used for testing
@@ -28,6 +35,24 @@ export function mapEquality(map1: Map<string, number>, map2: Map<string, number>
     }
   }
   return true
+}
+
+export function hasResponseData(plates: any[]): boolean {
+  const destinationPlates = getDestinationPlates(plates);
+  return destinationPlates.some(plate =>
+    Object.values(plate.getWells()).some((well: any) =>
+      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+    )
+  );
+}
+
+export function getPlatesWithResponseData(plates: any[]) {
+  const destinationPlates = getDestinationPlates(plates);
+  return destinationPlates.filter(plate =>
+    Object.values(plate.getWells()).some((well: any) =>
+      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+    )
+  );
 }
 
 // Parse Excel file based on protocol configuration
@@ -247,10 +272,10 @@ function parseTableFormat(sheet: WorkSheet, protocol: Protocol): { wellData: Map
 export function applyParsedDataToPlates(
   plates: Plate[], 
   parsedData: ParsedData[], 
-  normalizationType: 'None' | 'PctOfCtrl'
+  protocol: Protocol
 ): { updatedPlates: Plate[], errors: string[] } {
   const errors: string[] = [];
-  const updatedPlates: Plate[] = [];
+  let updatedPlates: Plate[] = [];
   
   // Create a map of barcode to parsed data for efficiency
   const dataByBarcode = new Map<string, ParsedData>();
@@ -267,10 +292,8 @@ export function applyParsedDataToPlates(
       continue;
     }
     
-    // Clone the plate to avoid mutating the original
     const updatedPlate = plate.clone();
     
-    // Apply raw responses to wells
     let minResponse = Infinity;
     let maxResponse = -Infinity;
     
@@ -289,25 +312,12 @@ export function applyParsedDataToPlates(
     updatedPlate.metadata.globalMinResponse = minResponse;
     updatedPlate.metadata.globalMaxResponse = maxResponse;
     
-    // Apply normalization if needed
-    if (normalizationType === 'PctOfCtrl') {
-      // TODO: Implement control-based normalization
-      // For now, just copy raw to normalized
-      for (const well of updatedPlate) {
-        if (well && well.rawResponse !== null) {
-          well.applyNormalizedResponse(well.rawResponse);
-        }
-      }
-    } else {
-      // No normalization - copy raw to normalized
-      for (const well of updatedPlate) {
-        if (well && well.rawResponse !== null) {
-          well.applyNormalizedResponse(well.rawResponse);
-        }
-      }
-    }
-    
     updatedPlates.push(updatedPlate);
+  }
+  if (protocol.dataProcessing.normalization ===  'PctOfCtrl') {
+    const {recalculatedPlates, errors: normError} = calculateNormalization(updatedPlates,protocol)
+    updatedPlates = recalculatedPlates
+    if (normError.length > 0) errors.push.apply(errors,normError)
   }
   
   return { updatedPlates, errors };
@@ -571,4 +581,113 @@ export function autoParseMatrixFile(
     }
   }
   return plateData;
+}
+
+export function calculateNormalization(
+  plates: Plate[], 
+  protocol: Protocol,
+  excludeWells?: Set<string> // Wells to exclude from control calculations (for masking)
+): { recalculatedPlates: Plate[], errors: string[] } {
+  const errors: string[] = [];
+  const recalculatedPlates: Plate[] = [];
+  
+  for (const plate of plates) {
+    const recalculatedPlate = plate.clone();
+    
+    if (protocol.dataProcessing.normalization === 'PctOfCtrl') {
+      // Extract control values, excluding masked wells if specified
+      const controlParams = extractControlValuesWithExclusions(
+        recalculatedPlate, 
+        protocol.dataProcessing.controls,
+        excludeWells
+      );
+      
+      // Validate we have the minimum required controls
+      if (controlParams.maxCtrl === undefined && controlParams.minCtrl === undefined) {
+        recalculatedPlates.push(recalculatedPlate);
+        continue;
+      }
+      
+      // Default to 0 if no MinCtrl is defined
+      const minValue = controlParams.minCtrl ?? 0;
+      
+      // Use MaxCtrl if available, otherwise use the maximum raw response in the plate
+      let maxValue = controlParams.maxCtrl;
+      if (maxValue === undefined) {
+        const allRawResponses = Object.values(recalculatedPlate.getWells())
+          .filter(well => ((excludeWells && !excludeWells.has(well.id)) && well.rawResponse != null))
+          .map(well => well.rawResponse as number)
+          //.map(well => well.rawResponse)
+          //.filter((well): well.response is number => response !== null && 
+          //  (!excludeWells || !excludeWells.has(well.id)));
+        
+        if (allRawResponses.length > 0) {
+          maxValue = Math.max(...allRawResponses);
+        } else {
+          maxValue = 100; // Default fallback
+        }
+      }
+      
+      const blankValue = controlParams.blank ?? 0;
+      const range = maxValue - minValue;
+      
+      if (range <= 0) {
+        errors.push(`Plate ${plate.barcode}: Invalid control range after recalculation (max: ${maxValue}, min: ${minValue})`);
+      } else {
+        for (const well of recalculatedPlate) {
+          if (well && well.rawResponse !== null) {
+            // Formula: ((raw - blank) - min) / (max - min) * 100
+            const adjustedRaw = well.rawResponse - blankValue;
+            const normalizedValue = ((adjustedRaw - minValue) / range) * 100;
+            well.applyNormalizedResponse(normalizedValue);
+          }
+        }
+      }
+    }
+    
+    recalculatedPlates.push(recalculatedPlate);
+  }
+  
+  return { recalculatedPlates, errors };
+}
+
+// Helper function for extracting control values with exclusions
+function extractControlValuesWithExclusions(
+  plate: Plate, 
+  controls: ControlDefinition[],
+  excludeWells?: Set<string>
+): NormalizationParams {
+  const params: NormalizationParams = {};
+  
+  for (const control of controls) {
+    if (!control.wells) continue;
+    
+    try {
+      const wells = plate.getSomeWells(control.wells);
+      const responses = wells
+        .filter(well => !excludeWells || !excludeWells.has(well.id)) // Exclude masked wells
+        .map(well => well.rawResponse)
+        .filter((response): response is number => response !== null);
+      if (responses.length === 0) continue;
+      
+      // Calculate mean response for this control type
+      const meanResponse = responses.reduce((sum, val) => sum + val, 0) / responses.length;
+      
+      switch (control.type) {
+        case 'MaxCtrl':
+          params.maxCtrl = meanResponse;
+          break;
+        case 'MinCtrl':
+          params.minCtrl = meanResponse;
+          break;
+        case 'Blank':
+          params.blank = meanResponse;
+          break;
+      }
+    } catch (error) {
+      console.warn(`Invalid well range for ${control.type}: ${control.wells}`, error);
+    }
+  }
+  
+  return params;
 }

@@ -1,6 +1,7 @@
 import { PlateSize } from "../classes/PlateClass";
+
 export const PARSE_FORMATS = ['Matrix', 'Table'] as const;
-export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'PosCtrl', 'NegCtrl', 'Reference'] as const;
+export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'Blank'] as const;
 export const NORMALIZATION_TYPES = ['PctOfCtrl', 'None'] as const;
 export const FIELD_TYPES = ['Free Text', 'PickList'] as const;
 export const PLATE_SIZES = [96, 384, 1536] as const;
@@ -54,3 +55,9 @@ export interface Protocol {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export const CONTROL_TYPE_DESCRIPTIONS: Record<ControlType, string> = {
+  'MaxCtrl': 'Maximum Control (100% response)',
+  'MinCtrl': 'Minimum Control (0% response)', 
+  'Blank': 'Blank (for subtraction)'
+} as const;
