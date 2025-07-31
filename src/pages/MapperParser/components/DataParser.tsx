@@ -3,8 +3,8 @@ import { Container, Row, Col, Form, Button, Alert, Card, Badge, Accordion } from
 import { FileText, CheckCircle, XCircle, AlertTriangle, Download, Settings } from 'lucide-react';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
 import { Protocol } from '../../../types/mapperTypes';
-import { parseDataFile, applyParsedDataToPlates, ParsedData } from '../utils/parserUtils';
-import { exportDestinationPlatesCSV, getDestinationPlates } from '../utils/exportUtils';
+import { parseDataFile, applyParsedDataToPlates, ParsedData, hasResponseData, getPlatesWithResponseData } from '../utils/parserUtils';
+import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
 import PlateView from '../../../components/PlateView';
 import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
@@ -22,23 +22,7 @@ interface MetadataValues {
   [fieldName: string]: string | number;
 }
 
-function hasResponseData(plates: any[]): boolean {
-  const destinationPlates = getDestinationPlates(plates);
-  return destinationPlates.some(plate =>
-    Object.values(plate.getWells()).some((well: any) =>
-      well && (well.rawResponse !== null || well.normalizedResponse !== null)
-    )
-  );
-}
 
-function getPlatesWithResponseData(plates: any[]) {
-  const destinationPlates = getDestinationPlates(plates);
-  return destinationPlates.filter(plate =>
-    Object.values(plate.getWells()).some((well: any) =>
-      well && (well.rawResponse !== null || well.normalizedResponse !== null)
-    )
-  );
-}
 
 const DataParser: React.FC = () => {
   const { mappedPlates, setMappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
@@ -49,6 +33,7 @@ const DataParser: React.FC = () => {
   const [errors, setErrors] = useState<string[]>([]);
   const [metadataValues, setMetadataValues] = useState<MetadataValues>({});
   const plate = currentPlate(mappedPlates, curMappedPlateId);
+  const [normalizedResponse, setNormalizedResponse] = useState<Boolean>(false)
 
   useEffect(() => {
     if (selectedProtocol) {
@@ -60,7 +45,6 @@ const DataParser: React.FC = () => {
     }
   }, [protocols]);
 
-  // Initialize metadata values when protocol changes
   useEffect(() => {
     if (selectedProtocol) {
       const newMetadataValues: MetadataValues = {};
@@ -70,6 +54,10 @@ const DataParser: React.FC = () => {
       setMetadataValues(newMetadataValues);
     }
   }, [selectedProtocol]);
+
+  const handleNormalizationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNormalizedResponse(event.target.value === 'true');
+  };
 
   async function handleFiles(files: File[]) {
     if (!selectedProtocol) {
@@ -132,7 +120,6 @@ const DataParser: React.FC = () => {
     if (!selectedProtocol) return;
     setErrors([]);
 
-    // Validate metadata
     const metadataErrors = validateMetadata();
     if (metadataErrors.length > 0) {
       setErrors(metadataErrors);
@@ -154,7 +141,7 @@ const DataParser: React.FC = () => {
     const { updatedPlates, errors: applyErrors } = applyParsedDataToPlates(
       mappedPlates,
       allParsedData,
-      selectedProtocol.dataProcessing.normalization
+      selectedProtocol
     );
 
     if (applyErrors.length > 0) {
@@ -182,7 +169,8 @@ const DataParser: React.FC = () => {
       });
 
       setMappedPlates(platesCopy);
-      setUploadedFiles([]); // Clear files after successful application
+      console.log(platesCopy)
+      setUploadedFiles([]);
     }
   }
 
@@ -209,7 +197,7 @@ const DataParser: React.FC = () => {
   const platesWithDataCount = getPlatesWithResponseData(mappedPlates).length;
 
   const colorConfig: ColorConfig = {
-    scheme: 'response',
+    scheme: (normalizedResponse ? 'normalizedResponse' : 'rawResponse'),
     colorMap: new Map(),
     responseRange: plate?.metadata.globalMinResponse !== undefined && plate?.metadata.globalMaxResponse !== undefined
       ? { min: plate.metadata.globalMinResponse, max: plate.metadata.globalMaxResponse }
@@ -317,15 +305,10 @@ const DataParser: React.FC = () => {
 
   return (
     <Container fluid>
-      <Row className="mb-3">
-        <Col md={12}>
-          <h4>Data Parser</h4>
-          <p>Upload data files and parse them according to the selected protocol</p>
-        </Col>
-      </Row>
-
       <Row>
         <Col md={4}>
+          <h4>Data Parser</h4>
+          <p>Upload data files and parse them according to the selected protocol</p>
           <Row className="mb-3">
             <Col>
               <Form.Group>
@@ -397,6 +380,26 @@ const DataParser: React.FC = () => {
         </Col>
 
         <Col md={8}>
+          <Form>
+            <Form.Check
+              type="radio"
+              label="Normalized"
+              name="dataType"
+              value="true"
+              checked={normalizedResponse === true}
+              onChange={handleNormalizationChange}
+              inline
+            />
+            <Form.Check
+              type="radio"
+              label="Raw Data"
+              name="dataType"
+              value="false"
+              checked={normalizedResponse === false}
+              onChange={handleNormalizationChange}
+              inline
+            />
+          </Form>
           {plate ? (
             <>
               <PlateView
