@@ -88,6 +88,7 @@ function FileUploadCard({
           <p>{description}</p>
           <small className="text-muted">{acceptedTypes}</small>
         </div>
+        <label htmlFor={name} style={{ display: 'none' }}>{title}</label>
         <input
           ref={fileInputRef}
           type="file"

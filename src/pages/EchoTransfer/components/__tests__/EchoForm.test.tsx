@@ -128,8 +128,9 @@ describe('EchoForm', () => {
       setTransferFile={mockSetTransferFile}
     />);
 
-    const excelFileInput = screen.getByLabelText('Input File (Excel)');
-    const transferFileInput = screen.getByLabelText('Transfer Log (CSV)');
+    const excelFileInput = screen.getByLabelText("Ripple Input File (Excel)");
+    const transferFileInput = screen.getByLabelText("Transfer Log (CSV)");
+
     await act(async () => { 
       fireEvent.change(excelFileInput, { target: { files: [excelFile] } });
       fireEvent.change(transferFileInput, { target: { files: [transferFile] } });
@@ -145,7 +146,49 @@ describe('EchoForm', () => {
     expect(mockOnSubmit).toHaveBeenCalledWith(expect.any(FormData));
     jest.restoreAllMocks();
   });
-  
+
+it('onSubmit sees files in formData submitted with both files', async () => {
+  HTMLFormElement.prototype.checkValidity = jest.fn().mockReturnValue(true);
+
+  const excelFile = new File(['excel content'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const transferFile = new File(['csv content'], 'transfer.csv', { type: 'text/csv' });
+
+  const capturedValues: { [key: string]: any } = {};
+
+  const handleSubmit = jest.fn(async (formData: FormData) => {
+    for (let [key, value] of formData.entries()) {
+      capturedValues[key] = value;
+    }
+  });
+
+  render(<EchoForm
+    {...defaultProps}
+    excelFile={excelFile}
+    transferFile={transferFile}
+    setTransferFile={mockSetTransferFile}
+    onSubmit={handleSubmit}
+  />);
+
+  const excelInput = screen.getByLabelText("Ripple Input File (Excel)");
+  const transferInput = screen.getByLabelText("Transfer Log (CSV)");
+  const submitButton = screen.getByText('Test Submit');
+
+  await act(async () => {
+    fireEvent.change(excelInput, { target: { files: [excelFile] } });
+    fireEvent.change(transferInput, { target: { files: [transferFile] } });
+  });
+
+  await act(async () => {
+    fireEvent.click(submitButton);
+  });
+
+  expect(handleSubmit).toHaveBeenCalledTimes(1);
+  console.log(capturedValues)
+
+  expect(capturedValues['excelFile']).toBeInstanceOf(File);
+  expect(capturedValues['transferFile']).toBeInstanceOf(File);
+});
+
   it('does not call onSubmit and submit button is disabled if excelFile is missing', async () => {
     const propsWithoutExcel = {
       ...defaultProps,
@@ -277,7 +320,8 @@ describe('EchoForm', () => {
         const mockAssaySheet = { A1: { t: 's', v: 'WrongHeader1' }, B1: { t: 's', v: 'WrongHeader2' } };
         (read as jest.Mock).mockReturnValue({ SheetNames: ['Assay'], Sheets: { 'Assay': mockAssaySheet }});
         (xlsxUtils.sheet_to_json as jest.Mock).mockReturnValue([{ NotASetting: 'SomeVal', NotAValue: 'AnotherVal' }]);
-        const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+        //const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+        const excelInput = screen.getByLabelText("Ripple Input File (Excel)");
         await act(async () => { fireEvent.change(excelInput, { target: { files: [excelFile] } }); });
         const alert = screen.queryByRole('alert');
         if (alert) expect(alert).not.toBeVisible();
