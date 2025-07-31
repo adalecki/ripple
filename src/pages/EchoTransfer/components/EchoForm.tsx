@@ -128,7 +128,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
               onFilesSelected={handleExcelFileSelected}
               acceptedTypes=".xlsx, .xls"
               title="Ripple Input File (Excel)"
-              description="Select original Ripple file"
+              description="Select Ripple input file"
               multiple={false}
               name='excelFile'
             >
