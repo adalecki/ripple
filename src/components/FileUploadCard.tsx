@@ -73,7 +73,7 @@ function FileUploadCard({
   };
 
   return (
-    <Card className="mb-3">
+    <Card className='mb-3'>
       <Card.Header>{title}</Card.Header>
       <Card.Body>
         <div

@@ -1,6 +1,6 @@
 .plate-grid {
   display: grid;
-  gap: 1px; /* Adjust the gap size as needed */
+  gap: 1px;
   justify-content: start;
   width: 100%
 }
@@ -15,13 +15,13 @@
 }
 
 .well.selected {
-  background-color: #007bff; /* Bootstrap primary color for selection */
+  background-color: #007bff;
 }
 
 .selection-rectangle {
   position: absolute;
   border: 2px dashed blue; 
-  background-color: rgba(135, 206, 235, 0.3); /* Light blue with some transparency */
+  background-color: rgba(135, 206, 235, 0.3);
   pointer-events: none; /* So it doesn't interfere with other mouse events */
 }
 
@@ -84,8 +84,8 @@
   grid-template-areas:
     "empty colLabels"
     "rowLabels wells";
-  gap: 4px; /* Adjust gap between labels and wells as needed */
-  height: 100%; /* Or a specific height as needed */
+  gap: 4px;
+  height: 100%;
   width: 100%; /* Fill the parent container */
 }
 
