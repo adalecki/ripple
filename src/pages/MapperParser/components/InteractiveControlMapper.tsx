@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Modal, Button, Form, Alert, Badge, Container, Col, Row } from 'react-bootstrap';
 import { ControlDefinition, ControlType, CONTROL_TYPES } from '../../../types/mapperTypes';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
@@ -30,7 +30,7 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
   plateSize,
   onConfirm
 }) => {
-  const [tempPlate] = useState(() => new Plate({ plateSize: plateSize.toString() as PlateSize }));
+  const [tempPlate, setTempPlate] = useState(() => new Plate({ plateSize: plateSize.toString() as PlateSize }));
   const [selectedWells, setSelectedWells] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
   const [startPoint, setStartPoint] = useState<Point>({ x: 0, y: 0 });
@@ -40,6 +40,14 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const wellsRef = useRef<(HTMLDivElement)[]>([]);
+  const plateContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.addEventListener('mousedown', (e) => handlePageDblClick(e));
+    return () => {
+      document.removeEventListener('mousedown', (e) => handlePageDblClick(e));
+    };
+  }, []);
 
   const colorMap = useMemo(() => {
     const map = new Map<string, HslStringType>();
@@ -54,25 +62,57 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     colorMap: colorMap
   };
 
+  // Calculate coordinates relative to the plate container instead of the page
+  const getRelativeCoordinates = (e: React.MouseEvent): Point => {
+    if (plateContainerRef.current) {
+      const containerRect = plateContainerRef.current.getBoundingClientRect();
+      return {
+        x: e.clientX - containerRect.left,
+        y: e.clientY - containerRect.top
+      };
+    }
+    return { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+  };
+
+  const handlePageDblClick = (e: any) => {
+    if (e.detail > 1) {
+      setSelectedWells([])
+    }
+  }
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setDragging(true);
-    console.log(e,e.clientX,e.clientY,window.scrollX,window.scrollY)
-    const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+    const start = getRelativeCoordinates(e);
     setStartPoint(start);
     setEndPoint(start);
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (dragging) {
-      setEndPoint({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
+      setEndPoint(getRelativeCoordinates(e));
     }
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (dragging) {
       setDragging(false);
-      const wellArr = checkWellsInSelection(startPoint, endPoint, wellsRef);
+      // For well selection, we still need to use the original method that works with absolute coordinates
+      const absoluteStart = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+      const absoluteEnd = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+
+      const relativeEnd = getRelativeCoordinates(e);
+
+      // Convert back to absolute coordinates for well selection
+      const containerRect = plateContainerRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        absoluteStart.x = startPoint.x + containerRect.left + window.scrollX;
+        absoluteStart.y = startPoint.y + containerRect.top + window.scrollY;
+        absoluteEnd.x = relativeEnd.x + containerRect.left + window.scrollX;
+        absoluteEnd.y = relativeEnd.y + containerRect.top + window.scrollY;
+      }
+
+      const wellArr = checkWellsInSelection(absoluteStart, absoluteEnd, wellsRef);
       if (!e.shiftKey) {
         setSelectedWells(wellArr);
       } else {
@@ -130,17 +170,37 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     }
   }, []);
 
+  function rebuildPlateFromControls(controls: ControlDefinition[]) {
+    const newPlate = new Plate({ plateSize: plateSize.toString() as PlateSize });
+
+    controls.forEach(control => {
+      if (control.wells) {
+        try {
+          const wells = newPlate.getSomeWells(control.wells);
+          wells.forEach(well => {
+            well.applyPattern(control.type, 1); // Concentration doesn't matter for visualization
+          });
+        } catch (error) {
+          console.warn(`Invalid well range for ${control.type}: ${control.wells}`);
+        }
+      }
+    });
+
+    setTempPlate(newPlate);
+  };
+
   const assignSelectionToControl = () => {
     if (selectedWells.length === 0) {
       setError('Please select wells first');
       return;
     }
 
-    const wellBlock = formatWellBlock(selectedWells);
     const existingControlIndex = definedControls.findIndex(c => c.type === selectedControlType);
 
     if (existingControlIndex >= 0) {
       // Update existing control
+      const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id)
+      const wellBlock = formatWellBlock([...selectedWells, ...oldWellIds])
       const updatedControls = [...definedControls];
       updatedControls[existingControlIndex] = {
         ...updatedControls[existingControlIndex],
@@ -149,6 +209,7 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
       setDefinedControls(updatedControls);
     } else {
       // Add new control
+      const wellBlock = formatWellBlock(selectedWells);
       setDefinedControls(prev => [...prev, {
         type: selectedControlType,
         wells: wellBlock
@@ -157,6 +218,31 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
 
     setSelectedWells([]);
     setError(null);
+  };
+
+  const removeControlsFromSelection = () => {
+    if (selectedWells.length === 0) {
+      setError('Please select wells first');
+      return;
+    }
+    
+    const existingControlIndex = definedControls.findIndex(c => c.type === selectedControlType);
+    if (existingControlIndex >= 0) {
+      const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id);
+      const remainingWellIds = oldWellIds.filter(i => !selectedWells.includes(i));
+      const wellBlock = formatWellBlock(remainingWellIds);
+      
+      const updatedControls = [...definedControls];
+      updatedControls[existingControlIndex] = {
+        ...updatedControls[existingControlIndex],
+        wells: wellBlock
+      };
+      
+      setDefinedControls(updatedControls);
+      rebuildPlateFromControls(updatedControls);
+      setSelectedWells([]);
+      setError(null);
+    }
   };
 
   const removeControl = (controlType: ControlType) => {
@@ -174,20 +260,12 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     setError(null);
   };
 
-  // Apply control patterns to temp plate for visualization
-  React.useEffect(() => {
-    // Clear existing patterns
-    for (const well of tempPlate) {
-      if (well) {
-        well.clearContents();
-      }
-    }
-
-    // Apply control patterns
+  useEffect(() => {
+    const newPlate = new Plate({ plateSize: plateSize.toString() as PlateSize });
     definedControls.forEach(control => {
       if (control.wells) {
         try {
-          const wells = tempPlate.getSomeWells(control.wells);
+          const wells = newPlate.getSomeWells(control.wells);
           wells.forEach(well => {
             well.applyPattern(control.type, 1); // Concentration doesn't matter for visualization
           });
@@ -196,7 +274,9 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
         }
       }
     });
-  }, [definedControls, tempPlate]);
+
+    setTempPlate(newPlate);
+  }, [definedControls, plateSize]);
 
   const selectionStyle = dragging ? {
     left: Math.min(startPoint.x, endPoint.x),
@@ -246,10 +326,10 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
                     <Button
                       size="sm"
                       variant="outline-secondary"
-                      onClick={() => setSelectedWells([])}
+                      onClick={removeControlsFromSelection}
                       disabled={selectedWells.length === 0}
                     >
-                      Clear Selection
+                      Remove Controls from Selection
                     </Button>
                   </div>
 
@@ -284,16 +364,18 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
                 </div>
               </Col>
               <Col md="8">
-                <PlateView
-                  plate={tempPlate}
-                  view="controlMapping"
-                  colorConfig={colorConfig}
-                  selectedWells={selectedWells}
-                  handleMouseDown={handleMouseDown}
-                  handleLabelClick={handleLabelClick}
-                  selectionStyle={selectionStyle}
-                  ref={wellsRef}
-                />
+                <div ref={plateContainerRef} style={{ position: 'relative' }}>
+                  <PlateView
+                    plate={tempPlate}
+                    view="controlMapping"
+                    colorConfig={colorConfig}
+                    selectedWells={selectedWells}
+                    handleMouseDown={handleMouseDown}
+                    handleLabelClick={handleLabelClick}
+                    selectionStyle={selectionStyle}
+                    ref={wellsRef}
+                  />
+                </div>
               </Col>
             </Row>
           </div>
