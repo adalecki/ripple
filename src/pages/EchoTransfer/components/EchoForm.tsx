@@ -121,14 +121,14 @@ const EchoForm: React.FC<EchoFormProps> = ({
   return (
     <>
       <Form noValidate validated={validated} onSubmit={handleSubmit}>
-        <Row>
+        <Row >
           <Col md={(setTransferFile ? '6' : '12')}>
             <FileUploadCard
               key={`excel-${clearKey}`}
               onFilesSelected={handleExcelFileSelected}
               acceptedTypes=".xlsx, .xls"
-              title="Ripple Input File (Excel)"
-              description="Select Ripple input file"
+              title="Ripple Input"
+              description="Original Ripple file"
               multiple={false}
               name='excelFile'
             >
@@ -147,8 +147,8 @@ const EchoForm: React.FC<EchoFormProps> = ({
                 key={`transfer-${clearKey}`}
                 onFilesSelected={handleTransferFileSelected}
                 acceptedTypes=".csv"
-                title="Transfer Log (CSV)"
-                description="Select Echo transfer log output"
+                title="Transfer Log"
+                description="Echo output log"
                 multiple={false}
                 name='transferFile'
               >
