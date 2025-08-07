@@ -2,3 +2,6 @@
 #x "Total compounds" number on the checkpoint modal shouldn't report solvents as a compound
 #x Updated src vols sheet needs to pull name dynamically; apparently hardcoded to "testEcho?"
 #x Add tooltip to DMSO and allowable error saying they're fractions not percentages
+# Generated templates from design tab don't have Assay sheet
+# Change control names; "MaxCtrl" still ambiguous. Move to "MaxReadout" or something.
+# Well tooltip should transform toward the center of the plate based on quadrant; it'll slam up against the side, compressing the information within.

@@ -386,7 +386,7 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
         <Button variant="outline-secondary" onClick={handleReset}>
           Reset to Original
         </Button>
-        <Button variant="secondary" onClick={onHide}>
+        <Button variant="secondary" onClick={() => {handleReset();onHide()}}>
           Cancel
         </Button>
         <Button variant="primary" onClick={handleConfirm}>

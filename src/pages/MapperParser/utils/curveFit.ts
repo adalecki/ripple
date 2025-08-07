@@ -1,93 +1,83 @@
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 
-export function curveFit(x: number[] = [],y: number[] = []) {
-  //x = [50, 25.1, 12.6, 6.3, 3.16, 1.58, 0.794, 0.398, 0.199, 0.1]
-  //y = [186.55, 187.13, 163.96, 103.18, 82.57, 21.84, 4.67, 3.04, -0.93, -1.32]
+export interface CurveFitResult {
+  A: number; // Bottom
+  B: number; // Hillslope  
+  C: number; // EC50
+  D: number; // Top
+}
 
-  let maxY = Math.max(...y)
-  let minY = Math.min(...y)
-  // Add a check for cases where maxY and minY are the same to avoid division by zero
-  if (maxY === minY) {
-    // If all y values are the same, return early or handle as a flat line
-    // For now, returning parameters that would represent a flat line at that y value
-    // This might need more sophisticated handling depending on expected behavior.
-    // A: Bottom, B: HillSlope (0 for flat), C: EC50 (irrelevant for flat), D: Top
-    // Setting A and D to the constant y value.
-    const constantY = y.length > 0 ? y[0] : 0;
-    return [constantY, 0, 0, constantY];
+export interface CurveFitOptions {
+  damping?: number;
+  gradientDifference?: number;
+  maxIterations?: number;
+  errorTolerance?: number;
+}
+
+export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOptions = {}): number[] {
+  if (x.length !== y.length) {
+    throw new Error('x and y arrays must have the same length');
   }
-
-  let normedY = []
-  for (let val in y) {
-    let norm = ((y[val]-minY)/(maxY-minY))*100
-    normedY.push(norm)
-  }
-
-  // A - Bottom
-  // B - Hillslope
-  // C - EC50
-  // D - Top
-
-  function fourPL([A, B, C, D]: number[]) {
-    return (t: number) => {
-      return (A - D) / (1.0 + Math.pow(t / C, B)) + D;
-    }
-  }
-
-  function line([slope,intercept]: number[]) {
-    return (x_val: number) => slope * x_val + intercept
-  }
-  let initialSlopeY0 = y.length > 0 ? y[0] : 0;
-  let initialSlopeYLast = y.length > 0 ? y[y.length-1] : 0;
-
-  let initialSlope = y.length > 1 ? (initialSlopeYLast - initialSlopeY0)/y.length : 0;
   
-  let lineResult;
-  try {
-    lineResult = levenbergMarquardt({x:x, y:y},line,{initialValues:[initialSlope,initialSlopeY0]})
-  } catch (e) {
-    console.error("Error during linear fitting for initial slope:", e);
-    lineResult = { parameterValues: [0, initialSlopeY0] };
+  if (x.length < 3) {
+    throw new Error('Need at least 3 data points for curve fitting');
   }
+  // Normalize response values to scale from 0 - 100
+  const maxY = Math.max(...y);
+  const minY = Math.min(...y);
+  const normedY: number[] = [];
+  
+  for (let i = 0; i < y.length; i++) {
+    const norm = ((y[i] - minY) / (maxY - minY)) * 100;
+    normedY.push(norm);
+  }
+
+  // A - Bottom, B - Hillslope, C - EC50, D - Top
+  function fourPL([A, B, C, D]: number[]) {
+    return (t: number): number => {
+      return (A - D) / (1.0 + Math.pow(t / C, B)) + D;
+    };
+  }
+
+  function line([slope, intercept]: number[]) {
+    return (x: number): number => slope * x + intercept;
+  }
+
+  const initialSlope = (y[y.length - 1] - y[0]) / y.length;
+  const lineResult = levenbergMarquardt(
+    { x: x, y: y }, 
+    line, 
+    { initialValues: [initialSlope, y[0]] }
+  );
   
   // Find the point closest to 50% response to use as initial EC50 guess
-  let estA = Math.min(...y)
-  let estB = (lineResult.parameterValues[0] > 0 ? 1 : -1)
-  let estC = 5 // Default C if other estimates fail
-  let estD = Math.max(...y)
+  const estA = Math.min(...y);
+  const estB = (lineResult.parameterValues[0] > 0 ? 1 : -1);
+  let estC = 5;
+  const estD = Math.max(...y);
 
-  let midpoint = (estA + estD)/2
-  
-  if (y.length > 0) {
-    let closest = y.reduce((prev,curr) => (Math.abs(curr-midpoint) < Math.abs(prev-midpoint) ? curr:prev))
-    const indexOfClosest = y.indexOf(closest);
-    if (indexOfClosest !== -1 && x.length > indexOfClosest) {
-        estC = x[indexOfClosest];
-    }
-  }
-
+  const midpoint = (estA + estD) / 2;
+  const closest = y.reduce((prev, curr) => 
+    (Math.abs(curr - midpoint) < Math.abs(prev - midpoint) ? curr : prev)
+  );
+  estC = x[y.indexOf(closest)];
 
   const initialValues = [estA, estB, estC, estD];
-  
 
-  const options = {
-    damping: 1.5,
+  // Options for the LM algorithm
+  const lmOptions = {
+    damping: options.damping ?? 1.5,
     initialValues: initialValues,
-    gradientDifference: 10e-2,
-    maxIterations: 100,
-    errorTolerance: 10e-3
+    gradientDifference: options.gradientDifference ?? 10e-2,
+    maxIterations: options.maxIterations ?? 100,
+    errorTolerance: options.errorTolerance ?? 10e-3
   };
 
   const data = {
     x: x,
     y: y
   };
-
-  try {
-    const fittedParams = levenbergMarquardt(data, fourPL, options).parameterValues;
-    return fittedParams;
-  } catch (error) {
-    console.error("Error during 4PL curve fitting:", error);
-    return initialValues;
-  }
+  
+  const fittedParams = levenbergMarquardt(data, fourPL, lmOptions).parameterValues;
+  return fittedParams;
 }

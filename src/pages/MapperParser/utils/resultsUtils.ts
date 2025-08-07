@@ -11,20 +11,74 @@ export interface TreatmentGroup {
   wells: TreatmentWell[];
 }
 
-export function aggregateData(data: {wellId: string, concentration: number, response: number}[]) {
-  const grouped = data.reduce((acc: {[key: number]: number[]}, val) => {
-    if (!acc[val.concentration]) {
-      acc[val.concentration] = [];
-    }
-    acc[val.concentration].push(val.response);
-    return acc;
-  }, {});
+export interface AggregatedPoint {
+  concentration: number;
+  mean: number;
+  stdDev: number;
+  count: number;
+}
 
-  return Object.entries(grouped).map(([concentration, values]) => {
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const stdDev = Math.sqrt(values.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / values.length);
-    return { concentration: +concentration, mean, stdDev };
-  }).sort((a,b) => a.concentration-b.concentration);
+export interface CurveData {
+  compoundId: string;
+  points: ConcentrationPoint[];
+}
+
+export interface ConcentrationPoint {
+  concentration: number;
+  responseValue: number;
+  wellId: string;
+}
+
+export interface FittedPoint {
+  concentration: number;
+  mean: number;
+}
+
+export type AssayType = 'SP' | 'DR';
+
+export function getCurveData(plate: Plate, normalized: Boolean): CurveData[] {
+  const compoundGroups = new Map<string, ConcentrationPoint[]>();
+
+  // Group wells by their compound IDs
+  for (const well of plate) {
+    // Skip wells without response data or that are unused
+    if (well.getIsUnused() || (well.rawResponse === null && well.normalizedResponse === null)) {
+      continue;
+    }
+
+    const contents = well.getContents();
+    for (const content of contents) {
+      // Only include contents with a compound ID and concentration
+      if (content.compoundId && content.concentration > 0) {
+        const responseValue = (normalized ? well.normalizedResponse : well.rawResponse)
+        if (!responseValue) continue
+
+        if (!compoundGroups.has(content.compoundId)) {
+          compoundGroups.set(content.compoundId, []);
+        }
+
+        compoundGroups.get(content.compoundId)!.push({
+          concentration: content.concentration,
+          responseValue,
+          wellId: well.id
+        });
+      }
+    }
+  }
+
+  const curves: CurveData[] = [];
+  for (const [compoundId, points] of compoundGroups) {
+    const uniqueConcentrations = new Set(points.map(p => p.concentration));
+
+    if (uniqueConcentrations.size > 4) {
+      curves.push({
+        compoundId,
+        points
+      });
+    }
+  }
+
+  return curves.sort((a, b) => a.compoundId.localeCompare(b.compoundId));
 };
 
 // Generates a unique string key for a treatment based on its compound IDs.
@@ -40,7 +94,6 @@ export function getTreatmentKey(well: Well): string {
   }
   return compoundIds.join('+');
 }
-
 
 export function groupDataByTreatment(plate: Plate | null): Map<string, TreatmentGroup> {
   const treatmentGroups = new Map<string, TreatmentGroup>()
@@ -62,14 +115,12 @@ export function groupDataByTreatment(plate: Plate | null): Map<string, Treatment
         treatmentGroups.set(treatmentKey, { wells: [] })
       }
       const tData = treatmentGroups.get(treatmentKey)!
-      tData.wells.push({wellId: wellId, concentration: concentration, response: response})
+      tData.wells.push({ wellId: wellId, concentration: concentration, response: response })
 
     }
   }
   return treatmentGroups;
 }
-
-export type AssayType = 'SP' | 'DR';
 
 export function identifyAssayType(treatmentGroup: TreatmentGroup): AssayType {
   if (!treatmentGroup) {
@@ -80,3 +131,103 @@ export function identifyAssayType(treatmentGroup: TreatmentGroup): AssayType {
 
   return uniqueConcentrations.size >= 4 ? 'DR' : 'SP';
 }
+
+export function yAxisDomains(plate: Plate, normalized: Boolean): { yLo: number, yHi: number } {
+  let yLo = 0;
+  let yHi = 100;
+
+  if (normalized) {
+    if (isNaN(parseFloat(plate.metadata.normalizedMinValue)) || isNaN(parseFloat(plate.metadata.normalizedMaxValue))) return { yLo, yHi }
+    const window = plate.metadata.normalizedMaxValue - plate.metadata.normalizedMinValue;
+    yLo = Math.min(yLo, plate.metadata.normalizedMinValue - (window / 20))
+    yHi = Math.max(yHi, plate.metadata.normalizedMaxValue + (window / 20))
+  }
+  else {
+    if (isNaN(parseFloat(plate.metadata.globalMinResponse)) || isNaN(parseFloat(plate.metadata.globalMaxResponse))) return { yLo, yHi }
+    const window = plate.metadata.globalMaxResponse - plate.metadata.globalMinResponse;
+    yLo = plate.metadata.globalMinResponse - (window / 20)
+    yHi = plate.metadata.globalMaxResponse + (window / 20)
+  }
+  return { yLo, yHi }
+}
+
+export function aggregateData(points: ConcentrationPoint[]): AggregatedPoint[] {
+  const grouped = points.reduce((acc: { [key: number]: number[] }, point) => {
+    if (!acc[point.concentration]) {
+      acc[point.concentration] = [];
+    }
+    acc[point.concentration].push(point.responseValue);
+    return acc;
+  }, {});
+
+  return Object.entries(grouped).map(([concentration, values]) => {
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+
+    return {
+      concentration: +concentration,
+      mean,
+      stdDev,
+      count: values.length
+    };
+  });
+}
+
+export function fourPL(x: number, top: number, bottom: number, hillslope: number, ec50: number): number {
+  return bottom + (top - bottom) / (1 + Math.pow(ec50 / x, hillslope));
+}
+
+export function formatEC50(value: number): string {
+  if (value === 0 || isNaN(value) || !isFinite(value)) return "N/A";
+  if (value < 0.001) return value.toExponential(2);
+  if (value < 1) return value.toFixed(3);
+  if (value < 1000) return value.toFixed(1);
+  return value.toExponential(2);
+};
+
+export function hasResponseData(plate: Plate): boolean {
+  if (!plate) return false;
+  for (const well of plate) {
+    if (!well) continue
+    if (well.rawResponse !== null || well.normalizedResponse !== null) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export function hasCompounds(plate: Plate): boolean {
+  if (!plate) return false;
+  for (const well of plate) {
+    if (!well) continue
+    const contents = well.getContents();
+    if (contents.some(content => content.compoundId && content.concentration > 0)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export function getMaskedWells(plate: Plate): string[] {
+  if (!plate) return [];
+  const maskedWells: string[] = [];
+  for (const well of plate) {
+    if (!well) continue
+    if (well.getIsUnused()) {
+      maskedWells.push(well.id);
+    }
+  }
+  return maskedWells;
+};
+
+export function getPlatesWithData(plates: Plate[]): Plate[] {
+  return plates.filter(plate => {
+    for (const well of plate) {
+      if (well.rawResponse !== null || well.normalizedResponse !== null) {
+        return true;
+      }
+    }
+    return false;
+  });
+};
