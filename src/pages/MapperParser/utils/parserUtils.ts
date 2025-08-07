@@ -3,6 +3,7 @@ import { ControlDefinition, Protocol } from '../../../types/mapperTypes';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { getWellIdFromCoords, numberToLetters } from '../../EchoTransfer/utils/plateUtils';
 import { getDestinationPlates } from './exportUtils';
+import { Well } from '../../../classes/WellClass';
 
 export interface ParsedData {
   barcode: string;
@@ -37,19 +38,19 @@ export function mapEquality(map1: Map<string, number>, map2: Map<string, number>
   return true
 }
 
-export function hasResponseData(plates: any[]): boolean {
+export function hasResponseData(plates: Plate[]): boolean {
   const destinationPlates = getDestinationPlates(plates);
   return destinationPlates.some(plate =>
-    Object.values(plate.getWells()).some((well: any) =>
+    Object.values(plate.getWells()).some((well: Well) =>
       well && (well.rawResponse !== null || well.normalizedResponse !== null)
     )
   );
 }
 
-export function getPlatesWithResponseData(plates: any[]) {
+export function getPlatesWithResponseData(plates: Plate[]) {
   const destinationPlates = getDestinationPlates(plates);
   return destinationPlates.filter(plate =>
-    Object.values(plate.getWells()).some((well: any) =>
+    Object.values(plate.getWells()).some((well: Well) =>
       well && (well.rawResponse !== null || well.normalizedResponse !== null)
     )
   );
@@ -283,10 +284,9 @@ export function applyParsedDataToPlates(
     dataByBarcode.set(data.barcode, data);
   });
   
-  // Process each plate
   for (const plate of plates) {
     const plateData = dataByBarcode.get(plate.barcode);
-    
+    // Put plates without parsed data into the stack without further modification
     if (!plateData) {
       updatedPlates.push(plate);
       continue;
@@ -311,6 +311,7 @@ export function applyParsedDataToPlates(
     // Store response range in plate metadata
     updatedPlate.metadata.globalMinResponse = minResponse;
     updatedPlate.metadata.globalMaxResponse = maxResponse;
+    updatedPlate.metadata.protocolId = protocol.id;
     
     updatedPlates.push(updatedPlate);
   }
@@ -586,7 +587,7 @@ export function autoParseMatrixFile(
 export function calculateNormalization(
   plates: Plate[], 
   protocol: Protocol,
-  excludeWells?: Set<string> // Wells to exclude from control calculations (for masking)
+  excludeWells?: Set<string>
 ): { recalculatedPlates: Plate[], errors: string[] } {
   const errors: string[] = [];
   const recalculatedPlates: Plate[] = [];
@@ -595,14 +596,12 @@ export function calculateNormalization(
     const recalculatedPlate = plate.clone();
     
     if (protocol.dataProcessing.normalization === 'PctOfCtrl') {
-      // Extract control values, excluding masked wells if specified
       const controlParams = extractControlValuesWithExclusions(
         recalculatedPlate, 
         protocol.dataProcessing.controls,
         excludeWells
       );
       
-      // Validate we have the minimum required controls
       if (controlParams.maxCtrl === undefined && controlParams.minCtrl === undefined) {
         recalculatedPlates.push(recalculatedPlate);
         continue;
@@ -617,9 +616,6 @@ export function calculateNormalization(
         const allRawResponses = Object.values(recalculatedPlate.getWells())
           .filter(well => ((excludeWells && !excludeWells.has(well.id)) && well.rawResponse != null))
           .map(well => well.rawResponse as number)
-          //.map(well => well.rawResponse)
-          //.filter((well): well.response is number => response !== null && 
-          //  (!excludeWells || !excludeWells.has(well.id)));
         
         if (allRawResponses.length > 0) {
           maxValue = Math.max(...allRawResponses);
@@ -634,14 +630,20 @@ export function calculateNormalization(
       if (range <= 0) {
         errors.push(`Plate ${plate.barcode}: Invalid control range after recalculation (max: ${maxValue}, min: ${minValue})`);
       } else {
+        let normMinValue = 0;
+        let normMaxValue = 100;
         for (const well of recalculatedPlate) {
           if (well && well.rawResponse !== null) {
             // Formula: ((raw - blank) - min) / (max - min) * 100
             const adjustedRaw = well.rawResponse - blankValue;
             const normalizedValue = ((adjustedRaw - minValue) / range) * 100;
             well.applyNormalizedResponse(normalizedValue);
+            normMinValue = Math.min(normMinValue, normalizedValue)
+            normMaxValue = Math.max(normMaxValue, normalizedValue)
           }
         }
+        recalculatedPlate.metadata.normalizedMinValue = normMinValue;
+        recalculatedPlate.metadata.normalizedMaxValue = normMaxValue;
       }
     }
     
