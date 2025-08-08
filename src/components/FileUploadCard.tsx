@@ -95,6 +95,9 @@ function FileUploadCard({
           multiple={multiple}
           accept={acceptedTypes}
           onChange={handleFileSelect}
+          onClick={(event) => {
+            (event.target as HTMLInputElement).value = '';
+          }}
           style={{ display: 'none' }}
           name={name}
           id={name}

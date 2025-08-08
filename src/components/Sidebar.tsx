@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListGroup, Form, Button } from 'react-bootstrap';
 
 import '../css/Sidebar.css'
@@ -31,16 +31,28 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [filter, setFilter] = useState<string>(initialFilter || 'all');
 
+  useEffect(() => {
+    if (!selectedItemId) return;
+
+    const isSelectedVisible = items.some(item =>
+      item.id === selectedItemId && (filter === 'all' || item.type === filter)
+    );
+
+    if (!isSelectedVisible) {
+      const firstVisibleItem = items.find(item =>
+        filter === 'all' || item.type === filter
+      );
+
+      setSelectedItemId(firstVisibleItem ? firstVisibleItem.id : null);
+    }
+  }, [filter, items, selectedItemId, setSelectedItemId]);
+
   const filteredItems = items.filter(item =>
     filter === 'all' ? true : item.type === filter
   );
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilter(e.target.value);
-  };
-
-  const selectItem = (itemId: number) => {
-    setSelectedItemId(itemId);
   };
 
   return (
@@ -68,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ListGroup.Item
               key={item.id}
               active={item.id === selectedItemId}
-              onClick={() => selectItem(item.id)}
+              onClick={() => setSelectedItemId(item.id)}
               className="sidebar-item"
             >
               <div className="item-info">
@@ -89,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div className="item-details">
                 <span className="item-type">{item.type}</span>
-                { item.details ? Object.entries(item.details).map(([key, value]) => (
+                {item.details ? Object.entries(item.details).map(([key, value]) => (
                   <span key={key} className="item-count">
                     {key}: {value}
                   </span>
