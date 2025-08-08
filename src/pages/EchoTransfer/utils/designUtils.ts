@@ -4,10 +4,8 @@ import { Plate } from '../../../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
-  // Create a new workbook
   const wb: WorkBook = utils.book_new();
 
-  // Create Patterns sheet
   const patternsData = patterns.map(pattern => {
     const baseData: any = {
       Pattern: pattern.name,
@@ -26,7 +24,6 @@ export function generateExcelTemplate(patterns: Pattern[]) {
 
   const patternsWs = utils.json_to_sheet(patternsData);
   
-  // Ensure all headers are present
   const patternsHeaders = [
     "Pattern", "Type", "Direction", "Replicates",
     ...Array.from({length: 20}, (_, i) => `Conc${i + 1}`)
@@ -35,7 +32,6 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   
   utils.book_append_sheet(wb, patternsWs, "Patterns");
 
-  // Create Layout sheet
   const layoutData = patterns.flatMap(pattern => 
     pattern.locations.map(location => ({
       Pattern: pattern.name,
@@ -45,17 +41,18 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   const layoutWs = utils.json_to_sheet(layoutData);
   utils.book_append_sheet(wb, layoutWs, "Layout");
 
-  // Create Compounds sheet (empty with headers)
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
   utils.book_append_sheet(wb, compoundsWs, "Compounds");
 
-  // Create Barcodes sheet (empty with headers)
   const barcodesHeaders = ["Intermediate Plate Barcodes", "Destination Plate Barcodes"];
   const barcodesWs = utils.aoa_to_sheet([barcodesHeaders]);
   utils.book_append_sheet(wb, barcodesWs, "Barcodes");
 
-  // Generate and download the Excel file
+  const assayHeaders = ["Setting", "Value"];
+  const assayWs = utils.aoa_to_sheet([assayHeaders]);
+  utils.book_append_sheet(wb, assayWs, "Barcodes");
+
   const fileName = `Echo_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
   writeFile(wb, fileName);
 }

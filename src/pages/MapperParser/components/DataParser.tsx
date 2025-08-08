@@ -22,8 +22,6 @@ interface MetadataValues {
   [fieldName: string]: string | number;
 }
 
-
-
 const DataParser: React.FC = () => {
   const { mappedPlates, setMappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
   const { protocols } = useContext(ProtocolsContext);
@@ -69,7 +67,6 @@ const DataParser: React.FC = () => {
       file,
       status: 'pending' as const
     }));
-
     setUploadedFiles(prev => [...prev, ...newFiles]);
 
     for (let i = 0; i < newFiles.length; i++) {
@@ -94,7 +91,7 @@ const DataParser: React.FC = () => {
     }
   }
 
-  function handleMetadataChange(fieldName: string, value: string | number) {
+  const handleMetadataChange = (fieldName: string, value: string | number) => {
     setMetadataValues(prev => ({
       ...prev,
       [fieldName]: value
@@ -116,7 +113,7 @@ const DataParser: React.FC = () => {
     return validationErrors;
   }
 
-  function handleApplyData() {
+  const handleApplyData = () => {
     if (!selectedProtocol) return;
     setErrors([]);
 
@@ -174,7 +171,7 @@ const DataParser: React.FC = () => {
     }
   }
 
-  function handleExportCSV() {
+  const handleExportCSV = () => {
     if (!selectedProtocol) {
       setErrors(['Please select a protocol before exporting']);
       return;

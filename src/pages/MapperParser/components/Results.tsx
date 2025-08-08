@@ -98,6 +98,23 @@ const Results: React.FC = () => {
                 </div>
               )}
 
+
+
+              {/* Control Wells Info */}
+              {selectedProtocol && selectedProtocol.dataProcessing.controls.length > 0 && (
+                <div className="mb-3 p-2 bg-light rounded">
+                  <div className="small fw-bold mb-1">Control Wells:</div>
+                  {selectedProtocol.dataProcessing.controls.map((control, index) => (
+                    <div key={index} className="small text-muted">
+                      {control.type}: {control.wells}
+                    </div>
+                  ))}
+                  <div className="small text-muted mt-1">
+                    <em>Controls are excluded from dose-response curves</em>
+                  </div>
+                </div>
+              )}
+
               {/* Masked Wells */}
               {maskedWells.length > 0 && (
                 <div className="small text-muted">
@@ -144,7 +161,7 @@ const Results: React.FC = () => {
                 <h5 className="mb-0">Dose-Response Curves</h5>
               </Card.Header>
               <Card.Body>
-                <TreatmentCurves plate={plate} normalized={normalizedResponse} />
+                <TreatmentCurves plate={plate} normalized={normalizedResponse} protocol={selectedProtocol || undefined} />
               </Card.Body>
             </Card>
           )}

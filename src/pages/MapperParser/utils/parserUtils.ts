@@ -269,7 +269,6 @@ function parseTableFormat(sheet: WorkSheet, protocol: Protocol): { wellData: Map
   return { wellData, errors };
 }
 
-// Apply parsed data to plates
 export function applyParsedDataToPlates(
   plates: Plate[], 
   parsedData: ParsedData[], 
@@ -308,7 +307,6 @@ export function applyParsedDataToPlates(
       }
     });
     
-    // Store response range in plate metadata
     updatedPlate.metadata.globalMinResponse = minResponse;
     updatedPlate.metadata.globalMaxResponse = maxResponse;
     updatedPlate.metadata.protocolId = protocol.id;
@@ -653,7 +651,6 @@ export function calculateNormalization(
   return { recalculatedPlates, errors };
 }
 
-// Helper function for extracting control values with exclusions
 function extractControlValuesWithExclusions(
   plate: Plate, 
   controls: ControlDefinition[],
@@ -672,7 +669,6 @@ function extractControlValuesWithExclusions(
         .filter((response): response is number => response !== null);
       if (responses.length === 0) continue;
       
-      // Calculate mean response for this control type
       const meanResponse = responses.reduce((sum, val) => sum + val, 0) / responses.length;
       
       switch (control.type) {

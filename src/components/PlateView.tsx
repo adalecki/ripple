@@ -1,9 +1,9 @@
 import React, { useState, MutableRefObject } from 'react';
 import WellTooltip from './WellTooltip';
-import { wellColors } from '../pages/EchoTransfer/utils/wellColors';
+import { wellColors, ColorConfig } from '../pages/EchoTransfer/utils/wellColors';
+import { getCoordsFromWellId } from '../pages/EchoTransfer/utils/plateUtils';
 import { Plate } from '../classes/PlateClass';
-import { Well as WellType } from '../classes/WellClass';
-import { ColorConfig } from '../pages/EchoTransfer/utils/wellColors';
+import { Well } from '../classes/WellClass';
 import WellView from './WellView';
 import '../css/PlateComponent.css'
 
@@ -18,15 +18,33 @@ interface PlateViewProps {
   handleMouseUp?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   selectionStyle?: React.CSSProperties;
-  blockBorderMap?: Map<string, {top: boolean, right: boolean, bottom: boolean, left: boolean}>;
+  blockBorderMap?: Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>;
 }
 
 type PlateViewRef = ((instance: HTMLDivElement[] | null) => void) | MutableRefObject<HTMLDivElement[] | null>;
 
 interface HoveredWellData {
-  well: WellType;
+  well: Well;
   position: { x: number; y: number };
   transform: string;
+}
+
+function tooltipTransform(plate: Plate, wellRect: DOMRect, wellId: string): { x: number, y: number, transform: string } {
+  const wellCoords = getCoordsFromWellId(wellId)
+  let x = 0;
+  let y = 0;
+  let tooltipX = wellRect.right + window.scrollX
+  let tooltipY = wellRect.bottom + window.scrollY
+
+  if (plate.columns / 2 <= wellCoords.col + 1) {
+    x = -100
+    tooltipX = wellRect.left + window.scrollX
+  }
+  if (plate.rows / 2 <= wellCoords.row + 1) {
+    y = -100
+    tooltipY = wellRect.top + window.scrollY
+  }
+  return {x: tooltipX, y: tooltipY, transform: `translate(${x}%, ${y}%)`}
 }
 
 const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
@@ -44,13 +62,13 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
       const wellData = plate.getWell(wellId);
       const wellElement = e.currentTarget;
       const wellRect = wellElement.getBoundingClientRect();
-      let tooltipX = wellRect.right + window.scrollX;
-      let tooltipY = wellRect.top + window.scrollY;
+      const {x, y, transform} = tooltipTransform(plate, wellRect, wellId)
+
       if (wellData) {
         setHoveredWell({
           well: wellData,
-          position: { x: tooltipX, y: tooltipY },
-          transform: (window.innerWidth - wellRect.right > 200 ? 'translate(0%, -100%)' : 'translate(-100%, -100%)')
+          position: { x: x, y: y },
+          transform: transform
         });
       }
     };
@@ -109,11 +127,11 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
       }
       return result;
     }
-    
+
     for (let rowIndex = 0; rowIndex < plate.rows; rowIndex++) {
       const row = numberToLetters(rowIndex)
       rowLabels.push(
-        <div 
+        <div
           key={`plate-row-label-${row}`}
           className="plate-grid-label"
         >
@@ -123,9 +141,9 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
     }
     for (let colIndex = 0; colIndex < plate.columns; colIndex++) {
       columnLabels.push(
-        <div 
+        <div
           key={`plate-col-label-${colIndex + 1}`}
-          className='plate-grid-label'  
+          className='plate-grid-label'
         >
           {colIndex + 1}
         </div>);
@@ -134,16 +152,16 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
     return (
       <div>
         <div className="grid-container">
-          <div 
+          <div
             className="col-labels-container"
             onClick={mouseLabelClickHandler}
-            style={{gridTemplateColumns: `repeat(${plate.columns}, 1fr)`}}>
+            style={{ gridTemplateColumns: `repeat(${plate.columns}, 1fr)` }}>
             {columnLabels}
           </div>
-          <div 
+          <div
             className="row-labels-container"
             onClick={mouseLabelClickHandler}
-            style={{gridTemplateRows: `repeat(${plate.rows}, 1fr)`}}>
+            style={{ gridTemplateRows: `repeat(${plate.rows}, 1fr)` }}>
             {rowLabels}
           </div>
           <div
