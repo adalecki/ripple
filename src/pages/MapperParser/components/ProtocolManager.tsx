@@ -42,7 +42,7 @@ const ProtocolManager: React.FC = () => {
   useEffect(() => {
     const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
     if (selectedProtocol) {
-      setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol))); // Deep clone
+      setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol)));
     } else {
       setEditingProtocol(null);
     }
@@ -129,48 +129,6 @@ const ProtocolManager: React.FC = () => {
       });
     }
   };
-
-  /*const handleAddControl = () => {
-    if (editingProtocol) {
-      const newControl: ControlDefinition = {
-        type: 'MaxCtrl',
-        wells: ''
-      };
-      setEditingProtocol({
-        ...editingProtocol,
-        dataProcessing: {
-          ...editingProtocol.dataProcessing,
-          controls: [...editingProtocol.dataProcessing.controls, newControl]
-        }
-      });
-    }
-  };
-
-  const handleUpdateControl = (index: number, control: Partial<ControlDefinition>) => {
-    if (editingProtocol) {
-      const updatedControls = [...editingProtocol.dataProcessing.controls];
-      updatedControls[index] = { ...updatedControls[index], ...control };
-      setEditingProtocol({
-        ...editingProtocol,
-        dataProcessing: {
-          ...editingProtocol.dataProcessing,
-          controls: updatedControls
-        }
-      });
-    }
-  };
-
-  const handleRemoveControl = (index: number) => {
-    if (editingProtocol) {
-      setEditingProtocol({
-        ...editingProtocol,
-        dataProcessing: {
-          ...editingProtocol.dataProcessing,
-          controls: editingProtocol.dataProcessing.controls.filter((_, i) => i !== index)
-        }
-      });
-    }
-  };*/
 
   const handleOpenInteractiveMapper = () => {
     if (!editingProtocol) return;
@@ -739,7 +697,7 @@ const ProtocolManager: React.FC = () => {
                     </Form.Group>
 
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h6 className="mb-0">Controls</h6>
+                      <h6 className="mb-0">Controls <InfoTooltip text='"MinCtrl" is the lowest response value, and "MaxCtrl" is the highest response value. "Blank" is subtracted from every well before normalization.' /></h6>
                       {isEditing && (
                         <Button size="sm" variant="outline-primary" onClick={() => setShowInteractiveControlMapper(true)}>
                           Interactive Selection

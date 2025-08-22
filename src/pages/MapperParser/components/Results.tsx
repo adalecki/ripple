@@ -56,11 +56,15 @@ const Results: React.FC = () => {
   const maskedWells = getMaskedWells(plate);
   const platesWithData = getPlatesWithData(mappedPlates);
   const showExportButton = platesWithData.length > 0 && selectedProtocol;
+  const listEls = []
+  for (let i = 0; i < 100; i++) {
+    listEls.push(<li key={i}>{i}</li>)
+  }
 
   return (
-    <Container fluid>
-      <Row>
-        <Col md="4">
+    <Container fluid className="h-100" >
+      <Row className="h-100">
+        <Col md="4" >
           <Card>
             <Card.Header>
               <h5 className="mb-0">Plate Results</h5>
@@ -98,9 +102,6 @@ const Results: React.FC = () => {
                 </div>
               )}
 
-
-
-              {/* Control Wells Info */}
               {selectedProtocol && selectedProtocol.dataProcessing.controls.length > 0 && (
                 <div className="mb-3 p-2 bg-light rounded">
                   <div className="small fw-bold mb-1">Control Wells:</div>
@@ -115,14 +116,12 @@ const Results: React.FC = () => {
                 </div>
               )}
 
-              {/* Masked Wells */}
               {maskedWells.length > 0 && (
                 <div className="small text-muted">
                   <strong>Masked Wells:</strong> {maskedWells.join(', ')}
                 </div>
               )}
 
-              {/* Plate Info */}
               {plate && (
                 <div className="mt-3 small text-muted">
                   <div><strong>Plate ID:</strong> {plate.id}</div>
@@ -133,8 +132,7 @@ const Results: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-
-        <Col md="8">
+        <Col md="8" className="d-flex h-100">
           {!plate ? (
             <Card>
               <Card.Body className="text-center py-5">
@@ -142,8 +140,11 @@ const Results: React.FC = () => {
               </Card.Body>
             </Card>
           ) : !hasResponseData([plate]) ? (
-            <Card>
+            <Card className='overflow-auto'>
               <Card.Body className="text-center py-5">
+                <ul>
+                  {listEls}
+                </ul>
                 <h5>No Response Data</h5>
                 <p className="text-muted">Upload and parse data files using the Data Parser to see response curves.</p>
               </Card.Body>
@@ -156,7 +157,7 @@ const Results: React.FC = () => {
               </Card.Body>
             </Card>
           ) : (
-            <Card>
+            <Card className='overflow-auto'>
               <Card.Header>
                 <h5 className="mb-0">Dose-Response Curves</h5>
               </Card.Header>

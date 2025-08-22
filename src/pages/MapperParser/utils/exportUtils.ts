@@ -6,23 +6,18 @@ export interface CsvExportData {
   rows: string[][];
 }
 
-/**
- * Generates CSV data from destination plates for export
- * @param destinationPlates Array of destination plates with response data
- * @param protocol Protocol containing metadata field definitions
- * @param includeEmptyWells Whether to include wells with no contents (default: false)
- * @returns Object containing headers and rows for CSV export
- */
-export function generateDestinationPlatesCSV(
+function generateDestinationPlatesCSV(
   destinationPlates: Plate[],
   protocol?: Protocol,
-  includeEmptyWells: boolean = false
+  includeEmptyWells: boolean = true
 ): CsvExportData {
   let maxContents = 0;
+  let hasNormData = false;
   for (const plate of destinationPlates) {
     for (const well of plate) {
       if (well && (includeEmptyWells || well.getContents().length > 0)) {
         maxContents = Math.max(maxContents, well.getContents().length);
+        if (well.normalizedResponse !== null) {hasNormData = true}
       }
     }
   }
@@ -35,6 +30,7 @@ export function generateDestinationPlatesCSV(
   }
   
   headers.push('Raw Response');
+  if (hasNormData) headers.push('Normalized Response')
   
   if (protocol) {
     for (const field of protocol.metadataFields) {
@@ -57,7 +53,7 @@ export function generateDestinationPlatesCSV(
       row.push(well.id);
       
       // Contents (only include compound contents, not solvents)
-      const contents = well.getContents().filter(content => content.compoundId);
+      const contents = well.getContents()
       for (let i = 0; i < maxContents; i++) {
         if (i < contents.length) {
           row.push(contents[i].compoundId || '');
@@ -67,8 +63,8 @@ export function generateDestinationPlatesCSV(
           row.push('');
         }
       }
-      
       row.push(well.rawResponse?.toString() || '');
+      if (hasNormData) row.push((+well.normalizedResponse?.toFixed(4)!).toString() || '')
       
       if (protocol) {
         for (const field of protocol.metadataFields) {
@@ -91,14 +87,9 @@ export function generateDestinationPlatesCSV(
   return { headers, rows };
 }
 
-/**
- * Converts CSV data object to a CSV string
- * @param csvData Object containing headers and rows
- * @returns CSV formatted string
- */
-export function csvDataToString(csvData: CsvExportData): string {
+function downloadCSV(csvData: CsvExportData, filename: string): void {
   const allRows = [csvData.headers, ...csvData.rows];
-  return allRows.map(row => 
+  const csvString = allRows.map(row => 
     row.map(cell => {
       const cellStr = cell.toString();
       // Escape cells that contain commas, quotes, or newlines
@@ -108,16 +99,8 @@ export function csvDataToString(csvData: CsvExportData): string {
       return cellStr;
     }).join(',')
   ).join('\n');
-}
-
-/**
- * Downloads CSV data as a file
- * @param csvData Object containing headers and rows
- * @param filename Name for the downloaded file
- */
-export function downloadCSV(csvData: CsvExportData, filename: string): void {
-  const csvString = csvDataToString(csvData);
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  // add a character at the start to tell Excel it's utf-8 encoding and avoid weird characters
+  const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   
   if (link.download !== undefined) {
@@ -132,12 +115,7 @@ export function downloadCSV(csvData: CsvExportData, filename: string): void {
   }
 }
 
-/**
- * Generates a default filename for the CSV export
- * @param protocol Optional protocol name to include
- * @returns Formatted filename with timestamp
- */
-export function generateCSVFilename(protocol?: Protocol): string {
+function generateCSVFilename(protocol?: Protocol): string {
   const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
   const protocolName = protocol?.name ? `_${protocol.name.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
   return `destination_plates_results${protocolName}_${timestamp}.csv`;
@@ -153,7 +131,7 @@ export function generateCSVFilename(protocol?: Protocol): string {
 export function exportDestinationPlatesCSV(
   plates: Plate[],
   protocol?: Protocol,
-  includeEmptyWells: boolean = false,
+  includeEmptyWells: boolean = true,
   customFilename?: string
 ): void {
   const destinationPlates = getDestinationPlates(plates)
