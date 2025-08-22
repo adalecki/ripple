@@ -7,8 +7,9 @@ import Sidebar from '../../components/Sidebar.tsx';
 import PlateMapper from './components/PlateMapper.tsx';
 import ProtocolManager from './components/ProtocolManager.tsx';
 import DataParser from './components/DataParser.tsx';
-import ResultsTab from './components/Results.tsx';
+import Results from './components/Results.tsx';
 import { loadProtocols, saveProtocols } from './utils/protocolUtils';
+import '../../css/MapperParser.css'
 
 const MapperParser: React.FC = () => {
   const [tabKey, setTabKey] = useState<string>('protocols');
@@ -71,29 +72,37 @@ const MapperParser: React.FC = () => {
   return (
     <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
       <ProtocolsContext.Provider value={{ protocols, setProtocols, selectedProtocolId, setSelectedProtocolId }}>
-        <Row>
+        <Row style={{ minHeight: 0 }}>
           <Col md="2">
             {renderSidebar()}
           </Col>
-          <Col md="10" className="d-flex flex-column">
-            <Tabs id="mapper-parser-tab-select" activeKey={tabKey} onSelect={handleSelect} className='mb-3'>
-              <Tab eventKey="protocols" title="Protocol Manager">
-                <ProtocolManager />
-              </Tab>
-              <Tab eventKey="mapper" title="Plate Mapper">
-                <PlateMapper />
-              </Tab>
-              <Tab eventKey="parser" title="Data Parser">
-                <DataParser />
-              </Tab>
-              <Tab eventKey="results" title="Results">
-                <ResultsTab />
-              </Tab>
-            </Tabs>
+          <Col md="10" style={{ minHeight: 0 }}>
+            <div className="mapper-tabs" style={{ height: 'calc(100vh - var(--navbar-height))'}}>
+              <Tabs
+                id="mapper-parser-tab-select"
+                activeKey={tabKey}
+                onSelect={handleSelect}
+                mountOnEnter
+              >
+                <Tab eventKey="protocols" title="Protocol Manager">
+                  <ProtocolManager />
+                </Tab>
+                <Tab eventKey="mapper" title="Plate Mapper">
+                  <PlateMapper />
+                </Tab>
+                <Tab eventKey="parser" title="Data Parser">
+                  <DataParser />
+                </Tab>
+                <Tab eventKey="results" title="Results">
+                  <Results />
+                </Tab>
+              </Tabs>
+            </div>
           </Col>
         </Row>
       </ProtocolsContext.Provider>
     </MappedPlatesContext.Provider>
+    
   );
 }
 

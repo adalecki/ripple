@@ -91,10 +91,11 @@ export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Proto
   }
 
   const curves: CurveData[] = [];
+  console.log(compoundGroups)
   for (const [compoundId, points] of compoundGroups) {
     const uniqueConcentrations = new Set(points.map(p => p.concentration));
 
-    if (uniqueConcentrations.size > 4) {
+    if (uniqueConcentrations.size > 3) {
       const aggregatedPoints = aggregateData(points);
       aggregatedPoints.sort((a, b) => b.concentration - a.concentration);
       

@@ -135,11 +135,12 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
                   format: {
                     concentration: false,
                     mean: false,
+                    x: true,
+                    y: true,
                     stdDev: (d: number) => d.toFixed(2),
                     count: false,
-                    wells: true,
-                    x: true,
-                    y: true
+                    wells: true
+
                   }
                 }
               }),
@@ -168,7 +169,6 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
           }}
         />
 
-        {/* Summary statistics */}
         <div className="mt-3 d-flex justify-content-between text-muted small">
           <div>
             <strong>Data Points:</strong> {aggregatedData.length} concentrations, {curveData.points.length} wells

@@ -39,32 +39,31 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
     };
   }
 
-  function line([slope, intercept]: number[]) {
+  const initialSlope = (y[y.length - 1] - y[0]) / y.length;
+
+  /*function line([slope, intercept]: number[]) {
     return (x: number): number => slope * x + intercept;
   }
 
-  const initialSlope = (y[y.length - 1] - y[0]) / y.length;
   const lineResult = levenbergMarquardt(
     { x: x, y: y }, 
     line, 
     { initialValues: [initialSlope, y[0]] }
-  );
+  );*/
   
   // Find the point closest to 50% response to use as initial EC50 guess
   const estA = Math.min(...y);
-  const estB = (lineResult.parameterValues[0] > 0 ? 1 : -1);
-  let estC = 5;
+  const estB = (initialSlope < 0 ? 1 : -1);
   const estD = Math.max(...y);
 
   const midpoint = (estA + estD) / 2;
   const closest = y.reduce((prev, curr) => 
     (Math.abs(curr - midpoint) < Math.abs(prev - midpoint) ? curr : prev)
   );
-  estC = x[y.indexOf(closest)];
+  const estC = x[y.indexOf(closest)];
 
   const initialValues = [estA, estB, estC, estD];
 
-  // Options for the LM algorithm
   const lmOptions = {
     damping: options.damping ?? 1.5,
     initialValues: initialValues,
