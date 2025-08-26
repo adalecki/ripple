@@ -21,7 +21,7 @@ export interface AggregatedPoint {
 }
 
 export interface CurveData {
-  compoundId: string;
+  treatmentId: string;
   points: ConcentrationPoint[];
   aggregatedPoints: AggregatedPoint[];
 }
@@ -59,40 +59,33 @@ function isControlWell(wellId: string, plate: Plate, protocol?: Protocol): boole
 }
 
 export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Protocol): CurveData[] {
-  const compoundGroups = new Map<string, ConcentrationPoint[]>();
+  const treatmentGroups = new Map<string, ConcentrationPoint[]>();
 
-  // Group wells by their compound IDs, excluding control wells
   for (const well of plate) {
-    // Skip wells without response data, unused wells, or control wells
     if (well.getIsUnused() || 
         (well.rawResponse === null && well.normalizedResponse === null) ||
         isControlWell(well.id, plate, protocol)) {
       continue;
     }
 
-    const contents = well.getContents();
-    for (const content of contents) {
-      // Only include contents with a compound ID and concentration
-      if (content.compoundId && content.concentration > 0) {
-        const responseValue = (normalized ? well.normalizedResponse : well.rawResponse)
-        if (!responseValue) continue
-
-        if (!compoundGroups.has(content.compoundId)) {
-          compoundGroups.set(content.compoundId, []);
-        }
-
-        compoundGroups.get(content.compoundId)!.push({
-          concentration: content.concentration,
-          responseValue,
-          wellId: well.id
-        });
+    const treatmentKey = getTreatmentKey(well)
+    if (treatmentKey !== 'EMPTY_WELL') {
+      const responseValue = (normalized ? well.normalizedResponse : well.rawResponse)
+      if (!responseValue) continue
+      if (!treatmentGroups.has(treatmentKey)) {
+        treatmentGroups.set(treatmentKey,[])
       }
+      const contents = well.getContents()
+      treatmentGroups.get(treatmentKey)!.push({
+        concentration: contents[0].concentration,
+        responseValue,
+        wellId: well.id
+      })
     }
   }
 
   const curves: CurveData[] = [];
-  console.log(compoundGroups)
-  for (const [compoundId, points] of compoundGroups) {
+  for (const [treatmentKey, points] of treatmentGroups) {
     const uniqueConcentrations = new Set(points.map(p => p.concentration));
 
     if (uniqueConcentrations.size > 3) {
@@ -100,26 +93,26 @@ export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Proto
       aggregatedPoints.sort((a, b) => b.concentration - a.concentration);
       
       curves.push({
-        compoundId,
+        treatmentId: treatmentKey,
         points,
         aggregatedPoints
       });
     }
   }
 
-  return curves.sort((a, b) => a.compoundId.localeCompare(b.compoundId));
+  return curves.sort((a, b) => a.treatmentId.localeCompare(b.treatmentId));
 };
 
 // Generates a unique string key for a treatment based on its compound IDs.
 // Sorts compound IDs to ensure order doesn't matter (e.g., A+B is same as B+A).
 export function getTreatmentKey(well: Well): string {
   const compoundIds = well.getContents()
-    .map(content => content.compoundId)
-    .filter((id): id is string => id !== undefined && id !== null)
+    .filter(content => !isNaN(content.concentration) && content.compoundId !== null && content.compoundId !== undefined)
+    .map(content => content.compoundId as string)
     .sort();
 
   if (compoundIds.length === 0) {
-    return 'CONTROL_EMPTY_WELL';
+    return 'EMPTY_WELL';
   }
   return compoundIds.join('+');
 }

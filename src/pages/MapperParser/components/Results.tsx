@@ -7,7 +7,7 @@ import { Protocol } from '../../../types/mapperTypes';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import TreatmentCurves from './TreatmentCurves';
 import { hasResponseData } from '../utils/parserUtils';
-import { getPlatesWithData, getMaskedWells, hasCompounds } from '../utils/resultsUtils';
+import { getPlatesWithData, getMaskedWells } from '../utils/resultsUtils';
 
 const Results: React.FC = () => {
   const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
@@ -64,108 +64,111 @@ const Results: React.FC = () => {
   return (
     <Container fluid className="h-100" >
       <Row className="h-100">
-        <Col md="4" >
-          <Card>
+        <Col
+          md="5"
+          className="d-flex flex-column h-100"
+        >
+          <Card className="mb-2">
             <Card.Header>
               <h5 className="mb-0">Plate Results</h5>
             </Card.Header>
             <Card.Body>
-              <Form>
-                <Form.Check
-                  type="radio"
-                  label="Normalized"
-                  name="dataType"
-                  value="true"
-                  checked={normalizedResponse === true}
-                  onChange={handleNormalizationChange}
-                  inline
-                />
-                <Form.Check
-                  type="radio"
-                  label="Raw Data"
-                  name="dataType"
-                  value="false"
-                  checked={normalizedResponse === false}
-                  onChange={handleNormalizationChange}
-                  inline
-                />
-              </Form>
-              <br />
-              {showExportButton && (
-                <div className="mb-3">
-                  <div className="text-muted small mb-2">
-                    {platesWithData.length} plate{platesWithData.length !== 1 ? 's' : ''} with data
-                  </div>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <Form>
+                  <Form.Check
+                    type="radio"
+                    label="Normalized"
+                    name="dataType"
+                    value="true"
+                    checked={normalizedResponse === true}
+                    onChange={handleNormalizationChange}
+                    inline
+                  />
+                  <Form.Check
+                    type="radio"
+                    label="Raw Data"
+                    name="dataType"
+                    value="false"
+                    checked={normalizedResponse === false}
+                    onChange={handleNormalizationChange}
+                    inline
+                  />
+                </Form>
+                {showExportButton && (
                   <Button onClick={handleExportCSV} variant='success' className="w-100">
                     Export Results CSV
                   </Button>
-                </div>
-              )}
-
+                )}
+              </div>
               {selectedProtocol && selectedProtocol.dataProcessing.controls.length > 0 && (
-                <div className="mb-3 p-2 bg-light rounded">
-                  <div className="small fw-bold mb-1">Control Wells:</div>
-                  {selectedProtocol.dataProcessing.controls.map((control, index) => (
-                    <div key={index} className="small text-muted">
-                      {control.type}: {control.wells}
+                <div className="p-2 bg-light rounded d-flex justify-content-between">
+                  <div>
+                    <div className="small fw-bold mb-1">Control Wells:</div>
+                    {selectedProtocol.dataProcessing.controls.map((control, index) => (
+                      <div key={index} className="small text-muted">
+                        {control.type}: {control.wells}
+                      </div>
+                    ))}
+                    <div className="small text-muted mt-1">
+                      <em>Controls are excluded from DRCs</em>
                     </div>
-                  ))}
-                  <div className="small text-muted mt-1">
-                    <em>Controls are excluded from dose-response curves</em>
                   </div>
-                </div>
-              )}
-
-              {maskedWells.length > 0 && (
-                <div className="small text-muted">
-                  <strong>Masked Wells:</strong> {maskedWells.join(', ')}
-                </div>
-              )}
-
-              {plate && (
-                <div className="mt-3 small text-muted">
-                  <div><strong>Plate ID:</strong> {plate.id}</div>
-                  <div><strong>Barcode:</strong> {plate.barcode || 'None'}</div>
-                  <div><strong>Wells:</strong> {Object.keys(plate.getWells()).length}</div>
+                  {maskedWells.length > 0 && (
+                    <div className="small text-muted">
+                      <strong>Masked Wells:</strong> {maskedWells.join(', ')}
+                    </div>
+                  )}
+                  <div>
+                    {plate && (
+                      <div className="small text-muted">
+                        <div><strong>Plate ID:</strong> {plate.id}</div>
+                        <div><strong>Barcode:</strong> {plate.barcode || 'None'}</div>
+                        <div><strong>Wells:</strong> {Object.keys(plate.getWells()).length}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </Card.Body>
           </Card>
+          <Card className="overflow-auto">
+            <Card.Header>
+              <h5 className="mb-0">Dose-Response Curves</h5>
+            </Card.Header>
+            <Card.Body className="overflow-auto">
+              {!plate || !hasResponseData([plate]) ? (
+                <div>
+                  <h5>No plate data</h5>
+                  <p className="text-muted">
+                    Please upload and parse plates to view response data
+                  </p>
+                </div>
+              ) : (
+                <TreatmentCurves
+                  plate={plate}
+                  normalized={normalizedResponse}
+                  protocol={selectedProtocol || undefined}
+                />
+              )}
+            </Card.Body>
+          </Card>
         </Col>
-        <Col md="8" className="d-flex h-100">
-          {!plate ? (
-            <Card>
-              <Card.Body className="text-center py-5">
-                <p className="text-muted">No plate selected. Please use the Plate Mapper to create plates first.</p>
-              </Card.Body>
-            </Card>
-          ) : !hasResponseData([plate]) ? (
-            <Card className='overflow-auto'>
-              <Card.Body className="text-center py-5">
-                <ul>
-                  {listEls}
-                </ul>
-                <h5>No Response Data</h5>
-                <p className="text-muted">Upload and parse data files using the Data Parser to see response curves.</p>
-              </Card.Body>
-            </Card>
-          ) : !hasCompounds(plate) ? (
-            <Card>
-              <Card.Body className="text-center py-5">
-                <h5>No Compounds Found</h5>
-                <p className="text-muted">Wells need compound information with concentrations to generate dose-response curves.</p>
-              </Card.Body>
-            </Card>
-          ) : (
-            <Card className='overflow-auto'>
-              <Card.Header>
-                <h5 className="mb-0">Dose-Response Curves</h5>
-              </Card.Header>
-              <Card.Body>
+        <Col md="7" className="d-flex h-100">
+          <Card className='overflow-auto'>
+            <Card.Header>
+              <h5 className="mb-0">Dose-Response Curves</h5>
+            </Card.Header>
+            <Card.Body className='overflow-auto'>
+              {!plate || !hasResponseData([plate]) ?
+                <div>
+                  <h5>No plate data</h5>
+                  <p className='text-muted'>Please upload and parse plates to view response data</p>
+                </div>
+                :
                 <TreatmentCurves plate={plate} normalized={normalizedResponse} protocol={selectedProtocol || undefined} />
-              </Card.Body>
-            </Card>
-          )}
+              }
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
     </Container>
