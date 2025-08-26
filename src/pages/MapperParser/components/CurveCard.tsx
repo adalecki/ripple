@@ -42,20 +42,18 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
       dataPoints.push({ concentration, mean: response });
     }
   } catch (error) {
-    console.warn('Curve fitting failed for compound:', curveData.compoundId, error);
+    console.warn('Curve fitting failed for treatment:', curveData.treatmentId, error);
     fittingError = "Curve fitting failed";
     // Fallback to just showing the data points without fitted curve
     dataPoints = aggregatedData.map(d => ({ concentration: d.concentration, mean: d.mean }));
   }
 
-  // Create custom tick values for even spacing on log scale
   function createLogTicks(min: number, max: number) {
     const logMin = Math.log10(min);
     const logMax = Math.log10(max);
     const range = logMax - logMin;
-    //const numTicks = Math.min(8, Math.max(4, Math.floor(range) + 1));
     const numTicks = 10;
-    
+
     const ticks: number[] = [];
     for (let i = 0; i < numTicks; i++) {
       const logValue = logMin + (i / (numTicks - 1)) * range;
@@ -68,9 +66,9 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
 
   return (
     <Accordion.Item eventKey={eventKey}>
-      <Accordion.Header className="custom-accordion-button">
+      <Accordion.Header>
         <div className="d-flex justify-content-between align-items-center w-100 me-3">
-          <span>{curveData.compoundId}</span>
+          <span>{curveData.treatmentId}</span>
           <div className="text-end">
             <div>EC50: {formatEC50(ec50)}</div>
             <small className="text-muted">{curveData.points.length} wells, {aggregatedData.length} concentrations</small>
@@ -103,7 +101,7 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
               label: "Concentration (µM)",
               ticks: xTicks,
               tickFormat: (d: number) => {
-                if (d >= 1000) return `${(d/1000).toFixed(0)}k`;
+                if (d >= 1000) return `${(d / 1000).toFixed(0)}k`;
                 if (d >= 1) return d.toFixed(0);
                 if (d >= 0.1) return d.toFixed(1);
                 if (d >= 0.01) return d.toFixed(2);
@@ -113,9 +111,9 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
             },
             marks: [
               // X and Y axis lines only
-              Plot.ruleY([yLo], {stroke: "#000", strokeWidth: 1}),
-              Plot.ruleX([Math.min(...x) * 0.9], {stroke: "#000", strokeWidth: 1}),
-              
+              Plot.ruleY([yLo], { stroke: "#000", strokeWidth: 1 }),
+              Plot.ruleX([Math.min(...x) * 0.9], { stroke: "#000", strokeWidth: 1 }),
+
               // Data points with tooltips
               Plot.dot(aggregatedData, {
                 x: "concentration",
@@ -127,7 +125,7 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
                 channels: {
                   concentration: "concentration",
                   mean: "mean",
-                  stdDev: "stdDev", 
+                  stdDev: "stdDev",
                   count: "count",
                   wells: (d: AggregatedPoint) => d.wellIds.join(', ')
                 },
@@ -144,7 +142,7 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
                   }
                 }
               }),
-              
+
               // Error bars
               Plot.ruleX(aggregatedData, {
                 x: "concentration",
@@ -154,7 +152,7 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
                 strokeWidth: 2,
                 opacity: 0.6
               }),
-              
+
               // Fitted curve
               ...(fittingError ? [] : [
                 Plot.line(dataPoints, {
@@ -168,17 +166,11 @@ const CurveCard: React.FC<CurveCardProps> = ({ eventKey, curveData, yLo, yHi }) 
             ]
           }}
         />
-
-        <div className="mt-3 d-flex justify-content-between text-muted small">
-          <div>
-            <strong>Data Points:</strong> {aggregatedData.length} concentrations, {curveData.points.length} wells
+        {!fittingError && fittedParams.length >= 4 && (
+          <div className='text-muted small'>
+            <strong>Fit Parameters:</strong> Top: {fittedParams[3].toFixed(1)}, Bottom: {fittedParams[0].toFixed(1)}, Hill: {fittedParams[1].toFixed(2)}
           </div>
-          {!fittingError && fittedParams.length >= 4 && (
-            <div>
-              <strong>Fit Parameters:</strong> Top: {fittedParams[3].toFixed(1)}, Bottom: {fittedParams[0].toFixed(1)}, Hill: {fittedParams[1].toFixed(2)}
-            </div>
-          )}
-        </div>
+        )}
       </Accordion.Body>
     </Accordion.Item>
   );

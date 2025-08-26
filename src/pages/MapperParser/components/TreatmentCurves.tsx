@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button, Accordion } from 'react-bootstrap';
 import CurveCard from './CurveCard';
 import { Plate } from '../../../classes/PlateClass';
@@ -14,14 +14,14 @@ interface TreatmentCurvesProps {
 const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, protocol }) => {
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   
-  const curveData = getCurveData(plate, normalized, protocol);
-  const {yLo, yHi} = yAxisDomains(plate, normalized);
+  const curveData = useMemo( () => getCurveData(plate, normalized, protocol), [plate,normalized,protocol]);
+  const {yLo, yHi} = useMemo( () => yAxisDomains(plate, normalized), [plate,normalized]);
 
   const toggleExpandAll = () => {
     if (activeKeys.length === curveData.length) {
       setActiveKeys([]);
     } else {
-      setActiveKeys(curveData.map((curve) => curve.compoundId));
+      setActiveKeys(curveData.map((curve) => curve.treatmentId));
     }
   };
 
@@ -41,8 +41,8 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
 
   const treatmentCurves = curveData.map((curve) => (
     <CurveCard 
-      key={curve.compoundId} 
-      eventKey={curve.compoundId} 
+      key={curve.treatmentId} 
+      eventKey={curve.treatmentId} 
       yLo={yLo}
       yHi={yHi}
       curveData={curve} 
@@ -69,6 +69,7 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
         onSelect={(eventKey) => {
           setActiveKeys(eventKey as string[]);
         }}
+        
       >
         {treatmentCurves}
       </Accordion>
