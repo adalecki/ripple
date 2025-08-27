@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { Button, Accordion } from 'react-bootstrap';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Row, Card, Form } from 'react-bootstrap';
 import CurveCard from './CurveCard';
 import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
-import { getCurveData, yAxisDomains } from '../utils/resultsUtils';
+import { getCurveData, hasResponseData, yAxisDomains } from '../utils/resultsUtils';
 
 interface TreatmentCurvesProps {
   plate: Plate;
@@ -12,18 +12,33 @@ interface TreatmentCurvesProps {
 }
 
 const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, protocol }) => {
-  const [activeKeys, setActiveKeys] = useState<string[]>([]);
-  
-  const curveData = useMemo( () => getCurveData(plate, normalized, protocol), [plate,normalized,protocol]);
-  const {yLo, yHi} = useMemo( () => yAxisDomains(plate, normalized), [plate,normalized]);
+  const curvesRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({width: 1100, height: 1100})
+  const [gridSize, setGridSize] = useState(2)
+  const [showFitParams, setShowFitParams] = useState('false')
 
-  const toggleExpandAll = () => {
-    if (activeKeys.length === curveData.length) {
-      setActiveKeys([]);
-    } else {
-      setActiveKeys(curveData.map((curve) => curve.treatmentId));
+  useEffect(() => {
+    function updateDimensions() {
+      if (curvesRef.current) {
+        const rect = curvesRef.current.getBoundingClientRect()
+        setDimensions({
+          width: rect.width,
+          height: rect.height
+        })
+      }
     }
-  };
+    updateDimensions()
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    if (curvesRef.current) {
+      resizeObserver.observe(curvesRef.current)
+    }
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
+
+  const curveData = useMemo(() => getCurveData(plate, normalized, protocol), [plate, normalized, protocol]);
+  const { yLo, yHi } = useMemo(() => yAxisDomains(plate, normalized), [plate, normalized]);
 
   if (curveData.length === 0) {
     return (
@@ -39,41 +54,76 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
     );
   }
 
+  const curveWidth = (((dimensions.width - 8) - (gridSize * 8))/gridSize) - 8
+
   const treatmentCurves = curveData.map((curve) => (
-    <CurveCard 
-      key={curve.treatmentId} 
-      eventKey={curve.treatmentId} 
+    <CurveCard
+      key={curve.treatmentId}
+      treatmentKey={curve.treatmentId}
       yLo={yLo}
       yHi={yHi}
-      curveData={curve} 
+      curveData={curve}
+      showFitParams={showFitParams}
+      curveWidth={curveWidth}
+      gridSize={gridSize}
     />
   ));
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-2">
+    <Card className='overflow-auto'>
+      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+        <h5 className="mb-0">Dose-Response Curves</h5>
         <span className="text-muted">
           {curveData.length} curve{curveData.length !== 1 ? 's' : ''} found
-          {protocol && protocol.dataProcessing.controls.length > 0 && (
-            <span className="ms-2 small">(controls excluded)</span>
-          )}
+          {protocol && protocol.dataProcessing.controls.length > 0 && (" (controls excluded)")}
         </span>
-        <Button size="sm" onClick={toggleExpandAll}>
-          {activeKeys.length === curveData.length ? 'Collapse All' : 'Expand All'}
-        </Button>
-      </div>
-      <Accordion 
-        flush 
-        alwaysOpen 
-        activeKey={activeKeys} 
-        onSelect={(eventKey) => {
-          setActiveKeys(eventKey as string[]);
-        }}
-        
-      >
-        {treatmentCurves}
-      </Accordion>
-    </div>
+        <span className='d-flex justify-content-between align-items-center p-1'>
+          <span className='mx-3'>
+          <Form.Group>
+            <Form.Label className="small fw-bold">Graphs per Row</Form.Label>
+            <Form.Select
+              size="sm"
+              value={gridSize}
+              onChange={(e) => {
+                setGridSize(parseInt(e.target.value));
+              }}
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+            </Form.Select>
+          </Form.Group>
+        </span>
+        <span>
+          <Form.Group>
+            <Form.Label className="small fw-bold">Show Fit Params?</Form.Label>
+            <Form.Select
+              size="sm"
+              value={showFitParams}
+              onChange={(e) => {
+                setShowFitParams(e.target.value)
+              }}
+              >
+                <option value='true'>Yes</option>
+                <option value='false'>No</option>
+              </Form.Select>
+          </Form.Group>
+        </span>
+        </span>
+      </Card.Header>
+      <Card.Body className='overflow-auto' ref={curvesRef}>
+        {!plate || !hasResponseData(plate) ?
+          <div>
+            <h5>No plate data</h5>
+            <p className='text-muted'>Please upload and parse plates to view response data</p>
+          </div>
+          :
+          <Row md={gridSize} className="g-2">
+            {treatmentCurves}
+          </Row>}
+      </Card.Body>
+    </Card>
   );
 };
 

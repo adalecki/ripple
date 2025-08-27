@@ -41,10 +41,10 @@ export type AssayType = 'SP' | 'DR';
 
 function isControlWell(wellId: string, plate: Plate, protocol?: Protocol): boolean {
   if (!protocol) return false;
-  
+
   for (const control of protocol.dataProcessing.controls) {
     if (!control.wells) continue;
-    
+
     try {
       const controlWells = plate.getSomeWells(control.wells);
       if (controlWells.some(well => well.id === wellId)) {
@@ -54,7 +54,7 @@ function isControlWell(wellId: string, plate: Plate, protocol?: Protocol): boole
       console.warn(`Invalid control well range: ${control.wells}`, error);
     }
   }
-  
+
   return false;
 }
 
@@ -62,9 +62,9 @@ export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Proto
   const treatmentGroups = new Map<string, ConcentrationPoint[]>();
 
   for (const well of plate) {
-    if (well.getIsUnused() || 
-        (well.rawResponse === null && well.normalizedResponse === null) ||
-        isControlWell(well.id, plate, protocol)) {
+    if (well.getIsUnused() ||
+      (well.rawResponse === null && well.normalizedResponse === null) ||
+      isControlWell(well.id, plate, protocol)) {
       continue;
     }
 
@@ -73,7 +73,7 @@ export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Proto
       const responseValue = (normalized ? well.normalizedResponse : well.rawResponse)
       if (!responseValue) continue
       if (!treatmentGroups.has(treatmentKey)) {
-        treatmentGroups.set(treatmentKey,[])
+        treatmentGroups.set(treatmentKey, [])
       }
       const contents = well.getContents()
       treatmentGroups.get(treatmentKey)!.push({
@@ -91,7 +91,7 @@ export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Proto
     if (uniqueConcentrations.size > 3) {
       const aggregatedPoints = aggregateData(points);
       aggregatedPoints.sort((a, b) => b.concentration - a.concentration);
-      
+
       curves.push({
         treatmentId: treatmentKey,
         points,
@@ -255,4 +255,18 @@ export function getPlatesWithData(plates: Plate[]): Plate[] {
     }
     return false;
   });
+};
+
+export function createLogTicks(min: number, max: number, gridSize: number) {
+  const logMin = Math.log10(min);
+  const logMax = Math.log10(max);
+  const range = logMax - logMin;
+  const numTicks = Math.min(10, (14 - 2 * gridSize));
+
+  const ticks: number[] = [];
+  for (let i = 0; i < numTicks; i++) {
+    const logValue = logMin + (i / (numTicks - 1)) * range;
+    ticks.push(Math.pow(10, logValue));
+  }
+  return ticks;
 };
