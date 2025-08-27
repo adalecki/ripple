@@ -6,7 +6,6 @@ import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import TreatmentCurves from './TreatmentCurves';
-import { hasResponseData } from '../utils/parserUtils';
 import { getPlatesWithData, getMaskedWells } from '../utils/resultsUtils';
 
 const Results: React.FC = () => {
@@ -65,7 +64,7 @@ const Results: React.FC = () => {
     <Container fluid className="h-100" >
       <Row className="h-100">
         <Col
-          md="5"
+          md="4"
           className="d-flex flex-column h-100"
         >
           <Card className="mb-2">
@@ -131,44 +130,9 @@ const Results: React.FC = () => {
               )}
             </Card.Body>
           </Card>
-          <Card className="overflow-auto">
-            <Card.Header>
-              <h5 className="mb-0">Dose-Response Curves</h5>
-            </Card.Header>
-            <Card.Body className="overflow-auto">
-              {!plate || !hasResponseData([plate]) ? (
-                <div>
-                  <h5>No plate data</h5>
-                  <p className="text-muted">
-                    Please upload and parse plates to view response data
-                  </p>
-                </div>
-              ) : (
-                <TreatmentCurves
-                  plate={plate}
-                  normalized={normalizedResponse}
-                  protocol={selectedProtocol || undefined}
-                />
-              )}
-            </Card.Body>
-          </Card>
         </Col>
-        <Col md="7" className="d-flex h-100">
-          <Card className='overflow-auto'>
-            <Card.Header>
-              <h5 className="mb-0">Dose-Response Curves</h5>
-            </Card.Header>
-            <Card.Body className='overflow-auto'>
-              {!plate || !hasResponseData([plate]) ?
-                <div>
-                  <h5>No plate data</h5>
-                  <p className='text-muted'>Please upload and parse plates to view response data</p>
-                </div>
-                :
-                <TreatmentCurves plate={plate} normalized={normalizedResponse} protocol={selectedProtocol || undefined} />
-              }
-            </Card.Body>
-          </Card>
+        <Col md="8" className="d-flex h-100">
+          <TreatmentCurves plate={plate} normalized={normalizedResponse} protocol={selectedProtocol || undefined} />
         </Col>
       </Row>
     </Container>
