@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { Button, Col, Row, Container, Card, Form } from 'react-bootstrap';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
 import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
@@ -6,7 +6,7 @@ import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import TreatmentCurves from './TreatmentCurves';
-import { getPlatesWithData, getMaskedWells } from '../utils/resultsUtils';
+import { getPlatesWithData, getMaskedWells, getPlateData } from '../utils/resultsUtils';
 
 const Results: React.FC = () => {
   const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
@@ -55,10 +55,8 @@ const Results: React.FC = () => {
   const maskedWells = getMaskedWells(plate);
   const platesWithData = getPlatesWithData(mappedPlates);
   const showExportButton = platesWithData.length > 0 && selectedProtocol;
-  const listEls = []
-  for (let i = 0; i < 100; i++) {
-    listEls.push(<li key={i}>{i}</li>)
-  }
+ 
+  const {curveData, sPData} = useMemo(() => getPlateData(plate, normalizedResponse, selectedProtocol || undefined), [plate, normalizedResponse, selectedProtocol]);
 
   return (
     <Container fluid className="h-100" >
@@ -132,7 +130,7 @@ const Results: React.FC = () => {
           </Card>
         </Col>
         <Col md="8" className="d-flex h-100">
-          <TreatmentCurves plate={plate} normalized={normalizedResponse} protocol={selectedProtocol || undefined} />
+          <TreatmentCurves plate={plate} normalized={normalizedResponse} curveData={curveData} protocol={selectedProtocol || undefined} />
         </Col>
       </Row>
     </Container>

@@ -3,17 +3,18 @@ import { Row, Card, Form } from 'react-bootstrap';
 import CurveCard from './CurveCard';
 import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
-import { getCurveData, hasResponseData, yAxisDomains } from '../utils/resultsUtils';
+import { CurveData, hasResponseData, yAxisDomains } from '../utils/resultsUtils';
 
 interface TreatmentCurvesProps {
   plate: Plate;
   normalized: Boolean;
+  curveData: CurveData[]
   protocol?: Protocol;
 }
 
-const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, protocol }) => {
+const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, curveData, protocol }) => {
   const curvesRef = useRef<HTMLDivElement>(null)
-  const [dimensions, setDimensions] = useState({width: 1100, height: 1100})
+  const [dimensions, setDimensions] = useState({ width: 1100, height: 1100 })
   const [gridSize, setGridSize] = useState(2)
   const [showFitParams, setShowFitParams] = useState('false')
 
@@ -21,10 +22,12 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
     function updateDimensions() {
       if (curvesRef.current) {
         const rect = curvesRef.current.getBoundingClientRect()
-        setDimensions({
-          width: rect.width,
-          height: rect.height
-        })
+        if (rect.width != 0 && rect.height != 0) { //when changing tabs dimensions become zero, forcing a rerender and producing an error
+          setDimensions({
+            width: rect.width,
+            height: rect.height
+          })
+        }
       }
     }
     updateDimensions()
@@ -37,7 +40,6 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
     }
   }, [])
 
-  const curveData = useMemo(() => getCurveData(plate, normalized, protocol), [plate, normalized, protocol]);
   const { yLo, yHi } = useMemo(() => yAxisDomains(plate, normalized), [plate, normalized]);
 
   if (curveData.length === 0) {
@@ -54,7 +56,8 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
     );
   }
 
-  const curveWidth = (((dimensions.width - 8) - (gridSize * 8))/gridSize) - 8
+  const curveWidth = (((dimensions.width - 8) - (gridSize * 8)) / gridSize) - 8
+  if (curveWidth < 0) console.log(curveWidth, dimensions, gridSize)
 
   const treatmentCurves = curveData.map((curve) => (
     <CurveCard
@@ -79,37 +82,37 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, pr
         </span>
         <span className='d-flex justify-content-between align-items-center p-1'>
           <span className='mx-3'>
-          <Form.Group>
-            <Form.Label className="small fw-bold">Graphs per Row</Form.Label>
-            <Form.Select
-              size="sm"
-              value={gridSize}
-              onChange={(e) => {
-                setGridSize(parseInt(e.target.value));
-              }}
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-            </Form.Select>
-          </Form.Group>
-        </span>
-        <span>
-          <Form.Group>
-            <Form.Label className="small fw-bold">Show Fit Params?</Form.Label>
-            <Form.Select
-              size="sm"
-              value={showFitParams}
-              onChange={(e) => {
-                setShowFitParams(e.target.value)
-              }}
+            <Form.Group>
+              <Form.Label className="small fw-bold">Graphs per Row</Form.Label>
+              <Form.Select
+                size="sm"
+                value={gridSize}
+                onChange={(e) => {
+                  setGridSize(parseInt(e.target.value));
+                }}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+              </Form.Select>
+            </Form.Group>
+          </span>
+          <span>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Show Fit Params?</Form.Label>
+              <Form.Select
+                size="sm"
+                value={showFitParams}
+                onChange={(e) => {
+                  setShowFitParams(e.target.value)
+                }}
               >
                 <option value='true'>Yes</option>
                 <option value='false'>No</option>
               </Form.Select>
-          </Form.Group>
-        </span>
+            </Form.Group>
+          </span>
         </span>
       </Card.Header>
       <Card.Body className='overflow-auto' ref={curvesRef}>

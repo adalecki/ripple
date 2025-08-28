@@ -166,7 +166,6 @@ const DataParser: React.FC = () => {
       });
 
       setMappedPlates(platesCopy);
-      console.log(platesCopy)
       setUploadedFiles([]);
     }
   }

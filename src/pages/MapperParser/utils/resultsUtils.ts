@@ -1,6 +1,7 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
 import { Protocol } from '../../../types/mapperTypes';
+import { getWellIndex } from '../../EchoTransfer/utils/plateUtils';
 
 export interface TreatmentWell {
   wellId: string;
@@ -37,45 +38,56 @@ export interface FittedPoint {
   mean: number;
 }
 
-export type AssayType = 'SP' | 'DR';
-
-function isControlWell(wellId: string, plate: Plate, protocol?: Protocol): boolean {
-  if (!protocol) return false;
-
-  for (const control of protocol.dataProcessing.controls) {
-    if (!control.wells) continue;
-
-    try {
-      const controlWells = plate.getSomeWells(control.wells);
-      if (controlWells.some(well => well.id === wellId)) {
-        return true;
-      }
-    } catch (error) {
-      console.warn(`Invalid control well range: ${control.wells}`, error);
-    }
-  }
-
-  return false;
+interface ShortContents {
+  compoundId: string;
+  concentration: number;
 }
 
-export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Protocol): CurveData[] {
-  const treatmentGroups = new Map<string, ConcentrationPoint[]>();
+interface SinglePoint {
+  controlType: 'MaxCtrl' | 'MinCtrl' | 'None';
+  contents: ShortContents[];
+  responseValue: number;
+  wellId: string;
+}
 
+export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Protocol): {curveData: CurveData[], sPData: SinglePoint[]} {
+  if (!protocol) return {curveData: [], sPData: []}
+  console.log(protocol)
+  const treatmentGroups = new Map<string, ConcentrationPoint[]>();
+  const sPData: SinglePoint[] = [];
+  const controlMap: Map<string, string> = new Map()
+  for (const control of protocol.dataProcessing.controls) {
+    const wellIds = plate.getSomeWells(control.wells).map(well => well.id)
+    wellIds.forEach((wellId) => controlMap.set(wellId, control.type))
+
+  }
   for (const well of plate) {
     if (well.getIsUnused() ||
-      (well.rawResponse === null && well.normalizedResponse === null) ||
-      isControlWell(well.id, plate, protocol)) {
+      (normalized ? well.normalizedResponse === null : well.rawResponse === null)) {
       continue;
+    }
+
+    if (controlMap.has(well.id)) {
+      const controlType = controlMap.get(well.id)! as SinglePoint['controlType']
+      const contents = well.getContents().filter(content => content.compoundId != undefined);
+      const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration }))
+      sPData.push({
+        controlType: controlType,
+        contents: shortContents,
+        responseValue: (normalized ? well.normalizedResponse : well.rawResponse) as number,
+        wellId: well.id
+      })
+      continue
     }
 
     const treatmentKey = getTreatmentKey(well)
     if (treatmentKey !== 'EMPTY_WELL') {
-      const responseValue = (normalized ? well.normalizedResponse : well.rawResponse)
-      if (!responseValue) continue
+      const responseValue = (normalized ? well.normalizedResponse : well.rawResponse) as number
       if (!treatmentGroups.has(treatmentKey)) {
         treatmentGroups.set(treatmentKey, [])
       }
       const contents = well.getContents()
+      //for potential DRs only can worry about first concentration
       treatmentGroups.get(treatmentKey)!.push({
         concentration: contents[0].concentration,
         responseValue,
@@ -98,9 +110,26 @@ export function getCurveData(plate: Plate, normalized: Boolean, protocol?: Proto
         aggregatedPoints
       });
     }
+    else {
+      for (const point of points) {
+        const well = plate.getWell(point.wellId)!
+        const contents = well.getContents().filter(content => content.compoundId != undefined);
+        const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration }))
+        sPData.push({
+          controlType: 'None',
+          contents: shortContents,
+          responseValue: (normalized ? well.normalizedResponse : well.rawResponse) as number,
+          wellId: well.id
+        })
+      }
+
+    }
   }
 
-  return curves.sort((a, b) => a.treatmentId.localeCompare(b.treatmentId));
+  return {
+    curveData: curves.sort((a, b) => a.treatmentId.localeCompare(b.treatmentId)),
+    sPData: sPData.sort((a, b) => (getWellIndex(a.wellId, plate) as number) - (getWellIndex(b.wellId, plate) as number))
+  }
 };
 
 // Generates a unique string key for a treatment based on its compound IDs.
@@ -115,43 +144,6 @@ export function getTreatmentKey(well: Well): string {
     return 'EMPTY_WELL';
   }
   return compoundIds.join('+');
-}
-
-export function groupDataByTreatment(plate: Plate | null): Map<string, TreatmentGroup> {
-  const treatmentGroups = new Map<string, TreatmentGroup>()
-
-  if (!plate || !plate.wells) {
-    return treatmentGroups;
-  }
-
-  for (const wellId in plate.wells) {
-    const well = plate.getWell(wellId);
-
-    if (well && !well.getIsUnused() && well.rawResponse !== null) {
-      const treatmentKey = getTreatmentKey(well);
-      const concentration = well.getContents().length > 0 ? well.getContents()[0].concentration : 0; //just use first content's conc for now
-
-      const response = well.rawResponse; // Using rawResponse as per plan for curveFit
-
-      if (!treatmentGroups.has(treatmentKey)) {
-        treatmentGroups.set(treatmentKey, { wells: [] })
-      }
-      const tData = treatmentGroups.get(treatmentKey)!
-      tData.wells.push({ wellId: wellId, concentration: concentration, response: response })
-
-    }
-  }
-  return treatmentGroups;
-}
-
-export function identifyAssayType(treatmentGroup: TreatmentGroup): AssayType {
-  if (!treatmentGroup) {
-    return 'SP'; // Default or error case
-  }
-  // Count unique, non-zero concentrations for dose-response determination.
-  const uniqueConcentrations = new Set(treatmentGroup.wells.map(well => well.concentration).filter(conc => conc > 0));
-
-  return uniqueConcentrations.size >= 4 ? 'DR' : 'SP';
 }
 
 export function yAxisDomains(plate: Plate, normalized: Boolean): { yLo: number, yHi: number } {
