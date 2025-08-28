@@ -97,7 +97,6 @@ export class Plate {
     }
   }
 
-
   getWell(wellId: string): Well | null {
     let paddedWellId = wellId
     const splitWell = wellId.match(/([A-Z]+)(\d+)/)

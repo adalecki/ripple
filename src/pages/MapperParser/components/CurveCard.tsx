@@ -53,7 +53,6 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
 
 
   const xTicks = createLogTicks(Math.min(...x), Math.max(...x), gridSize);
-  console.log(Math.min(curveWidth*0.75,300))
   return (
     <Col key={treatmentKey}>
       <Card>
