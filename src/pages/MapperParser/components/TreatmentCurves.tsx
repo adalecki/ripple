@@ -1,46 +1,49 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Row, Card, Form } from 'react-bootstrap';
 import CurveCard from './CurveCard';
 import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
-import { CurveData, hasResponseData, yAxisDomains } from '../utils/resultsUtils';
+import { CurveData, hasResponseData } from '../utils/resultsUtils';
 
 interface TreatmentCurvesProps {
   plate: Plate;
-  normalized: Boolean;
-  curveData: CurveData[]
+  curveData: CurveData[];
+  yLo: number;
+  yHi: number;
   protocol?: Protocol;
 }
 
-const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, normalized, curveData, protocol }) => {
-  const curvesRef = useRef<HTMLDivElement>(null)
+const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, curveData, yLo, yHi, protocol }) => {
+  const [curvesNode, setCurvesNode] = useState<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 1100, height: 1100 })
   const [gridSize, setGridSize] = useState(2)
   const [showFitParams, setShowFitParams] = useState('false')
 
-  useEffect(() => {
-    function updateDimensions() {
-      if (curvesRef.current) {
-        const rect = curvesRef.current.getBoundingClientRect()
-        if (rect.width != 0 && rect.height != 0) { //when changing tabs dimensions become zero, forcing a rerender and producing an error
-          setDimensions({
-            width: rect.width,
-            height: rect.height
-          })
-        }
-      }
+  const curvesRef = useCallback((node: HTMLDivElement) => {
+    if (node !== null) {
+      setCurvesNode(node);
     }
-    updateDimensions()
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    if (curvesRef.current) {
-      resizeObserver.observe(curvesRef.current)
-    }
-    return () => {
-      resizeObserver.disconnect()
-    }
-  }, [])
+  }, []);
 
-  const { yLo, yHi } = useMemo(() => yAxisDomains(plate, normalized), [plate, normalized]);
+  useEffect(() => {
+    if (curvesNode) {
+      const updateDimensions = () => {
+        const rect = curvesNode.getBoundingClientRect();
+        if (rect.height != 0 && rect.width != 0) {
+        setDimensions({
+          width: rect.width,
+          height: rect.height
+        });
+      }
+      };
+      updateDimensions();
+      const resizeObserver = new ResizeObserver(updateDimensions);
+      resizeObserver.observe(curvesNode);
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [curvesNode])
 
   if (curveData.length === 0) {
     return (
