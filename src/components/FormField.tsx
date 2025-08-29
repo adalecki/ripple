@@ -143,7 +143,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       }
     };
 
-    const baseClassName = `form-field ${type === 'switch' ? 'form-field-switch' : ''} ${type === 'file' ? 'form-field-file' : ''} ${className}`;
+    const baseClassName = `form-field ${type === 'switch' ? 'form-field-switch' : ''} ${type === 'file' ? 'form-field-file' : ''} ${className}`.trim();
 
     return type === 'switch' ? (
       <div className={baseClassName}>

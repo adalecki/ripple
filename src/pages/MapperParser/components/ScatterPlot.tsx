@@ -13,7 +13,6 @@ interface ScatterPlotProps {
 const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
   const [scatterNode, setScatterNode] = useState<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 785, height: 785 })
-  console.log(dimensions)
 
   const scatterRef = useCallback((node: HTMLDivElement) => {
     if (node !== null) {
@@ -41,6 +40,36 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
     }
   }, [scatterNode])
 
+  function getColor(controlType: string): string {
+    switch (controlType) {
+      case 'MinCtrl': return '#dc2626'; // red
+      case 'MaxCtrl': return '#2563eb'; // blue
+      default: return '#6b7280'; // grey
+    }
+  }
+
+function formatTooltip(point: SinglePoint): string {
+  const lines: string[] = [];
+  lines.push(`Well: ${point.wellId}`);
+  lines.push(`Response: ${point.responseValue.toFixed(2)}`);
+  
+  if (point.controlType !== 'None') {
+    lines.push(`Type: ${point.controlType}`);
+  }
+  
+  lines.push('Contents:');
+  
+  if (point.contents.length === 0) {
+    lines.push('  None');
+  } else {
+    point.contents.forEach(content => {
+      lines.push(`  ${content.compoundId}: ${content.concentration.toFixed(3)} µM`);
+    });
+  }
+  
+  return lines.join('\n');
+}
+
   if (sPData.length === 0) {
     return (
       <Card className="mb-3">
@@ -60,30 +89,9 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
       ...point,
       xIndex: index
     };
-
-    if (point.contents.length === 0) {
-      data.compound1 = "No compounds";
-    } else {
-      // Add separate channels for each compound (up to 4 for tooltip space)
-      point.contents.slice(0, 4).forEach((content, i) => {
-        data[`compound${i + 1}`] = `${content.compoundId}: ${content.concentration.toFixed(3)} µM`;
-      });
-
-      if (point.contents.length > 4) {
-        data.additionalCompounds = `... and ${point.contents.length - 4} more`;
-      }
-    }
-
+    data.toolTip = formatTooltip(point)
     return data;
   });
-
-  function getColor(controlType: string): string {
-    switch (controlType) {
-      case 'MinCtrl': return '#dc2626'; // red
-      case 'MaxCtrl': return '#2563eb'; // blue
-      default: return '#6b7280'; // grey
-    }
-  }
 
   return (
     <Card className="mb-3">
@@ -120,33 +128,13 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
                 fill: (d: any) => getColor(d.controlType),
                 r: 4,
                 stroke: "#ffffff",
-                strokeWidth: 1,
-                channels: {
-                  "Well": "wellId",
-                  controlType: "controlType",
-                  responseValue: "responseValue",
-                  compound1: "compound1",
-                  compound2: "compound2",
-                  compound3: "compound3",
-                  compound4: "compound4",
-                  additionalCompounds: "additionalCompounds"
-                },
-                tip: {
-                  format: {
-                    x: false,
-                    y: false,
-                    xIndex: false,
-                    wellId: (d: string) => `Well: ${d}`,
-                    controlType: (d: string) => d === 'None' ? null : `Control: ${d}`,
-                    compound1: (d: string) => d || null,
-                    compound2: (d: string) => d || null,
-                    compound3: (d: string) => d || null,
-                    compound4: (d: string) => d || null,
-                    additionalCompounds: (d: string) => d || null,
-                    responseValue: (d: number) => `Response: ${d.toFixed(2)}`
-                  }
-                }
-              })
+                strokeWidth: 1
+              }),
+              Plot.tip(plotData, Plot.pointer({
+                x: "xIndex",
+                y: "responseValue",
+                title: (d) => d.toolTip
+              }))
             ]
           }}
         />

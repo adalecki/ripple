@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Row, Card, Form } from 'react-bootstrap';
+import { Row, Card } from 'react-bootstrap';
 import CurveCard from './CurveCard';
 import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
@@ -11,13 +11,21 @@ interface TreatmentCurvesProps {
   yLo: number;
   yHi: number;
   protocol?: Protocol;
+  showFitParams: boolean;
+  gridSize: number;
 }
 
-const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, curveData, yLo, yHi, protocol }) => {
+const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ 
+  plate, 
+  curveData, 
+  yLo, 
+  yHi, 
+  protocol,
+  showFitParams,
+  gridSize
+}) => {
   const [curvesNode, setCurvesNode] = useState<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 1100, height: 1100 })
-  const [gridSize, setGridSize] = useState(2)
-  const [showFitParams, setShowFitParams] = useState('false')
 
   const curvesRef = useCallback((node: HTMLDivElement) => {
     if (node !== null) {
@@ -30,11 +38,11 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, curveData, yLo
       const updateDimensions = () => {
         const rect = curvesNode.getBoundingClientRect();
         if (rect.height != 0 && rect.width != 0) {
-        setDimensions({
-          width: rect.width,
-          height: rect.height
-        });
-      }
+          setDimensions({
+            width: rect.width,
+            height: rect.height
+          });
+        }
       };
       updateDimensions();
       const resizeObserver = new ResizeObserver(updateDimensions);
@@ -59,8 +67,7 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, curveData, yLo
     );
   }
 
-  const curveWidth = (((dimensions.width - 8) - (gridSize * 8)) / gridSize) - 8
-  if (curveWidth < 0) console.log(curveWidth, dimensions, gridSize)
+  const curveWidth = (((dimensions.width - 8) - (gridSize * 8)) / gridSize) - 8;
 
   const treatmentCurves = curveData.map((curve) => (
     <CurveCard
@@ -69,7 +76,7 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, curveData, yLo
       yLo={yLo}
       yHi={yHi}
       curveData={curve}
-      showFitParams={showFitParams}
+      showFitParams={showFitParams ? 'true' : 'false'}
       curveWidth={curveWidth}
       gridSize={gridSize}
     />
@@ -82,40 +89,6 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({ plate, curveData, yLo
         <span className="text-muted">
           {curveData.length} curve{curveData.length !== 1 ? 's' : ''} found
           {protocol && protocol.dataProcessing.controls.length > 0 && (" (controls excluded)")}
-        </span>
-        <span className='d-flex justify-content-between align-items-center p-1'>
-          <span className='mx-3'>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Graphs per Row</Form.Label>
-              <Form.Select
-                size="sm"
-                value={gridSize}
-                onChange={(e) => {
-                  setGridSize(parseInt(e.target.value));
-                }}
-              >
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-                <option value={4}>4</option>
-              </Form.Select>
-            </Form.Group>
-          </span>
-          <span>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Show Fit Params?</Form.Label>
-              <Form.Select
-                size="sm"
-                value={showFitParams}
-                onChange={(e) => {
-                  setShowFitParams(e.target.value)
-                }}
-              >
-                <option value='true'>Yes</option>
-                <option value='false'>No</option>
-              </Form.Select>
-            </Form.Group>
-          </span>
         </span>
       </Card.Header>
       <Card.Body className='overflow-auto' ref={curvesRef}>

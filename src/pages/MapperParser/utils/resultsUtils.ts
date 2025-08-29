@@ -52,7 +52,6 @@ export interface SinglePoint {
 
 export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Protocol): {curveData: CurveData[], sPData: SinglePoint[]} {
   if (!protocol) return {curveData: [], sPData: []}
-  console.log(protocol)
   const treatmentGroups = new Map<string, ConcentrationPoint[]>();
   const sPData: SinglePoint[] = [];
   const controlMap: Map<string, string> = new Map()
