@@ -38,12 +38,12 @@ export interface FittedPoint {
   mean: number;
 }
 
-interface ShortContents {
+export interface ShortContents {
   compoundId: string;
   concentration: number;
 }
 
-interface SinglePoint {
+export interface SinglePoint {
   controlType: 'MaxCtrl' | 'MinCtrl' | 'None';
   contents: ShortContents[];
   responseValue: number;

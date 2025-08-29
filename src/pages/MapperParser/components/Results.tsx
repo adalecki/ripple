@@ -6,7 +6,8 @@ import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import TreatmentCurves from './TreatmentCurves';
-import { getPlatesWithData, getMaskedWells, getPlateData } from '../utils/resultsUtils';
+import ScatterPlot from './ScatterPlot';
+import { getPlatesWithData, getMaskedWells, getPlateData, yAxisDomains } from '../utils/resultsUtils';
 
 const Results: React.FC = () => {
   const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
@@ -57,6 +58,7 @@ const Results: React.FC = () => {
   const showExportButton = platesWithData.length > 0 && selectedProtocol;
  
   const {curveData, sPData} = useMemo(() => getPlateData(plate, normalizedResponse, selectedProtocol || undefined), [plate, normalizedResponse, selectedProtocol]);
+  const { yLo, yHi } = useMemo(() => yAxisDomains(plate, normalizedResponse), [plate, normalizedResponse]);
 
   return (
     <Container fluid className="h-100" >
@@ -128,9 +130,15 @@ const Results: React.FC = () => {
               )}
             </Card.Body>
           </Card>
+          
+          <ScatterPlot 
+            sPData={sPData} 
+            yLo={yLo} 
+            yHi={yHi} 
+          />
         </Col>
         <Col md="8" className="d-flex h-100">
-          <TreatmentCurves plate={plate} normalized={normalizedResponse} curveData={curveData} protocol={selectedProtocol || undefined} />
+          <TreatmentCurves plate={plate} curveData={curveData} yLo={yLo} yHi={yHi} protocol={selectedProtocol || undefined} />
         </Col>
       </Row>
     </Container>

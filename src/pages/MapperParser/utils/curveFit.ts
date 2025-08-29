@@ -40,16 +40,6 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
   }
 
   const initialSlope = (y[y.length - 1] - y[0]) / y.length;
-
-  /*function line([slope, intercept]: number[]) {
-    return (x: number): number => slope * x + intercept;
-  }
-
-  const lineResult = levenbergMarquardt(
-    { x: x, y: y }, 
-    line, 
-    { initialValues: [initialSlope, y[0]] }
-  );*/
   
   // Find the point closest to 50% response to use as initial EC50 guess
   const estA = Math.min(...y);
