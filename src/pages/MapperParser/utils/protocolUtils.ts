@@ -4,7 +4,7 @@ const STORAGE_KEY = 'ripple-protocols';
 
 // Default protocols based on the provided JSON
 export const defaultProtocols: Protocol[] = [
-  {
+  /*{
     id: 1,
     name: 'Table Based',
     description: 'Standard table-based data format',
@@ -48,10 +48,10 @@ export const defaultProtocols: Protocol[] = [
     },
     createdAt: new Date(),
     updatedAt: new Date()
-  },
+  },*/
   {
     id: 2,
-    name: 'Biochemical Assay',
+    name: 'Example Matrix Assay',
     description: 'Matrix format for biochemical assays',
     parseStrategy: {
       format: 'Matrix',
@@ -59,7 +59,7 @@ export const defaultProtocols: Protocol[] = [
       xLabels: 'A09:X09',
       yLabels: 'A10:A25',
       rawData: 'B10:Y25',
-      plateBarcodeLocation: 'cell',
+      plateBarcodeLocation: 'filename',
       plateBarcodeCell: 'A01',
       barcodeDelimiter: null,
       barcodeChunk: 0,
@@ -110,7 +110,7 @@ export function loadProtocols(): Protocol[] {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      // Convert date strings back to Date objects
+      if (parsed.length == 0) return defaultProtocols
       return parsed.map((p: any) => ({
         ...p,
         createdAt: new Date(p.createdAt),

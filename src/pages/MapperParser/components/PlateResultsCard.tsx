@@ -115,6 +115,7 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
                 onChange={(value) => onOptionsChange({ responseRangeMin: value })}
                 placeholder="Auto"
                 step={0.1}
+                debounce={500}
               />
               <FormField
                 id="responseRangeMax"
@@ -125,6 +126,7 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
                 onChange={(value) => onOptionsChange({ responseRangeMax: value })}
                 placeholder="Auto"
                 step={0.1}
+                debounce={500}
               />
             </Col>
           </Row>

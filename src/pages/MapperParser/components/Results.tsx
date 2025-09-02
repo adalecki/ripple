@@ -38,6 +38,10 @@ const Results: React.FC = () => {
   }, [protocols, plate?.metadata?.protocolId, selectedProtocol]);
 
   function handleOptionsChange(updates: Partial<PlateResultsOptions>) {
+    console.log(updates)
+    if (updates.responseRangeMin && Number.isNaN(updates.responseRangeMin)) {
+      updates.responseRangeMin = 7
+    }
     setOptions(prev => ({ ...prev, ...updates }));
   }
 
@@ -67,12 +71,11 @@ const Results: React.FC = () => {
  
   const { curveData, sPData } = useMemo(() => getPlateData(plate, options.normalized, selectedProtocol || undefined), [plate, options.normalized, selectedProtocol]);
   
-  // Calculate y-axis domains with optional override
   const { yLo: autoYLo, yHi: autoYHi } = useMemo(() => yAxisDomains(plate, options.normalized), [plate, options.normalized]);
   const yLo = (options.responseRangeMin !== '' && options.responseRangeMin !== null) ? Number(options.responseRangeMin) : autoYLo;
   const yHi = (options.responseRangeMax !== '' && options.responseRangeMax !== null) ? Number(options.responseRangeMax) : autoYHi;
+  console.log(yLo,yHi,options)
 
-  // Filter scatter plot data based on showAllWells option
   const filteredSPData = useMemo(() => {
     if (options.showAllWells) {
       // Include all single points plus all DRC points

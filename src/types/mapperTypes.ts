@@ -1,6 +1,7 @@
 import { PlateSize } from "../classes/PlateClass";
 
-export const PARSE_FORMATS = ['Matrix', 'Table'] as const;
+//export const PARSE_FORMATS = ['Matrix', 'Table'] as const;
+export const PARSE_FORMATS = ['Matrix'] as const;
 export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'Blank'] as const;
 export const NORMALIZATION_TYPES = ['PctOfCtrl', 'None'] as const;
 export const FIELD_TYPES = ['Free Text', 'PickList'] as const;
