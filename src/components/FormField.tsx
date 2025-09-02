@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useDebounce } from 'use-debounce';
 import '../css/FormField.css'
 
 export type FormFieldType = 'text' | 'number' | 'select' | 'switch' | 'file';
@@ -23,7 +24,7 @@ export interface FormFieldProps {
   step?: number;
   accept?: string;
   className?: string;
-  error?: string;
+  debounce?: number; // Debounce delay in milliseconds
 }
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
@@ -42,19 +43,41 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     step,
     accept,
     className = '',
-    error
+    debounce
   }, ref) => {
+    const [internalValue, setInternalValue] = useState(value);
+    const [debouncedValue] = useDebounce(internalValue, debounce || 0);
+
+    // Update internal value when external value changes
+    useEffect(() => {
+      setInternalValue(value);
+    }, [value]);
+
+    // Call onChange when debounced value changes (only if debouncing is enabled)
+    useEffect(() => {
+      if (debounce && debouncedValue !== value) {
+        onChange(debouncedValue);
+      }
+    }, [debouncedValue, debounce, onChange, value]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const newValue = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked :
         e.target.type === 'number' ||
           (e.target instanceof HTMLSelectElement && options?.[0]?.value !== undefined &&
-            typeof options[0].value === 'number') ? parseFloat(e.target.value) :
+            typeof options[0].value === 'number') ? (!isNaN(parseFloat(e.target.value)) ? parseFloat(e.target.value) : '') :
           e.target.type === 'file' ? (e.target as HTMLInputElement).files :
             e.target.value;
-      onChange(newValue);
+      
+      if (debounce) {
+        setInternalValue(newValue);
+      } else {
+        onChange(newValue);
+      }
     };
 
     const renderInput = () => {
+      const displayValue = debounce ? internalValue : value;
+
       switch (type) {
         case 'number':
           return (
@@ -62,7 +85,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
               type="number"
               id={id}
               name={name}
-              value={value ?? ''}
+              value={displayValue ?? ''}
               onChange={handleInputChange}
               required={required}
               disabled={disabled}
@@ -77,7 +100,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             <select
               id={id}
               name={name}
-              value={value ?? ''}
+              value={displayValue ?? ''}
               onChange={handleInputChange}
               required={required}
               disabled={disabled}
@@ -99,7 +122,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
                   type="checkbox"
                   id={id}
                   name={name}
-                  checked={Boolean(value)}
+                  checked={Boolean(displayValue)}
                   onChange={handleInputChange}
                   disabled={disabled}
                   className="form-check-input"
@@ -132,7 +155,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
               type="text"
               id={id}
               name={name}
-              value={value ?? ''}
+              value={displayValue ?? ''}
               onChange={handleInputChange}
               required={required}
               disabled={disabled}
@@ -148,7 +171,6 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     return type === 'switch' ? (
       <div className={baseClassName}>
         {renderInput()}
-        {error && <div className="form-field-error">{error}</div>}
       </div>
     ) : (
       <div className={baseClassName}>
@@ -157,7 +179,6 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           {renderInput()}
         </div>
         {unit && <span className="unit-label">{unit}</span>}
-        {error && <div className="form-field-error">{error}</div>}
       </div>
     );
   }

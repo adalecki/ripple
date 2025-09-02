@@ -4,17 +4,12 @@ import { Plus, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
 import {
   Protocol,
   MetadataField,
-  //ControlDefinition,
   ParseFormat,
-  //NormalizationType,
-  //ControlType,
   FieldType,
   PARSE_FORMATS,
   PLATE_SIZES,
   BARCODE_LOCATIONS,
   FIELD_TYPES,
-  //NORMALIZATION_TYPES,
-  //CONTROL_TYPES,
   ParseStrategy
 } from '../../../types/mapperTypes';
 import { ProtocolsContext } from '../../../contexts/Context';
