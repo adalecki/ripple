@@ -20,6 +20,7 @@
     "bootstrap": "^5.3.3",
     "color-convert": "^2.0.1",
     "d3": "^7.9.0",
+    "jspdf": "^3.0.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.453.0",
     "ml-levenberg-marquardt": "^5.0.0",

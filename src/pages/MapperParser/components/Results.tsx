@@ -38,7 +38,6 @@ const Results: React.FC = () => {
   }, [protocols, plate?.metadata?.protocolId, selectedProtocol]);
 
   function handleOptionsChange(updates: Partial<PlateResultsOptions>) {
-    console.log(updates)
     if (updates.responseRangeMin && Number.isNaN(updates.responseRangeMin)) {
       updates.responseRangeMin = 7
     }
@@ -74,7 +73,6 @@ const Results: React.FC = () => {
   const { yLo: autoYLo, yHi: autoYHi } = useMemo(() => yAxisDomains(plate, options.normalized), [plate, options.normalized]);
   const yLo = (options.responseRangeMin !== '' && options.responseRangeMin !== null) ? Number(options.responseRangeMin) : autoYLo;
   const yHi = (options.responseRangeMax !== '' && options.responseRangeMax !== null) ? Number(options.responseRangeMax) : autoYHi;
-  console.log(yLo,yHi,options)
 
   const filteredSPData = useMemo(() => {
     if (options.showAllWells) {
