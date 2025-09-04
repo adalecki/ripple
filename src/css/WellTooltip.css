@@ -1,5 +1,5 @@
 .well-tooltip {
-  position: absolute;
+  position: fixed;
   border: 1px solid #dee2e6;
   background-color: #f8f9fa;
   padding: 10px;
@@ -8,7 +8,7 @@
   z-index: 1000;
   pointer-events: none;
   font-size: 0.8rem;
-  max-width: 250px;
+  width: max-content;
 }
 
 .header-section {

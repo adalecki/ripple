@@ -87,7 +87,7 @@ describe('EchoForm', () => {
 
   it('renders correctly with default props', () => {
     render(<EchoForm {...defaultProps} />);
-    expect(screen.getByLabelText(/Input File \(Excel\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ripple Input/i)).toBeInTheDocument();
     mockFields.forEach(field => {
       if (field.prefId != 'useSurveyVols') expect(screen.getByLabelText(field.name)).toBeInTheDocument();
     });
@@ -95,13 +95,13 @@ describe('EchoForm', () => {
 
   it('renders correctly without optional transfer file props', () => {
     render(<EchoForm {...defaultProps} />);
-    expect(screen.getByLabelText(/Input File \(Excel\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ripple Input/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Transfer Log \(CSV\)/i)).not.toBeInTheDocument();
   });
 
   it('calls setExcelFile when Excel file input changes', async () => {
     render(<EchoForm {...defaultProps} />);
-    const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+    const excelInput = screen.getByLabelText(/Ripple Input/i);
     const testFile = new File(['excel content'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     await act(async () => { fireEvent.change(excelInput, { target: { files: [testFile] } }); })
     expect(mockSetExcelFile).toHaveBeenCalledWith(testFile);
@@ -110,7 +110,7 @@ describe('EchoForm', () => {
   it('calls setTransferFile when Transfer Log file input changes', async () => {
     const propsWithTransfer = { ...defaultProps, setTransferFile: mockSetTransferFile };
     render(<EchoForm {...propsWithTransfer} />);
-    const transferInput = screen.getByLabelText(/Transfer Log \(CSV\)/i);
+    const transferInput = screen.getByLabelText(/Transfer Log/i);
     const testFile = new File(['csv content'], 'test.csv', { type: 'text/csv' });
     await act(async () => { fireEvent.change(transferInput, { target: { files: [testFile] } }); })
     expect(mockSetTransferFile).toHaveBeenCalledWith(testFile);
@@ -128,8 +128,9 @@ describe('EchoForm', () => {
       setTransferFile={mockSetTransferFile}
     />);
 
-    const excelFileInput = screen.getByLabelText('Input File (Excel)');
-    const transferFileInput = screen.getByLabelText('Transfer Log (CSV)');
+    const excelFileInput = screen.getByLabelText(/Ripple Input/i);
+    const transferFileInput = screen.getByLabelText(/Transfer Log/i);
+
     await act(async () => { 
       fireEvent.change(excelFileInput, { target: { files: [excelFile] } });
       fireEvent.change(transferFileInput, { target: { files: [transferFile] } });
@@ -145,7 +146,49 @@ describe('EchoForm', () => {
     expect(mockOnSubmit).toHaveBeenCalledWith(expect.any(FormData));
     jest.restoreAllMocks();
   });
-  
+
+it('onSubmit sees files in formData submitted with both files', async () => {
+  HTMLFormElement.prototype.checkValidity = jest.fn().mockReturnValue(true);
+
+  const excelFile = new File(['excel content'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const transferFile = new File(['csv content'], 'transfer.csv', { type: 'text/csv' });
+
+  const capturedValues: { [key: string]: any } = {};
+
+  const handleSubmit = jest.fn(async (formData: FormData) => {
+    for (let [key, value] of formData.entries()) {
+      capturedValues[key] = value;
+    }
+  });
+
+  render(<EchoForm
+    {...defaultProps}
+    excelFile={excelFile}
+    transferFile={transferFile}
+    setTransferFile={mockSetTransferFile}
+    onSubmit={handleSubmit}
+  />);
+
+  const excelInput = screen.getByLabelText(/Ripple Input/i);
+  const transferInput = screen.getByLabelText(/Transfer Log/i);
+  const submitButton = screen.getByText('Test Submit');
+
+  await act(async () => {
+    fireEvent.change(excelInput, { target: { files: [excelFile] } });
+    fireEvent.change(transferInput, { target: { files: [transferFile] } });
+  });
+
+  await act(async () => {
+    fireEvent.click(submitButton);
+  });
+
+  expect(handleSubmit).toHaveBeenCalledTimes(1);
+  console.log(capturedValues)
+
+  expect(capturedValues['excelFile']).toBeInstanceOf(File);
+  expect(capturedValues['transferFile']).toBeInstanceOf(File);
+});
+
   it('does not call onSubmit and submit button is disabled if excelFile is missing', async () => {
     const propsWithoutExcel = {
       ...defaultProps,
@@ -239,7 +282,7 @@ describe('EchoForm', () => {
       });
       (xlsxUtils.sheet_to_json as jest.Mock).mockImplementation((sheet) => sheet === mockAssaySheet ? mockAssayData : []);
       
-      const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+      const excelInput = screen.getByLabelText(/Ripple Input/i);
       await act(async () => { fireEvent.change(excelInput, { target: { files: [excelFile] } }); });
 
       expect(mockSetExcelFile).toHaveBeenCalledWith(excelFile);
@@ -264,7 +307,7 @@ describe('EchoForm', () => {
     it('does not update form values or show alert if "Assay" tab is missing', async () => {
       render(<EchoForm {...defaultProps} />);
       (read as jest.Mock).mockReturnValue({ SheetNames: ['Sheet1'], Sheets: { 'Sheet1': {} } });
-      const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+      const excelInput = screen.getByLabelText(/Ripple Input/i);
       await act(async () => { fireEvent.change(excelInput, { target: { files: [excelFile] } }); });
       expect(xlsxUtils.sheet_to_json).not.toHaveBeenCalled(); 
       const alert = screen.queryByRole('alert');
@@ -277,7 +320,8 @@ describe('EchoForm', () => {
         const mockAssaySheet = { A1: { t: 's', v: 'WrongHeader1' }, B1: { t: 's', v: 'WrongHeader2' } };
         (read as jest.Mock).mockReturnValue({ SheetNames: ['Assay'], Sheets: { 'Assay': mockAssaySheet }});
         (xlsxUtils.sheet_to_json as jest.Mock).mockReturnValue([{ NotASetting: 'SomeVal', NotAValue: 'AnotherVal' }]);
-        const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+        //const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
+        const excelInput = screen.getByLabelText(/Ripple Input/i);
         await act(async () => { fireEvent.change(excelInput, { target: { files: [excelFile] } }); });
         const alert = screen.queryByRole('alert');
         if (alert) expect(alert).not.toBeVisible();

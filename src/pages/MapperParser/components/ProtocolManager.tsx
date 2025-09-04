@@ -4,17 +4,12 @@ import { Plus, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
 import {
   Protocol,
   MetadataField,
-  //ControlDefinition,
   ParseFormat,
-  //NormalizationType,
-  //ControlType,
   FieldType,
   PARSE_FORMATS,
   PLATE_SIZES,
   BARCODE_LOCATIONS,
   FIELD_TYPES,
-  //NORMALIZATION_TYPES,
-  //CONTROL_TYPES,
   ParseStrategy
 } from '../../../types/mapperTypes';
 import { ProtocolsContext } from '../../../contexts/Context';
@@ -25,6 +20,9 @@ import InteractiveDataMapper from './InteractiveDataMapper';
 import '../../../css/ProtocolManager.css';
 import { PlateSize } from '../../../classes/PlateClass';
 import InfoTooltip from '../../../components/InfoTooltip';
+import InteractiveControlMapper from './InteractiveControlMapper';
+import { ControlDefinition, ControlType, NormalizationType, CONTROL_TYPES, NORMALIZATION_TYPES } from '../../../types/mapperTypes';
+
 
 const ProtocolManager: React.FC = () => {
   const { protocols, setProtocols, selectedProtocolId, setSelectedProtocolId } = useContext(ProtocolsContext);
@@ -34,11 +32,12 @@ const ProtocolManager: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showInteractiveMapper, setShowInteractiveMapper] = useState(false);
+  const [showInteractiveControlMapper, setShowInteractiveControlMapper] = useState(false);
 
   useEffect(() => {
     const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
     if (selectedProtocol) {
-      setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol))); // Deep clone
+      setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol)));
     } else {
       setEditingProtocol(null);
     }
@@ -126,7 +125,28 @@ const ProtocolManager: React.FC = () => {
     }
   };
 
-  /*const handleAddControl = () => {
+  const handleOpenInteractiveMapper = () => {
+    if (!editingProtocol) return;
+    setShowInteractiveMapper(true);
+  };
+
+  const handleConfirmInteractiveMap = (newStrategyRanges: Partial<ParseStrategy>) => {
+    if (editingProtocol) {
+      setEditingProtocol(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          parseStrategy: {
+            ...prev.parseStrategy,
+            ...newStrategyRanges // Merge the new ranges
+          }
+        };
+      });
+    }
+    setShowInteractiveMapper(false);
+  };
+
+  const handleAddControl = () => {
     if (editingProtocol) {
       const newControl: ControlDefinition = {
         type: 'MaxCtrl',
@@ -166,27 +186,19 @@ const ProtocolManager: React.FC = () => {
         }
       });
     }
-  };*/
-
-  const handleOpenInteractiveMapper = () => {
-    if (!editingProtocol) return;
-    setShowInteractiveMapper(true);
   };
 
-  const handleConfirmInteractiveMap = (newStrategyRanges: Partial<ParseStrategy>) => {
+  const handleConfirmControlMapping = (controls: ControlDefinition[]) => {
     if (editingProtocol) {
-      setEditingProtocol(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          parseStrategy: {
-            ...prev.parseStrategy,
-            ...newStrategyRanges // Merge the new ranges
-          }
-        };
+      setEditingProtocol({
+        ...editingProtocol,
+        dataProcessing: {
+          ...editingProtocol.dataProcessing,
+          controls: controls
+        }
       });
     }
-    setShowInteractiveMapper(false);
+    setShowInteractiveControlMapper(false);
   };
 
   const renderBarcodeLocationFields = () => {
@@ -656,9 +668,9 @@ const ProtocolManager: React.FC = () => {
                 </Accordion.Item>
 
                 <Accordion.Item eventKey="2">
-                  <Accordion.Header>Data Processing - Coming Soon</Accordion.Header>
-                  {/*<Accordion.Body>
-                    <Form.Group className="mb-1">
+                  <Accordion.Header>Data Processing</Accordion.Header>
+                  <Accordion.Body>
+                    <Form.Group className="mb-3">
                       <Form.Label>Normalization</Form.Label>
                       <Form.Select
                         value={editingProtocol.dataProcessing.normalization}
@@ -679,7 +691,15 @@ const ProtocolManager: React.FC = () => {
                       </Form.Select>
                     </Form.Group>
 
-                    <h6>Controls</h6>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0">Controls <InfoTooltip text='"MinCtrl" is the lowest response value, and "MaxCtrl" is the highest response value. "Blank" is subtracted from every well before normalization.' /></h6>
+                      {isEditing && (
+                        <Button size="sm" variant="outline-primary" onClick={() => setShowInteractiveControlMapper(true)}>
+                          Interactive Selection
+                        </Button>
+                      )}
+                    </div>
+
                     {editingProtocol.dataProcessing.controls.map((control, index) => (
                       <Card key={index} className="mb-2 sub-card">
                         <Card.Body>
@@ -700,19 +720,19 @@ const ProtocolManager: React.FC = () => {
                                 </Form.Select>
                               </Form.Group>
                             </Col>
-                            <Col md={4}>
+                            <Col md={6}>
                               <Form.Group>
                                 <Form.Label>Wells</Form.Label>
                                 <Form.Control
                                   type="text"
-                                  placeholder="e.g., A01:A24"
+                                  placeholder="e.g., A01:A24 or A01:B12;P01:P24"
                                   value={control.wells || ''}
                                   onChange={(e) => handleUpdateControl(index, { wells: e.target.value })}
                                   disabled={!isEditing}
                                 />
                               </Form.Group>
                             </Col>
-                            <Col md={1} className="d-flex align-items-end">
+                            <Col md={2} className="d-flex align-items-end">
                               {isEditing && (
                                 <Button
                                   size="sm"
@@ -732,7 +752,7 @@ const ProtocolManager: React.FC = () => {
                         <Plus size={16} /> Add Control
                       </Button>
                     )}
-                  </Accordion.Body>*/}
+                  </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
             </>
@@ -806,6 +826,15 @@ const ProtocolManager: React.FC = () => {
           onHide={() => setShowInteractiveMapper(false)}
           currentParseStrategy={editingProtocol.parseStrategy}
           onConfirm={handleConfirmInteractiveMap}
+        />
+      )}
+      {editingProtocol && (
+        <InteractiveControlMapper
+          show={showInteractiveControlMapper}
+          onHide={() => setShowInteractiveControlMapper(false)}
+          currentControls={editingProtocol.dataProcessing.controls}
+          plateSize={editingProtocol.parseStrategy.plateSize}
+          onConfirm={handleConfirmControlMapping}
         />
       )}
     </div>

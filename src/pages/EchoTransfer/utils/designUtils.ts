@@ -4,10 +4,8 @@ import { Plate } from '../../../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
-  // Create a new workbook
   const wb: WorkBook = utils.book_new();
 
-  // Create Patterns sheet
   const patternsData = patterns.map(pattern => {
     const baseData: any = {
       Pattern: pattern.name,
@@ -26,7 +24,6 @@ export function generateExcelTemplate(patterns: Pattern[]) {
 
   const patternsWs = utils.json_to_sheet(patternsData);
   
-  // Ensure all headers are present
   const patternsHeaders = [
     "Pattern", "Type", "Direction", "Replicates",
     ...Array.from({length: 20}, (_, i) => `Conc${i + 1}`)
@@ -35,7 +32,6 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   
   utils.book_append_sheet(wb, patternsWs, "Patterns");
 
-  // Create Layout sheet
   const layoutData = patterns.flatMap(pattern => 
     pattern.locations.map(location => ({
       Pattern: pattern.name,
@@ -45,17 +41,18 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   const layoutWs = utils.json_to_sheet(layoutData);
   utils.book_append_sheet(wb, layoutWs, "Layout");
 
-  // Create Compounds sheet (empty with headers)
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
   utils.book_append_sheet(wb, compoundsWs, "Compounds");
 
-  // Create Barcodes sheet (empty with headers)
   const barcodesHeaders = ["Intermediate Plate Barcodes", "Destination Plate Barcodes"];
   const barcodesWs = utils.aoa_to_sheet([barcodesHeaders]);
   utils.book_append_sheet(wb, barcodesWs, "Barcodes");
 
-  // Generate and download the Excel file
+  const assayHeaders = ["Setting", "Value"];
+  const assayWs = utils.aoa_to_sheet([assayHeaders]);
+  utils.book_append_sheet(wb, assayWs, "Assay");
+
   const fileName = `Echo_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
   writeFile(wb, fileName);
 }
@@ -124,3 +121,52 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
   }
   return msgArr
 }
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+interface Rectangle {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+export function rectanglesOverlap(rect1: Rectangle, rect2: Rectangle): boolean {
+    return !(rect1.right < rect2.left ||
+      rect1.left > rect2.right ||
+      rect1.bottom < rect2.top ||
+      rect1.top > rect2.bottom);
+  };
+
+export function checkWellsInSelection(startPoint: Point, endPoint: Point, wellsRef: React.MutableRefObject<HTMLDivElement[]>): string[] {
+    const wellArr: string[] = [];
+    const selectionRect: Rectangle = {
+      left: Math.min(startPoint.x, endPoint.x),
+      top: Math.min(startPoint.y, endPoint.y),
+      right: Math.max(startPoint.x, endPoint.x),
+      bottom: Math.max(startPoint.y, endPoint.y)
+    };
+    wellsRef.current.forEach(wellElement => {
+      if (wellElement) {
+        const rect = wellElement.getBoundingClientRect();
+        const wellRect: Rectangle = {
+          left: rect.left + window.scrollX,
+          top: rect.top + window.scrollY,
+          right: rect.right + window.scrollX,
+          bottom: rect.bottom + window.scrollY
+        };
+
+        if (rectanglesOverlap(wellRect, selectionRect)) {
+          const wellId = wellElement.getAttribute('data-wellid');
+          if (wellId) {
+            wellArr.push(wellId);
+          }
+        }
+      }
+    });
+
+    return wellArr;
+  };

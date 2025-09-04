@@ -21,8 +21,8 @@ const WellTooltip: React.FC<WellTooltipProps> = ({ hoveredWell }) => {
   return (
     <div className="well-tooltip" style={{ top: position.y, left: position.x, transform }}>
       <div className='header-section'>
-        <span>Well {well.id}</span>
-        {well.rawResponse ? <span>{well.rawResponse}</span> : ''}
+        <span>{well.id}</span>
+        {well.rawResponse ? <span>{well.rawResponse}{well.normalizedResponse ? <span> ({Math.round(well.normalizedResponse)}%)</span> : ''}</span> : ''}
       </div>
       {well.getIsUnused() ? (
         <div className="content-item">

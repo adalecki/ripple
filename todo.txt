@@ -1,4 +1,9 @@
-# Change "Submit" on calculator to clear previous plates, then resubmit using new form values, instead of requiring user to manually clear plates.
-# "Total compounds" number on the checkpoint modal shouldn't report solvents as a compound
-# Updated src vols sheet needs to pull name dynamically; apparently hardcoded to "testEcho?"
-# Add tooltip to DMSO and allowable error saying they're fractions not percentages
+#x Change "Submit" on calculator to clear previous plates, then resubmit using new form values, instead of requiring user to manually clear plates.
+#x "Total compounds" number on the checkpoint modal shouldn't report solvents as a compound
+#x Updated src vols sheet needs to pull name dynamically; apparently hardcoded to "testEcho?"
+#x Add tooltip to DMSO and allowable error saying they're fractions not percentages
+#x Generated templates from design tab don't have Assay sheet
+#x Change control names; "MaxCtrl" still ambiguous. Move to "MaxReadout" or something. - Added tooltip
+#x Well tooltip should transform toward the center of the plate based on quadrant; it'll slam up against the side, compressing the information within.
+#x In Data Parser, selecting a protocol, uploading a file, removing file, and changing protocol prevents uploading to new protocol?
+# Need to find a better way to do DMSO solvent. Right now the Excel sheet doesn't automatically come with a DMSO pattern. Why bother putting it in at all? Shouldn't the validation step just insert the pattern for you?

@@ -10,7 +10,7 @@ export interface HslType {
 }
 
 export interface ColorConfig {
-  scheme: 'compound' | 'pattern' | 'response';
+  scheme: 'compound' | 'pattern' | 'rawResponse' | 'normalizedResponse';
   colorMap: Map<string, HslStringType>;
   maxConcentration?: number;
   responseRange?: { min: number; max: number };
@@ -39,8 +39,11 @@ export function generatePatternColors(patterns: Pattern[]) {
 }
 
 export function wellColors(plate: Plate, config: ColorConfig): { wellId: string; colors: HslStringType[] }[] {
-  if (config.scheme === 'response') {
-    return wellColorsResponse(plate);
+  if (config.scheme === 'rawResponse') {
+    return wellColorsResponse(plate, false);
+  }
+  else if (config.scheme === 'normalizedResponse') {
+    return wellColorsResponse(plate, true)
   }
   const wellColors = [];
 
@@ -148,12 +151,12 @@ export function hslToString(hsl: HslType): `hsl(${number},${number}%,${number}%)
   return `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`
 }
 
-export function wellColorsResponse(plate: Plate): { wellId: string; colors: HslStringType[] }[] {
+export function wellColorsResponse(plate: Plate, normalized: Boolean): { wellId: string; colors: HslStringType[] }[] {
   const wellColorArr: { wellId: string; colors: HslStringType[] }[] = [];
   
   // Get min/max from plate metadata
-  const minResponse = plate.metadata.globalMinResponse || 0;
-  const maxResponse = plate.metadata.globalMaxResponse || 100;
+  const minResponse = (normalized ? 0 : plate.metadata.globalMinResponse);
+  const maxResponse = (normalized ? 100 : plate.metadata.globalMaxResponse);
   
   // Create color scale
   const colorScale = d3
@@ -168,11 +171,14 @@ export function wellColorsResponse(plate: Plate): { wellId: string; colors: HslS
     
     if (well.getIsUnused()) {
       colors = ['hsl(0,0%,95%)' as HslStringType]; // Gray for unused wells
-    } else if (well.rawResponse !== null) {
+    } else if (!normalized && well.rawResponse !== null) {
       const color = colorScale(well.rawResponse);
-      //colors = [d3.color(color)?.formatHex()];
       colors = [d3.color(color)?.formatHsl() as HslStringType]
-    } else {
+    } else if (normalized && well.normalizedResponse !== null) {
+      const color = colorScale(well.normalizedResponse)
+      colors = [d3.color(color)?.formatHsl() as HslStringType]
+    } 
+    else {
       colors = ['hsl(0,0%,100%)']; // White for wells without data
     }
     

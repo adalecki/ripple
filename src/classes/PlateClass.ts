@@ -32,18 +32,13 @@ export class Plate {
     this.patterns = {};
   }
 
-  [Symbol.iterator]() {
-    const wellIds = Object.keys(this.wells);
-    let index = 0;
-    return {
-      next: () => {
-        if (index < wellIds.length) {
-          return { value: this.getWell(wellIds[index++]), done: false };
-        } else {
-          return { done: true };
-        }
+  *[Symbol.iterator](): IterableIterator<Well> {
+    for (const wellId of Object.keys(this.wells)) {
+      const well = this.wells[wellId];
+      if (well) {
+        yield well;
       }
-    };
+    }
   }
 
   clone(): Plate {
@@ -101,7 +96,6 @@ export class Plate {
       }
     }
   }
-
 
   getWell(wellId: string): Well | null {
     let paddedWellId = wellId

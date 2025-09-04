@@ -1,127 +1,147 @@
-import React, { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Card } from 'react-bootstrap';
+import PlotFigure from './PlotFigure';
+import * as Plot from "@observablehq/plot";
+import { SinglePoint } from '../utils/resultsUtils';
 
 interface ScatterPlotProps {
-  plotData: { x: number; y: number; wellId: string }[]; // x is original concentration/value, y is response
-  treatmentKey: string;
+  sPData: SinglePoint[];
+  yLo: number;
+  yHi: number;
 }
 
-const ScatterPlot: React.FC<ScatterPlotProps> = ({ plotData, treatmentKey }) => {
-  const d3Container = useRef<SVGSVGElement | null>(null);
+const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
+  const [scatterNode, setScatterNode] = useState<HTMLDivElement | null>(null)
+  const [dimensions, setDimensions] = useState({ width: 785, height: 785 })
+
+  const scatterRef = useCallback((node: HTMLDivElement) => {
+    if (node !== null) {
+      setScatterNode(node);
+    }
+  }, []);
 
   useEffect(() => {
-    if (plotData && plotData.length > 0 && d3Container.current) {
-      const svg = d3.select(d3Container.current);
-      svg.selectAll("*").remove(); // Clear previous SVG content
-
-      const margin = { top: 40, right: 30, bottom: 50, left: 60 };
-      const width = parseInt(svg.style('width')) - margin.left - margin.right;
-      const height = parseInt(svg.style('height')) - margin.top - margin.bottom;
-
-      const processedData = plotData.map((d, i) => ({
-        index: i, // Use array index for X-axis
-        response: d.y,
-        wellId: d.wellId,
-        originalX: d.x // Keep original x for tooltip if needed
-      }));
-
-      const xScale = d3.scaleLinear()
-        .domain([0, processedData.length - 1])
-        .range([0, width]);
-
-      const yScale = d3.scaleLinear()
-        .domain(d3.extent(processedData, d => d.response) as [number, number] || [0,100])
-        .nice()
-        .range([height, 0]);
-
-      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-
-      // X-axis
-      g.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(xScale).ticks(Math.min(processedData.length -1, 10)).tickFormat(d3.format('d')))
-        .append('text')
-        .attr('y', margin.bottom - 10)
-        .attr('x', width / 2)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'currentColor')
-        .style('font-size', '12px')
-        .text('Well Index');
-
-      // Y-axis
-      g.append('g')
-        .call(d3.axisLeft(yScale))
-        .append('text')
-        .attr('transform', 'rotate(-90)')
-        .attr('y', -margin.left + 15)
-        .attr('x', -height / 2)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'currentColor')
-        .style('font-size', '12px')
-        .text('Response');
-      
-      // Title
-      svg.append('text')
-        .attr('x', (width + margin.left + margin.right) / 2)
-        .attr('y', margin.top / 2 + 5)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '16px')
-        .style('font-weight', 'bold')
-        .text(`Single-Point Assay: ${treatmentKey}`);
-
-      // Tooltip
-      const tooltip = d3.select('body').append('div')
-        .attr('class', 'd3-tooltip')
-        .style('position', 'absolute')
-        .style('display','none')
-        .style('z-index', '10')
-        .style('padding', '10px')
-        .style('background', 'rgba(0,0,0,0.7)')
-        .style('color', '#fff')
-        .style('border-radius', '5px')
-        .style('font-size', '12px');
-
-      // Data points
-      g.selectAll('circle')
-        .data(processedData)
-        .enter()
-        .append('circle')
-        .attr('cx', d => xScale(d.index))
-        .attr('cy', d => yScale(d.response))
-        .attr('r', 5)
-        .style('fill', 'steelblue')
-        .on('mouseover', (_, d) => {
-          
-          const scatterDiv = d3.select('div#scatter-plot-div').node() as HTMLDivElement
-          const scatterDivRect = scatterDiv.getBoundingClientRect()
-          console.log(scatterDivRect,window)
-          tooltip.html(`Well: ${d.wellId}<br/>Index: ${d.index}<br/>Response: ${d.response.toFixed(2)}`)
-            .style('display','flex')
-            .style(window.innerWidth - scatterDivRect!.right > 200 ? 'translate(0%, -100%)' : 'translate(-100%, -100%)')
-        })
-        .on('mousemove', (event) => {
-          tooltip.style('top', (event.pageY - 10) + 'px')
-                 .style('left', (event.pageX + 10) + 'px');
-        })
-        .on('mouseout', () => {
-          tooltip.style('display', 'none');
-        });
-
+    if (scatterNode) {
+      const updateDimensions = () => {
+        const rect = scatterNode.getBoundingClientRect();
+        if (rect.height != 0 && rect.width != 0) { //when changing tabs dimensions become zero, forcing a rerender and producing an error
+          setDimensions({
+            width: rect.width,
+            height: rect.height
+          });
+        }
+      };
+      updateDimensions();
+      const resizeObserver = new ResizeObserver(updateDimensions);
+      resizeObserver.observe(scatterNode);
+      return () => {
+        resizeObserver.disconnect();
+      };
     }
-    // Cleanup tooltip on component unmount
-    return () => {
-      d3.select('.d3-tooltip').remove();
-    };
-  }, [plotData, treatmentKey]);
+  }, [scatterNode])
 
-  if (!plotData || plotData.length === 0) {
-    return <p>No data available for this treatment to display scatter plot.</p>;
+  function getColor(controlType: string): string {
+    switch (controlType) {
+      case 'MinCtrl': return '#dc2626'; // red
+      case 'MaxCtrl': return '#2563eb'; // blue
+      default: return '#6b7280'; // grey
+    }
   }
 
+  function formatTooltip(point: SinglePoint): string {
+    const lines: string[] = [];
+    lines.push(`Well: ${point.wellId}`);
+    lines.push(`Response: ${point.responseValue.toFixed(2)}`);
+
+    if (point.controlType !== 'None') {
+      lines.push(`Type: ${point.controlType}`);
+    }
+
+    lines.push('Contents:');
+
+    if (point.contents.length === 0) {
+      lines.push('  None');
+    } else {
+      point.contents.forEach(content => {
+        lines.push(`  ${content.compoundId}: ${content.concentration.toFixed(3)} µM`);
+      });
+    }
+
+    return lines.join('\n');
+  }
+
+  if (sPData.length === 0) {
+    return (
+      <Card className="mb-3">
+        <Card.Header>
+          <h6 className="mb-0">Well Data</h6>
+        </Card.Header>
+        <Card.Body className="text-center text-muted p-4">
+          <p>No well data available.</p>
+        </Card.Body>
+      </Card>
+    );
+  }
+
+  // Add sequential index for x-axis to avoid gaps
+  const plotData = sPData.map((point, index) => {
+    const data: any = {
+      ...point,
+      xIndex: index
+    };
+    data.toolTip = formatTooltip(point)
+    return data;
+  });
+
   return (
-    <div style={{ width: '100%', height: '400px' }} id='scatter-plot-div'>
-      <svg ref={d3Container} width="100%" height="100%" />
-    </div>
+    <Card className="mb-3" style={{ border: "2px solid #adb5bd" }}>
+      <Card.Header className='bg-light p-1'>
+        <div className="d-flex align-items-center">
+          <span><strong>Well Data</strong> ({sPData.length} wells)</span>
+        </div>
+      </Card.Header>
+      <Card.Body ref={scatterRef}>
+        <PlotFigure
+          options={{
+            width: dimensions.width,
+            height: Math.min(dimensions.width, 600),
+            marginLeft: 70,
+            marginBottom: 60,
+            style: {
+              fontSize: "12px"
+            },
+            y: {
+              domain: [yLo, yHi],
+              label: "Response",
+              axis: "left"
+            },
+            x: {
+              domain: [0, sPData.length - 1],
+              label: "Well Index",
+              axis: "bottom"
+            },
+            marks: [
+              Plot.ruleY([yLo], { stroke: "#000", strokeWidth: 1 }),
+              Plot.ruleX([0], { stroke: "#000", strokeWidth: 1 }),
+
+              Plot.dot(plotData, {
+                x: "xIndex",
+                y: "responseValue",
+                fill: (d: any) => getColor(d.controlType),
+                r: 4,
+                stroke: "#ffffff",
+                strokeWidth: 1
+              }),
+              Plot.tip(plotData, Plot.pointer({
+                x: "xIndex",
+                y: "responseValue",
+                title: (d) => d.toolTip
+              }))
+            ]
+          }}
+        />
+      </Card.Body>
+    </Card>
   );
 };
 
