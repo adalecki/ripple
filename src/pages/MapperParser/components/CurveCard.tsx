@@ -55,8 +55,8 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
   const xTicks = createLogTicks(Math.min(...x), Math.max(...x), gridSize);
   return (
     <Col key={treatmentKey}>
-      <Card>
-        <Card.Header className='p-1'>
+      <Card style={{border: "2px solid #adb5bd"}}>
+        <Card.Header className='bg-light p-1'>
           <div className="d-flex justify-content-between align-items-center w-100 ">
             <strong><span>{curveData.treatmentId}</span></strong>
             <div className="text-end">

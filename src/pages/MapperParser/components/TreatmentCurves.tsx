@@ -57,90 +57,58 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({
     }
   }, [curvesNode])
 
-  const exportToPDF = async () => {
-    if (!curvesNode || curveData.length === 0) return;
+const exportToPDF = async () => {
+  if (!curvesNode || curveData.length === 0) return;
+  setIsExporting(true);
+  try {
+    const clone = curvesNode.cloneNode(true) as HTMLElement;
+    
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    clone.style.overflow = 'visible';
+    clone.style.maxHeight = 'none';
+    clone.style.height = 'auto';
+    clone.style.width = curvesNode.offsetWidth + 'px';
+    
+    document.body.appendChild(clone);
+    
+    // Force layout calculation
+    clone.offsetHeight;
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    setIsExporting(true);
+    const canvas = await html2canvas(clone, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      width: clone.scrollWidth,
+      height: clone.scrollHeight
+    });
 
-    try {
-      // Find all parent elements that might be constraining the size
-      const elementsToModify: Array<{ element: HTMLElement, originalStyles: { [key: string]: string } }> = [];
+    document.body.removeChild(clone);
 
-      let currentElement: HTMLElement | null = curvesNode;
-      while (currentElement && currentElement !== document.body) {
-        const computedStyle = window.getComputedStyle(currentElement);
-        const originalStyles: { [key: string]: string } = {};
+    const pdf = pdfExport(canvas, curvesNode, gridSize, {
+      marginX: 8,
+      marginY: 8,
+      gapX: 4,
+      gapY: 4,
+      imageType: "JPEG",
+    });
 
-        // Store original styles that might constrain content
-        if (computedStyle.overflow !== 'visible') {
-          originalStyles.overflow = currentElement.style.overflow;
-          currentElement.style.overflow = 'visible';
-        }
-        if (computedStyle.maxHeight !== 'none') {
-          originalStyles.maxHeight = currentElement.style.maxHeight;
-          currentElement.style.maxHeight = 'none';
-        }
-        if (computedStyle.height !== 'auto') {
-          originalStyles.height = currentElement.style.height;
-          currentElement.style.height = 'auto';
-        }
-
-        if (Object.keys(originalStyles).length > 0) {
-          elementsToModify.push({ element: currentElement, originalStyles });
-        }
-
-        currentElement = currentElement.parentElement;
-      }
-
-      // Force a reflow to ensure all content is rendered
-      curvesNode.offsetHeight;
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Capture the full container content
-      const canvas = await html2canvas(curvesNode, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0,
-        width: curvesNode.scrollWidth,
-        height: curvesNode.scrollHeight
-      });
-
-      const pdf = pdfExport(canvas, curvesNode, gridSize, {
-        marginX: 0,
-        marginY: 0,
-        gapX: 0,
-        gapY: 0,
-        imageType: "JPEG",   // smaller PDFs; switch to "PNG" if you need lossless
-      });
-
-
-      // Restore all original styles
-      elementsToModify.forEach(({ element, originalStyles }) => {
-        Object.entries(originalStyles).forEach(([property, value]) => {
-          if (value === '') {
-            element.style.removeProperty(property);
-          } else {
-            (element.style as any)[property] = value;
-          }
-        });
-      });
-
-      // Generate filename with timestamp
-      const timestamp = new Date().toISOString().slice(0, 10);
-      const plateId = plate.barcode || `Plate_${plate.id}`;
-      const filename = `${plateId}_dose_response_curves_${timestamp}.pdf`;
-
-      pdf.save(filename);
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      alert('Failed to export PDF. Please try again.');
-    } finally {
-      setIsExporting(false);
-    }
-  };
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const plateId = plate.barcode || `Plate_${plate.id}`;
+    const filename = `${plateId}_dose_response_curves_${timestamp}.pdf`;
+    pdf.save(filename);
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    alert('Failed to export PDF. Please try again.');
+  } finally {
+    setIsExporting(false);
+  }
+};
 
   if (curveData.length === 0) {
     return (
