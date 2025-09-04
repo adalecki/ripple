@@ -51,7 +51,7 @@ export function generateExcelTemplate(patterns: Pattern[]) {
 
   const assayHeaders = ["Setting", "Value"];
   const assayWs = utils.aoa_to_sheet([assayHeaders]);
-  utils.book_append_sheet(wb, assayWs, "Barcodes");
+  utils.book_append_sheet(wb, assayWs, "Assay");
 
   const fileName = `Echo_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
   writeFile(wb, fileName);

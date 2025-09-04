@@ -47,7 +47,7 @@ function describeEllipticalArc({
 
   return d;
 }
-//#0445ad
+
 const Logo = () => {
   return (
     <svg

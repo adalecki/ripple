@@ -24,7 +24,8 @@ export interface FormFieldProps {
   step?: number;
   accept?: string;
   className?: string;
-  debounce?: number; // Debounce delay in milliseconds
+  error?: string;
+  debounce?: number; 
 }
 
 export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
@@ -43,6 +44,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     step,
     accept,
     className = '',
+    error,
     debounce
   }, ref) => {
     const [internalValue, setInternalValue] = useState(value);
@@ -171,6 +173,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     return type === 'switch' ? (
       <div className={baseClassName}>
         {renderInput()}
+        {error && <div className="form-field-error">{error}</div>}
       </div>
     ) : (
       <div className={baseClassName}>
@@ -179,6 +182,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           {renderInput()}
         </div>
         {unit && <span className="unit-label">{unit}</span>}
+        {error && <div className="form-field-error">{error}</div>}
       </div>
     );
   }
