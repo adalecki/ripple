@@ -158,13 +158,12 @@ type ExportOpts = {
   gapX?: number;    // pts between columns
   gapY?: number;    // pts between rows
   imageType?: "PNG" | "JPEG";
-  jpegQuality?: number; // 0..1
 };
 
 export function pdfExport(
-  bigCanvas: HTMLCanvasElement,           // result of single html2canvas(curvesNode, ...)
-  curvesNode: HTMLDivElement,            // the container you rendered
-  perRow: number,                        // graphs per row in the PDF
+  bigCanvas: HTMLCanvasElement,
+  curvesNode: HTMLDivElement,
+  perRow: number,
   opts: Partial<ExportOpts> = {}
 ) {
   const {
@@ -179,55 +178,50 @@ export function pdfExport(
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
 
-  // html2canvas scale compensation: canvas is scaled vs DOM css pixels
-  const scaleX = bigCanvas.width / curvesNode.scrollWidth;
-  const scaleY = bigCanvas.height / curvesNode.scrollHeight;
+  const containerWidth = curvesNode.scrollWidth;
+  const containerHeight = curvesNode.scrollHeight;
+  const scaleX = bigCanvas.width / containerWidth;
+  const scaleY = bigCanvas.height / containerHeight;
 
-  // Tile width (pts) after margins/gaps, preserving aspect ratio per card
   const usableWidth = pdfWidth - 2 * marginX - (perRow - 1) * gapX;
   const cellWidthPt = usableWidth / perRow;
 
-  const containerRect = curvesNode.getBoundingClientRect();
   const cards = Array.from(curvesNode.querySelectorAll(".card")) as HTMLElement[];
   if (!cards.length) return pdf;
 
-  // Layout state
+  const containerRect = curvesNode.getBoundingClientRect();
+
   let xPt = marginX;
   let yPt = marginY;
   let col = 0;
   let rowMaxHeightPt = 0;
-  let gap = 0;
-  gap = cards[1].getBoundingClientRect().left - cards[0].getBoundingClientRect().right
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
+    const cardRect = card.getBoundingClientRect();
 
-    // Rect relative to container, then scale into bigCanvas coordinates
-    const r = card.getBoundingClientRect();
-    const relLeft = r.left - containerRect.left + curvesNode.scrollLeft ;
-    const relTop = r.top - containerRect.top + curvesNode.scrollTop;
+    const relativeLeft = cardRect.left - containerRect.left + curvesNode.scrollLeft;
+    const relativeTop = cardRect.top - containerRect.top + curvesNode.scrollTop;
 
-    const sx = (relLeft * scaleX);
-    const sy = (relTop * scaleY);
-    const sw = (r.width * scaleX);
-    const sh = (r.height * scaleY);
+    const canvasX = relativeLeft * scaleX;
+    const canvasY = relativeTop * scaleY;
+    const canvasWidth = cardRect.width * scaleX;
+    const canvasHeight = cardRect.height * scaleY;
 
-    // Crop from the big canvas into a small offscreen canvas (no dataURL conversion needed)
     const tile = document.createElement("canvas");
-    tile.width = sw;
-    tile.height = sh;
-    const tctx = tile.getContext("2d")!;
-    tctx.drawImage(bigCanvas,sx,sy,sw,sh,0,0,sw,sh)
-    document.body.appendChild(tile)
-    const br = document.createElement("br")
-    document.body.appendChild(br)
+    tile.width = canvasWidth;
+    tile.height = canvasHeight;
+    const tileCtx = tile.getContext("2d")!;
+    
+    tileCtx.drawImage(
+      bigCanvas,
+      canvasX, canvasY, canvasWidth, canvasHeight,
+      0, 0, canvasWidth, canvasHeight
+    );
 
-    // Preserve aspect ratio: compute target height in pts from width in pts
-    //const aspect = r.height / r.width;
-    const aspect = sh/sw
-    const cellHeightPt = cellWidthPt * aspect;
+    const aspectRatio = canvasHeight / canvasWidth;
+    const cellHeightPt = cellWidthPt * aspectRatio;
 
-    // Page break if this row’s next tile won’t fit vertically
     if (yPt + cellHeightPt > pdfHeight - marginY + 0.001) {
       pdf.addPage();
       xPt = marginX;
@@ -236,18 +230,14 @@ export function pdfExport(
       rowMaxHeightPt = 0;
     }
 
-    // Place the image
-    // jsPDF accepts HTMLCanvasElement directly (faster than toDataURL)
     pdf.addImage(tile, imageType, xPt, yPt, cellWidthPt, cellHeightPt, undefined, undefined, 0);
 
-    // Advance layout
     rowMaxHeightPt = Math.max(rowMaxHeightPt, cellHeightPt);
     col++;
 
     if (col < perRow) {
       xPt += cellWidthPt + gapX;
     } else {
-      // new row
       xPt = marginX;
       yPt += rowMaxHeightPt + gapY;
       col = 0;

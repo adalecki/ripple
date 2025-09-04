@@ -48,27 +48,27 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
     }
   }
 
-function formatTooltip(point: SinglePoint): string {
-  const lines: string[] = [];
-  lines.push(`Well: ${point.wellId}`);
-  lines.push(`Response: ${point.responseValue.toFixed(2)}`);
-  
-  if (point.controlType !== 'None') {
-    lines.push(`Type: ${point.controlType}`);
+  function formatTooltip(point: SinglePoint): string {
+    const lines: string[] = [];
+    lines.push(`Well: ${point.wellId}`);
+    lines.push(`Response: ${point.responseValue.toFixed(2)}`);
+
+    if (point.controlType !== 'None') {
+      lines.push(`Type: ${point.controlType}`);
+    }
+
+    lines.push('Contents:');
+
+    if (point.contents.length === 0) {
+      lines.push('  None');
+    } else {
+      point.contents.forEach(content => {
+        lines.push(`  ${content.compoundId}: ${content.concentration.toFixed(3)} µM`);
+      });
+    }
+
+    return lines.join('\n');
   }
-  
-  lines.push('Contents:');
-  
-  if (point.contents.length === 0) {
-    lines.push('  None');
-  } else {
-    point.contents.forEach(content => {
-      lines.push(`  ${content.compoundId}: ${content.concentration.toFixed(3)} µM`);
-    });
-  }
-  
-  return lines.join('\n');
-}
 
   if (sPData.length === 0) {
     return (
@@ -94,9 +94,11 @@ function formatTooltip(point: SinglePoint): string {
   });
 
   return (
-    <Card className="mb-3">
-      <Card.Header>
-        <h6 className="mb-0">Well Data ({sPData.length} wells)</h6>
+    <Card className="mb-3" style={{ border: "2px solid #adb5bd" }}>
+      <Card.Header className='bg-light p-1'>
+        <div className="d-flex align-items-center">
+          <span><strong>Well Data</strong> ({sPData.length} wells)</span>
+        </div>
       </Card.Header>
       <Card.Body ref={scatterRef}>
         <PlotFigure
