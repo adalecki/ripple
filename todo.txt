@@ -7,3 +7,7 @@
 #x Well tooltip should transform toward the center of the plate based on quadrant; it'll slam up against the side, compressing the information within.
 #x In Data Parser, selecting a protocol, uploading a file, removing file, and changing protocol prevents uploading to new protocol?
 # Need to find a better way to do DMSO solvent. Right now the Excel sheet doesn't automatically come with a DMSO pattern. Why bother putting it in at all? Shouldn't the validation step just insert the pattern for you?
+# Filename parsing in Protocol Manager isn't intuitive. At minimum add a tooltip to explain it.
+# Add "clear plates" button to other tabs in mapperparser
+# Find better workflow for saving protocols. Right now users make an edit, then navigate away. Maybe an alert when tab changes if it's editing?
+# When changing plate size in Protocol Manager, if going to a smaller size and controls are outside the limit, get an error

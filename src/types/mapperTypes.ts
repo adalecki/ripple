@@ -5,7 +5,7 @@ export const PARSE_FORMATS = ['Matrix'] as const;
 export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'Blank'] as const;
 export const NORMALIZATION_TYPES = ['PctOfCtrl', 'None'] as const;
 export const FIELD_TYPES = ['Free Text', 'PickList'] as const;
-export const PLATE_SIZES = [96, 384, 1536] as const;
+export const PLATE_SIZES = ['96', '384', '1536'] as const;
 export const BARCODE_LOCATIONS = ['filename', 'cell'] as const;
 
 export type ParseFormat = typeof PARSE_FORMATS[number];
@@ -36,7 +36,7 @@ export interface ParseStrategy {
   format: ParseFormat;
   autoParse: boolean;
   plateSize: PlateSize;
-  rawData: string;
+  rawData?: string;
   xLabels?: string; // For Matrix format
   yLabels?: string; // For Matrix format
   wellIDs?: string; // For Table format
@@ -53,8 +53,6 @@ export interface Protocol {
   parseStrategy: ParseStrategy;
   metadataFields: MetadataField[];
   dataProcessing: DataProcessing;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export const CONTROL_TYPE_DESCRIPTIONS: Record<ControlType, string> = {

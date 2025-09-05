@@ -8,11 +8,10 @@ export default defineConfig({
   server: {port: 3000},
   build: {
     rollupOptions: {
-      // Tell Vite to treat these modules as external and not bundle them
       external: [
         'canvg',
         'dompurify',
-        'core-js', // Add any other optional dependencies you are not using
+        'core-js'
       ],
     },
   }
