@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Button, Form, Card, Row, Col, Accordion } from 'react-bootstrap';
+import { Button, Form, Card, Row, Col, Accordion, Container } from 'react-bootstrap';
 import { Plus, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
 import {
   Protocol,
@@ -324,7 +324,7 @@ const ProtocolManager: React.FC = () => {
 
 
   return (
-    <div className="protocol-manager">
+    <Container fluid className="protocol-manager">
       <Row>
         <Col md={8}>
           {editingProtocol ? (
@@ -837,7 +837,7 @@ const ProtocolManager: React.FC = () => {
           onConfirm={handleConfirmControlMapping}
         />
       )}
-    </div>
+    </Container>
   );
 };
 

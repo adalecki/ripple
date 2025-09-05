@@ -99,9 +99,7 @@ export const defaultProtocols: Protocol[] = [
         { type: 'MinCtrl', wells: 'P1:P24' }
       ],
       normalization: 'PctOfCtrl'
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
+    }
   }
 ];
 
@@ -111,11 +109,7 @@ export function loadProtocols(): Protocol[] {
     try {
       const parsed = JSON.parse(stored);
       if (parsed.length == 0) return defaultProtocols
-      return parsed.map((p: any) => ({
-        ...p,
-        createdAt: new Date(p.createdAt),
-        updatedAt: new Date(p.updatedAt)
-      }));
+      return parsed;
     } catch (e) {
       console.error('Failed to parse stored protocols:', e);
       return defaultProtocols;
@@ -140,18 +134,22 @@ export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
     description: '',
     parseStrategy: {
       format: 'Matrix',
+      autoParse: false,
       plateSize: '384',
       rawData: '',
+      xLabels: '',
+      yLabels: '',
+      wellIDs: '',
       plateBarcodeLocation: 'filename',
-      autoParse: false
+      plateBarcodeCell: '',
+      barcodeDelimiter: null,
+      barcodeChunk: undefined
     },
     metadataFields: [],
     dataProcessing: {
       controls: [],
       normalization: 'None'
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
+    }
   };
 }
 
@@ -161,16 +159,14 @@ export function duplicateProtocol(protocol: Protocol): Protocol {
   return {
     ...JSON.parse(JSON.stringify(protocol)), // Deep clone
     id: newId,
-    name: `${protocol.name} (Copy)`,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    name: `${protocol.name} (Copy)`
   };
 }
 
 export function updateProtocol(protocols: Protocol[], protocolId: number, updates: Partial<Protocol>): Protocol[] {
   return protocols.map(p => 
     p.id === protocolId 
-      ? { ...p, ...updates, updatedAt: new Date() }
+      ? { ...p, ...updates }
       : p
   );
 }
