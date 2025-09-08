@@ -5,7 +5,6 @@ import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSize
 import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { DilutionPattern } from '../../../classes/PatternClass';
-import { timeIt } from '../utils/validationUtils';
 
 // strings recorded instead of class references to avoid object reference issues
 export interface TransferStep {
@@ -79,9 +78,7 @@ export class EchoCalculator {
     this.destinationPlates = this.prepareDestPlates()
     this.fillIntPlates()
     this.fillDestPlates()
-    let timeObj = timeIt([],'dmsostart')
     if (this.inputData.CommonData.dmsoNormalization) { this.dmsoNormalization() }
-    timeObj = timeIt(timeObj,'dmsoend')
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates, ...this.destinationPlates]) {
       this.findPlateMaxConcentration(plate)
     }
