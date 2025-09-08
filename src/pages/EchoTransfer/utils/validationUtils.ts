@@ -306,21 +306,6 @@ function validPatternName(patternName: string, errors: string[]): boolean {
   return true
 }
 
-/**
- * Measures the execution time of a given function and logs it to the console.
- * @param name A descriptive name for the operation being timed.
- * @param fn The function to be executed and timed.
- * @returns The result of the executed function.
- */
-export function timeFunction<T>(name: string, fn: () => T): T {
-  const start = performance.now();
-  const result = fn();
-  const end = performance.now();
-  const executionTime = end - start;
-  console.log(`${name} took ${executionTime.toFixed(2)} milliseconds`);
-  return result;
-}
-
 export type timeObj = {
     name: string,
     time: number
