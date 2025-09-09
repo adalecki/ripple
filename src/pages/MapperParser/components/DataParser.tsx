@@ -346,20 +346,21 @@ const DataParser: React.FC = () => {
                     {platesWithDataCount} plate{platesWithDataCount !== 1 ? 's' : ''} with data
                   </small>
                 </div>
-                <Button
-                  size="sm"
-                  variant="success"
-                  className="w-100"
-                  onClick={handleExportCSV}
-                >
-                  <Download size={14} className="me-1" />
-                  Export CSV
-                </Button>
+                <div className="d-flex align-items-center gap-2">
+                  <Button
+                    variant="success"
+                    className="w-50"
+                    onClick={handleExportCSV}
+                  >
+                    <Download size={14} className="me-1" />
+                    Export CSV
+                  </Button>
+                  <Button variant="outline-danger" className="w-50" onClick={() => setMappedPlates([])}>Clear Plates</Button>
+                </div>
               </Card.Body>
             </Card>
           )}
 
-          {/* Errors */}
           {errors.length > 0 && (
             <Alert variant="danger" dismissible onClose={() => setErrors([])} className="p-2">
               <div className="d-flex align-items-start">

@@ -101,6 +101,7 @@ const exportToPDF = async () => {
     const timestamp = new Date().toISOString().slice(0, 10);
     const plateId = plate.barcode || `Plate_${plate.id}`;
     const filename = `${plateId}_dose_response_curves_${timestamp}.pdf`;
+    pdf.output('dataurlnewwindow')
     pdf.save(filename);
   } catch (error) {
     console.error('Error exporting PDF:', error);
@@ -161,14 +162,14 @@ const exportToPDF = async () => {
           )}
         </div>
       </Card.Header>
-      <Card.Body className='overflow-auto' ref={curvesRef}>
+      <Card.Body className='overflow-auto'>
         {!plate || !hasResponseData(plate) ?
           <div>
             <h5>No plate data</h5>
             <p className='text-muted'>Please upload and parse plates to view response data</p>
           </div>
           :
-          <Row md={gridSize} className="g-2">
+          <Row md={gridSize} className="g-2" ref={curvesRef}>
             {treatmentCurves}
           </Row>}
       </Card.Body>

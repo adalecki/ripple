@@ -5,7 +5,7 @@ export const PARSE_FORMATS = ['Matrix'] as const;
 export const CONTROL_TYPES = ['MaxCtrl', 'MinCtrl', 'Blank'] as const;
 export const NORMALIZATION_TYPES = ['PctOfCtrl', 'None'] as const;
 export const FIELD_TYPES = ['Free Text', 'PickList'] as const;
-export const PLATE_SIZES = [96, 384, 1536] as const;
+export const PLATE_SIZES = ['96', '384', '1536'] as const;
 export const BARCODE_LOCATIONS = ['filename', 'cell'] as const;
 
 export type ParseFormat = typeof PARSE_FORMATS[number];
@@ -42,8 +42,9 @@ export interface ParseStrategy {
   wellIDs?: string; // For Table format
   plateBarcodeLocation: BarcodeLocation;
   plateBarcodeCell?: string; // Required when plateBarcodeLocation is 'cell'
-  barcodeDelimiter?: string | null; // Required when plateBarcodeLocation is 'filename'
-  barcodeChunk?: number; // Required when plateBarcodeLocation is 'filename'
+  useFullFilename: boolean; // Explicit flag for full filename mode
+  barcodeDelimiter: string; // Delimiter to use when not using full filename
+  barcodeChunk: number; // Chunk index when not using full filename
 }
 
 export interface Protocol {
@@ -53,8 +54,6 @@ export interface Protocol {
   parseStrategy: ParseStrategy;
   metadataFields: MetadataField[];
   dataProcessing: DataProcessing;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export const CONTROL_TYPE_DESCRIPTIONS: Record<ControlType, string> = {

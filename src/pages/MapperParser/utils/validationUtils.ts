@@ -1,4 +1,4 @@
-import { Protocol } from '../../../types/mapperTypes';
+import { CONTROL_TYPES, FIELD_TYPES, NORMALIZATION_TYPES, PARSE_FORMATS, PLATE_SIZES, Protocol } from '../../../types/mapperTypes';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -12,68 +12,63 @@ export interface ImportableProtocol extends Protocol {
 
 export function validateProtocolImport(fileContent: string, existingProtocols: Protocol[]): ValidationResult {
   const errors: string[] = [];
-  
+
   try {
     const parsed = JSON.parse(fileContent);
-    
+
     if (!Array.isArray(parsed)) {
       return {
         isValid: false,
         errors: ['File must contain an array of protocols']
       };
     }
-    
+
     if (parsed.length === 0) {
       return {
         isValid: false,
         errors: ['File contains no protocols']
       };
     }
-    
+
     const protocols: ImportableProtocol[] = [];
     const existingNames = new Set(existingProtocols.map(p => p.name));
     const existingIds = new Set(existingProtocols.map(p => p.id));
-    
+
     parsed.forEach((item: any, index: number) => {
-      const protocolErrors = validateProtocolStructure(item, index);
-      errors.push(...protocolErrors);
-      
-      if (protocolErrors.length === 0) {
-        let newId = Date.now() + index;
-        while (existingIds.has(newId)) {
-          newId += 1;
-        }
-        
-        let newName = item.name;
-        if (existingNames.has(newName)) {
-          let counter = 1;
-          while (existingNames.has(`${newName} (${counter})`)) {
-            counter++;
-          }
-          newName = `${newName} (${counter})`;
-        }
-        
-        const protocol: ImportableProtocol = {
-          ...item,
-          id: newId,
-          name: newName,
-          createdAt: new Date(item.createdAt || new Date()),
-          updatedAt: new Date(item.updatedAt || new Date()),
-          isSelected: true
-        };
-        
-        protocols.push(protocol);
-        existingIds.add(newId);
-        existingNames.add(newName);
+      const sanitizedProtocol = sanitizeProtocol(item, index + 1);
+
+      let newId = Date.now() + index;
+      while (existingIds.has(newId)) {
+        newId += 1;
       }
+
+      let newName = sanitizedProtocol.name;
+      if (existingNames.has(newName)) {
+        let counter = 1;
+        while (existingNames.has(`${newName} (${counter})`)) {
+          counter++;
+        }
+        newName = `${newName} (${counter})`;
+      }
+
+      const protocol: ImportableProtocol = {
+        ...sanitizedProtocol,
+        id: newId,
+        name: newName,
+        isSelected: true
+      };
+
+      protocols.push(protocol);
+      existingIds.add(newId);
+      existingNames.add(newName);
     });
-    
+
     return {
-      isValid: errors.length === 0,
+      isValid: true,
       errors,
       protocols
     };
-    
+
   } catch (e) {
     return {
       isValid: false,
@@ -82,94 +77,70 @@ export function validateProtocolImport(fileContent: string, existingProtocols: P
   }
 }
 
-function validateProtocolStructure(protocol: any, index: number): string[] {
-  const errors: string[] = [];
-  const prefix = `Protocol ${index + 1}:`;
-  
-  if (!protocol.name || typeof protocol.name !== 'string') {
-    errors.push(`${prefix} Missing or invalid name`);
-  }
-  
-  if (typeof protocol.id !== 'number') {
-    errors.push(`${prefix} Missing or invalid id`);
-  }
-  
-  if (!protocol.parseStrategy || typeof protocol.parseStrategy !== 'object') {
-    errors.push(`${prefix} Missing parseStrategy`);
-  } else {
-    const { parseStrategy } = protocol;
-    
-    if (!['Table', 'Matrix'].includes(parseStrategy.format)) {
-      errors.push(`${prefix} Invalid parseStrategy.format`);
-    }
-    
-    if (![96, 384, 1536].includes(parseStrategy.plateSize)) {
-      errors.push(`${prefix} Invalid parseStrategy.plateSize`);
-    }
-    
-    if (!parseStrategy.rawData || typeof parseStrategy.rawData !== 'string') {
-      errors.push(`${prefix} Missing parseStrategy.rawData`);
-    }
-    
-    if (!['filename', 'cell'].includes(parseStrategy.plateBarcodeLocation)) {
-      errors.push(`${prefix} Invalid parseStrategy.plateBarcodeLocation`);
-    }
-  }
-  
-  if (!Array.isArray(protocol.metadataFields)) {
-    errors.push(`${prefix} Invalid metadataFields (must be array)`);
-  } else {
-    protocol.metadataFields.forEach((field: any, fieldIndex: number) => {
-      if (!field.name || typeof field.name !== 'string') {
-        errors.push(`${prefix} MetadataField ${fieldIndex + 1}: Missing or invalid name`);
-      }
-      
-      if (!['Free Text', 'PickList'].includes(field.type)) {
-        errors.push(`${prefix} MetadataField ${fieldIndex + 1}: Invalid type`);
-      }
-      
-      if (typeof field.required !== 'boolean') {
-        errors.push(`${prefix} MetadataField ${fieldIndex + 1}: Invalid required field`);
-      }
-    });
-  }
-  
-  if (!protocol.dataProcessing || typeof protocol.dataProcessing !== 'object') {
-    errors.push(`${prefix} Missing dataProcessing`);
-  } else {
-    const { dataProcessing } = protocol;
-    
-    if (!['PctOfCtrl', 'None'].includes(dataProcessing.normalization)) {
-      errors.push(`${prefix} Invalid dataProcessing.normalization`);
-    }
-    
-    if (!Array.isArray(dataProcessing.controls)) {
-      errors.push(`${prefix} Invalid dataProcessing.controls (must be array)`);
-    } else {
-      dataProcessing.controls.forEach((control: any, controlIndex: number) => {
-        if (!['MaxCtrl', 'MinCtrl', 'PosCtrl', 'NegCtrl', 'Reference'].includes(control.type)) {
-          errors.push(`${prefix} Control ${controlIndex + 1}: Invalid type`);
-        }
-      });
-    }
-  }
-  
-  return errors;
+function sanitizeProtocol(protocol: any, index: number): Protocol {
+  const name = (typeof protocol.name === 'string' && protocol.name.trim()) ? protocol.name.trim() : `Imported Protocol ${index}`;
+
+  const parseStrategy = {
+    format: (PARSE_FORMATS.includes(protocol.parseStrategy?.format)) ? protocol.parseStrategy.format : 'Matrix',
+    plateSize: (PLATE_SIZES.includes(protocol.parseStrategy?.plateSize.toString())) ? protocol.parseStrategy.plateSize.toString() : '384',
+    rawData: (typeof protocol.parseStrategy?.rawData === 'string') ? protocol.parseStrategy.rawData : '',
+    plateBarcodeLocation: (['filename', 'cell'].includes(protocol.parseStrategy?.plateBarcodeLocation)) ? protocol.parseStrategy.plateBarcodeLocation : 'filename',
+    autoParse: typeof protocol.parseStrategy?.autoParse === 'boolean' ? protocol.parseStrategy.autoParse : false,
+
+    xLabels: (typeof protocol.parseStrategy?.xLabels === 'string') ? protocol.parseStrategy.xLabels : '',
+    yLabels: (typeof protocol.parseStrategy?.yLabels === 'string') ? protocol.parseStrategy.yLabels : '',
+    wellIDs: (typeof protocol.parseStrategy?.wellIDs === 'string') ? protocol.parseStrategy.wellIDs : '',
+    plateBarcodeCell: (typeof protocol.parseStrategy?.plateBarcodeCell === 'string') ? protocol.parseStrategy.plateBarcodeCell : '',
+    useFullFilename: (typeof protocol.parseStrategy?.useFullFilename === 'boolean') ? protocol.parseStrategy.useFullFilename : true,
+    barcodeDelimiter: (typeof protocol.parseStrategy?.barcodeDelimiter === 'string') ? protocol.parseStrategy.barcodeDelimiter : '',
+    barcodeChunk: (typeof protocol.parseStrategy?.barcodeChunk === 'number') ? protocol.parseStrategy.barcodeChunk : 1,
+  };
+
+  const metadataFields = Array.isArray(protocol.metadataFields) ?
+    protocol.metadataFields
+      .filter((field: any) => field && typeof field.name === 'string' && field.name.trim())
+      .map((field: any) => ({
+        name: field.name.trim(),
+        type: (FIELD_TYPES.includes(field.type)) ? field.type : 'Free Text',
+        required: typeof field.required === 'boolean' ? field.required : false,
+        defaultValue: field.defaultValue || undefined,
+        values: (['PickList'].includes(field.type) && Array.isArray(field.values)) ? field.values : undefined
+      })) : [];
+
+  const controls = Array.isArray(protocol.dataProcessing?.controls) ?
+    protocol.dataProcessing.controls
+      .filter((control: any) => control && CONTROL_TYPES.includes(control.type))
+      .map((control: any) => ({
+        type: control.type,
+        wells: (typeof control.wells === 'string') ? control.wells : ''
+      })) : [];
+
+  const dataProcessing = {
+    normalization: (NORMALIZATION_TYPES.includes(protocol.dataProcessing?.normalization)) ?
+      protocol.dataProcessing.normalization : 'None',
+    controls
+  };
+
+  return {
+    id: 0,
+    name,
+    description: (typeof protocol.description === 'string') ? protocol.description : '',
+    parseStrategy,
+    metadataFields,
+    dataProcessing
+  };
 }
 
 export function exportProtocols(protocols: Protocol[]): string {
-  // Create clean export data without UI-specific fields
   const exportData = protocols.map(protocol => ({
     id: protocol.id,
     name: protocol.name,
     description: protocol.description || '',
     parseStrategy: protocol.parseStrategy,
     metadataFields: protocol.metadataFields,
-    dataProcessing: protocol.dataProcessing,
-    createdAt: protocol.createdAt.toISOString(),
-    updatedAt: protocol.updatedAt.toISOString()
+    dataProcessing: protocol.dataProcessing
   }));
-  
+
   return JSON.stringify(exportData, null, 2);
 }
 
@@ -177,7 +148,7 @@ export function downloadProtocolsAsJson(protocols: Protocol[], filename?: string
   const jsonString = exportProtocols(protocols);
   const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = filename || `protocols_${new Date().toISOString().split('T')[0]}.json`;

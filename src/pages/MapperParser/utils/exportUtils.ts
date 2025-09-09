@@ -171,7 +171,7 @@ export function pdfExport(
     marginY = 0,
     gapX = 0,
     gapY = 0,
-    imageType = "PNG"
+    imageType = "JPEG"
   } = { ...opts };
 
   const pdf = new jsPDF("portrait", "pt", "letter");
@@ -205,21 +205,21 @@ export function pdfExport(
 
     const canvasX = relativeLeft * scaleX;
     const canvasY = relativeTop * scaleY;
-    const canvasWidth = cardRect.width * scaleX;
-    const canvasHeight = cardRect.height * scaleY;
+    const cardWidth = cardRect.width * scaleX;
+    const cardHeight = cardRect.height * scaleY;
 
     const tile = document.createElement("canvas");
-    tile.width = canvasWidth;
-    tile.height = canvasHeight;
+    tile.width = cardWidth;
+    tile.height = cardHeight;
     const tileCtx = tile.getContext("2d")!;
     
     tileCtx.drawImage(
       bigCanvas,
-      canvasX, canvasY, canvasWidth, canvasHeight,
-      0, 0, canvasWidth, canvasHeight
+      canvasX, canvasY, cardWidth, cardHeight,
+      0, 0, cardWidth, cardHeight
     );
 
-    const aspectRatio = canvasHeight / canvasWidth;
+    const aspectRatio = cardHeight / cardWidth;
     const cellHeightPt = cellWidthPt * aspectRatio;
 
     if (yPt + cellHeightPt > pdfHeight - marginY + 0.001) {
