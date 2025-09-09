@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Modal, Button, Form, ListGroup, Alert } from 'react-bootstrap';
 import { Upload, FileText, AlertTriangle } from 'lucide-react';
 import { Protocol } from '../../../types/mapperTypes';
 import { validateProtocolImport, ImportableProtocol } from '../utils/validationUtils';
+import FileUploadCard from '../../../components/FileUploadCard';
 
 interface ImportProtocolsModalProps {
   show: boolean;
@@ -22,21 +23,20 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
   const [selectedProtocols, setSelectedProtocols] = useState<Set<number>>(new Set());
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (files: FileList | null) => {
+  const handleFileChange = async (files: File[]) => {
     if (files && files.length === 1) {
       const file = files[0];
       setSelectedFile(file);
-      
+
       try {
         const content = await file.text();
         const validation = validateProtocolImport(content, existingProtocols);
-        
+
         if (validation.isValid && validation.protocols) {
           setValidatedProtocols(validation.protocols);
           setValidationErrors([]);
-          
+
           // Select all valid protocols by default
           const protocolIds = new Set(validation.protocols.map(p => p.id));
           setSelectedProtocols(protocolIds);
@@ -90,7 +90,7 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
         const { isSelected, ...cleanProtocol } = p;
         return cleanProtocol;
       });
-    
+
     if (protocolsToImport.length > 0) {
       onImport(protocolsToImport);
       handleClose();
@@ -103,9 +103,6 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
     setValidationErrors([]);
     setSelectedProtocols(new Set());
     setSelectAll(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
     onHide();
   };
 
@@ -117,19 +114,23 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
         <Modal.Title>Import Protocols</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Form.Group className="mb-3 protocol-file-upload">
-          <Form.Label>
-            <FileText size={16} className="me-1" />
-            Select Protocol File (JSON)
-          </Form.Label>
-          <Form.Control
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={(e) => handleFileChange((e.target as HTMLInputElement).files)}
-          />
-        </Form.Group>
-
+        <FileUploadCard
+          key={`protocolImport`}
+          onFilesSelected={handleFileChange}
+          acceptedTypes=".json"
+          title="Protocols"
+          description="Exported from Ripple"
+          multiple={false}
+          name='protocolsFile'
+        >
+          {selectedFile && (
+            <div className="mt-2">
+              <small className="text-success">
+                Selected: {selectedFile.name}
+              </small>
+            </div>
+          )}
+        </FileUploadCard>
         {validationErrors.length > 0 && (
           <Alert variant="danger">
             <AlertTriangle size={16} className="me-1" />
@@ -153,7 +154,7 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
                 className="fw-bold"
               />
             </div>
-            
+
             <ListGroup style={{ maxHeight: '400px', overflowY: 'auto' }}>
               {validatedProtocols.map((protocol) => (
                 <ListGroup.Item
@@ -197,8 +198,8 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
         <Button variant="secondary" onClick={handleClose}>
           Cancel
         </Button>
-        <Button 
-          variant="primary" 
+        <Button
+          variant="primary"
           onClick={handleImport}
           disabled={selectedCount === 0}
         >

@@ -4,51 +4,6 @@ const STORAGE_KEY = 'ripple-protocols';
 
 // Default protocols based on the provided JSON
 export const defaultProtocols: Protocol[] = [
-  /*{
-    id: 1,
-    name: 'Table Based',
-    description: 'Standard table-based data format',
-    parseStrategy: {
-      format: 'Table',
-      plateSize: '384',
-      xLabels: 'F01:DA01',
-      wellIDs: 'E02:E385',
-      rawData: 'F02:DA385',
-      plateBarcodeLocation: 'filename',
-      barcodeDelimiter: null,
-      barcodeChunk: 0,
-      autoParse: false
-    },
-    metadataFields: [
-      {
-        name: 'Protocol Version',
-        type: 'PickList',
-        required: false,
-        defaultValue: 'v2.1',
-        values: ['v2.0', 'v2.1']
-      },
-      {
-        name: 'Operator',
-        type: 'PickList',
-        required: true,
-        defaultValue: '',
-        values: []
-      },
-      {
-        name: 'Cell Line',
-        type: 'PickList',
-        required: true,
-        defaultValue: '',
-        values: ['CHO', 'HEK-293T', 'A549', 'MCF7']
-      }
-    ],
-    dataProcessing: {
-      controls: [],
-      normalization: 'PctOfCtrl'
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },*/
   {
     id: 2,
     name: 'Example Matrix Assay',
@@ -61,8 +16,9 @@ export const defaultProtocols: Protocol[] = [
       rawData: 'B10:Y25',
       plateBarcodeLocation: 'filename',
       plateBarcodeCell: 'A01',
-      barcodeDelimiter: null,
-      barcodeChunk: 0,
+      useFullFilename: true,
+      barcodeDelimiter: '_',
+      barcodeChunk: 1,
       autoParse: true
     },
     metadataFields: [
@@ -109,7 +65,33 @@ export function loadProtocols(): Protocol[] {
     try {
       const parsed = JSON.parse(stored);
       if (parsed.length == 0) return defaultProtocols
-      return parsed;
+      
+      // Migrate existing protocols to new structure
+      const migrated = parsed.map((p: any) => {
+        const protocol = {
+          ...p
+        };
+        
+        // Migrate to new useFullFilename structure
+        if (protocol.parseStrategy.useFullFilename === undefined) {
+          // If barcodeDelimiter was null/undefined or empty, assume full filename
+          const wasFullFilename = protocol.parseStrategy.barcodeDelimiter == null || 
+                                 protocol.parseStrategy.barcodeDelimiter === '';
+          protocol.parseStrategy.useFullFilename = wasFullFilename;
+          
+          // Set defaults for delimiter and chunk if they don't exist
+          if (!protocol.parseStrategy.barcodeDelimiter || protocol.parseStrategy.barcodeDelimiter === null) {
+            protocol.parseStrategy.barcodeDelimiter = '_';
+          }
+          if (protocol.parseStrategy.barcodeChunk == null) {
+            protocol.parseStrategy.barcodeChunk = 1;
+          }
+        }
+        
+        return protocol;
+      });
+      
+      return migrated;
     } catch (e) {
       console.error('Failed to parse stored protocols:', e);
       return defaultProtocols;
@@ -134,16 +116,13 @@ export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
     description: '',
     parseStrategy: {
       format: 'Matrix',
-      autoParse: false,
       plateSize: '384',
       rawData: '',
-      xLabels: '',
-      yLabels: '',
-      wellIDs: '',
       plateBarcodeLocation: 'filename',
-      plateBarcodeCell: '',
-      barcodeDelimiter: null,
-      barcodeChunk: undefined
+      useFullFilename: true,
+      barcodeDelimiter: '_',
+      barcodeChunk: 1,
+      autoParse: false
     },
     metadataFields: [],
     dataProcessing: {

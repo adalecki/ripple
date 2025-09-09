@@ -95,28 +95,29 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
   if (protocol.parseStrategy.plateBarcodeLocation === 'filename') {
     const filenameWithoutExtension = filename.replace(/\.[^/.]+$/, '');
     
-    if (protocol.parseStrategy.barcodeDelimiter == null) {
+    if (protocol.parseStrategy.useFullFilename) {
       barcode = filenameWithoutExtension;
     } else {
       const delimiter = protocol.parseStrategy.barcodeDelimiter;
-      const chunkIndex = protocol.parseStrategy.barcodeChunk ? protocol.parseStrategy.barcodeChunk - 1 : 0; //user inputs 1-indexed number; convert to 0 indexed number
+      const chunkIndex = protocol.parseStrategy.barcodeChunk - 1; // Convert to 0-indexed
       
-      if (delimiter === '') {
-        barcode = filenameWithoutExtension;
-      } else {
-        const chunks = filenameWithoutExtension.split(delimiter);
-        
-        if (chunkIndex < 0 || chunkIndex >= chunks.length) {
-          errors.push(`Barcode chunk index ${chunkIndex} is out of range. Filename "${filenameWithoutExtension}" split by "${delimiter}" has ${chunks.length} chunks (0-${chunks.length - 1}).`);
-          return { errors };
-        }
-        
-        barcode = chunks[chunkIndex].trim();
-        
-        if (barcode === '') {
-          errors.push(`Barcode chunk ${chunkIndex} is empty after splitting filename "${filenameWithoutExtension}" by delimiter "${delimiter}".`);
-          return { errors };
-        }
+      if (!delimiter) {
+        errors.push('Delimiter is required when not using full filename');
+        return { errors };
+      }
+      
+      const chunks = filenameWithoutExtension.split(delimiter);
+      
+      if (chunkIndex < 0 || chunkIndex >= chunks.length) {
+        errors.push(`Barcode chunk index ${chunkIndex + 1} is out of range. Filename "${filenameWithoutExtension}" split by "${delimiter}" has ${chunks.length} chunks (1-${chunks.length}).`);
+        return { errors };
+      }
+      
+      barcode = chunks[chunkIndex].trim();
+      
+      if (barcode === '') {
+        errors.push(`Barcode chunk ${chunkIndex + 1} is empty after splitting filename "${filenameWithoutExtension}" by delimiter "${delimiter}".`);
+        return { errors };
       }
     }
   } else if (protocol.parseStrategy.plateBarcodeLocation === 'cell' && protocol.parseStrategy.plateBarcodeCell) {
