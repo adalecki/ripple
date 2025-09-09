@@ -91,9 +91,9 @@ function sanitizeProtocol(protocol: any, index: number): Protocol {
     yLabels: (typeof protocol.parseStrategy?.yLabels === 'string') ? protocol.parseStrategy.yLabels : '',
     wellIDs: (typeof protocol.parseStrategy?.wellIDs === 'string') ? protocol.parseStrategy.wellIDs : '',
     plateBarcodeCell: (typeof protocol.parseStrategy?.plateBarcodeCell === 'string') ? protocol.parseStrategy.plateBarcodeCell : '',
-    barcodeDelimiter: protocol.parseStrategy?.barcodeDelimiter !== undefined ?
-      (typeof protocol.parseStrategy.barcodeDelimiter === 'string' ? protocol.parseStrategy.barcodeDelimiter : null) : null,
-    barcodeChunk: (typeof protocol.parseStrategy?.barcodeChunk === 'number') ? protocol.parseStrategy.barcodeChunk : undefined,
+    useFullFilename: (typeof protocol.parseStrategy?.useFullFilename === 'boolean') ? protocol.parseStrategy.useFullFilename : true,
+    barcodeDelimiter: (typeof protocol.parseStrategy?.barcodeDelimiter === 'string') ? protocol.parseStrategy.barcodeDelimiter : '',
+    barcodeChunk: (typeof protocol.parseStrategy?.barcodeChunk === 'number') ? protocol.parseStrategy.barcodeChunk : 1,
   };
 
   const metadataFields = Array.isArray(protocol.metadataFields) ?
