@@ -101,7 +101,6 @@ const exportToPDF = async () => {
     const timestamp = new Date().toISOString().slice(0, 10);
     const plateId = plate.barcode || `Plate_${plate.id}`;
     const filename = `${plateId}_dose_response_curves_${timestamp}.pdf`;
-    pdf.output('dataurlnewwindow')
     pdf.save(filename);
   } catch (error) {
     console.error('Error exporting PDF:', error);
