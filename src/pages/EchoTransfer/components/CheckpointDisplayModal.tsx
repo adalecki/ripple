@@ -78,12 +78,13 @@ const CheckpointSummary: React.FC<CheckpointSummaryProps> = ({ echoPreCalc }) =>
         <Row>
           <Col md={6}>
             <p><strong>Destination Plates:</strong> {echoPreCalc.destinationPlatesCount}</p>
-            <p><strong>Estimated Total DMSO:</strong> {echoPreCalc.totalDMSOBackfillVol.toFixed(2)} nL</p>
-            <p><strong>Estimated Max DMSO per Well:</strong> {echoPreCalc.maxDMSOVol.toFixed(2)} nL</p>
-          </Col>
-          <Col md={6}>
             <p><strong>Total Compounds:</strong> {totalCompounds}</p>
             <p><strong>Total Patterns:</strong> {echoPreCalc.dilutionPatterns.size}</p>
+          </Col>
+          <Col md={6}>
+            <p><strong>DMSO Required (estimated):</strong> {echoPreCalc.totalDMSOBackfillVol.toFixed(2)} nL</p>
+            <p><strong>DMSO Max Per Well (estimated):</strong> {echoPreCalc.maxDMSOVol.toFixed(2)} nL</p>
+            <p><strong>DMSO on Source (usable):</strong> {(echoPreCalc.dmsoUsableVolume / 1000).toFixed(1)} µL ({echoPreCalc.dmsoSourceWells} well{echoPreCalc.dmsoSourceWells === 1 ? '' : 's'}) </p>
           </Col>
         </Row>
       </Card.Body>

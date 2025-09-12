@@ -73,7 +73,7 @@ export class EchoCalculator {
     this.checkpointTracker = checkpointTracker;
     this.evenDepletion = this.inputData.CommonData.evenDepletion || false;
 
-    this.sourcePlates = prepareSrcPlates(this.echoPreCalc.srcCompoundInventory, this.echoPreCalc.srcPltSize, this.echoPreCalc.dilutionPatterns)
+    this.sourcePlates = prepareSrcPlates(this.echoPreCalc.srcCompoundInventory, this.echoPreCalc.srcPltSize, this.echoPreCalc.dilutionPatterns, this.inputData)
     this.intermediatePlates = this.prepareIntPlates();
     this.destinationPlates = this.prepareDestPlates()
     this.fillIntPlates()
@@ -121,7 +121,8 @@ export class EchoCalculator {
     for (const srcPlate of this.sourcePlates) {
       for (const well of srcPlate) {
         if (well?.isSolventOnlyWell('DMSO')) {
-          dmsoVolAvailable += (well.getSolventVolume('DMSO') - echoIntDeadVolume)
+          const plateDeadVolume = this.echoPreCalc.plateDeadVolumes.get(srcPlate.barcode) || echoIntDeadVolume;
+          dmsoVolAvailable += Math.max(0, well.getSolventVolume('DMSO') - plateDeadVolume);
         }
       }
     }

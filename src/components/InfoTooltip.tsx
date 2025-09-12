@@ -40,7 +40,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
   };
 
   return (
-    <span className={`info-tooltip-container ${className}`}>
+    <span className={className}>
       <span
         className="info-icon"
         onMouseEnter={handleMouseEnter}
