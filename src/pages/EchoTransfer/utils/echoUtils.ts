@@ -463,7 +463,7 @@ export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
   return combinations;
 }
 
-export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateSize: PlateSize, dilutionPatterns: Map<string, DilutionPattern>): Plate[] {
+export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateSize: PlateSize, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType): Plate[] {
   const srcPlates: Plate[] = [];
   for (const [compoundId, patternMap] of srcCompoundInventory) {
     const patternNames: string[] = []
@@ -495,6 +495,30 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
               location.volume,
               { name: 'DMSO', fraction: 1 }
             );
+          }
+        }
+      }
+    }
+  }
+  
+  if (inputData) {
+    const testPlate = new Plate({ plateSize: plateSize });
+    for (const compound of inputData.Compounds) {
+      const isDMSOWithEmptyPattern = compound['Compound ID'] === 'DMSO' && (!compound['Pattern'] || compound['Pattern'].trim() === '');
+      
+      if (isDMSOWithEmptyPattern) {
+        const srcBarcode = compound['Source Barcode'];
+        let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
+        if (!srcPlate) {
+          srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source' });
+          srcPlates.push(srcPlate);
+        }
+        
+        const wells = testPlate.getSomeWells(compound['Well ID']);
+        for (const well of wells) {
+          const plateWell = srcPlate.getWell(well.id);
+          if (plateWell && plateWell.getContents().length === 0) {
+            plateWell.addSolvent({ name: 'DMSO', volume: compound['Volume (µL)'] * 1000 });
           }
         }
       }
@@ -550,6 +574,14 @@ export function buildSrcCompoundInventory(inputData: InputDataType, plateSize: P
 
   for (const compound of inputData.Compounds) {
     const compoundId = compound['Compound ID'];
+    
+    // Handle DMSO with empty pattern as a special case
+    const isDMSOWithEmptyPattern = compoundId === 'DMSO' && (!compound['Pattern'] || compound['Pattern'].trim() === '');
+    
+    if (isDMSOWithEmptyPattern) {
+      continue;
+    }
+    
     const patternNames = compound['Pattern'].split(';').map(g => g.trim());
 
     if (!srcCompoundInventory.has(compoundId)) {

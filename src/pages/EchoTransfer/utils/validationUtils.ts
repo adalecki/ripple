@@ -254,13 +254,29 @@ function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, avai
     } catch (err) {
       errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab lacks a Volume`)
     }
-    if (cpd['Compound ID'] != 'DMSO') {
+    
+    // Special handling for DMSO - allow empty pattern
+    const isDMSO = cpd['Compound ID'] === 'DMSO';
+    const hasEmptyPattern = !cpd['Pattern'] || cpd['Pattern'].trim() === '';
+    
+    if (isDMSO && hasEmptyPattern) {
+      // DMSO with empty pattern is valid - skip pattern validation
+      // Also skip concentration validation (already skipped below)
+    } else if (cpd['Compound ID'] != 'DMSO') {
       try {
         if (isNaN(cpd['Concentration (µM)'])) { errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab has a non-number Concentration`) }
         else if (!(cpd['Concentration (µM)'] > 0)) { errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab has a negative Concentration`) }
       } catch (err) {
         errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab lacks a Concentration`)
       }
+      const patterns = cpd['Pattern'].split(';')
+      for (const patternName of patterns) {
+        if (!availablePatternNames.has(patternName)) {
+          errors.push(`${patternName} on line ${parseInt(idx) + 2} of Compounds tab not present on Patterns tab`)
+        }
+      }
+    } else if (isDMSO && !hasEmptyPattern) {
+      // DMSO with a pattern still needs pattern validation
       const patterns = cpd['Pattern'].split(';')
       for (const patternName of patterns) {
         if (!availablePatternNames.has(patternName)) {

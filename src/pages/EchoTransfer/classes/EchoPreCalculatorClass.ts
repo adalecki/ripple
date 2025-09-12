@@ -49,6 +49,8 @@ export class EchoPreCalculator {
   dropletSize: number;
   srcPltSize: PlateSize;
   dstPltSize: PlateSize;
+  dmsoSourceWells: number;
+  dmsoUsableVolume: number;
 
   constructor(
     inputData: InputDataType,
@@ -74,6 +76,8 @@ export class EchoPreCalculator {
     this.dropletSize = (typeof(preferences.dropletSize) == 'number' ? preferences.dropletSize : 2.5);
     this.srcPltSize = ['384','1536'].includes(preferences.sourcePlateSize as PlateSize) ? preferences.sourcePlateSize as PlateSize : '384';
     this.dstPltSize = ['96','384','1536'].includes(preferences.destinationPlateSize as PlateSize) ? preferences.destinationPlateSize as PlateSize : '384';
+    this.dmsoSourceWells = 0;
+    this.dmsoUsableVolume = 0;
 
     const maxVolumesPerPlate = new Map<string, number>();
     for (const compound of this.inputData.Compounds) {
@@ -98,7 +102,8 @@ export class EchoPreCalculator {
       step1: "Valid Dilution Patterns",
       step2: "Build Source Inventory",
       step3: "Calculated Transfer Volumes",
-      step4: "Sufficient Source Volumes"
+      step4: "Sufficient Source Volumes",
+      step5: "DMSO Source Detection"
     }
     try {
       this.dilutionPatterns = analyzeDilutionPatterns(this.inputData.Patterns);
@@ -138,6 +143,7 @@ export class EchoPreCalculator {
         console.log(err.stack)
       }
     }
+    this.calculateDMSOSources(checkpointNames.step5);
     this.destinationPlatesCount = this.calculateDestinationPlates();
     this.maxDMSOVol = this.maxDMSOVolume()
     this.checkpointTracker.updateCheckpoint(checkpointNames.step3, "Pending")
@@ -158,7 +164,7 @@ export class EchoPreCalculator {
           for (const [conc, volume] of result.totalVolumes) {
             innerMap.set(conc, volume);
           }
-          this.destinationWellsCount += result.destinationWellsCount //removed conditional as we're handling combo modifier in calculateTransferVolumes
+          this.destinationWellsCount += result.destinationWellsCount
           if (this.inputData.CommonData.dmsoNormalization) {this.totalDMSOBackfillVol += result.totalDMSOBackfillVol}
           const transferConcentrations = this.calculateTransferConcentrations(pattern, compoundGroup);
           for (const conc of pattern.concentrations) {
@@ -450,6 +456,54 @@ export class EchoPreCalculator {
     let error = Math.abs(v3 - actualV3) / v3
     let actualInt2Conc = calculateMissingValue({ c1: conc, v1: actualV3, v2: (actualV3 + this.intermediateBackfillVolume) })
     return { srcConc: conc, int2Conc: actualInt2Conc, volToTsfr: actualV3, error: error }
+  }
+
+  calculateDMSOSources(checkpointName: string) {
+    let dmsoWellCount = 0;
+    let totalDMSOVolume = 0;
+    const dmsoWellsByPlate = new Map<string, number>();
+    
+    for (const compound of this.inputData.Compounds) {
+      const isDMSOWithEmptyPattern = compound['Compound ID'] === 'DMSO' && 
+                                     (!compound['Pattern'] || compound['Pattern'].trim() === '');
+      
+      if (isDMSOWithEmptyPattern) {
+        const testPlate = new Plate({ plateSize: this.srcPltSize });
+        const wells = testPlate.getSomeWells(compound['Well ID']);
+        const volumeNL = compound['Volume (µL)'] * 1000;
+        const barcode = compound['Source Barcode'];
+        const deadVolume = this.plateDeadVolumes.get(barcode) || 2500;
+        
+        dmsoWellCount += wells.length;
+        totalDMSOVolume += wells.length * Math.max(0, volumeNL - deadVolume);
+        
+        dmsoWellsByPlate.set(barcode, (dmsoWellsByPlate.get(barcode) || 0) + wells.length);
+      }
+    }
+    
+    // Also check for DMSO from Solvent patterns (existing behavior)
+    for (const [_, patternMap] of this.srcCompoundInventory) {
+      for (const [patternName, compoundGroup] of patternMap) {
+        const pattern = this.dilutionPatterns.get(patternName);
+        if (pattern && pattern.type === 'Solvent') {
+          dmsoWellCount += compoundGroup.locations.length;
+          for (const loc of compoundGroup.locations) {
+            const deadVolume = this.plateDeadVolumes.get(loc.barcode) || 2500;
+            totalDMSOVolume += Math.max(0, loc.volume - deadVolume);
+          }
+        }
+      }
+    }
+    
+    this.dmsoSourceWells = dmsoWellCount;
+    this.dmsoUsableVolume = totalDMSOVolume;
+    
+    if (dmsoWellCount > 0) {
+      const messages = [`Detected ${dmsoWellCount} DMSO source wells with ${(totalDMSOVolume / 1000).toFixed(1)} µL usable volume`];
+      this.checkpointTracker.updateCheckpoint(checkpointName, "Passed", messages);
+    } else {
+      this.checkpointTracker.updateCheckpoint(checkpointName, "Passed", ["No DMSO source wells detected"]);
+    }
   }
 
   maxDMSOVolume(): number {

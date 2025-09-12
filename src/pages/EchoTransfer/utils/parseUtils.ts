@@ -17,7 +17,7 @@ export function constructPlatesFromTransfers(inputData: InputDataType, transfers
 
   const compoundMap = buildSrcCompoundInventory(inputData, preferences.sourcePlateSize as PlateSize);
   const dilutionPatterns = analyzeDilutionPatterns(inputData.Patterns)
-  newPlates['source'] = prepareSrcPlates(compoundMap, preferences.sourcePlateSize as PlateSize, dilutionPatterns)
+  newPlates['source'] = prepareSrcPlates(compoundMap, preferences.sourcePlateSize as PlateSize, dilutionPatterns, inputData)
   const possibleBarcodes = {
     'source': new Set<string>(),
     'intermediate': new Set<string>(),
