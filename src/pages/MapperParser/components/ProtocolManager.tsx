@@ -25,8 +25,7 @@ import { ControlDefinition, ControlType, NormalizationType, CONTROL_TYPES, NORMA
 
 
 const ProtocolManager: React.FC = () => {
-  const { protocols, setProtocols, selectedProtocolId, setSelectedProtocolId } = useContext(ProtocolsContext);
-  const [isEditing, setIsEditing] = useState(false);
+  const { protocols, setProtocols, selectedProtocolId, setSelectedProtocolId, isEditing, setIsEditing } = useContext(ProtocolsContext);
   const [isNewProtocol, setIsNewProtocol] = useState(false);
   const [editingProtocol, setEditingProtocol] = useState<Protocol | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
