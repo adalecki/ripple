@@ -50,6 +50,8 @@ export type ProtocolsContextType = {
   setProtocols: React.Dispatch<React.SetStateAction<Protocol[]>>;
   selectedProtocolId: number | null;
   setSelectedProtocolId: React.Dispatch<React.SetStateAction<number | null>>;
+  isEditing: boolean;
+  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export const ProtocolsContext = createContext<ProtocolsContextType>({
@@ -57,4 +59,6 @@ export const ProtocolsContext = createContext<ProtocolsContextType>({
   setProtocols: () => {},
   selectedProtocolId: null,
   setSelectedProtocolId: () => {},
+  isEditing: false,
+  setIsEditing: () => {}
 });
