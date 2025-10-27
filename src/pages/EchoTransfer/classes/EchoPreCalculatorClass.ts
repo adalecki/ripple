@@ -277,8 +277,14 @@ export class EchoPreCalculator {
     }
 
     for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
-      // Using dropletSize as the dead volume for intermediate plate calculations
-      const intWellsNeeded = Math.ceil((totalVolumes.get(intConc) || 0) / ((this.intermediateBackfillVolume + concInfo.volToTsfr) - this.dropletSize));
+      let intermediatePlateDeadVolume = 15000; // Default to 15µL in nL
+      if (this.intermediateBackfillVolume < 15000) { // If backfill volume is less than 15µL (15000 nL)
+        intermediatePlateDeadVolume = 2500; // Assume 2.5µL dead volume (2500 nL)
+      }
+      const intWellsNeeded = Math.ceil(
+        (totalVolumes.get(intConc) || 0) / 
+        ((this.intermediateBackfillVolume + concInfo.volToTsfr) - intermediatePlateDeadVolume)
+      );
       const currentVolume = totalVolumes.get(concInfo.sourceConc) || 0;
       const newVolume = currentVolume + (concInfo.volToTsfr * intWellsNeeded);
       totalVolumes.set(concInfo.sourceConc, newVolume);
