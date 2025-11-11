@@ -319,9 +319,9 @@ const renderBarcodeLocationFields = () => {
 
 
   return (
-    <Container fluid className="protocol-manager">
-      <Row>
-        <Col md={8}>
+    <Container fluid className="protocol-manager h-100 pb-2">
+      <Row className='h-100'>
+        <Col md={8} className='d-flex flex-column h-100 overflow-auto'>
           {editingProtocol ? (
             <>
               <div className="d-flex justify-content-between align-items-center">

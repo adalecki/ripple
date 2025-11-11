@@ -82,12 +82,12 @@ const handleSelect = (k: string | null) => {
   return (
     <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
       <ProtocolsContext.Provider value={{ protocols, setProtocols, selectedProtocolId, setSelectedProtocolId, isEditing, setIsEditing }}>
-        <Row style={{ minHeight: 0 }}>
+        <Row >
           <Col md="2">
             {renderSidebar()}
           </Col>
           <Col md="10" style={{ minHeight: 0 }}>
-            <div className="mapper-tabs" style={{ height: 'calc(100vh - var(--navbar-height))'}}>
+            <div className="mapper-tabs">
               <Tabs
                 id="mapper-parser-tab-select"
                 activeKey={tabKey}

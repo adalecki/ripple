@@ -73,7 +73,6 @@ const exportToPDF = async () => {
     
     document.body.appendChild(clone);
     
-    // Force layout calculation
     clone.offsetHeight;
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -140,7 +139,7 @@ const exportToPDF = async () => {
   ));
 
   return (
-    <Card className='overflow-auto'>
+    <Card>
       <Card.Header className='d-flex justify-content-between align-items-center p-1'>
         <h5 className="mb-0">Dose-Response Curves</h5>
         <div className="d-flex align-items-center gap-2">

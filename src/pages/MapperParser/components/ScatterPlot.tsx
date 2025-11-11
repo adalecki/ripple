@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from 'react-bootstrap';
 import PlotFigure from './PlotFigure';
 import * as Plot from "@observablehq/plot";
@@ -14,11 +14,11 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
   const [scatterNode, setScatterNode] = useState<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 785, height: 785 })
 
-  const scatterRef = useCallback((node: HTMLDivElement) => {
+  const scatterRef = (node: HTMLDivElement) => {
     if (node !== null) {
       setScatterNode(node);
     }
-  }, []);
+  }
 
   useEffect(() => {
     if (scatterNode) {
@@ -83,7 +83,6 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
     );
   }
 
-  // Add sequential index for x-axis to avoid gaps
   const plotData = sPData.map((point, index) => {
     const data: any = {
       ...point,
@@ -92,23 +91,28 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
     data.toolTip = formatTooltip(point)
     return data;
   });
-
+  console.log(dimensions)
+  //height: Math.min(dimensions.width, dimensions.height),
+  //height: `${Math.min(dimensions.width, dimensions.height)}px`
   return (
-    <Card className="mb-3" style={{ border: "2px solid #adb5bd" }}>
+    <Card className="d-flex overflow-hidden" style={{ border: "2px solid #adb5bd" }} ref={scatterRef}>
       <Card.Header className='bg-light p-1'>
         <div className="d-flex align-items-center">
           <span><strong>Well Data</strong> ({sPData.length} wells)</span>
         </div>
       </Card.Header>
-      <Card.Body ref={scatterRef}>
+      <Card.Body>
         <PlotFigure
           options={{
             width: dimensions.width,
-            height: Math.min(dimensions.width, 600),
+            height: Math.min(dimensions.width, dimensions.height),
             marginLeft: 70,
             marginBottom: 60,
+            marginRight: 20,
             style: {
-              fontSize: "12px"
+              fontSize: "12px",
+              maxWidth: "none",
+              height: `${Math.min(dimensions.width, dimensions.height)}px`
             },
             y: {
               domain: [yLo, yHi],

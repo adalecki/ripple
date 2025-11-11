@@ -300,12 +300,12 @@ const DataParser: React.FC = () => {
   };
 
   return (
-    <Container fluid>
-      <Row>
-        <Col md={4}>
+    <Container fluid className='h-100'>
+      <Row className='h-100'>
+        <Col md={4} className='d-flex flex-column h-100 overflow-auto' >
           <h4>Data Parser</h4>
           <p>Upload data files and parse them according to the selected protocol</p>
-          <Row className="mb-3">
+          <Row className="mb-3" >
             <Col>
               <Form.Group>
                 <Form.Label className="small fw-bold">Protocol</Form.Label>
@@ -341,6 +341,35 @@ const DataParser: React.FC = () => {
           {showExportButton && (
             <Card className="mb-3">
               <Card.Body className="p-2">
+                <div className='d-flex justify-content-between align-items-center'>
+                  <Form>
+                    <Form.Check
+                      type="radio"
+                      label="Normalized"
+                      name="dataType"
+                      value="true"
+                      checked={normalizedResponse === true}
+                      onChange={handleNormalizationChange}
+                      inline
+                    />
+                    <Form.Check
+                      type="radio"
+                      label="Raw Data"
+                      name="dataType"
+                      value="false"
+                      checked={normalizedResponse === false}
+                      onChange={handleNormalizationChange}
+                      inline
+                    />
+                  </Form>
+                  {hasResponseDataForPlate && colorConfig.responseRange && (
+                    <div className="text-center">
+                      <small className="text-muted">
+                        Response Range: {colorConfig.responseRange.min.toFixed(2)} - {colorConfig.responseRange.max.toFixed(2)}
+                      </small>
+                    </div>
+                  )}
+                </div>
                 <div className="mb-1">
                   <small className="text-muted">
                     {platesWithDataCount} plate{platesWithDataCount !== 1 ? 's' : ''} with data
@@ -375,43 +404,13 @@ const DataParser: React.FC = () => {
             </Alert>
           )}
         </Col>
-
-        <Col md={8}>
-          <Form>
-            <Form.Check
-              type="radio"
-              label="Normalized"
-              name="dataType"
-              value="true"
-              checked={normalizedResponse === true}
-              onChange={handleNormalizationChange}
-              inline
-            />
-            <Form.Check
-              type="radio"
-              label="Raw Data"
-              name="dataType"
-              value="false"
-              checked={normalizedResponse === false}
-              onChange={handleNormalizationChange}
-              inline
-            />
-          </Form>
+        <Col md={8} className='d-flex flex-column h-100 overflow-auto'>
           {plate ? (
-            <>
-              <PlateView
-                plate={plate}
-                view="response"
-                colorConfig={colorConfig}
-              />
-              {hasResponseDataForPlate && colorConfig.responseRange && (
-                <div className="mt-3 text-center">
-                  <small className="text-muted">
-                    Response Range: {colorConfig.responseRange.min.toFixed(2)} - {colorConfig.responseRange.max.toFixed(2)}
-                  </small>
-                </div>
-              )}
-            </>
+            <PlateView
+              plate={plate}
+              view="response"
+              colorConfig={colorConfig}
+            />
           ) : (
             <Card>
               <Card.Body className="text-center py-5">

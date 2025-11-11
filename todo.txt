@@ -11,3 +11,4 @@
 #x Add "clear plates" button to other tabs in mapperparser
 # Find better workflow for saving protocols. Right now users make an edit, then navigate away. Maybe an alert when tab changes if it's editing?
 # When changing plate size in Protocol Manager, if going to a smaller size and controls are outside the limit, get an error
+# Trim pattern and cpd names from input sheet for trailing white spaces
