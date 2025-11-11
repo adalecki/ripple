@@ -27,7 +27,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
   const [selection, setSelection] = useState<SelectionRange>({ start: null, end: null });
   const [isSelecting, setIsSelecting] = useState(false);
 
-  // State for the ranges defined by the user
   const [definedRanges, setDefinedRanges] = useState<Partial<ParseStrategy>>({});
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +38,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
         setFileContent(text);
         parseFileContent(text);
         setError(null);
-        // Reset selections when new file is loaded
         setSelection({ start: null, end: null });
         setDefinedRanges(currentParseStrategy || {});
       };
@@ -53,10 +51,8 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
   };
 
   function parseFileContent(content: string) {
-    // Basic parsing: split by lines, then by tabs.
-    // More sophisticated parsing might be needed for CSVs or other delimiters.
     const lines = content.split(/\r?\n/);
-    const data = lines.map(line => line.split('\t')); // Assuming tab-separated for now
+    const data = lines.map(line => line.split('\t'));
     setParsedData(data);
   };
 
@@ -104,7 +100,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
   };
   function isCellInRange(row: number, col: number, rangeStr: string | undefined): boolean {
     if (!rangeStr) return false;
-    // This is a simplified parser for A1 notation. A robust one would be more complex.
     try {
       const parts = rangeStr.split(':');
       const parseCell = (cellStr: string): CellAddress => {
@@ -128,7 +123,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
       return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
 
     } catch (e) {
-      // console.warn("Could not parse range string:", rangeStr, e);
       return false;
     }
   };
@@ -166,7 +160,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
 
   const currentSelectionA1 = selection.start && selection.end ? getA1Notation(selection.start, selection.end) : 'None';
 
-  // Reset state when modal is hidden (closed without confirm)
   const handleExited = () => {
     setFileContent(null);
     setParsedData([]);
@@ -176,7 +169,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
     setDefinedRanges({});
   };
 
-  // Load current strategy when modal is shown
   React.useEffect(() => {
     if (show) {
       setDefinedRanges(currentParseStrategy || {});
@@ -189,7 +181,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
     let bestBlock = { startRow: -1, endRow: -1, startCol: -1, endCol: -1, numRows: 0, numCols: 0, density: 0 };
 
     const isNumeric = (val: string) => val && !isNaN(parseFloat(val)) && isFinite(Number(val));
-    const MIN_NUMERIC_PERCENT = 0.6; // At least 60% of cells in a data row should look numeric
+    const MIN_NUMERIC_PERCENT = 0.6; //at least 60% of cells in a data row should look numeric
     const MIN_COLS_IN_MATRIX = 4;
     const MIN_ROWS_IN_MATRIX = 4;
 
@@ -211,7 +203,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
       }
 
       if (totalNonEmptyCells > 0 && (numericCells / totalNonEmptyCells >= MIN_NUMERIC_PERCENT) && (lastNonEmptyCol - firstNonEmptyCol + 1 >= MIN_COLS_IN_MATRIX)) {
-        // This row looks like a data row
+        //row looks like a data row
         let currentBlockStartRow = r;
         let currentBlockEndRow = r;
         let blockFirstCol = firstNonEmptyCol;
@@ -219,7 +211,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
         let blockNumericCells = numericCells;
         let blockTotalCells = (lastNonEmptyCol - firstNonEmptyCol + 1);
 
-        // Try to extend downwards
+        //extend downwards
         for (let r2 = r + 1; r2 < data.length; r2++) {
           let nextRowNumericCells = 0;
           let nextRowTotalNonEmpty = 0;
@@ -237,45 +229,32 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
             }
           }
 
-          // Check if this row is similar enough (numeric ratio and within column bounds)
+          //similar enough (numeric ratio and within column bounds)
           const colOverlap = Math.min(blockLastCol, nextRowLastCol) - Math.max(blockFirstCol, nextRowFirstCol) + 1;
           if (nextRowTotalNonEmpty > 0 && (nextRowNumericCells / nextRowTotalNonEmpty >= MIN_NUMERIC_PERCENT) && (nextRowLastCol - nextRowFirstCol + 1 >= MIN_COLS_IN_MATRIX) && colOverlap > 0) {
             currentBlockEndRow = r2;
-            blockFirstCol = Math.min(blockFirstCol, nextRowFirstCol); // Expand columns to fit all data rows
+            blockFirstCol = Math.min(blockFirstCol, nextRowFirstCol);
             blockLastCol = Math.max(blockLastCol, nextRowLastCol);
             blockNumericCells += nextRowNumericCells;
-            blockTotalCells += (nextRowLastCol - nextRowFirstCol + 1); // Count cells in the current row's identified range
+            blockTotalCells += (nextRowLastCol - nextRowFirstCol + 1);
           } else {
-            break; // End of contiguous data-like block
+            break;
           }
         }
 
         const numRows = currentBlockEndRow - currentBlockStartRow + 1;
         const numCols = blockLastCol - blockFirstCol + 1;
-        const density = blockNumericCells / (numRows * numCols); // blockTotalCells;
-
-        // Simple scoring: prefer larger blocks, higher density.
-        // Weighting for proximity to "Background Information" or "Plate Information"
+        const density = blockNumericCells / (numRows * numCols);
         let score = (numRows * numCols) * density;
-
 
         if (numRows >= MIN_ROWS_IN_MATRIX && numCols >= MIN_COLS_IN_MATRIX && score > (bestBlock.numRows * bestBlock.numCols * bestBlock.density)) {
           bestBlock = { startRow: currentBlockStartRow, endRow: currentBlockEndRow, startCol: blockFirstCol, endCol: blockLastCol, numRows, numCols, density };
         }
-        r = currentBlockEndRow; // Continue search after this block
+        r = currentBlockEndRow;
       }
     }
 
-    // In the example, the actual data starts 2 rows after "Background information" in one instance, and 1 row after "Plate Information" header section
-    // This is very specific. A more general heuristic: if we found a block AND "Background Information",
-    // and the block is just before "Background Information", it's likely the one.
-    // The example data has two "Background information" sections, one above and one below the main data block.
-    // The data we want is the one *before* the first "Background information" if "Plate Information" is also present above.
-    // Or it's the large numeric block.
-
     if (bestBlock.startRow !== -1) {
-      // Check if the row above the detected block looks like a header (non-numeric, but cells align with data)
-      // This could refine startRow and potentially identify xLabels
       if (bestBlock.startRow > 0) {
         const potentialHeaderRow = data[bestBlock.startRow - 1];
         let headerNonNumericCount = 0;
@@ -288,14 +267,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
             }
           }
         }
-        // If the row above is mostly non-numeric and aligns with data columns, consider it a header
-        if (headerCellCount > 0 && (headerNonNumericCount / headerCellCount) > 0.8 && headerCellCount >= MIN_COLS_IN_MATRIX * 0.75) {
-          // Tentatively set xLabels, user can override
-          // setDefinedRanges(prev => ({ ...prev, xLabels: getA1Notation({row: bestBlock.startRow - 1, col: bestBlock.startCol}, {row: bestBlock.startRow - 1, col: bestBlock.endCol}) }));
-        }
       }
-      // Check if the column to the left of the detected block looks like a header (non-numeric)
-      // This could refine startCol and potentially identify yLabels
       if (bestBlock.startCol > 0) {
         let yLabelNonNumericCount = 0;
         let yLabelCellCount = 0;
@@ -306,10 +278,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
               yLabelNonNumericCount++;
             }
           }
-        }
-        if (yLabelCellCount > 0 && (yLabelNonNumericCount / yLabelCellCount) > 0.8 && yLabelCellCount >= MIN_ROWS_IN_MATRIX * 0.75) {
-          // Tentatively set yLabels
-          // setDefinedRanges(prev => ({ ...prev, yLabels: getA1Notation({row: bestBlock.startRow, col: bestBlock.startCol -1 }, {row: bestBlock.endRow, col: bestBlock.startCol -1}) }));
         }
       }
 
@@ -330,12 +298,11 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
     const detected = detectDataMatrix(parsedData);
     if (detected) {
       setDefinedRanges(prev => ({ ...prev, rawData: detected.range }));
-      // Optionally, also set selection to highlight it
       setSelection({
         start: { row: detected.startRow, col: detected.startCol },
         end: { row: detected.endRow, col: detected.endCol }
       });
-      setIsSelecting(false); // Finalize selection
+      setIsSelecting(false);
       setError(null);
     } else {
       setError("Could not automatically detect a data matrix. Please select manually.");

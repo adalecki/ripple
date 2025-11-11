@@ -104,7 +104,7 @@ const PlateMapper: React.FC = () => {
   return (
     <Container fluid className='h-100 pb-2'>
       <Row className="h-100">
-        <Col md={4} className='d-flex flex-column h-100 overflow-auto'>
+        <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           <h4>Plate Mapper</h4>
           <p>Upload the original Excel template and Echo transfer log to visualize actual transfers</p>
           <EchoForm
@@ -145,7 +145,7 @@ const PlateMapper: React.FC = () => {
         </Col>
 
         {mappedPlates.length > 0 && plate && originalFile && (
-          <Col md={8} className='d-flex flex-column h-100 overflow-auto'>
+          <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
             <PlateView
               plate={plate}
               view="plateMapper"

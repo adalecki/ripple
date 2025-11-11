@@ -160,7 +160,7 @@ const exportToPDF = async () => {
           )}
         </div>
       </Card.Header>
-      <Card.Body className='overflow-auto'>
+      <Card.Body className='overflow-auto' style={{ scrollbarGutter: 'stable' }}>
         {!plate || !hasResponseData(plate) ?
           <div>
             <h5>No plate data</h5>

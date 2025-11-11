@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card } from 'react-bootstrap';
 import PlotFigure from './PlotFigure';
 import * as Plot from "@observablehq/plot";
@@ -11,34 +11,27 @@ interface ScatterPlotProps {
 }
 
 const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
-  const [scatterNode, setScatterNode] = useState<HTMLDivElement | null>(null)
-  const [dimensions, setDimensions] = useState({ width: 785, height: 785 })
-
-  const scatterRef = (node: HTMLDivElement) => {
-    if (node !== null) {
-      setScatterNode(node);
-    }
-  }
+  const scatterNode = useRef(null)
+  const [dimensions, setDimensions] = useState({ width: 100, height: 100 })
 
   useEffect(() => {
-    if (scatterNode) {
-      const updateDimensions = () => {
-        const rect = scatterNode.getBoundingClientRect();
-        if (rect.height != 0 && rect.width != 0) { //when changing tabs dimensions become zero, forcing a rerender and producing an error
+    if (scatterNode.current) {
+      const observer = new ResizeObserver((entries) => {
+        for (let entry of entries) {
           setDimensions({
-            width: rect.width,
-            height: rect.height
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
           });
         }
-      };
-      updateDimensions();
-      const resizeObserver = new ResizeObserver(updateDimensions);
-      resizeObserver.observe(scatterNode);
+      });
+
+      observer.observe(scatterNode.current);
+
       return () => {
-        resizeObserver.disconnect();
+        observer.disconnect();
       };
     }
-  }, [scatterNode])
+  }, []);
 
   function getColor(controlType: string): string {
     switch (controlType) {
@@ -91,28 +84,25 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
     data.toolTip = formatTooltip(point)
     return data;
   });
-  console.log(dimensions)
-  //height: Math.min(dimensions.width, dimensions.height),
-  //height: `${Math.min(dimensions.width, dimensions.height)}px`
+
   return (
-    <Card className="d-flex overflow-hidden" style={{ border: "2px solid #adb5bd" }} ref={scatterRef}>
-      <Card.Header className='bg-light p-1'>
+    <Card className="flex-grow-1 mapper-card">
+      <Card.Header className='bg-light'>
         <div className="d-flex align-items-center">
           <span><strong>Well Data</strong> ({sPData.length} wells)</span>
         </div>
       </Card.Header>
-      <Card.Body>
+      <Card.Body ref={scatterNode} style={{ minHeight: 150 }}>
         <PlotFigure
           options={{
             width: dimensions.width,
-            height: Math.min(dimensions.width, dimensions.height),
+            height: dimensions.height,
             marginLeft: 70,
             marginBottom: 60,
             marginRight: 20,
             style: {
               fontSize: "12px",
               maxWidth: "none",
-              height: `${Math.min(dimensions.width, dimensions.height)}px`
             },
             y: {
               domain: [yLo, yHi],

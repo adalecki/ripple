@@ -37,7 +37,6 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
           setValidatedProtocols(validation.protocols);
           setValidationErrors([]);
 
-          // Select all valid protocols by default
           const protocolIds = new Set(validation.protocols.map(p => p.id));
           setSelectedProtocols(protocolIds);
           setSelectAll(true);

@@ -14,7 +14,11 @@
   flex: 1;
 }
 
-.treatment-curves {
-  overflow-y: auto;
-  font-size: x-large;
+.mapper-card {
+  border: 2px solid #adb5bd;
+  min-height: 0;
+}
+
+.mapper-card .card-header {
+  padding: 0.25rem;
 }

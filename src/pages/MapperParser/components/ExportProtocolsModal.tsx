@@ -21,7 +21,6 @@ const ExportProtocolsModal: React.FC<ExportProtocolsModalProps> = ({
 
   useEffect(() => {
     if (show) {
-      // Reset selection when modal opens
       setSelectedProtocols(new Set(protocols.map(p => p.id)));
       setSelectAll(true);
     }

@@ -55,9 +55,9 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
   const xTicks = createLogTicks(Math.min(...x), Math.max(...x), gridSize);
   return (
     <Col key={treatmentKey}>
-      <Card style={{border: "2px solid #adb5bd"}}>
-        <Card.Header className='bg-light p-1'>
-          <div className="d-flex justify-content-between align-items-center w-100 ">
+      <Card className='mapper-card'>
+        <Card.Header className='bg-light'>
+          <div className="d-flex justify-content-between align-items-center">
             <strong><span>{curveData.treatmentId}</span></strong>
             <div className="text-end">
               <div>EC50: {formatEC50(ec50)}</div>
@@ -129,7 +129,6 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
                   }
                 }),
 
-                // Error bars
                 Plot.ruleX(aggregatedData, {
                   x: "concentration",
                   y1: (d: AggregatedPoint) => Math.max(yLo, d.mean - d.stdDev),
@@ -139,7 +138,6 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
                   opacity: 0.6
                 }),
 
-                // Fitted curve
                 ...(fittingError ? [] : [
                   Plot.line(dataPoints, {
                     x: "concentration",

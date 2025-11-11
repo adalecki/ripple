@@ -97,7 +97,7 @@ const Results: React.FC = () => {
       <Row className="h-100" style={{ minHeight: 0}}>
         <Col
           md="4"
-          className="d-flex flex-column h-100 overflow-auto"
+          className="d-flex flex-column h-100 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}
         >
           <PlateResultsCard
             plate={plate}
@@ -116,7 +116,7 @@ const Results: React.FC = () => {
             yHi={yHi} 
           />
         </Col>
-        <Col md="8" className="d-flex h-100">
+        <Col md="8" className="d-flex h-100" style={{ scrollbarGutter: 'stable' }}>
           <TreatmentCurves 
             plate={plate} 
             curveData={curveData} 

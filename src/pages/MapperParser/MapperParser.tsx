@@ -23,20 +23,20 @@ const MapperParser: React.FC = () => {
     saveProtocols(protocols);
   }, [protocols]);
 
-const handleSelect = (k: string | null) => {
-  if (k !== null) {
-    if (tabKey === 'protocols' && k !== 'protocols' && isEditing) {
-      const shouldProceed = window.confirm(
-        'You have unsaved changes to your protocol. Do you want to leave without saving?'
-      );
-      if (!shouldProceed) {
-        return;
+  const handleSelect = (k: string | null) => {
+    if (k !== null) {
+      if (tabKey === 'protocols' && k !== 'protocols' && isEditing) {
+        const shouldProceed = window.confirm(
+          'You have unsaved changes to your protocol. Do you want to leave without saving?'
+        );
+        if (!shouldProceed) {
+          return;
+        }
+        setIsEditing(false);
       }
-      setIsEditing(false);
+      setTabKey(k);
     }
-    setTabKey(k);
-  }
-};
+  };
 
   const renderSidebar = () => {
     if (tabKey === 'mapper' || tabKey === 'parser' || tabKey === 'results') {
@@ -82,7 +82,7 @@ const handleSelect = (k: string | null) => {
   return (
     <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
       <ProtocolsContext.Provider value={{ protocols, setProtocols, selectedProtocolId, setSelectedProtocolId, isEditing, setIsEditing }}>
-        <Row >
+        <Row>
           <Col md="2">
             {renderSidebar()}
           </Col>
@@ -112,7 +112,7 @@ const handleSelect = (k: string | null) => {
         </Row>
       </ProtocolsContext.Provider>
     </MappedPlatesContext.Provider>
-    
+
   );
 }
 

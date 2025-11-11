@@ -302,7 +302,7 @@ const DataParser: React.FC = () => {
   return (
     <Container fluid className='h-100'>
       <Row className='h-100'>
-        <Col md={4} className='d-flex flex-column h-100 overflow-auto' >
+        <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           <h4>Data Parser</h4>
           <p>Upload data files and parse them according to the selected protocol</p>
           <Row className="mb-3" >
@@ -404,7 +404,7 @@ const DataParser: React.FC = () => {
             </Alert>
           )}
         </Col>
-        <Col md={8} className='d-flex flex-column h-100 overflow-auto'>
+        <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           {plate ? (
             <PlateView
               plate={plate}
