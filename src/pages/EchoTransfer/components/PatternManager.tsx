@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Button, Form, Card } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
 import { Pattern } from '../../../classes/PatternClass';
 import { PatternsContext } from '../../../contexts/Context';
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
 
 import '../../../css/PatternManager.css'
+import { FormField } from '../../../components/FormField';
 
 const PatternManager: React.FC = () => {
   const { patterns, setPatterns, selectedPatternId, setSelectedPatternId } = useContext(PatternsContext);
@@ -64,6 +65,7 @@ const PatternManager: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (editingPattern) {
+      console.log(e)
       let value: any = e.target.value;
       if (e.target.name === 'replicates') { value = parseInt(e.target.value) }
       if (e.target.name === 'direction') { value = [e.target.value] }
@@ -83,6 +85,29 @@ const PatternManager: React.FC = () => {
         }));
       } else {
         setEditingPattern(new Pattern({ ...editingPattern, [e.target.name]: value }));
+      }
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: number | string) => {
+    if (editingPattern) {
+
+      if (fieldName === 'type' && value === 'Unused') {
+        setEditingPattern(new Pattern({
+          ...editingPattern,
+          [fieldName]: value,
+          concentrations: [],
+          replicates: 1,
+          direction: ['LR']
+        }));
+      } else if (fieldName === 'type' && editingPattern.type === 'Unused') {
+        setEditingPattern(new Pattern({
+          ...editingPattern,
+          [fieldName]: value as "Treatment" | "Control" | "Combination" | "Solvent" | "Unused",
+          concentrations: [null]
+        }));
+      } else {
+        setEditingPattern(new Pattern({ ...editingPattern, [fieldName]: value }));
       }
     }
   };
@@ -133,6 +158,93 @@ const PatternManager: React.FC = () => {
               </>
             )}
           </div>
+          <Form>
+            <FormField
+              key='pattern-name'
+              id='pattern-name'
+              name='name'
+              type='text'
+              label='Name'
+              value={editingPattern.name}
+              onChange={(value) => handleFieldChange("name", value)}
+              required={true}
+              disabled={!isEditing}
+            />
+            <FormField
+              key='pattern-type'
+              id='pattern-type'
+              name='type'
+              type='select'
+              label='Type'
+              value={editingPattern.type}
+              onChange={(value) => handleFieldChange("type", value)}
+              required={true}
+              disabled={!isEditing}
+              options={[
+                { label: "Control", value: "Control" },
+                { label: "Treatment", value: "Treatment" },
+                { label: "Unused", value: "Unused" }
+              ]}
+            />
+            {editingPattern.type !== 'Unused' && (
+              <>
+                <FormField
+                  key='pattern-replicates'
+                  id='pattern-replicates'
+                  name='replicates'
+                  type='number'
+                  label='Replicates'
+                  value={editingPattern.replicates}
+                  onChange={(value) => handleFieldChange("replicates", value)}
+                  required={true}
+                  disabled={!isEditing}
+                  step={1}
+                />
+                <FormField
+                  key='pattern-direction'
+                  id='pattern-direction'
+                  name='direction'
+                  type='select'
+                  label='Direction'
+                  value={editingPattern.direction}
+                  onChange={(value) => handleFieldChange("direction", value)}
+                  required={true}
+                  disabled={!isEditing}
+                  options={[
+                    { label: "Left to Right", value: "LR" },
+                    { label: "Right to Left", value: "RL" },
+                    { label: "Top to Bottom", value: "TB" },
+                    { label: "Bottom to Top", value: "BT" }
+                  ]}
+                />
+                <div className='d-flex justify-content-start align-items-center'>
+                <Form.Label>Color</Form.Label>
+                <div
+                  className="color-preview"
+                  style={{ backgroundColor: editingPattern.color }}
+                  onClick={() => isEditing && setIsPickingColor(!isPickingColor)}
+                />
+                </div>
+                {isPickingColor && (
+                  <div className="mb-3">
+                    <HslStringColorPicker
+                      color={editingPattern.color}
+                      onChange={handleColorChange}
+                    />
+                  </div>
+                )}
+                <Form.Label>Concentrations</Form.Label>
+                <div className="concentration-table-container">
+                  <ConcentrationTable
+                    concentrations={editingPattern.concentrations}
+                    onChange={handleConcentrationChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </>
+            )}
+          </Form>
+
 
           <Form>
             <Form.Group className="mb-3">
