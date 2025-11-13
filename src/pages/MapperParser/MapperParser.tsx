@@ -9,7 +9,6 @@ import ProtocolManager from './components/ProtocolManager.tsx';
 import DataParser from './components/DataParser.tsx';
 import Results from './components/Results.tsx';
 import { loadProtocols, saveProtocols } from './utils/protocolUtils';
-import '../../css/MapperParser.css'
 
 const MapperParser: React.FC = () => {
   const [tabKey, setTabKey] = useState<string>('protocols');
@@ -87,7 +86,7 @@ const MapperParser: React.FC = () => {
             {renderSidebar()}
           </Col>
           <Col md="10" style={{ minHeight: 0 }}>
-            <div className="mapper-tabs">
+            <div className="page-tabs">
               <Tabs
                 id="mapper-parser-tab-select"
                 activeKey={tabKey}

@@ -2,7 +2,6 @@ import { Protocol } from '../../../types/mapperTypes';
 
 const STORAGE_KEY = 'ripple-protocols';
 
-// Default protocols based on the provided JSON
 export const defaultProtocols: Protocol[] = [
   {
     id: 2,
@@ -66,20 +65,16 @@ export function loadProtocols(): Protocol[] {
       const parsed = JSON.parse(stored);
       if (parsed.length == 0) return defaultProtocols
       
-      // Migrate existing protocols to new structure
       const migrated = parsed.map((p: any) => {
         const protocol = {
           ...p
         };
         
-        // Migrate to new useFullFilename structure
         if (protocol.parseStrategy.useFullFilename === undefined) {
-          // If barcodeDelimiter was null/undefined or empty, assume full filename
           const wasFullFilename = protocol.parseStrategy.barcodeDelimiter == null || 
                                  protocol.parseStrategy.barcodeDelimiter === '';
           protocol.parseStrategy.useFullFilename = wasFullFilename;
           
-          // Set defaults for delimiter and chunk if they don't exist
           if (!protocol.parseStrategy.barcodeDelimiter || protocol.parseStrategy.barcodeDelimiter === null) {
             protocol.parseStrategy.barcodeDelimiter = '_';
           }
@@ -136,7 +131,7 @@ export function duplicateProtocol(protocol: Protocol): Protocol {
   const newId = Date.now();
   
   return {
-    ...JSON.parse(JSON.stringify(protocol)), // Deep clone
+    ...JSON.parse(JSON.stringify(protocol)),
     id: newId,
     name: `${protocol.name} (Copy)`
   };

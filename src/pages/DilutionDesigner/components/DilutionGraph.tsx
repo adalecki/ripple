@@ -16,7 +16,6 @@ const generateLogTicks = (min: number, max: number): number[] => {
   const ticks: number[] = [];
 
   for (let i = logs[0]; i <= logs[1]; i++) {
-    // Convert to number using exponential notation for precision
     const mainTick = Number(`1e${i}`);
     ticks.push(mainTick);
 
@@ -80,7 +79,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     const width = dimensions.width - chartMargins.left - chartMargins.right;
     const height = dimensions.height - chartMargins.top - chartMargins.bottom;
 
-    // Find min/max concentrations for domain
     const allConcentrations = points.flatMap(p => {
       const transfers = analysisResults.get(p.concentration) || [];
       return [
@@ -113,7 +111,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     const g = svg.append('g')
       .attr('transform', `translate(${chartMargins.left},${chartMargins.top})`);
 
-    // Add axes
     g.append('g')
       .attr('transform', `translate(0,${height})`)
       .call(xAxis);
@@ -121,7 +118,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     g.append('g')
       .call(yAxis);
 
-    // Layer 1: Allowable range rectangles
     const rangesGroup = g.append('g').attr('class', 'ranges');
     points.forEach((point, _) => {
       if (point.concentration !== 0) {
@@ -141,7 +137,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       int2: '#29bd1e'
     };
 
-    // Layer 2: Discrete transfer lines
     points.forEach((point, _) => {
       const transfers = analysisResults.get(point.concentration) || [];
       transfers.forEach(transfer => {
@@ -158,7 +153,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       });
     });
 
-    // Layer 3: Target line
     const linePath = line<Point>()
       .x(d => xScale(d.concentration))
       .y(d => yScale(d.index));
@@ -170,7 +164,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       .attr('stroke-width', 2)
       .attr('d', linePath);
 
-    // Layer 4: Target points (on top)
     points.filter(p => p.concentration !== 0).forEach((point, _) => {
       const transfers = analysisResults.get(point.concentration) || [];
       const hasValidTransfer = transfers.length > 0 && 
@@ -184,7 +177,6 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
 
     });
 
-    // Add legend
     const legend = g.append('g')
       .attr('class', 'legend')
       .attr('transform', `translate(${width - 100}, 20)`);

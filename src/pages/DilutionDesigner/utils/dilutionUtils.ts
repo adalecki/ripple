@@ -18,7 +18,7 @@ function getIntermediateConcs({
   volNumber: number;
 }): number[] {
   if (dropletSize <= 0 || maxTransferVolume <= 0 || volNumber <= 0) {
-        return []; // Handle invalid input
+        return [];
   }
   if (dropletSize >= maxTransferVolume) {
         return [dropletSize];
@@ -102,7 +102,6 @@ export function buildConcentrationMap({
 }): Map<string, Map<number, number[]>> {
   const concMap = new Map<string, Map<number, number[]>>();
 
-  // Initialize maps for each source type
   concMap.set('stock', new Map<number, number[]>());
   if (useIntConcs) {
     concMap.set('int1', new Map<number, number[]>());
@@ -110,7 +109,6 @@ export function buildConcentrationMap({
   }
 
 
-  // Process stock concentrations
   for (const stockConc of stockConcentrations) {
     const stockMap = concMap.get('stock')!;
     stockMap.set(
@@ -124,7 +122,6 @@ export function buildConcentrationMap({
       })
     );
     if (useIntConcs) {
-      // Get int1 concentrations from this stock
       const int1Concs = getIntermediateConcs({
         sourceConc: stockConc,
         dropletSize,
@@ -133,10 +130,9 @@ export function buildConcentrationMap({
         volNumber: numIntConcs
       });
 
-      // Process int1 concentrations
       const int1Map = concMap.get('int1')!;
       for (const int1Conc of int1Concs) {
-        if (!int1Map.has(int1Conc)) {  // Avoid duplicate processing
+        if (!int1Map.has(int1Conc)) {
           int1Map.set(
             int1Conc,
             getAllPossibleConcs({
@@ -150,8 +146,7 @@ export function buildConcentrationMap({
         }
       }
 
-      // Get int2 concentrations from lowest int1
-      const lowestInt1Conc = int1Concs[0]; // This is from minimum transfer volume
+      const lowestInt1Conc = int1Concs[0];
       const int2Concs = getIntermediateConcs({
         sourceConc: lowestInt1Conc,
         dropletSize,
@@ -160,10 +155,9 @@ export function buildConcentrationMap({
         volNumber: numIntConcs
       });
 
-      // Process int2 concentrations
       const int2Map = concMap.get('int2')!;
       for (const int2Conc of int2Concs) {
-        if (!int2Map.has(int2Conc)) {  // Avoid duplicate processing
+        if (!int2Map.has(int2Conc)) {
           int2Map.set(
             int2Conc,
             getAllPossibleConcs({
@@ -230,7 +224,6 @@ export function analyzeDilutionPoints({
   useIntConcs: boolean;
   numIntConcs: number;
 }): Map<number, TransferMap[]> {
-  // First build complete concentration map
   const concMap = buildConcentrationMap({
     stockConcentrations,
     dropletSize: constraints.dropletSize,
@@ -242,7 +235,6 @@ export function analyzeDilutionPoints({
     numIntConcs: numIntConcs
   });
 
-  // Then find valid transfers for each point
   const results = new Map<number, TransferMap[]>();
 
   for (const point of points) {

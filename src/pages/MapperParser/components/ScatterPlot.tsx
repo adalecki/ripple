@@ -35,9 +35,9 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
 
   function getColor(controlType: string): string {
     switch (controlType) {
-      case 'MinCtrl': return '#dc2626'; // red
-      case 'MaxCtrl': return '#2563eb'; // blue
-      default: return '#6b7280'; // grey
+      case 'MinCtrl': return '#dc2626';
+      case 'MaxCtrl': return '#2563eb';
+      default: return '#6b7280';
     }
   }
 
@@ -86,7 +86,7 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
   });
 
   return (
-    <Card className="flex-grow-1 mapper-card">
+    <Card className="flex-grow-1 page-card">
       <Card.Header className='bg-light'>
         <div className="d-flex align-items-center">
           <span><strong>Well Data</strong> ({sPData.length} wells)</span>

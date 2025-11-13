@@ -112,8 +112,8 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
   }, [echoPreCalc]);
 
   const handleDeadVolumeChange = (barcode: string, value: string) => {
-    const newVolumeNL = parseFloat(value) * 1000; // Assuming input is in µL
-    if (!isNaN(newVolumeNL) && newVolumeNL >= 0) { // Added check for non-negative
+    const newVolumeNL = parseFloat(value) * 1000;
+    if (!isNaN(newVolumeNL) && newVolumeNL >= 0) {
       setEditableDeadVolumes(prevMap => new Map(prevMap).set(barcode, newVolumeNL));
     }
   };
@@ -123,16 +123,13 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
     let hasChanges = false;
     editableDeadVolumes.forEach((newVolumeNL, barcode) => {
       if (echoPreCalc.plateDeadVolumes.get(barcode) !== newVolumeNL) {
-        echoPreCalc.updateDeadVolume(barcode, newVolumeNL); // This method calls calculateNeeds()
+        echoPreCalc.updateDeadVolume(barcode, newVolumeNL);
         hasChanges = true;
       }
     });
     if (hasChanges) {
-      // Create a new reference for echoPreCalc to trigger state update in parent
       const newEchoPreCalcInstance = Object.assign(Object.create(Object.getPrototypeOf(echoPreCalc)), echoPreCalc);
       setEchoPreCalc(newEchoPreCalcInstance);
-      // The checkpointTracker within echoPreCalc is already updated by calculateNeeds.
-      // So, we pass the reference to the updated tracker.
       setCheckpointTracker(newEchoPreCalcInstance.checkpointTracker);
     }
   };
@@ -183,10 +180,10 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
                         <Form.Control
                           type="number"
                           id={`deadvol-${barcode}`}
-                          value={deadVolumeNL / 1000} // Display in µL
+                          value={deadVolumeNL / 1000}
                           onChange={(e) => handleDeadVolumeChange(barcode, e.target.value)}
                           step="0.1"
-                          min="0" // Prevent negative dead volumes
+                          min="0"
                         />
                       </Col>
                     </Row>

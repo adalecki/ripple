@@ -37,14 +37,14 @@ export interface ParseStrategy {
   autoParse: boolean;
   plateSize: PlateSize;
   rawData: string;
-  xLabels?: string; // For Matrix format
-  yLabels?: string; // For Matrix format
-  wellIDs?: string; // For Table format
+  xLabels?: string;
+  yLabels?: string;
+  wellIDs?: string;
   plateBarcodeLocation: BarcodeLocation;
-  plateBarcodeCell?: string; // Required when plateBarcodeLocation is 'cell'
-  useFullFilename: boolean; // Explicit flag for full filename mode
-  barcodeDelimiter: string; // Delimiter to use when not using full filename
-  barcodeChunk: number; // Chunk index when not using full filename
+  plateBarcodeCell?: string;
+  useFullFilename: boolean;
+  barcodeDelimiter: string;
+  barcodeChunk: number;
 }
 
 export interface Protocol {

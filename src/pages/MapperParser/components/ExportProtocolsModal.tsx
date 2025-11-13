@@ -1,4 +1,3 @@
-// src/pages/MapperParser/components/ExportProtocolsModal.tsx
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ListGroup } from 'react-bootstrap';
 import { Download } from 'lucide-react';

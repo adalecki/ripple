@@ -137,7 +137,7 @@ const ProtocolManager: React.FC = () => {
           ...prev,
           parseStrategy: {
             ...prev.parseStrategy,
-            ...newStrategyRanges // Merge the new ranges
+            ...newStrategyRanges
           }
         };
       });

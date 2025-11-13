@@ -122,24 +122,31 @@ const EchoTransfer: React.FC = () => {
         <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
           <Row>
             <Col md="2">{renderSidebar()}</Col>
-            <Col md="10" className="d-flex flex-column">
-              <Tabs id="echo-tab-select" activeKey={tabKey} onSelect={handleSelect} className='mb-3'>
-                <Tab eventKey="instructions" title="Instructions">
-                  <EchoInstructions />
-                </Tab>
-                <Tab eventKey="design" title="Design">
-                  <DesignWizard
-                    patternPlate={patternPlate}
-                    setPatternPlate={setPatternPlate}
-                  />
-                </Tab>
-                <Tab eventKey="echo" title="Calculator">
-                  <EchoCalc />
-                </Tab>
-                <Tab eventKey="about" title="About">
-                  <About />
-                </Tab>
-              </Tabs>
+            <Col md="10" style={{ minHeight: 0 }}>
+              <div className="page-tabs">
+                <Tabs
+                  id="echo-tab-select"
+                  activeKey={tabKey}
+                  onSelect={handleSelect}
+                  mountOnEnter
+                >
+                  <Tab eventKey="instructions" title="Instructions">
+                    <EchoInstructions />
+                  </Tab>
+                  <Tab eventKey="design" title="Design">
+                    <DesignWizard
+                      patternPlate={patternPlate}
+                      setPatternPlate={setPatternPlate}
+                    />
+                  </Tab>
+                  <Tab eventKey="echo" title="Calculator">
+                    <EchoCalc />
+                  </Tab>
+                  <Tab eventKey="about" title="About">
+                    <About />
+                  </Tab>
+                </Tabs>
+              </div>
             </Col>
           </Row>
         </MappedPlatesContext.Provider>

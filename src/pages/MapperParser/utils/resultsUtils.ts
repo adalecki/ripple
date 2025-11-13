@@ -131,8 +131,6 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
   }
 };
 
-// Generates a unique string key for a treatment based on its compound IDs.
-// Sorts compound IDs to ensure order doesn't matter (e.g., A+B is same as B+A).
 export function getTreatmentKey(well: Well): string {
   const compoundIds = well.getContents()
     .filter(content => !isNaN(content.concentration) && content.compoundId !== null && content.compoundId !== undefined)

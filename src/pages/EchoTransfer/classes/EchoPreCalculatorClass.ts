@@ -308,7 +308,7 @@ export class EchoPreCalculator {
     const concentrationMap: Map<number, ConcentrationObj> = new Map()
     const intermediateConcentrations: Map<number, ConcentrationObj> = new Map() // map of intermed conc and volume used to make it
     let intermediateConcRange = { 'max': calculateMissingValue({ v1: this.maxTransferVolume, c1: Math.max(...availableConcentrations), v2: (this.intermediateBackfillVolume + this.maxTransferVolume) }), 'min': calculateMissingValue({ v1: this.dropletSize, c1: Math.min(...availableConcentrations), v2: (this.intermediateBackfillVolume + this.dropletSize) }) }
-    //const maxConcentrations = 4; // Maximum number of intermediate concentrations
+    //const maxConcentrations = 4;
 
     //first try to satisfy using source plate concentrations
     for (const sourceConc of availableConcentrations) {
@@ -481,7 +481,6 @@ export class EchoPreCalculator {
       }
     }
     
-    // Also check for DMSO from Solvent patterns (existing behavior)
     for (const [_, patternMap] of this.srcCompoundInventory) {
       for (const [patternName, compoundGroup] of patternMap) {
         const pattern = this.dilutionPatterns.get(patternName);
@@ -559,7 +558,6 @@ export class EchoPreCalculator {
   calculateFinalDMSONeeded() {
     const totalDestinationWells = this.destinationPlatesCount * parseInt(this.dstPltSize)
     
-    // Calculate unused wells count
     let unusedWellsCount = 0;
     for (const layout of this.inputData.Layout) {
       const pattern = this.dilutionPatterns.get(layout.Pattern);
@@ -638,6 +636,6 @@ export class EchoPreCalculator {
 
   public updateDeadVolume(barcode: string, newDeadVolumeNL: number): void {
     this.plateDeadVolumes.set(barcode, newDeadVolumeNL);
-    this.calculateNeeds(); // Re-run calculations
+    this.calculateNeeds();
   }
 }

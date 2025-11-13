@@ -1,98 +1,17 @@
-.pattern-manager {
-  display: flex;
-  height: calc(100vh - var(--navbar-height) - 60px);
-  overflow: hidden;
-}
-
-.pattern-list-container {
-  width: 250px;
-  padding: 5px;
-  overflow-y: auto;
-}
-
-.add-pattern-btn {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-.pattern-list {
-  overflow-y: auto;
-}
-
-.pattern-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.pattern-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.pattern-name {
-  font-weight: bold;
-}
-
-.pattern-type {
-  font-size: 0.9em;
-  color: #6c757d;
-}
-
-.pattern-form-container {
-  flex: 1;
-  padding: 5px;
-  overflow-y: auto;
-}
-
-.pattern-form {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 5px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-}
-
-.form-row {
-  display: flex;
-  gap: 15px;
-}
-
-.form-row .form-group {
-  flex: 1;
-}
-
 .concentration-table-container {
-  overflow-y: auto;
   border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 10px;
+  border-radius: 0.25rem;
+  padding: 0.625rem;
 }
 
 .concentration-table-container .key {
-  padding: 1px;
+  padding: 0.0625rem;
   color: #6c757d;
 }
 
 .concentration-table-container .value {
   text-align: end;
-  font-size: large;
+  font-size: 1.125rem;
   width: 100%;
   border: none;
   background: transparent;
@@ -102,37 +21,10 @@
   padding-right: 1em;
 }
 
-
-.color-picker-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .color-preview {
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.25rem;
   cursor: pointer;
   border: 1px solid #dee2e6;
-}
-
-.edit-alert {
-  padding-left: 5px;
-  font-size: 0.9em;
-  color: #6c757d;
-  font-style: italic;
-}
-
-.delete-btn {
-  background: none;
-  border: none;
-  color: red;
-  cursor: pointer;
-  padding: 0;
-  font-size: 12px;
-}
-
-.delete-btn.disabled {
-  visibility: hidden;
 }

@@ -66,22 +66,18 @@ export function formatWellBlock(wellIds: string[]): string {
   if (wellIds.length === 0) return '';
   if (wellIds.length === 1) return wellIds[0];
 
-  // Sort wells for consistent processing
   const wells = [...new Set(wellIds)].sort((a, b) => {
     const coordsA = getCoordsFromWellId(a);
     const coordsB = getCoordsFromWellId(b);
     return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsA.row - coordsB.row;
   })
 
-  // Find all possible rectangles containing each well
   const blocks: string[] = [];
   const usedWells = new Set<string>();
 
   while (usedWells.size < wells.length) {
-    // Find the next unused well to start a new block
     const startWell = wells.find(well => !usedWells.has(well))!;
 
-    // Find best rectangle starting from this well
     const rect = findBestRectangle(startWell, wells, usedWells);
     blocks.push(rect.block);
     rect.wells.forEach(well => usedWells.add(well));
@@ -103,17 +99,14 @@ function findBestRectangle(startWell: string, allWells: string[], usedWells: Set
     wells: [startWell]
   };
 
-  // Find all potential end wells to form rectangles
   const potentialEnds = allWells.filter(well => {
     const endRow = well.match(/^[A-Z]+/)![0];
     const endCol = parseInt(well.slice(endRow.length));
-    // Convert row letters to numbers for proper comparison
     const startRowNum = lettersToNumber(startRow);
     const endRowNum = lettersToNumber(endRow);
     return (endRowNum >= startRowNum && endCol >= startCol) && !usedWells.has(well);
   });
 
-  // Try each potential end well
   for (const endWell of potentialEnds) {
     const rectangleWells = getRectangleWells(startWell, endWell);
 
@@ -165,17 +158,14 @@ export function mapWellsToConcentrations(
     return result;
   }
 
-  // Get the coordinates and determine the block dimensions
   const coordsList = wells.map(w => getCoordsFromWellId(w.id));
   const uniqueRows = [...new Set(coordsList.map(c => c.row))].sort((a, b) => a - b);
   const uniqueCols = [...new Set(coordsList.map(c => c.col))].sort((a, b) => a - b);
   
-  // Create a 2D array to represent the block
   const blockArray: string[][] = Array(uniqueRows.length)
     .fill(null)
     .map(() => Array(uniqueCols.length).fill(null));
   
-  // Fill the block array with well IDs
   for (const well of wells) {
     const coords = getCoordsFromWellId(well.id);
     const rowIdx = uniqueRows.indexOf(coords.row);
@@ -183,12 +173,10 @@ export function mapWellsToConcentrations(
     blockArray[rowIdx][colIdx] = well.id;
   }
 
-  // Create a linear sequence of wells based on direction
   const wellSequence: string[] = [];
   
   switch (direction) {
     case 'TB': {
-      // Primary: left to right across columns, Secondary: top to bottom across rows
       for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
         for (let rowIdx = 0; rowIdx < uniqueRows.length; rowIdx++) {
           if (blockArray[rowIdx][colIdx]) {
@@ -199,7 +187,6 @@ export function mapWellsToConcentrations(
       break;
     }
     case 'BT': {
-      // Primary: right to left across columns, Secondary: top to bottom across rows
       for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
         for (let rowIdx = uniqueRows.length - 1; rowIdx >= 0; rowIdx--) {
           if (blockArray[rowIdx][colIdx]) {
@@ -210,7 +197,6 @@ export function mapWellsToConcentrations(
       break;
     }
     case 'LR': {
-      // Primary: top to bottom across rows, Secondary: left to right across columns
       for (let rowIdx = 0; rowIdx < uniqueRows.length; rowIdx++) {
         for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
           if (blockArray[rowIdx][colIdx]) {
@@ -221,7 +207,6 @@ export function mapWellsToConcentrations(
       break;
     }
     case 'RL': {
-      // Primary: bottom to top across rows, Secondary: left to right across columns
       for (let rowIdx = 0; rowIdx < uniqueRows.length; rowIdx++) {
         for (let colIdx = uniqueCols.length - 1; colIdx >= 0; colIdx--) {
           if (blockArray[rowIdx][colIdx]) {
@@ -233,7 +218,6 @@ export function mapWellsToConcentrations(
     }
   }
 
-  // Distribute wells to concentrations in sequence
   for (let i = 0; i < wellSequence.length; i++) {
 
     const concentrationIndex = i % numConcs;
@@ -263,49 +247,41 @@ export function mapWellsToConcentrations(
 export function calculateBlockBorders(plate: Plate): Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }> {
   const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
 
-  // Initialize all wells with no borders
   for (const well of plate) {
     if (well) {
       borderMap.set(well.id, { top: false, right: false, bottom: false, left: false });
     }
   }
 
-  // For each pattern
   const patternIds = Object.keys(plate.patterns)
   for (const patternId of patternIds) {
     const pattern = plate.patterns[patternId]
-    // For each block in the pattern
     for (const block of pattern.locations) {
       const wells = plate.getSomeWells(block);
       const wellIds = wells.map(w => w.id);
 
-      // For each well in the block
       for (const wellId of wellIds) {
         const coords = getCoordsFromWellId(wellId);
         const borders = borderMap.get(wellId)!;
 
-        // Check top
         const topWellId = coords.row > 0 ?
           getWellIdFromCoords(coords.row - 1, coords.col) : null;
         if (!topWellId || !wellIds.includes(topWellId)) {
           borders.top = true;
         }
 
-        // Check right
         const rightWellId = coords.col < plate.columns - 1 ?
           getWellIdFromCoords(coords.row, coords.col + 1) : null;
         if (!rightWellId || !wellIds.includes(rightWellId)) {
           borders.right = true;
         }
 
-        // Check bottom
         const bottomWellId = coords.row < plate.rows - 1 ?
           getWellIdFromCoords(coords.row + 1, coords.col) : null;
         if (!bottomWellId || !wellIds.includes(bottomWellId)) {
           borders.bottom = true;
         }
 
-        // Check left
         const leftWellId = coords.col > 0 ?
           getWellIdFromCoords(coords.row, coords.col - 1) : null;
         if (!leftWellId || !wellIds.includes(leftWellId)) {
@@ -337,7 +313,6 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     throw new Error("The number of wells per concentration must be divisible by the original number of replicates.");
   }
 
-  // Map wells to concentrations based on the pattern
   const wellConcentrationArr = mapWellsToConcentrations(
     plate,
     formatWellBlock(wells),
@@ -345,7 +320,6 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     pattern.direction[0]
   );
 
-  // Split into blocks
   const blocks: string[] = [];
 
   for (let i = 0; i < patternReplicates; i++) {

@@ -87,7 +87,7 @@ const EchoCalc: React.FC = () => {
       const calc = new EchoCalculator(echoPreCalc, mutableCheckpointTracker);
       setCheckpointTracker(mutableCheckpointTracker);
       const newPlates = [...calc.sourcePlates, ...calc.intermediatePlates, ...calc.destinationPlates];
-      for (let i=0; i < newPlates.length; i++) {
+      for (let i = 0; i < newPlates.length; i++) {
         let newPlate = newPlates[i]
         newPlate.id = i + 1
       }
@@ -115,7 +115,7 @@ const EchoCalc: React.FC = () => {
   }
 
   return (
-    <Container fluid>
+    <Container fluid className='h-100 pb-2'>
       <CheckpointDisplayModal
         showModal={showModal}
         checkpointTracker={checkpointTracker}
@@ -126,14 +126,10 @@ const EchoCalc: React.FC = () => {
         setEchoPreCalc={setEchoPreCalc}
         setCheckpointTracker={setCheckpointTracker}
       />
-      <Row className="mb-3">
-        <Col md={12}>
+      <Row className='h-100' style={{ minHeight: 0 }}>
+        <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           <h4>Transfer Calculator</h4>
           <p>Upload formatted Excel template to calculate transfers</p>
-        </Col>
-      </Row>
-      <Row>
-        <Col md={3}>
           <EchoForm
             onSubmit={handleSubmit}
             excelFile={file}
@@ -142,7 +138,7 @@ const EchoCalc: React.FC = () => {
             handleClear={handleClear}
           />
         </Col>
-        <Col md={8}>
+        <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           {(plate && compoundColorMap) ?
             <PlateView
               plate={plate}

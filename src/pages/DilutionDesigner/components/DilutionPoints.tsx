@@ -12,7 +12,6 @@ const DilutionPointsInput: React.FC<DilutionPointsInputProps> = ({
   points,
   onPointsChange
 }) => {
-  // Convert points to table values
   const tableValues: TableValue[] = points.map((point) => ({
     id: point.index,
     value: point.concentration,

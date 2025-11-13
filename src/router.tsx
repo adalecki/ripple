@@ -9,6 +9,8 @@ import MobileCheck from "./components/MobileCheck";
 import { PreferencesProvider } from "./hooks/usePreferences";
 import MapperParser from "./pages/MapperParser/MapperParser";
 
+import './css/router.css'
+
 const Layout = () => (
   <PreferencesProvider>
     <MobileCheck>

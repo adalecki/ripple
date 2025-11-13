@@ -50,12 +50,10 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const [internalValue, setInternalValue] = useState(value);
     const [debouncedValue] = useDebounce(internalValue, debounce || 0);
 
-    // Update internal value when external value changes
     useEffect(() => {
       setInternalValue(value);
     }, [value]);
 
-    // Call onChange when debounced value changes (only if debouncing is enabled)
     useEffect(() => {
       if (debounce && debouncedValue !== value) {
         onChange(debouncedValue);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, Form, Card } from 'react-bootstrap';
 import { Pattern } from '../../../classes/PatternClass';
 import { PatternsContext } from '../../../contexts/Context';
 import ConcentrationTable from './ConcentrationTable';
@@ -48,38 +48,36 @@ const PatternManager: React.FC = () => {
   const handleEditPattern = () => {
     setIsEditing(true);
     if (editingPattern && editingPattern.concentrations.length == 0) {
-      setEditingPattern(new Pattern({...editingPattern, concentrations: [null]}))
+      setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }))
     }
   };
 
   const handleSavePattern = () => {
     if (editingPattern) {
       const concentrations = editingPattern.concentrations.filter(c => c != null)
-      const savePattern = new Pattern({...editingPattern, concentrations: concentrations})
+      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations })
       setPatterns(patterns.map(p => p.id === savePattern.id ? savePattern : p));
       setIsEditing(false);
       setIsPickingColor(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (editingPattern) {
       let value: any = e.target.value;
       if (e.target.name === 'replicates') { value = parseInt(e.target.value) }
       if (e.target.name === 'direction') { value = [e.target.value] }
-      // NEW: Handle type change to/from Unused
       if (e.target.name === 'type' && value === 'Unused') {
-        setEditingPattern(new Pattern({ 
-          ...editingPattern, 
+        setEditingPattern(new Pattern({
+          ...editingPattern,
           [e.target.name]: value,
-          concentrations: [], // Clear concentrations for Unused
+          concentrations: [],
           replicates: 1,
           direction: ['LR']
         }));
       } else if (e.target.name === 'type' && editingPattern.type === 'Unused') {
-        // Switching from Unused to another type
-        setEditingPattern(new Pattern({ 
-          ...editingPattern, 
+        setEditingPattern(new Pattern({
+          ...editingPattern,
           [e.target.name]: value,
           concentrations: [null]
         }));
@@ -105,36 +103,53 @@ const PatternManager: React.FC = () => {
   };
 
   return (
-    <div className="pattern-manager">
-      <div className="pattern-form-container">
-      <Button onClick={handleAddPattern} className="add-pattern-btn">Add Pattern</Button>
-        {isEditing ? (
-          <div>
-            <Button onClick={handleSavePattern}>Save</Button>
+    <div className="d-flex flex-column">
+      <h4>Plate Designer</h4>
+      <p>Add patterns and map them to your plate for a downloadable template</p>
+      <Button variant="primary" onClick={handleAddPattern} className="mb-3">
+        Add Pattern
+      </Button>
+
+      {editingPattern ? (
+        <div>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            {isEditing ? (
+              <Button variant="success" size="sm" onClick={handleSavePattern}>
+                Save
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleEditPattern}
+                  disabled={editingPattern.locations.length > 0}
+                >
+                  Edit
+                </Button>
+                {editingPattern.locations.length > 0 && (
+                  <small className="text-muted fst-italic ms-2">Can't edit when present on plate</small>
+                )}
+              </>
+            )}
           </div>
-        ) : (
-          <div>
-            {selectedPatternId && <Button onClick={handleEditPattern} disabled={(editingPattern != null && editingPattern.locations.length > 0)}>Edit</Button>}
-            {(editingPattern != null && editingPattern.locations.length > 0) ? (<span className='edit-alert'>Can't edit when present on plate</span>) : (<div></div>)}
-          </div>
-        )}
-        {editingPattern && (
-          <div className="pattern-form">
-            <div className="pattern-form"></div>
-            <div className="form-group">
-              <label>Name</label>
-              <input
+
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
                 type="text"
                 name="name"
                 value={editingPattern.name}
                 onChange={handleInputChange}
                 disabled={!isEditing}
               />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Type</label>
-                <select
+            </Form.Group>
+
+            <div className="d-flex gap-3 mb-3">
+              <Form.Group className="flex-fill">
+                <Form.Label>Type</Form.Label>
+                <Form.Select
                   name="type"
                   value={editingPattern.type}
                   onChange={handleInputChange}
@@ -143,70 +158,77 @@ const PatternManager: React.FC = () => {
                   <option value="Control">Control</option>
                   <option value="Treatment">Treatment</option>
                   <option value="Unused">Unused</option>
-                </select>
-              </div>
+                </Form.Select>
+              </Form.Group>
+
               {editingPattern.type !== 'Unused' && (
-                <div className="form-group">
-                  <label>Replicates</label>
-                  <input
+                <Form.Group className="flex-fill">
+                  <Form.Label>Replicates</Form.Label>
+                  <Form.Control
                     type="number"
                     name="replicates"
                     value={editingPattern.replicates}
                     onChange={handleInputChange}
                     disabled={!isEditing}
                   />
-                </div>
+                </Form.Group>
               )}
             </div>
+
             {editingPattern.type !== 'Unused' && (
-              <div className='form-row'>
-                <div className="form-group">
-                  <label>Direction</label>
-                  <select
-                    name="direction"
-                    value={editingPattern.direction[0]}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  >
-                    <option value="LR">Left to Right</option>
-                    <option value="RL">Right to Left</option>
-                    <option value="TB">Top to Bottom</option>
-                    <option value="BT">Bottom to Top</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Color</label>
-                  <div className="color-picker-container">
+              <>
+                <div className="d-flex gap-3 mb-3">
+                  <Form.Group className="flex-fill">
+                    <Form.Label>Direction</Form.Label>
+                    <Form.Select
+                      name="direction"
+                      value={editingPattern.direction[0]}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                    >
+                      <option value="LR">Left to Right</option>
+                      <option value="RL">Right to Left</option>
+                      <option value="TB">Top to Bottom</option>
+                      <option value="BT">Bottom to Top</option>
+                    </Form.Select>
+                  </Form.Group>
+
+                  <Form.Group className="flex-fill">
+                    <Form.Label>Color</Form.Label>
                     <div
                       className="color-preview"
                       style={{ backgroundColor: editingPattern.color }}
                       onClick={() => isEditing && setIsPickingColor(!isPickingColor)}
                     />
-                  </div>
-                  {isPickingColor && (
+                  </Form.Group>
+                </div>
+
+                {isPickingColor && (
+                  <div className="mb-3">
                     <HslStringColorPicker
                       color={editingPattern.color}
                       onChange={handleColorChange}
                     />
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+
+                <Form.Group>
+                  <Form.Label>Concentrations</Form.Label>
+                  <div className="concentration-table-container">
+                    <ConcentrationTable
+                      concentrations={editingPattern.concentrations}
+                      onChange={handleConcentrationChange}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </Form.Group>
+              </>
             )}
-            {editingPattern.type !== 'Unused' && (
-              <div>
-                <label>Concentrations</label>
-                <div className="concentration-table-container">
-                  <ConcentrationTable
-                    concentrations={editingPattern.concentrations}
-                    onChange={handleConcentrationChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          </Form>
+        </div>
+      ) : (
+        <p className="text-muted">Select or add a pattern to edit</p>
+      )}
     </div>
   );
 };

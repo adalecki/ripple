@@ -1,10 +1,10 @@
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 
 export interface CurveFitResult {
-  A: number; // Bottom
-  B: number; // Hillslope  
-  C: number; // EC50
-  D: number; // Top
+  A: number; //Bottom
+  B: number; //Hillslope  
+  C: number; //EC50
+  D: number; //Top
 }
 
 export interface CurveFitOptions {
@@ -22,7 +22,6 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
   if (x.length < 3) {
     throw new Error('Need at least 3 data points for curve fitting');
   }
-  // Normalize response values to scale from 0 - 100
   const maxY = Math.max(...y);
   const minY = Math.min(...y);
   const normedY: number[] = [];
@@ -32,7 +31,6 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
     normedY.push(norm);
   }
 
-  // A - Bottom, B - Hillslope, C - EC50, D - Top
   function fourPL([A, B, C, D]: number[]) {
     return (t: number): number => {
       return (A - D) / (1.0 + Math.pow(t / C, B)) + D;
@@ -41,7 +39,6 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
 
   const initialSlope = (y[y.length - 1] - y[0]) / y.length;
   
-  // Find the point closest to 50% response to use as initial EC50 guess
   const estA = Math.min(...y);
   const estB = (initialSlope < 0 ? 1 : -1);
   const estD = Math.max(...y);

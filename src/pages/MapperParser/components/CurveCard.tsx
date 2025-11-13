@@ -29,13 +29,11 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
     fittedParams = curveFit(x, y);
     ec50 = fittedParams[2];
 
-    // Generate fitted curve points - create more points for smooth curve
     const minConc = Math.min(...x);
     const maxConc = Math.max(...x);
     const logMinConc = Math.log10(minConc);
     const logMaxConc = Math.log10(maxConc);
 
-    // Generate points across the concentration range
     dataPoints = [];
     const numPoints = x.length * 10;
     for (let i = 0; i < numPoints; i++) {
@@ -47,7 +45,6 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
   } catch (error) {
     console.warn('Curve fitting failed for treatment:', curveData.treatmentId, error);
     fittingError = "Curve fitting failed";
-    // Fallback to just showing the data points without fitted curve
     dataPoints = aggregatedData.map(d => ({ concentration: d.concentration, mean: d.mean }));
   }
 
@@ -55,7 +52,7 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
   const xTicks = createLogTicks(Math.min(...x), Math.max(...x), gridSize);
   return (
     <Col key={treatmentKey}>
-      <Card className='mapper-card'>
+      <Card className='page-card'>
         <Card.Header className='bg-light'>
           <div className="d-flex justify-content-between align-items-center">
             <strong><span>{curveData.treatmentId}</span></strong>

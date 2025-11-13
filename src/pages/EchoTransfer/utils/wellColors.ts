@@ -154,11 +154,9 @@ export function hslToString(hsl: HslType): `hsl(${number},${number}%,${number}%)
 export function wellColorsResponse(plate: Plate, normalized: Boolean): { wellId: string; colors: HslStringType[] }[] {
   const wellColorArr: { wellId: string; colors: HslStringType[] }[] = [];
   
-  // Get min/max from plate metadata
   const minResponse = (normalized ? 0 : plate.metadata.globalMinResponse);
   const maxResponse = (normalized ? 100 : plate.metadata.globalMaxResponse);
   
-  // Create color scale
   const colorScale = d3
     .scaleSequential()
     .interpolator(d3.interpolateViridis)
@@ -170,7 +168,7 @@ export function wellColorsResponse(plate: Plate, normalized: Boolean): { wellId:
     let colors: HslStringType[] = [];
     
     if (well.getIsUnused()) {
-      colors = ['hsl(0,0%,95%)' as HslStringType]; // Gray for unused wells
+      colors = ['hsl(0,0%,95%)' as HslStringType];
     } else if (!normalized && well.rawResponse !== null) {
       const color = colorScale(well.rawResponse);
       colors = [d3.color(color)?.formatHsl() as HslStringType]
@@ -179,7 +177,7 @@ export function wellColorsResponse(plate: Plate, normalized: Boolean): { wellId:
       colors = [d3.color(color)?.formatHsl() as HslStringType]
     } 
     else {
-      colors = ['hsl(0,0%,100%)']; // White for wells without data
+      colors = ['hsl(0,0%,100%)'];
     }
     
     wellColorArr.push({ wellId: well.id, colors });

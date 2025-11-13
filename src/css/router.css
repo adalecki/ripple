@@ -1,24 +1,24 @@
-.mapper-tabs {
+.page-tabs {
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--navbar-height));
 }
 
-.mapper-tabs .tab-content {
+.page-tabs .tab-content {
   min-height: 0;
   display: flex;
   flex-grow: 1;
 }
 
-.mapper-tabs .tab-content .tab-pane {
+.page-tabs .tab-content .tab-pane {
   flex: 1;
 }
 
-.mapper-card {
+.page-card {
   border: 2px solid #adb5bd;
   min-height: 0;
 }
 
-.mapper-card .card-header {
+.page-card .card-header {
   padding: 0.25rem;
 }

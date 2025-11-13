@@ -17,8 +17,8 @@ export interface TransferStep {
 
 export interface TransferInfo {
   transferType: 'compound' | 'solvent';
-  solventName?: string; // Only used when transferType is 'solvent'
-  compoundName?: string; // Only used when transferType is 'compound'
+  solventName?: string;
+  compoundName?: string;
 }
 
 type IntermediateWellCache = Map<string,

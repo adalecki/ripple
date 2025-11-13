@@ -56,7 +56,6 @@ export function getPlatesWithResponseData(plates: Plate[]) {
   );
 }
 
-// Parse Excel file based on protocol configuration
 export async function parseDataFile(file: File, protocol: Protocol): Promise<ParseResult> {
   const errors: string[] = [];
   const parsedData: ParsedData[] = [];
@@ -99,7 +98,7 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
       barcode = filenameWithoutExtension;
     } else {
       const delimiter = protocol.parseStrategy.barcodeDelimiter;
-      const chunkIndex = protocol.parseStrategy.barcodeChunk - 1; // Convert to 0-indexed
+      const chunkIndex = protocol.parseStrategy.barcodeChunk - 1;
       
       if (!delimiter) {
         errors.push('Delimiter is required when not using full filename');
@@ -278,7 +277,6 @@ export function applyParsedDataToPlates(
   const errors: string[] = [];
   let updatedPlates: Plate[] = [];
   
-  // Create a map of barcode to parsed data for efficiency
   const dataByBarcode = new Map<string, ParsedData>();
   parsedData.forEach(data => {
     dataByBarcode.set(data.barcode, data);
@@ -286,7 +284,6 @@ export function applyParsedDataToPlates(
   
   for (const plate of plates) {
     const plateData = dataByBarcode.get(plate.barcode);
-    // Put plates without parsed data into the stack without further modification
     if (!plateData) {
       updatedPlates.push(plate);
       continue;
@@ -337,20 +334,15 @@ const PLATE_CONFIGS: Record<'12' | '24' | '48' | '96' | '384' | '1536', PlateInf
       '1536': { rows: 32, cols: 48 }
 };
 
-/**
- * Interface representing a potential data matrix found within the file.
- * It stores the raw data, its location in the file, calculated score, and dimensions.
- * Flags are included to indicate the presence of header rows or columns.
- */
 interface CandidateMatrix {
-  data: (string | number)[][]; // Raw data, can contain strings (e.g., 'OVER', '-') or numbers
-  startLine: number;           // The 0-indexed line number where this matrix block starts in the file
-  endLine: number;             // The 0-indexed line number where this matrix block ends in the file
-  score: number;               // The calculated score indicating how likely this is the target data
-  rows: number;                // Actual number of rows found in this matrix
-  cols: number;                // Actual number of columns found in this matrix
-  hasHeaderRow: boolean;       // True if the first row is likely a header (e.g., column numbers)
-  hasHeaderCol: boolean;       // True if the first column is likely a header (e.g., row letters)
+  data: (string | number)[][];
+  startLine: number;
+  endLine: number;
+  score: number;
+  rows: number;
+  cols: number;
+  hasHeaderRow: boolean;
+  hasHeaderCol: boolean;
 }
 
 /**
@@ -606,10 +598,8 @@ export function calculateNormalization(
         continue;
       }
       
-      // Default to 0 if no MinCtrl is defined
       const minValue = controlParams.minCtrl ?? 0;
       
-      // Use MaxCtrl if available, otherwise use the maximum raw response in the plate
       let maxValue = controlParams.maxCtrl;
       if (maxValue === undefined) {
         const allRawResponses = Object.values(recalculatedPlate.getWells())
@@ -619,7 +609,7 @@ export function calculateNormalization(
         if (allRawResponses.length > 0) {
           maxValue = Math.max(...allRawResponses);
         } else {
-          maxValue = 100; // Default fallback
+          maxValue = 100;
         }
       }
       
@@ -633,7 +623,7 @@ export function calculateNormalization(
         let normMaxValue = 100;
         for (const well of recalculatedPlate) {
           if (well && well.rawResponse !== null) {
-            // Formula: ((raw - blank) - min) / (max - min) * 100
+            //((raw - blank) - min) / (max - min) * 100
             const adjustedRaw = well.rawResponse - blankValue;
             const normalizedValue = ((adjustedRaw - minValue) / range) * 100;
             well.applyNormalizedResponse(normalizedValue);
@@ -665,7 +655,7 @@ function extractControlValuesWithExclusions(
     try {
       const wells = plate.getSomeWells(control.wells);
       const responses = wells
-        .filter(well => !excludeWells || !excludeWells.has(well.id)) // Exclude masked wells
+        .filter(well => !excludeWells || !excludeWells.has(well.id))
         .map(well => well.rawResponse)
         .filter((response): response is number => response !== null);
       if (responses.length === 0) continue;
