@@ -42,7 +42,6 @@ function generateDestinationPlatesCSV(
   const rows: string[][] = [];
 
   for (const plate of destinationPlates) {
-    // Sort wells by ID for consistent ordering
     const sortedWells = Object.values(plate.getWells())
       .filter(well => well && (includeEmptyWells || well.getContents().length > 0))
       .sort((a, b) => a.id.localeCompare(b.id));
@@ -53,7 +52,6 @@ function generateDestinationPlatesCSV(
       row.push(plate.barcode);
       row.push(well.id);
 
-      // Contents (only include compound contents, not solvents)
       const contents = well.getContents()
       for (let i = 0; i < maxContents; i++) {
         if (i < contents.length) {
@@ -69,7 +67,6 @@ function generateDestinationPlatesCSV(
 
       if (protocol) {
         for (const field of protocol.metadataFields) {
-          // Use metadata from plate, fallback to protocol default, then empty string
           const plateMetadataValue = plate.metadata[field.name];
           if (plateMetadataValue !== undefined) {
             row.push(plateMetadataValue.toString());
@@ -93,14 +90,13 @@ function downloadCSV(csvData: CsvExportData, filename: string): void {
   const csvString = allRows.map(row =>
     row.map(cell => {
       const cellStr = cell.toString();
-      // Escape cells that contain commas, quotes, or newlines
       if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
         return `"${cellStr.replace(/"/g, '""')}"`;
       }
       return cellStr;
     }).join(',')
   ).join('\n');
-  // add a character at the start to tell Excel it's utf-8 encoding and avoid weird characters
+  //add a character at the start to tell Excel it's utf-8 encoding and avoid weird characters
   const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
 
@@ -117,18 +113,11 @@ function downloadCSV(csvData: CsvExportData, filename: string): void {
 }
 
 function generateCSVFilename(protocol?: Protocol): string {
-  const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const timestamp = new Date().toISOString().split('T')[0];
   const protocolName = protocol?.name ? `_${protocol.name.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
   return `destination_plates_results${protocolName}_${timestamp}.csv`;
 }
 
-/**
- * Main export function that combines all steps
- * @param plates Array of all plates (will filter to destination plates)
- * @param protocol Protocol for metadata fields
- * @param includeEmptyWells Whether to include wells with no compound contents
- * @param customFilename Custom filename (optional)
- */
 export function exportDestinationPlatesCSV(
   plates: Plate[],
   protocol?: Protocol,
@@ -153,10 +142,10 @@ export function getDestinationPlates(plates: Plate[]): Plate[] {
 }
 
 type ExportOpts = {
-  marginX?: number; // pts
-  marginY?: number; // pts
-  gapX?: number;    // pts between columns
-  gapY?: number;    // pts between rows
+  marginX?: number;
+  marginY?: number;
+  gapX?: number;
+  gapY?: number;
   imageType?: "PNG" | "JPEG";
 };
 

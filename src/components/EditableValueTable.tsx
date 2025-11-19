@@ -54,7 +54,6 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
   const handleChange = (id: number, inputValue: string) => {
     setEditingValues(prev => ({ ...prev, [id]: inputValue }));
 
-    // Only update the actual value if it's a valid number
     if (inputValue === '') {
       const newValues = values.map(v =>
         v.id === id ? { ...v, value: null } : v
@@ -72,7 +71,6 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
   };
 
   const handleBlur = (id: number) => {
-    // Clean up the editing value when the input loses focus
     setEditingValues(prev => {
       const newValues = { ...prev };
       delete newValues[id];

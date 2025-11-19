@@ -74,17 +74,16 @@ interface ConcentrationRange {
 
 interface ConcentrationGap {
   ranges: ConcentrationRange[];
-  // If true, ranges are ordered high to low with gaps between
   hasGaps: boolean;
 }
 
 interface CalculationConstraints {
-  maxTransferVolume: number;     // Maximum volume that can be transferred
-  dropletSize: number;           // Minimum volume that can be transferred
-  dmsoLimit: number;             // Maximum fraction of DMSO allowed
-  backfillVolume: number;        // Volume in intermediate plates
-  assayVolume: number;           // Final assay volume
-  allowableError: number;        // Acceptable concentration error
+  maxTransferVolume: number;
+  dropletSize: number;
+  dmsoLimit: number;
+  backfillVolume: number;
+  assayVolume: number;
+  allowableError: number;
 }
 
 export function roundToInc({
@@ -177,7 +176,7 @@ function getPriority(sourceRole: string, destRole: string): number {
     'intermediate1-destination': 4,
     'intermediate2-destination': 5
   };
-  return (priorities as any)[`${sourceRole}-${destRole}`] || 6; // Default priority if not found
+  return (priorities as any)[`${sourceRole}-${destRole}`] || 6;
 }
 
 function getRole(barcode: string, plateArr: Plate[]) {
@@ -236,19 +235,18 @@ export function calculateFinalAchievableConcentration({
   assayVolume,
   intermediateSteps
 }: {
-  stockConcentration: number;  // Starting concentration in uM
-  intTransferVolume: number;      // Source to intermediate or intermediate to intermediate transfer volume in nL
-  finTransferVolume: number;      // Source to destination or intermediate to destination transfer volume in nL
-  backfillVolume: number;      // Intermediate plate backfill volume in nL
-  assayVolume: number;        // Final assay volume in nL
-  intermediateSteps: number;   // Number of intermediate plate steps
+  stockConcentration: number;
+  intTransferVolume: number;
+  finTransferVolume: number;
+  backfillVolume: number;
+  assayVolume: number;
+  intermediateSteps: number;
 }): number {
   const intermediateDilutionFactor = intTransferVolume / (intTransferVolume + backfillVolume);
 
   const finalDilutionFactor = finTransferVolume / (finTransferVolume + assayVolume);
 
-  // Calculate final concentration
-  // C₀ × (T ÷ (T + B))ⁿ × (T ÷ (T + A))
+  //C₀ × (T ÷ (T + B))ⁿ × (T ÷ (T + A))
   const finalConcentration = stockConcentration *
     Math.pow(intermediateDilutionFactor, intermediateSteps) *
     finalDilutionFactor;
@@ -263,8 +261,7 @@ export function calculateMaxFinalTransferVolume({
   assayVolume: number;
   dmsoLimit: number;
 }): number {
-  // Based on: dmsoLimit = transferVolume / (transferVolume + assayVolume)
-  // Solved for transferVolume
+  //dmsoLimit = transferVolume / (transferVolume + assayVolume)
   return (dmsoLimit * assayVolume) / (1 - dmsoLimit);
 }
 
@@ -286,7 +283,6 @@ export function analyzeAchievableRanges({
     })
   );
 
-  // Direct transfer (no intermediates)
   const directMin = calculateFinalAchievableConcentration({
     stockConcentration,
     intTransferVolume: 0,
@@ -307,7 +303,6 @@ export function analyzeAchievableRanges({
 
   ranges.push({ min: directMin, max: directMax });
 
-  // For each intermediate level
   for (let i = 1; i <= maxIntermediateLevels; i++) {
     const minWithInt = calculateFinalAchievableConcentration({
       stockConcentration,
@@ -334,7 +329,6 @@ export function analyzeAchievableRanges({
 }
 
 export function mergeConcentrationRanges(ranges: ConcentrationRange[]): ConcentrationGap {
-  // Sort ranges by max value descending
   ranges.sort((a, b) => b.max - a.max);
 
   const mergedRanges: ConcentrationRange[] = [];
@@ -342,14 +336,11 @@ export function mergeConcentrationRanges(ranges: ConcentrationRange[]): Concentr
 
   for (let i = 1; i < ranges.length; i++) {
     if (ranges[i].max <= currentRange.max && ranges[i].min >= currentRange.min) {
-      // Range is completely contained in current range, skip it
       continue;
     } else if (ranges[i].max <= currentRange.min) {
-      // There's a gap between ranges
       mergedRanges.push(currentRange);
       currentRange = ranges[i];
     } else {
-      // Ranges overlap, merge them
       currentRange = {
         min: Math.min(currentRange.min, ranges[i].min),
         max: Math.max(currentRange.max, ranges[i].max)
@@ -405,18 +396,15 @@ export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
   const combinations: T[][] = [];
   const n = elements.length;
 
-  // Basic validation
   if (r < 0 || r > n) {
     console.warn(`Invalid combination size r=${r} for elements array of size n=${n}. Returning empty array.`);
     return [];
   }
   if (r === 0) {
-    // There is one combination of size 0: the empty set.
     return [[]];
   }
   if (r === n) {
-    // There is one combination of size n: the set itself.
-    return [[...elements]]; // Return a copy
+    return [[...elements]];
   }
 
 
@@ -478,10 +466,10 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
           srcPlates.push(srcPlate)
         }
         const well = srcPlate.getWell(location.wellId);
-        // only support a single content per source plate for now as they're made from user input, not dynamically
-        // only support DMSO as solvent, though could eventually move to 
+        //only support a single content per source plate for now as they're made from user input, not dynamically
+        //only support DMSO as solvent, though could eventually move to 
         if (well && well.getContents().length === 0) {
-          const pattern = dilutionPatterns.get(patternNameCombined) // only works if solvent pattern name is solo without another name included
+          const pattern = dilutionPatterns.get(patternNameCombined) //only works if solvent pattern name is solo without another name included
           if (pattern && pattern.type == 'Solvent') {
             well.addSolvent({ name: pattern.patternName, volume: location.volume })
           }
@@ -575,7 +563,6 @@ export function buildSrcCompoundInventory(inputData: InputDataType, plateSize: P
   for (const compound of inputData.Compounds) {
     const compoundId = compound['Compound ID'];
     
-    // Handle DMSO with empty pattern as a special case
     const isDMSOWithEmptyPattern = compoundId === 'DMSO' && (!compound['Pattern'] || compound['Pattern'].trim() === '');
     
     if (isDMSOWithEmptyPattern) {

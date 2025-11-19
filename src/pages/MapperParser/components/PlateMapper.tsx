@@ -45,7 +45,7 @@ const PlateMapper: React.FC = () => {
 
   const handleSubmit = async (formData: FormData) => {
     setErrors([]);
-    
+
     if (!originalFile || !transferFile) {
       setErrors(['Please select both files']);
       return;
@@ -62,7 +62,7 @@ const PlateMapper: React.FC = () => {
       const xAb = await originalFile.arrayBuffer();
       const xWb = read(xAb, { type: 'array' }) as WorkBook;
       const { inputData, errors } = echoInputValidation(xWb, formValues, preferences);
-      
+
       if (errors.length > 0) {
         setErrors(errors);
         return;
@@ -71,11 +71,11 @@ const PlateMapper: React.FC = () => {
       const { transfers, surveyedVolumes } = await parseTransferLog(transferFile);
       const { newPlates, compoundMap } = constructPlatesFromTransfers(inputData, transfers, preferences, surveyedVolumes);
       const { allPlates, colorMap, failures } = performTransfers(newPlates, transfers, compoundMap);
-      
+
       if (failures.length > 0) {
         setErrors(prev => [...prev, ...failures]);
       }
-      
+
       setCompoundColorMap(colorMap);
       setMappedPlates(allPlates);
       if (allPlates.length > 0) {
@@ -102,16 +102,11 @@ const PlateMapper: React.FC = () => {
   };
 
   return (
-    <Container fluid>
-      <Row className="mb-3">
-        <Col md={12}>
+    <Container fluid className='h-100 pb-2'>
+      <Row className="h-100">
+        <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           <h4>Plate Mapper</h4>
           <p>Upload the original Excel template and Echo transfer log to visualize actual transfers</p>
-        </Col>
-      </Row>
-
-      <Row className="mb-3">
-        <Col md={3}>
           <EchoForm
             onSubmit={handleSubmit}
             excelFile={originalFile}
@@ -121,6 +116,14 @@ const PlateMapper: React.FC = () => {
             submitText='Build Plate Maps'
             handleClear={handleClear}
           />
+          <Button
+            onClick={() => generateNewExcelTemplate(originalFile, mappedPlates)}
+            className="mt-3"
+            disabled={!originalFile || mappedPlates.length < 1}
+            variant='success'
+          >
+            Download Updated Input File (Volumes)
+          </Button>
 
           {errors.length > 0 && (
             <div ref={alertContainerRef}>
@@ -142,24 +145,12 @@ const PlateMapper: React.FC = () => {
         </Col>
 
         {mappedPlates.length > 0 && plate && originalFile && (
-          <Col md={8}>
+          <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
             <PlateView
               plate={plate}
               view="plateMapper"
               colorConfig={colorConfig}
             />
-            <Row>
-              <Col>
-                <Button
-                  onClick={() => generateNewExcelTemplate(originalFile, mappedPlates)}
-                  className="mt-3"
-                  disabled={!originalFile}
-                  variant='success'
-                >
-                  Updated Input File (Volumes)
-                </Button>
-              </Col>
-            </Row>
           </Col>
         )}
       </Row>

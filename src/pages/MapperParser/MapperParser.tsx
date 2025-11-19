@@ -9,7 +9,6 @@ import ProtocolManager from './components/ProtocolManager.tsx';
 import DataParser from './components/DataParser.tsx';
 import Results from './components/Results.tsx';
 import { loadProtocols, saveProtocols } from './utils/protocolUtils';
-import '../../css/MapperParser.css'
 
 const MapperParser: React.FC = () => {
   const [tabKey, setTabKey] = useState<string>('protocols');
@@ -23,20 +22,20 @@ const MapperParser: React.FC = () => {
     saveProtocols(protocols);
   }, [protocols]);
 
-const handleSelect = (k: string | null) => {
-  if (k !== null) {
-    if (tabKey === 'protocols' && k !== 'protocols' && isEditing) {
-      const shouldProceed = window.confirm(
-        'You have unsaved changes to your protocol. Do you want to leave without saving?'
-      );
-      if (!shouldProceed) {
-        return;
+  const handleSelect = (k: string | null) => {
+    if (k !== null) {
+      if (tabKey === 'protocols' && k !== 'protocols' && isEditing) {
+        const shouldProceed = window.confirm(
+          'You have unsaved changes to your protocol. Do you want to leave without saving?'
+        );
+        if (!shouldProceed) {
+          return;
+        }
+        setIsEditing(false);
       }
-      setIsEditing(false);
+      setTabKey(k);
     }
-    setTabKey(k);
-  }
-};
+  };
 
   const renderSidebar = () => {
     if (tabKey === 'mapper' || tabKey === 'parser' || tabKey === 'results') {
@@ -82,12 +81,12 @@ const handleSelect = (k: string | null) => {
   return (
     <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
       <ProtocolsContext.Provider value={{ protocols, setProtocols, selectedProtocolId, setSelectedProtocolId, isEditing, setIsEditing }}>
-        <Row style={{ minHeight: 0 }}>
+        <Row>
           <Col md="2">
             {renderSidebar()}
           </Col>
           <Col md="10" style={{ minHeight: 0 }}>
-            <div className="mapper-tabs" style={{ height: 'calc(100vh - var(--navbar-height))'}}>
+            <div className="page-tabs">
               <Tabs
                 id="mapper-parser-tab-select"
                 activeKey={tabKey}
@@ -112,7 +111,7 @@ const handleSelect = (k: string | null) => {
         </Row>
       </ProtocolsContext.Provider>
     </MappedPlatesContext.Provider>
-    
+
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { usePreferences } from '../../hooks/usePreferences';
 import { analyzeDilutionPoints } from './utils/dilutionUtils';
@@ -25,6 +25,15 @@ const DilutionDesigner: React.FC = () => {
     numIntConcs: 5 as number
   });
 
+  useEffect(() => {
+    if (preferences.maxTransferVolume != settings.maxTransferVolume) {
+      handleSettingChange('maxTransferVolume', preferences.maxTransferVolume)
+    }
+    if (preferences.dropletSize != settings.dropletSize) {
+      handleSettingChange('dropletSize', preferences.dropletSize)
+    }
+  }, [preferences]);
+
   const [errors, setErrors] = useState<DilutionSettingsErrors>({});
 
   const [points, setPoints] = useState<Point[]>([
@@ -44,7 +53,7 @@ const DilutionDesigner: React.FC = () => {
         }
         break;
       case 'dmsoLimit':
-        if (!newSettings.dmsoLimit || newSettings.dmsoLimit <= 0 || newSettings.dmsoLimit >= 1) {
+        if (newSettings.dmsoLimit === undefined || newSettings.dmsoLimit < 0 || newSettings.dmsoLimit > 1) {
           return 'Must be between 0 and 1';
         }
         break;
@@ -97,7 +106,7 @@ const DilutionDesigner: React.FC = () => {
       setSettings(newSettings);
     }
   };
-  
+
   const analysisResults = analyzeDilutionPoints({
     points: points.map(p => p.concentration),
     stockConcentrations: settings.stockConcentrations,
@@ -114,38 +123,34 @@ const DilutionDesigner: React.FC = () => {
   });
 
   return (
-    <Container fluid className="dilution-designer">
-      <Row>
-        <Col md={2} className="designer-column">
-          <DilutionSettingsInput
-            settings={settings}
-            onSettingChange={handleSettingChange}
-            errors={errors}
-          />
-        </Col>
-        <Col md={2} className="designer-column middle-column">
-          <div className="middle-section">
-            <DilutionPointsInput
-              points={points}
-              onPointsChange={setPoints}
+    <div className="dilution-designer">
+      <Container fluid className="h-100 p-1">
+        <Row className="h-100" style={{ minHeight: 0 }}>
+          <Col md={4} className="designer-column">
+            <DilutionSettingsInput
+              settings={settings}
+              onSettingChange={handleSettingChange}
+              errors={errors}
             />
-          </div>
-          <div className="middle-section">
             <DilutionStocksInput
               settings={settings}
               onSettingsChange={setSettings}
             />
-          </div>
-        </Col>
-        <Col md={8} className="designer-column">
-          <DilutionGraph
-            points={points}
-            analysisResults={analysisResults}
-            allowableError={settings.allowableError}
-          />
-        </Col>
-      </Row>
-    </Container>
+            <DilutionPointsInput
+              points={points}
+              onPointsChange={setPoints}
+            />
+          </Col>
+          <Col md={8} className="d-flex h-100" style={{ scrollbarGutter: 'stable' }}>
+            <DilutionGraph
+              points={points}
+              analysisResults={analysisResults}
+              allowableError={settings.allowableError}
+            />
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 

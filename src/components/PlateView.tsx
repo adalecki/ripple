@@ -44,7 +44,7 @@ function tooltipTransform(plate: Plate, wellRect: DOMRect, wellId: string): { x:
     y = -100
     tooltipY = wellRect.top + window.scrollY
   }
-  return {x: tooltipX, y: tooltipY, transform: `translate(${x}%, ${y}%)`}
+  return { x: tooltipX, y: tooltipY, transform: `translate(${x}%, ${y}%)` }
 }
 
 const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
@@ -62,7 +62,7 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
       const wellData = plate.getWell(wellId);
       const wellElement = e.currentTarget;
       const wellRect = wellElement.getBoundingClientRect();
-      const {x, y, transform} = tooltipTransform(plate, wellRect, wellId)
+      const { x, y, transform } = tooltipTransform(plate, wellRect, wellId)
 
       if (wellData) {
         setHoveredWell({
@@ -150,31 +150,29 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
     }
 
     return (
-      <div>
-        <div className="grid-container">
-          <div
-            className="col-labels-container"
-            onClick={mouseLabelClickHandler}
-            style={{ gridTemplateColumns: `repeat(${plate.columns}, 1fr)` }}>
-            {columnLabels}
-          </div>
-          <div
-            className="row-labels-container"
-            onClick={mouseLabelClickHandler}
-            style={{ gridTemplateRows: `repeat(${plate.rows}, 1fr)` }}>
-            {rowLabels}
-          </div>
-          <div
-            className="wells-container"
-            onMouseDown={mouseDownHandler}
-            onMouseMove={mouseMoveHandler}
-            onMouseUp={mouseUpHandler}
-            style={{ gridTemplateRows: `repeat(${plate.rows}, 1fr)`, gridTemplateColumns: `repeat(${plate.columns}, 1fr)` }}>
-            {wells}
-          </div>
-          {hoveredWell && <WellTooltip hoveredWell={hoveredWell} />}
-          <div className={selectorStyle ? "selection-rectangle" : ''} style={selectorStyle}></div>
+      <div className="grid-container">
+        <div
+          className="col-labels-container"
+          onClick={mouseLabelClickHandler}
+          style={{ gridTemplateColumns: `repeat(${plate.columns}, 1fr)` }}>
+          {columnLabels}
         </div>
+        <div
+          className="row-labels-container"
+          onClick={mouseLabelClickHandler}
+          style={{ gridTemplateRows: `repeat(${plate.rows}, 1fr)` }}>
+          {rowLabels}
+        </div>
+        <div
+          className="wells-container"
+          onMouseDown={mouseDownHandler}
+          onMouseMove={mouseMoveHandler}
+          onMouseUp={mouseUpHandler}
+          style={{ gridTemplateRows: `repeat(${plate.rows}, 1fr)`, gridTemplateColumns: `repeat(${plate.columns}, 1fr)` }}>
+          {wells}
+        </div>
+        {hoveredWell && <WellTooltip hoveredWell={hoveredWell} />}
+        <div className={selectorStyle ? "selection-rectangle" : ''} style={selectorStyle}></div>
       </div>
     );
   }

@@ -1,14 +1,7 @@
-.plate-grid {
-  display: grid;
-  gap: 1px;
-  justify-content: start;
-  width: 100%
-}
-
 .well {
   background-color: #fff;
   border: 1px solid #000;
-  aspect-ratio: 1; /* Makes each well square */
+  aspect-ratio: 1; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,7 +15,7 @@
   position: absolute;
   border: 2px dashed blue; 
   background-color: rgba(135, 206, 235, 0.3);
-  pointer-events: none; /* So it doesn't interfere with other mouse events */
+  pointer-events: none;
 }
 
 .well-highlighted {
@@ -79,14 +72,12 @@
 
 .grid-container {
   display: grid;
-  grid-template-columns: auto 1fr; /* First column for row labels, second for wells */
-  grid-template-rows: auto 1fr; /* First row for column labels, second for wells */
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
   grid-template-areas:
     "empty colLabels"
     "rowLabels wells";
   gap: 4px;
-  height: 100%;
-  width: 100%; /* Fill the parent container */
 }
 
 .col-labels-container {

@@ -17,8 +17,8 @@ export interface TransferStep {
 
 export interface TransferInfo {
   transferType: 'compound' | 'solvent';
-  solventName?: string; // Only used when transferType is 'solvent'
-  compoundName?: string; // Only used when transferType is 'compound'
+  solventName?: string;
+  compoundName?: string;
 }
 
 type IntermediateWellCache = Map<string,
@@ -135,7 +135,6 @@ export class EchoCalculator {
     const intPlatesCount2 = Math.ceil(totalIntWellsNeeded.level2 / 384);
     const intPlates: Plate[] = [];
 
-    // Create intermediate plates
     const barcodes = this.inputData.Barcodes.map(row => row['Intermediate Plate Barcodes']);
     const totalPlatesNeeded = intPlatesCount1 + intPlatesCount2;
 
@@ -164,10 +163,8 @@ export class EchoCalculator {
     return intPlates;
   }
 
-  //fills intermediate plates and records transfer steps
   fillIntPlates() {
     const echoIntDeadVolume = this.intermediateBackfillVolume < 15000 ? 2500 : 15000
-    // First, calculate total intermediate well needs per compound and concentration
     const intermediateNeeds = new Map<string, Map<number, number>>();
 
     for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {
@@ -195,13 +192,10 @@ export class EchoCalculator {
       }
     }
 
-    // Create and fill all intermediate wells in one pass
     for (const [compoundId, compoundNeeds] of intermediateNeeds) {
       for (const [intConc, totalVolume] of compoundNeeds) {
         const wellsNeeded = Math.ceil(totalVolume / (this.intermediateBackfillVolume - echoIntDeadVolume)); //ignores actual transfered volume, but that just overestimates so should be fine
 
-        // Find plates with available wells
-        // Find suitable source location for this intermediate concentration
         const concInfo = this.findConcInfo(compoundId, intConc);
         if (!concInfo) {
           console.warn(`Could not find source for ${compoundId} at ${intConc}µM`);
@@ -220,7 +214,6 @@ export class EchoCalculator {
         const intPlate = this.intermediatePlates.find(plate => plate.barcode === location.barcode)!;
         const wellBlock = intPlate.getSomeWells(location.wellBlock);
 
-        // Fill wells
         for (const intWell of wellBlock) {
 
           const possibleLocs = this.findAvailableIntermediates(compoundId, concInfo)
@@ -240,7 +233,6 @@ export class EchoCalculator {
             compoundName: compoundId
           };
 
-          // Update cache
           const cacheArr = this.intermediateWellCache.get(compoundId)!.get(intConc) || [];
           const arrIdx = cacheArr.findIndex(e => e.barcode === transferStep.destinationBarcode);
           if (arrIdx > -1) {
@@ -386,12 +378,11 @@ export class EchoCalculator {
     );
 
     for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex++) {
-      // Clear the location cache when starting a new replicate
       this.patternLocationCache.clear();
 
       const plateGroup = destinationPlateGroups[replicateIndex];
 
-      // Process treatments
+      //treatments
       for (const [compoundId, compoundGroups] of this.echoPreCalc.srcCompoundInventory) {
         for (const [patternName, compoundGroup] of compoundGroups) {
           const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName);
@@ -408,7 +399,7 @@ export class EchoCalculator {
         }
       }
 
-      // Process combinations
+      //combinations
       for (const [patternName, dilutionPattern] of this.echoPreCalc.dilutionPatterns) {
         if (dilutionPattern.type == 'Combination') {
           const comboCompounds = compoundIdsWithPattern(this.echoPreCalc.srcCompoundInventory, patternName);

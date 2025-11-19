@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card } from 'react-bootstrap';
 import PlotFigure from './PlotFigure';
 import * as Plot from "@observablehq/plot";
@@ -11,40 +11,33 @@ interface ScatterPlotProps {
 }
 
 const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
-  const [scatterNode, setScatterNode] = useState<HTMLDivElement | null>(null)
-  const [dimensions, setDimensions] = useState({ width: 785, height: 785 })
+  const scatterNode = useRef(null)
+  const [dimensions, setDimensions] = useState({ width: 100, height: 100 })
 
-  const scatterRef = useCallback((node: HTMLDivElement) => {
-    if (node !== null) {
-      setScatterNode(node);
+  useEffect(() => {
+    if (scatterNode.current) {
+      const observer = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
+          });
+        }
+      });
+
+      observer.observe(scatterNode.current);
+
+      return () => {
+        observer.disconnect();
+      };
     }
   }, []);
 
-  useEffect(() => {
-    if (scatterNode) {
-      const updateDimensions = () => {
-        const rect = scatterNode.getBoundingClientRect();
-        if (rect.height != 0 && rect.width != 0) { //when changing tabs dimensions become zero, forcing a rerender and producing an error
-          setDimensions({
-            width: rect.width,
-            height: rect.height
-          });
-        }
-      };
-      updateDimensions();
-      const resizeObserver = new ResizeObserver(updateDimensions);
-      resizeObserver.observe(scatterNode);
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, [scatterNode])
-
   function getColor(controlType: string): string {
     switch (controlType) {
-      case 'MinCtrl': return '#dc2626'; // red
-      case 'MaxCtrl': return '#2563eb'; // blue
-      default: return '#6b7280'; // grey
+      case 'MinCtrl': return '#dc2626';
+      case 'MaxCtrl': return '#2563eb';
+      default: return '#6b7280';
     }
   }
 
@@ -83,7 +76,6 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
     );
   }
 
-  // Add sequential index for x-axis to avoid gaps
   const plotData = sPData.map((point, index) => {
     const data: any = {
       ...point,
@@ -94,21 +86,23 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
   });
 
   return (
-    <Card className="mb-3" style={{ border: "2px solid #adb5bd" }}>
-      <Card.Header className='bg-light p-1'>
+    <Card className="flex-grow-1 page-card">
+      <Card.Header className='bg-light'>
         <div className="d-flex align-items-center">
           <span><strong>Well Data</strong> ({sPData.length} wells)</span>
         </div>
       </Card.Header>
-      <Card.Body ref={scatterRef}>
+      <Card.Body ref={scatterNode} style={{ minHeight: 150 }}>
         <PlotFigure
           options={{
             width: dimensions.width,
-            height: Math.min(dimensions.width, 600),
+            height: dimensions.height,
             marginLeft: 70,
             marginBottom: 60,
+            marginRight: 20,
             style: {
-              fontSize: "12px"
+              fontSize: "12px",
+              maxWidth: "none",
             },
             y: {
               domain: [yLo, yHi],

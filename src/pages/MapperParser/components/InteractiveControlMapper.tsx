@@ -62,7 +62,6 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     colorMap: colorMap
   };
 
-  // Calculate coordinates relative to the plate container instead of the page
   const getRelativeCoordinates = (e: React.MouseEvent): Point => {
     if (plateContainerRef.current) {
       const containerRect = plateContainerRef.current.getBoundingClientRect();
@@ -97,13 +96,11 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
   const handleMouseUp = (e: React.MouseEvent) => {
     if (dragging) {
       setDragging(false);
-      // For well selection, we still need to use the original method that works with absolute coordinates
       const absoluteStart = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
       const absoluteEnd = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
 
       const relativeEnd = getRelativeCoordinates(e);
 
-      // Convert back to absolute coordinates for well selection
       const containerRect = plateContainerRef.current?.getBoundingClientRect();
       if (containerRect) {
         absoluteStart.x = startPoint.x + containerRect.left + window.scrollX;
@@ -178,7 +175,7 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
         try {
           const wells = newPlate.getSomeWells(control.wells);
           wells.forEach(well => {
-            well.applyPattern(control.type, 1); // Concentration doesn't matter for visualization
+            well.applyPattern(control.type, 1);
           });
         } catch (error) {
           console.warn(`Invalid well range for ${control.type}: ${control.wells}`);
@@ -198,7 +195,6 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     const existingControlIndex = definedControls.findIndex(c => c.type === selectedControlType);
 
     if (existingControlIndex >= 0) {
-      // Update existing control
       const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id)
       const wellBlock = formatWellBlock([...selectedWells, ...oldWellIds])
       const updatedControls = [...definedControls];
@@ -208,7 +204,6 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
       };
       setDefinedControls(updatedControls);
     } else {
-      // Add new control
       const wellBlock = formatWellBlock(selectedWells);
       setDefinedControls(prev => [...prev, {
         type: selectedControlType,
@@ -267,7 +262,7 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
         try {
           const wells = newPlate.getSomeWells(control.wells);
           wells.forEach(well => {
-            well.applyPattern(control.type, 1); // Concentration doesn't matter for visualization
+            well.applyPattern(control.type, 1);
           });
         } catch (error) {
           console.warn(`Invalid well range for ${control.type}: ${control.wells}`);

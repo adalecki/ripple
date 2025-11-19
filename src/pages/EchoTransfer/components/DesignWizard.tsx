@@ -87,7 +87,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     setDragging(true);
     const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
     setStartPoint(start);
-    setEndPoint(start) // Initially, endPoint is the same as startPoint
+    setEndPoint(start)
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -284,16 +284,17 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
   }, [patterns, patternPlate.rows, patternPlate.columns]);
 
   return (
-    <Container fluid className='noselect'>
+    <Container fluid className='noselect h-100 pb-2'>
       <div
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        className='h-100'
       >
-        <Row>
-          <Col md="3">
+      <Row className='h-100' style={{ minHeight: 0 }}>
+        <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
             <PatternManager />
           </Col>
-          <Col md="7">
+          <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
             <PlateView
               plate={patternPlate}
               view='design'

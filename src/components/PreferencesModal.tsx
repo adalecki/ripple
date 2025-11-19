@@ -18,10 +18,8 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
   const [selectedCategory, setSelectedCategory] = useState<string>(PREFERENCES_CONFIG[0].id);
   const { preferences, updatePreferences, resetPreferences } = usePreferences();
 
-  // Maintain temporary state while editing
   const [tempPreferences, setTempPreferences] = useState<PreferencesState>(() => ({ ...preferences }));
 
-  // Reset temp preferences when modal opens
   React.useEffect(() => {
     if (show) {
       setTempPreferences({ ...preferences });
@@ -41,7 +39,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
   };
 
   const handleCancel = () => {
-    setTempPreferences({ ...preferences }); // Reset temp state
+    setTempPreferences({ ...preferences });
     onHide();
   };
 

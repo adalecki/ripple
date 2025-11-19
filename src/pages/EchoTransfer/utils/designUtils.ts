@@ -14,7 +14,6 @@ export function generateExcelTemplate(patterns: Pattern[]) {
       Replicates: pattern.type === 'Unused' ? '' : pattern.replicates,
     };
 
-    // Add concentration columns up to Conc20
     for (let i = 1; i <= 20; i++) {
       baseData[`Conc${i}`] = pattern.type === 'Unused' ? null : (pattern.concentrations[i - 1] || null);
     }

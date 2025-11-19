@@ -76,7 +76,6 @@ const Results: React.FC = () => {
 
   const filteredSPData = useMemo(() => {
     if (options.showAllWells) {
-      // Include all single points plus all DRC points
       const allDRCPoints = curveData.flatMap(curve => 
         curve.points.map(point => ({
           controlType: 'None' as const,
@@ -90,16 +89,15 @@ const Results: React.FC = () => {
       );
       return [...sPData, ...allDRCPoints];
     }
-    // Only show controls and single points (exclude DRC points)
     return sPData;
   }, [sPData, curveData, options.showAllWells]);
 
   return (
-    <Container fluid className="h-100" >
-      <Row className="h-100">
+    <Container fluid className="h-100 pb-2">
+      <Row className="h-100" style={{ minHeight: 0}}>
         <Col
           md="4"
-          className="d-flex flex-column h-100"
+          className="d-flex flex-column h-100 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}
         >
           <PlateResultsCard
             plate={plate}
@@ -111,13 +109,14 @@ const Results: React.FC = () => {
             showExportButton={showExportButton}
           />
           
-          <ScatterPlot 
+          <ScatterPlot
+            key={`${plate.id}-${filteredSPData.length}`}
             sPData={filteredSPData} 
             yLo={yLo} 
             yHi={yHi} 
           />
         </Col>
-        <Col md="8" className="d-flex h-100">
+        <Col md="8" className="d-flex h-100" style={{ scrollbarGutter: 'stable' }}>
           <TreatmentCurves 
             plate={plate} 
             curveData={curveData} 

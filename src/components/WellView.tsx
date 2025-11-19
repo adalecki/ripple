@@ -14,7 +14,7 @@ interface WellProps {
 
 const WellView = React.forwardRef<HTMLDivElement, WellProps>(
   ({ well, bgColors, wellId, onMouseEnter, onMouseLeave, onClickMask, isSelected, blockBorders }, ref) => {
-    const classNames = `well ${isSelected ? 'well-highlighted' : ''} ${well.getIsUnused() ? 'well-unused' : ''}`; // NEW
+    const classNames = `well ${isSelected ? 'well-highlighted' : ''} ${well.getIsUnused() ? 'well-unused' : ''}`;
 
     const style = '3px solid rgb(0, 0, 0) '
 

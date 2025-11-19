@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import '../css/FormField.css'
 
-export type FormFieldType = 'text' | 'number' | 'select' | 'switch' | 'file';
+export type FormFieldType = 'text' | 'number' | 'select' | 'switch';
 
 export interface FormFieldOption {
   value: string | number;
@@ -22,13 +22,12 @@ export interface FormFieldProps {
   options?: FormFieldOption[];
   unit?: string | React.ReactNode;
   step?: number;
-  accept?: string;
   className?: string;
   error?: string;
-  debounce?: number; 
+  debounce?: number;
 }
 
-export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
+export const FormField: React.FC<FormFieldProps> =
   ({
     id,
     name,
@@ -42,20 +41,17 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     options = [],
     unit,
     step,
-    accept,
     className = '',
     error,
     debounce
-  }, ref) => {
+  }) => {
     const [internalValue, setInternalValue] = useState(value);
     const [debouncedValue] = useDebounce(internalValue, debounce || 0);
 
-    // Update internal value when external value changes
     useEffect(() => {
       setInternalValue(value);
     }, [value]);
 
-    // Call onChange when debounced value changes (only if debouncing is enabled)
     useEffect(() => {
       if (debounce && debouncedValue !== value) {
         onChange(debouncedValue);
@@ -69,7 +65,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             typeof options[0].value === 'number') ? (!isNaN(parseFloat(e.target.value)) ? parseFloat(e.target.value) : '') :
           e.target.type === 'file' ? (e.target as HTMLInputElement).files :
             e.target.value;
-      
+
       if (debounce) {
         setInternalValue(newValue);
       } else {
@@ -136,21 +132,6 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             </div>
           );
 
-        case 'file':
-          return (
-            <input
-              ref={ref}
-              type="file"
-              id={id}
-              name={name}
-              onChange={handleInputChange}
-              required={required}
-              disabled={disabled}
-              accept={accept}
-              className="form-control"
-            />
-          );
-
         default:
           return (
             <input
@@ -168,7 +149,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       }
     };
 
-    const baseClassName = `form-field ${type === 'switch' ? 'form-field-switch' : ''} ${type === 'file' ? 'form-field-file' : ''} ${className}`.trim();
+    const baseClassName = `form-field ${type === 'switch' ? 'form-field-switch' : ''} ${className}`.trim();
 
     return type === 'switch' ? (
       <div className={baseClassName}>
@@ -185,5 +166,4 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
         {error && <div className="form-field-error">{error}</div>}
       </div>
     );
-  }
-);
+  };

@@ -29,7 +29,8 @@
 }
 
 .editable-value-table .label {
-  padding: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   color: #6c757d;
   font-size: 0.9rem;
 }
@@ -60,4 +61,14 @@
   font-size: 0.9rem;
   font-weight: 600;
   border-bottom: 2px solid #dee2e6;
+  padding: 0;
+}
+
+.editable-value-table thead th:first-child {
+  padding-left: 4px;
+}
+
+.editable-value-table thead th:nth-child(2) {
+  text-align: end;
+  padding-right: 4px;
 }

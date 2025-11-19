@@ -37,9 +37,7 @@ export class CheckpointTracker {
 
   clone(): CheckpointTracker {
         const clonedTracker = new CheckpointTracker();
-        // Deep clone the checkpoints map
         this.checkpoints.forEach((value, key) => {
-            // Ensure 'message' array is also cloned
             clonedTracker.checkpoints.set(key, { ...value, message: [...value.message] });
         });
         return clonedTracker;

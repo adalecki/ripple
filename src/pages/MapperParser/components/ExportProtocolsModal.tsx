@@ -1,4 +1,3 @@
-// src/pages/MapperParser/components/ExportProtocolsModal.tsx
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ListGroup } from 'react-bootstrap';
 import { Download } from 'lucide-react';
@@ -21,7 +20,6 @@ const ExportProtocolsModal: React.FC<ExportProtocolsModalProps> = ({
 
   useEffect(() => {
     if (show) {
-      // Reset selection when modal opens
       setSelectedProtocols(new Set(protocols.map(p => p.id)));
       setSelectAll(true);
     }
