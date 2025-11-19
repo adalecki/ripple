@@ -12,7 +12,7 @@
 }
 
 .info-tooltip {
-  position: absolute;
+  position: fixed;
   border: 1px solid #dee2e6;
   background-color: #f8f9fa;
   padding: 10px;

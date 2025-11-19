@@ -8,7 +8,6 @@ interface DilutionGraphProps {
   points: Point[];
   analysisResults: Map<number, TransferMap[]>;
   allowableError: number;
-  width?: number;
 }
 
 const generateLogTicks = (min: number, max: number): number[] => {
@@ -42,35 +41,35 @@ const generateLogTicks = (min: number, max: number): number[] => {
 const DilutionGraph: React.FC<DilutionGraphProps> = ({
   points,
   analysisResults,
-  allowableError,
-  width: containerWidth = 600
+  allowableError
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [dimensions, setDimensions] = useState({
-    width: containerWidth,
-    height: Math.min(containerWidth * 0.6, 400)
-  });
+  const cardNode = useRef(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (cardNode.current) {
+      const observer = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
+          });
+        }
+      });
+
+      observer.observe(cardNode.current);
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, []);
 
   const chartMargins = { top: 20, right: 100, bottom: 40, left: 60 };
 
   useEffect(() => {
-    const updateDimensions = () => {
-      if (svgRef.current) {
-        const newWidth = svgRef.current.parentElement?.clientWidth || containerWidth;
-        setDimensions({
-          width: newWidth,
-          height: Math.min(newWidth * 0.6, 400)
-        });
-      }
-    };
-
-    window.addEventListener('resize', updateDimensions);
-    updateDimensions();
-
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, [containerWidth]);
-
-  useEffect(() => {
+    console.log(dimensions)
     if (!svgRef.current || dimensions.width === 0 || points.length === 0) return;
 
     const svg = select(svgRef.current);
@@ -121,6 +120,8 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     const rangesGroup = g.append('g').attr('class', 'ranges');
     points.forEach((point, _) => {
       if (point.concentration !== 0) {
+        console.log(point.concentration, xScale(point.concentration * (1 + allowableError)), xScale(point.concentration * (1 - allowableError)))
+        console.log(allowableError)
         rangesGroup.append('rect')
           .attr('x', xScale(point.concentration * (1 - allowableError)))
           .attr('y', 0)
@@ -220,13 +221,13 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
   }, [dimensions, points, analysisResults]);
 
   return (
-    <Card>
+    <Card style={{width: '100%', maxHeight: 900}}>
       <Card.Header>
         <Row>
           <h5 className="mb-0">Dilution Curve</h5>
         </Row>
       </Card.Header>
-      <Card.Body>
+      <Card.Body ref={cardNode} style={{ minHeight: 150, maxHeight: 800, overflow: 'hidden' }}>
         <svg
           ref={svgRef}
           width={dimensions.width}

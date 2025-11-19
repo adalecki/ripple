@@ -8,10 +8,10 @@ export interface InfoTooltipProps {
   className?: string;
 }
 
-const InfoTooltip: React.FC<InfoTooltipProps> = ({ 
-  text, 
-  size = 16, 
-  className = '' 
+const InfoTooltip: React.FC<InfoTooltipProps> = ({
+  text,
+  size = 16,
+  className = ''
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -33,9 +33,9 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
   const updatePosition = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const tooltipX = rect.right + window.scrollX + 8;
-    const tooltipY = rect.top + window.scrollY;
-    
+    const tooltipX = rect.right + 8;
+    const tooltipY = rect.top;
+
     setPosition({ x: tooltipX, y: tooltipY });
   };
 
@@ -49,15 +49,15 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
       >
         <Info size={size} />
       </span>
-      
+
       {isVisible && (
-        <div 
-          className="info-tooltip" 
+        <div
+          className="info-tooltip"
           style={{
-            top: position.y, 
+            top: position.y,
             left: position.x,
-            transform: window.innerWidth - position.x > 250 
-              ? 'translate(0%,-100%)' 
+            transform: window.innerWidth - position.x > 250
+              ? 'translate(0%,-100%)'
               : 'translate(-100%, -50%)'
           }}
         >

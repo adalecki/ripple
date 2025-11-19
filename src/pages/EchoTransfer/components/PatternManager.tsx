@@ -63,33 +63,7 @@ const PatternManager: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    if (editingPattern) {
-      console.log(e)
-      let value: any = e.target.value;
-      if (e.target.name === 'replicates') { value = parseInt(e.target.value) }
-      if (e.target.name === 'direction') { value = [e.target.value] }
-      if (e.target.name === 'type' && value === 'Unused') {
-        setEditingPattern(new Pattern({
-          ...editingPattern,
-          [e.target.name]: value,
-          concentrations: [],
-          replicates: 1,
-          direction: ['LR']
-        }));
-      } else if (e.target.name === 'type' && editingPattern.type === 'Unused') {
-        setEditingPattern(new Pattern({
-          ...editingPattern,
-          [e.target.name]: value,
-          concentrations: [null]
-        }));
-      } else {
-        setEditingPattern(new Pattern({ ...editingPattern, [e.target.name]: value }));
-      }
-    }
-  };
-
-  const handleFieldChange = (fieldName: string, value: number | string) => {
+  const handleFieldChange = (fieldName: string, value: number | string | string[]) => {
     if (editingPattern) {
 
       if (fieldName === 'type' && value === 'Unused') {
@@ -207,7 +181,7 @@ const PatternManager: React.FC = () => {
                   type='select'
                   label='Direction'
                   value={editingPattern.direction}
-                  onChange={(value) => handleFieldChange("direction", value)}
+                  onChange={(value) => handleFieldChange("direction", [value])}
                   required={true}
                   disabled={!isEditing}
                   options={[
@@ -217,13 +191,13 @@ const PatternManager: React.FC = () => {
                     { label: "Bottom to Top", value: "BT" }
                   ]}
                 />
-                <div className='d-flex justify-content-start align-items-center'>
-                <Form.Label>Color</Form.Label>
-                <div
-                  className="color-preview"
-                  style={{ backgroundColor: editingPattern.color }}
-                  onClick={() => isEditing && setIsPickingColor(!isPickingColor)}
-                />
+                <div className='form-field'>
+                  <div className='form-label'>Color</div>
+                  <div
+                    className="color-preview form-field-input"
+                    style={{ backgroundColor: editingPattern.color }}
+                    onClick={() => isEditing && setIsPickingColor(!isPickingColor)}
+                  />
                 </div>
                 {isPickingColor && (
                   <div className="mb-3">
@@ -241,99 +215,6 @@ const PatternManager: React.FC = () => {
                     disabled={!isEditing}
                   />
                 </div>
-              </>
-            )}
-          </Form>
-
-
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={editingPattern.name}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </Form.Group>
-
-            <div className="d-flex gap-3 mb-3">
-              <Form.Group className="flex-fill">
-                <Form.Label>Type</Form.Label>
-                <Form.Select
-                  name="type"
-                  value={editingPattern.type}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                >
-                  <option value="Control">Control</option>
-                  <option value="Treatment">Treatment</option>
-                  <option value="Unused">Unused</option>
-                </Form.Select>
-              </Form.Group>
-
-              {editingPattern.type !== 'Unused' && (
-                <Form.Group className="flex-fill">
-                  <Form.Label>Replicates</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="replicates"
-                    value={editingPattern.replicates}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </Form.Group>
-              )}
-            </div>
-
-            {editingPattern.type !== 'Unused' && (
-              <>
-                <div className="d-flex gap-3 mb-3">
-                  <Form.Group className="flex-fill">
-                    <Form.Label>Direction</Form.Label>
-                    <Form.Select
-                      name="direction"
-                      value={editingPattern.direction[0]}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                    >
-                      <option value="LR">Left to Right</option>
-                      <option value="RL">Right to Left</option>
-                      <option value="TB">Top to Bottom</option>
-                      <option value="BT">Bottom to Top</option>
-                    </Form.Select>
-                  </Form.Group>
-
-                  <Form.Group className="flex-fill">
-                    <Form.Label>Color</Form.Label>
-                    <div
-                      className="color-preview"
-                      style={{ backgroundColor: editingPattern.color }}
-                      onClick={() => isEditing && setIsPickingColor(!isPickingColor)}
-                    />
-                  </Form.Group>
-                </div>
-
-                {isPickingColor && (
-                  <div className="mb-3">
-                    <HslStringColorPicker
-                      color={editingPattern.color}
-                      onChange={handleColorChange}
-                    />
-                  </div>
-                )}
-
-                <Form.Group>
-                  <Form.Label>Concentrations</Form.Label>
-                  <div className="concentration-table-container">
-                    <ConcentrationTable
-                      concentrations={editingPattern.concentrations}
-                      onChange={handleConcentrationChange}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </Form.Group>
               </>
             )}
           </Form>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 import { Point } from '../types/dilutionTypes';
 import EditableValueTable, { TableValue } from '../../../components/EditableValueTable';
 
@@ -32,7 +32,7 @@ const DilutionPointsInput: React.FC<DilutionPointsInputProps> = ({
     onPointsChange([
       ...points,
       {
-        concentration: (points.length > 0 ? Math.round((lastPoint.concentration / 3) * 100000)/100000 : 30),
+        concentration: (points.length > 0 ? Math.round((lastPoint.concentration / 3) * 100000) / 100000 : 30),
         index: points.length
       }
     ]);
@@ -47,21 +47,17 @@ const DilutionPointsInput: React.FC<DilutionPointsInputProps> = ({
   };
 
   return (
-    <Card>
-      <Card.Header>
-        <Row>
-          <Col md="10"><h5 className="mb-0">Desired Points</h5></Col>
-          <Col md="2">
-            <button
-              className="btn btn-sm btn-outline-primary mt-2"
-              onClick={handleAdd}
-            >
-              +
-            </button>
-          </Col>
-        </Row>
+    <Card >
+      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+        <h5 className="mb-0">Desired Points</h5>
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={handleAdd}
+        >
+          +
+        </button>
       </Card.Header>
-      <Card.Body>
+      <Card.Body className='p-1'>
         <EditableValueTable
           tableId='points'
           values={tableValues}

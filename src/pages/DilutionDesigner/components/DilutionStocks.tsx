@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 import { DilutionSettings } from '../types/dilutionTypes';
 import EditableValueTable, { TableValue } from '../../../components/EditableValueTable';
 
@@ -34,20 +34,16 @@ const DilutionStocksInput: React.FC<DilutionStocksInputProps> = ({
 
   return (
     <Card>
-      <Card.Header>
-        <Row>
-          <Col md="10"><h5 className="mb-0">Stock Concentrations</h5></Col>
-          <Col md="2">
-            <button
-              className="btn btn-sm btn-outline-primary mt-2"
-              onClick={handleAdd}
-            >
-              +
-            </button>
-          </Col>
-        </Row>
+      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+        <h5 className="mb-0">Stock Concentrations</h5>
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={handleAdd}
+        >
+          +
+        </button>
       </Card.Header>
-      <Card.Body>
+      <Card.Body className='p-1'>
         <EditableValueTable
           tableId='stocks'
           values={tableValues}

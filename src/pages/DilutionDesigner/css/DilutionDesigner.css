@@ -1,101 +1,14 @@
 .dilution-designer {
+  display: flex;
+  flex-direction: column;
   height: calc(100vh - var(--navbar-height));
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-}
 
-/* Make sure the row takes full height */
-.dilution-designer .row {
-  height: 100%;
-  margin: 0;
 }
-
-/* Ensure columns take full height */
 .designer-column {
-  padding: 0 0.5rem;
-  height: 100%; 
-}
-
-.middle-column {
-  display: flex;
   flex-direction: column;
-  gap: 1rem;
-  overflow: hidden; 
-}
-
-.middle-section {
-  min-height: 0;
   display: flex;
-}
-
-.middle-section:first-child {
-  height: 60%;
-  flex: 3; 
-}
-
-.middle-section:last-child {
-  height: 40%;
-  flex: 2; 
-}
-
-.middle-section .card-header {
-  flex-shrink: 0;
-}
-
-.middle-section .card-body {
-  flex: 1;
+  height: 100%;
   overflow-y: auto;
-  min-height: 0;
-}
-.dilution-designer .card-header {
-  height: 65px; 
-  display: flex;
-  align-items: center;
-}
-
-
-/* For the points header with add button */
-.dilution-designer .card-header .row {
-  width: 100%;
-  margin: 0;
-}
-
-.dilution-designer .card-header .btn {
-  margin-top: 0 !important;  /* Override existing mt-2 */
-}
-
-.card {
-  border-radius: 8px;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12); 
-  width: 100%;
-}
-
-.card-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  padding: 0.75rem 0.75rem;
-}
-
-.card-body {
-  padding: 0.25rem 
-}
-
-/* Scrollbar styles */
-.middle-section .card-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.middle-section .card-body::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.middle-section .card-body::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.middle-section .card-body::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  scrollbar-gutter: stable;
+  gap: 0.5rem;
 }

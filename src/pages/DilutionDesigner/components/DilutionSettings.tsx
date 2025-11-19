@@ -1,7 +1,8 @@
 import React from 'react';
-import { Card, Row } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 import { DilutionSettings, DilutionSettingsErrors } from '../types/dilutionTypes';
 import { FormField } from '../../../components/FormField';
+import InfoTooltip from '../../../components/InfoTooltip';
 
 interface DilutionSettingsInputProps {
   settings: DilutionSettings;
@@ -15,41 +16,12 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
   errors
 }) => {
   return (
-    <Card className="mb-4">
-      <Card.Header>
-        <Row>
-          <h5 className="mb-0">Transfer Settings</h5>
-        </Row>
+    <Card>
+      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+        <h5 className="mb-0">Transfer Settings</h5>
+        <InfoTooltip text='To change transfer volume or droplet size, change your preferences (gear in the top right)' />
       </Card.Header>
-      <Card.Body>
-        <FormField
-          id="maxTransferVolume"
-          name="maxTransferVolume"
-          type="number"
-          label="Max Transfer Volume"
-          value={settings.maxTransferVolume}
-          onChange={(value) => onSettingChange('maxTransferVolume', value)}
-          required={true}
-          unit="nL"
-          error={errors.maxTransferVolume}
-        />
-
-        <FormField
-          id="dropletSize"
-          name="dropletSize"
-          type="select"
-          label="Droplet Size"
-          value={settings.dropletSize}
-          onChange={(value) => onSettingChange('dropletSize', value)}
-          required={true}
-          unit="nL"
-          options={[
-            { value: 2.5, label: '2.5' },
-            { value: 25, label: '25' }
-          ]}
-          error={errors.dropletSize}
-        />
-
+      <Card.Body className='p-1'>
         <FormField
           id="dmsoLimit"
           name="dmsoLimit"
@@ -60,18 +32,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           step={0.001}
           error={errors.dmsoLimit}
-        />
-
-        <FormField
-          id="backfillVolume"
-          name="backfillVolume"
-          type="number"
-          label="Backfill Volume"
-          value={settings.backfillVolume}
-          onChange={(value) => onSettingChange('backfillVolume', value)}
-          required={true}
-          unit="µL"
-          error={errors.backfillVolume}
+          className='mb-2'
         />
 
         <FormField
@@ -84,6 +45,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           unit="µL"
           error={errors.assayVolume}
+          className='mb-2'
         />
 
         <FormField
@@ -96,6 +58,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           step={0.05}
           error={errors.allowableError}
+          className='mb-2'
         />
 
         <FormField
@@ -106,7 +69,23 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           value={settings.useIntConcs}
           onChange={(value) => onSettingChange('useIntConcs', value)}
           error={errors.useIntConcs}
+          className='mb-2'
         />
+
+        <FormField
+          id="backfillVolume"
+          name="backfillVolume"
+          type="number"
+          label="Backfill Volume"
+          value={settings.backfillVolume}
+          onChange={(value) => onSettingChange('backfillVolume', value)}
+          required={true}
+          unit="µL"
+          error={errors.backfillVolume}
+          disabled={!settings.useIntConcs}
+          className='mb-2'
+        />
+
         <FormField
           id="numIntConcs"
           name="numIntConcs"
@@ -117,6 +96,8 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           step={1}
           error={errors.numIntConcs}
+          disabled={!settings.useIntConcs}
+          className='mb-2'
         />
       </Card.Body>
     </Card>
