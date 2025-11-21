@@ -1,6 +1,6 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
-import { formatWellBlock, getWellFromBarcodeAndId, mapWellsToConcentrations } from '../utils/plateUtils';
+import { formatWellBlock, getWellFromBarcodeAndId, mapWellsToConcentrations } from '../../../utils/plateUtils';
 import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
 import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';

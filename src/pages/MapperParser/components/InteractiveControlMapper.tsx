@@ -3,11 +3,11 @@ import { Modal, Button, Form, Alert, Badge, Container, Col, Row } from 'react-bo
 import { ControlDefinition, ControlType, CONTROL_TYPES } from '../../../types/mapperTypes';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import PlateView from '../../../components/PlateView';
-import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
+import { ColorConfig } from '../../../utils/wellColors';
 import { HslStringType } from '../../../classes/PatternClass';
-import { formatWellBlock, getCoordsFromWellId, numberToLetters } from '../../EchoTransfer/utils/plateUtils';
+import { formatWellBlock, getCoordsFromWellId, numberToLetters } from '../../../utils/plateUtils';
 import '../../../css/InteractiveControlMapper.css';
-import { checkWellsInSelection, Point } from '../../EchoTransfer/utils/designUtils';
+import { checkWellsInSelection } from '../../../utils/designUtils';
 
 interface InteractiveControlMapperProps {
   show: boolean;
@@ -32,22 +32,26 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
 }) => {
   const [tempPlate, setTempPlate] = useState(() => new Plate({ plateSize: plateSize.toString() as PlateSize }));
   const [selectedWells, setSelectedWells] = useState<string[]>([]);
-  const [dragging, setDragging] = useState(false);
-  const [startPoint, setStartPoint] = useState<Point>({ x: 0, y: 0 });
-  const [endPoint, setEndPoint] = useState<Point>({ x: 0, y: 0 });
   const [selectedControlType, setSelectedControlType] = useState<ControlType>('MaxCtrl');
   const [definedControls, setDefinedControls] = useState<ControlDefinition[]>([...currentControls]);
   const [error, setError] = useState<string | null>(null);
 
-  const wellsRef = useRef<(HTMLDivElement)[]>([]);
-  const plateContainerRef = useRef<HTMLDivElement>(null);
+
+  const selectionRef = useRef<HTMLDivElement | null>(null);
+  const dragState = useRef({ dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
 
   useEffect(() => {
-    document.addEventListener('mousedown', (e) => handlePageDblClick(e));
+    document.addEventListener('mousedown', handlePageDblClick, { passive: true });
     return () => {
-      document.removeEventListener('mousedown', (e) => handlePageDblClick(e));
+      document.removeEventListener('mousedown', handlePageDblClick);
     };
   }, []);
+
+  const handlePageDblClick = useCallback((e: any) => {
+    if (e.detail > 1) {
+      setSelectedWells(prev => (prev.length ? [] : prev));
+    }
+  }, [])
 
   const colorMap = useMemo(() => {
     const map = new Map<string, HslStringType>();
@@ -62,110 +66,109 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     colorMap: colorMap
   };
 
-  const getRelativeCoordinates = (e: React.MouseEvent): Point => {
-    if (plateContainerRef.current) {
-      const containerRect = plateContainerRef.current.getBoundingClientRect();
-      return {
-        x: e.clientX - containerRect.left,
-        y: e.clientY - containerRect.top
-      };
-    }
-    return { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-  };
-
-  const handlePageDblClick = (e: any) => {
-    if (e.detail > 1) {
-      setSelectedWells([])
-    }
-  }
-
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setDragging(true);
-    const start = getRelativeCoordinates(e);
-    setStartPoint(start);
-    setEndPoint(start);
+    e.preventDefault()
+    const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+
+    dragState.current.dragging = true;
+    dragState.current.startX = start.x;
+    dragState.current.startY = start.y
+    dragState.current.endX = start.x
+    dragState.current.endY = start.y
+    const el = selectionRef.current;
+    if (el) {
+      el.style.display = 'block';
+      el.style.left = `${start.x}px`;
+      el.style.top = `${start.y}px`;
+      el.style.width = '0px';
+      el.style.height = '0px';
+      el.className = 'selection-rectangle';
+    }
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragging) {
-      setEndPoint(getRelativeCoordinates(e));
+    if (!dragState.current.dragging) return
+    const end = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+    dragState.current.endX = end.x
+    dragState.current.endY = end.y
+    const left = Math.min(dragState.current.startX, dragState.current.endX)
+    const top = Math.min(dragState.current.startY, dragState.current.endY)
+    const width = Math.abs(dragState.current.startX - dragState.current.endX)
+    const height = Math.abs(dragState.current.startY - dragState.current.endY)
+    const el = selectionRef.current;
+    if (el) {
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
     }
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (dragging) {
-      setDragging(false);
-      const absoluteStart = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-      const absoluteEnd = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+    if (!dragState.current.dragging) return
+    dragState.current.dragging = false
+    const el = selectionRef.current;
+    if (el) el.style.display = 'none';
 
-      const relativeEnd = getRelativeCoordinates(e);
-
-      const containerRect = plateContainerRef.current?.getBoundingClientRect();
-      if (containerRect) {
-        absoluteStart.x = startPoint.x + containerRect.left + window.scrollX;
-        absoluteStart.y = startPoint.y + containerRect.top + window.scrollY;
-        absoluteEnd.x = relativeEnd.x + containerRect.left + window.scrollX;
-        absoluteEnd.y = relativeEnd.y + containerRect.top + window.scrollY;
-      }
-
-      const wellArr = checkWellsInSelection(absoluteStart, absoluteEnd, wellsRef);
-      if (!e.shiftKey) {
-        setSelectedWells(wellArr);
-      } else {
-        setSelectedWells(prev => {
-          const newSelection = [...prev];
-          for (const wellId of wellArr) {
-            const idx = newSelection.indexOf(wellId);
-            if (idx > -1) {
-              newSelection.splice(idx, 1);
-            } else {
-              newSelection.push(wellId);
-            }
-          }
-          return newSelection;
-        });
-      }
+    const startWell = document.elementFromPoint(dragState.current.startX, dragState.current.startY)
+    if (startWell && startWell.closest("[data-view]")) {
+      const parentPlate = startWell.closest("[data-view]")
+      if (!parentPlate) return
+      const wells = parentPlate.querySelectorAll('[data-wellid]')
+      let wellArr = checkWellsInSelection({ x: dragState.current.startX, y: dragState.current.startY }, { x: dragState.current.endX, y: dragState.current.endY }, wells);
+      selectorHelper(e, wellArr, selectedWells, setSelectedWells)
     }
   };
 
-  const handleLabelClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const selectorHelper = useCallback((e: React.MouseEvent, wellArr: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) => {
+    let newSelection = [...selectedWells]
+    if (!e.shiftKey) {
+      setSelectedWells(wellArr)
+    }
+    else {
+      for (let wellId of wellArr) {
+        let idx = newSelection.indexOf(wellId)
+        if (idx > -1) {
+          newSelection.splice(idx, 1)
+        }
+        else {
+          newSelection.push(wellId)
+        }
+      }
+      setSelectedWells(newSelection)
+    }
+  }, [])
+
+  const handleLabelClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const newSelection = new Set<string>();
     const target = e.target as HTMLDivElement;
     const targetLabel = target.innerText;
-    const isRow = isNaN(parseInt(targetLabel));
-
-    const newSelection: string[] = [];
-    wellsRef.current.forEach(wellElement => {
-      if (wellElement) {
-        const wellId = wellElement.getAttribute('data-wellid');
-        if (!wellId) return;
-        const wellCoords = getCoordsFromWellId(wellId);
-        const shouldSelect = isRow
+    const parentPlate = target.closest("[data-view]")
+    if (!parentPlate) return
+    const wells = parentPlate.querySelectorAll('[data-wellid]')
+    wells.forEach(wellElement => {
+      if (!wellElement) return
+      const wellId = wellElement.getAttribute('data-wellid')
+      if (!wellId) return
+      if (target.className.includes('all-wells-container')) {
+        newSelection.add(wellId)
+      }
+      else {
+        const wellCoords = getCoordsFromWellId(wellId)
+        const shouldSelect = isNaN(parseInt(targetLabel))
           ? numberToLetters(wellCoords.row) === targetLabel
           : (wellCoords.col + 1).toString() === targetLabel;
 
         if (shouldSelect) {
-          newSelection.push(wellId);
+          newSelection.add(wellId);
         }
       }
-    });
-
-    if (!e.shiftKey) {
-      setSelectedWells(newSelection);
-    } else {
-      setSelectedWells(prev => {
-        const updatedSelection = new Set(prev);
-        for (const wellId of newSelection) {
-          if (updatedSelection.has(wellId)) {
-            updatedSelection.delete(wellId);
-          } else {
-            updatedSelection.add(wellId);
-          }
-        }
-        return Array.from(updatedSelection);
-      });
+    })
+    if (target.className.includes('all-wells-container') && Array.from(newSelection).length == selectedWells.length) {
+      newSelection.clear()
     }
-  }, []);
+    selectorHelper(e, Array.from(newSelection), selectedWells, setSelectedWells)
+  }
 
   function rebuildPlateFromControls(controls: ControlDefinition[]) {
     const newPlate = new Plate({ plateSize: plateSize.toString() as PlateSize });
@@ -220,19 +223,19 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
       setError('Please select wells first');
       return;
     }
-    
+
     const existingControlIndex = definedControls.findIndex(c => c.type === selectedControlType);
     if (existingControlIndex >= 0) {
       const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id);
       const remainingWellIds = oldWellIds.filter(i => !selectedWells.includes(i));
       const wellBlock = formatWellBlock(remainingWellIds);
-      
+
       const updatedControls = [...definedControls];
       updatedControls[existingControlIndex] = {
         ...updatedControls[existingControlIndex],
         wells: wellBlock
       };
-      
+
       setDefinedControls(updatedControls);
       rebuildPlateFromControls(updatedControls);
       setSelectedWells([]);
@@ -272,13 +275,6 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
 
     setTempPlate(newPlate);
   }, [definedControls, plateSize]);
-
-  const selectionStyle = dragging ? {
-    left: Math.min(startPoint.x, endPoint.x),
-    top: Math.min(startPoint.y, endPoint.y),
-    width: Math.abs(startPoint.x - endPoint.x),
-    height: Math.abs(startPoint.y - endPoint.y),
-  } : undefined;
 
   return (
     <Modal show={show} onHide={onHide} size="xl" className="interactive-control-mapper-modal">
@@ -359,29 +355,26 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
                 </div>
               </Col>
               <Col md="8">
-                <div ref={plateContainerRef} style={{ position: 'relative' }}>
-                  <PlateView
-                    plate={tempPlate}
-                    view="controlMapping"
-                    colorConfig={colorConfig}
-                    selectedWells={selectedWells}
-                    handleMouseDown={handleMouseDown}
-                    handleLabelClick={handleLabelClick}
-                    selectionStyle={selectionStyle}
-                    ref={wellsRef}
-                  />
-                </div>
+                <PlateView
+                  plate={tempPlate}
+                  view="controlMapping"
+                  colorConfig={colorConfig}
+                  selectedWells={selectedWells}
+                  handleMouseDown={handleMouseDown}
+                  handleLabelClick={handleLabelClick}
+                />
               </Col>
             </Row>
           </div>
         </Container>
+        <div ref={selectionRef} style={{ position: 'fixed', pointerEvents: 'none', display: 'none' }} />
       </Modal.Body>
 
       <Modal.Footer>
         <Button variant="outline-secondary" onClick={handleReset}>
           Reset to Original
         </Button>
-        <Button variant="secondary" onClick={() => {handleReset();onHide()}}>
+        <Button variant="secondary" onClick={() => { handleReset(); onHide() }}>
           Cancel
         </Button>
         <Button variant="primary" onClick={handleConfirm}>

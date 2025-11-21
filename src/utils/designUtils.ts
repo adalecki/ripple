@@ -1,6 +1,6 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
-import { Pattern } from '../../../classes/PatternClass';
-import { Plate } from '../../../classes/PlateClass';
+import { Pattern } from '../classes/PatternClass';
+import { Plate } from '../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
@@ -140,7 +140,7 @@ export function rectanglesOverlap(rect1: Rectangle, rect2: Rectangle): boolean {
       rect1.top > rect2.bottom);
   };
 
-export function checkWellsInSelection(startPoint: Point, endPoint: Point, wellsRef: React.MutableRefObject<HTMLDivElement[]>): string[] {
+export function checkWellsInSelection(startPoint: Point, endPoint: Point, wells: NodeListOf<Element>): string[] {
     const wellArr: string[] = [];
     const selectionRect: Rectangle = {
       left: Math.min(startPoint.x, endPoint.x),
@@ -148,7 +148,7 @@ export function checkWellsInSelection(startPoint: Point, endPoint: Point, wellsR
       right: Math.max(startPoint.x, endPoint.x),
       bottom: Math.max(startPoint.y, endPoint.y)
     };
-    wellsRef.current.forEach(wellElement => {
+    wells.forEach(wellElement => {
       if (wellElement) {
         const rect = wellElement.getBoundingClientRect();
         const wellRect: Rectangle = {

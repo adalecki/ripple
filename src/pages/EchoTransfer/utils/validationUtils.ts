@@ -2,7 +2,7 @@ import { utils, WorkBook, WorkSheet } from 'xlsx'
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { InputDataType } from './echoUtils';
 import { PreferencesState } from '../../../hooks/usePreferences';
-import { getCoordsFromWellId } from './plateUtils';
+import { getCoordsFromWellId } from '../../../utils/plateUtils';
 
 function arraysMatch(arr1: any[], arr2: any[]) {
   if (arr1.length !== arr2.length) return false

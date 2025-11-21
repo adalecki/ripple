@@ -13,7 +13,7 @@ import {
   modifyPlate,
   calculateBlockBorders,
   splitIntoBlocks
-} from "../plateUtils";
+} from "../../../../utils/plateUtils";
 import { Plate } from "../../../../classes/PlateClass";
 import { Pattern } from "../../../../classes/PatternClass";
 

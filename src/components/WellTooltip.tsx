@@ -1,5 +1,5 @@
 import React from 'react';
-import { Well } from '../classes/WellClass';
+import type { Well } from '../classes/WellClass';
 import '../css/WellTooltip.css'
 
 interface HoveredWellData {

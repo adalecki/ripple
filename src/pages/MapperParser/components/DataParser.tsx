@@ -5,9 +5,9 @@ import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context
 import { Protocol } from '../../../types/mapperTypes';
 import { parseDataFile, applyParsedDataToPlates, ParsedData, hasResponseData, getPlatesWithResponseData } from '../utils/parserUtils';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
-import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
+import { currentPlate } from '../../../utils/plateUtils';
 import PlateView from '../../../components/PlateView';
-import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
+import { ColorConfig } from '../../../utils/wellColors';
 import '../../../css/DataParser.css';
 import FileUploadCard from '../../../components/FileUploadCard';
 

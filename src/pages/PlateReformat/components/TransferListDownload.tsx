@@ -1,7 +1,5 @@
-import { Button, Container } from 'react-bootstrap';
-import JSZip from 'jszip';
-import { TransferStep } from '../classes/EchoCalculatorClass';
-import { getCoordsFromWellId } from '../../../utils/plateUtils';
+import { Button } from 'react-bootstrap';
+import { getCoordsFromWellId, type TransferStep } from '../../../utils/plateUtils';
 
 const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]>, splitOutputCSVs: boolean }) => {
 
@@ -32,54 +30,6 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
   }
 
   async function fetchForExport() {
-    if (settings.splitOutputCSVs) {
-      const zip = new JSZip();
-      const outputPrioSets = [[1], [2], [3,4,5]];
-      
-      for (const set of outputPrioSets) {
-        let steps: TransferStep[] = [];
-        
-        for (const prio of set) {
-          const prioSteps = settings.transferMap.get(prio);
-          if (prioSteps) {
-            steps = steps.concat(prioSteps);
-          }
-        }
-        
-        if (steps.length > 0) {
-          const rows = steps.map(step => rowColExport(step));
-          const csvContent = generateCSV(rows);
-          
-          let suffix = '';
-          switch (set[0]) {
-            case 1:
-              suffix = 'src-int1';
-              break;
-            case 2:
-              suffix = 'int1-int2';
-              break;
-            case 3:
-              suffix = 'all-dest';
-              break;
-            default:
-              suffix = 'all';
-          }
-          
-          zip.file(`transfer_list_${suffix}.csv`, csvContent);
-        }
-      }
-      
-      const content = await zip.generateAsync({ type: "blob" });
-      const url = window.URL.createObjectURL(content);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `transfer_lists_${Date.now()}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-    } else {
       let allSteps: TransferStep[] = [];
       for (const steps of settings.transferMap.values()) {
         allSteps = allSteps.concat(steps);
@@ -97,15 +47,12 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    }
   }
 
   return (
-    <Container>
       <Button onClick={fetchForExport} variant='success'>
         Export {settings.splitOutputCSVs ? 'Files' : 'File'}
       </Button>
-    </Container>
   );
 };
 

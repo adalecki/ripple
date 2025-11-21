@@ -66,8 +66,13 @@
 }
 
 .plate-grid-label {
-  text-align: center;
   width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: clamp(6px, 0.5vw, 12px);
 }
 
 .grid-container {
@@ -75,30 +80,42 @@
   grid-template-columns: auto 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "empty colLabels"
+    "allWells colLabels"
     "rowLabels wells";
-  gap: 4px;
+  gap: 2px;
+}
+
+.all-wells-container {
+  display: grid;
+  grid-area: allWells;
+  font-size: clamp(6px, 0.5vw, 12px);
+  border: 1px solid #000;
+  aspect-ratio: 1; 
+  color: transparent;
 }
 
 .col-labels-container {
   display: grid;
-  font-size: 0.7em;
   grid-area: colLabels;
-  white-space: nowrap;
-  justify-items: center;
 }
 
 .row-labels-container {
-  font-size: 0.7em;
+  display: grid; 
   grid-area: rowLabels;
-  display: grid;    
-  align-items: center;
 }
 
 .wells-container {
   grid-area: wells;
   display: grid;
-  width: 100%; 
-  height: 100%;
-  gap: 2px;
+  gap: 1px;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
 }

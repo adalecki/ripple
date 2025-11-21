@@ -5,8 +5,8 @@ import { CompoundInventory } from "../classes/EchoPreCalculatorClass";
 import { HslStringType } from "../../../classes/PatternClass";
 import { Plate, PlateSize } from "../../../classes/PlateClass";
 import { buildSrcCompoundInventory, analyzeDilutionPatterns, prepareSrcPlates, InputDataType, executeAndRecordTransfer } from "./echoUtils";
-import { generateCompoundColors } from "./wellColors";
-import { formatWellBlock } from "./plateUtils";
+import { generateCompoundColors } from "../../../utils/wellColors";
+import { formatWellBlock } from "../../../utils/plateUtils";
 
 export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStep[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
   const newPlates: { 'source': Plate[], 'intermediate': Plate[], 'destination': Plate[] } = {

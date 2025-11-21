@@ -1,6 +1,6 @@
-import { Plate } from "../../../classes/PlateClass";
-import { Well } from "../../../classes/WellClass";
-import { HslStringType, Pattern } from "../../../classes/PatternClass";
+import { Plate } from "../classes/PlateClass";
+import { Well } from "../classes/WellClass";
+import { HslStringType, Pattern } from "../classes/PatternClass";
 import * as d3 from 'd3'
 
 export interface HslType {
@@ -10,7 +10,7 @@ export interface HslType {
 }
 
 export interface ColorConfig {
-  scheme: 'compound' | 'pattern' | 'rawResponse' | 'normalizedResponse';
+  scheme: 'compound' | 'pattern' | 'rawResponse' | 'normalizedResponse' | 'custom';
   colorMap: Map<string, HslStringType>;
   maxConcentration?: number;
   responseRange?: { min: number; max: number };
@@ -59,6 +59,8 @@ export function wellColors(plate: Plate, config: ColorConfig): { wellId: string;
       case 'pattern':
         colors = getPatternColor(well, config);
         break;
+      case 'custom':
+        colors = config.colorMap.get(well.id) ? [config.colorMap.get(well.id)!] : []
     }
 
     wellColors.push({

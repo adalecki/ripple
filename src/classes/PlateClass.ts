@@ -1,4 +1,4 @@
-import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../pages/EchoTransfer/utils/plateUtils";
+import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../utils/plateUtils";
 import { Pattern } from "./PatternClass";
 import { Well } from "./WellClass";
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
