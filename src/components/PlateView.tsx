@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import WellTooltip from './WellTooltip';
 import { wellColors, type ColorConfig } from '../utils/wellColors';
 import { getCoordsFromWellId } from '../utils/plateUtils';
@@ -91,24 +91,22 @@ const PlateView: React.FC<PlateViewProps> = (
     };
 
     const wellColorArr = wellColors(plate, colorConfig);
-    const wells = useMemo(() => {
-      return wellColorArr.map((well, _) => {
-        const borders = blockBorderMap ? blockBorderMap.get(well.wellId) : undefined;
-        return (
-          <WellView
-            key={well.wellId}
-            well={plate.getWell(well.wellId)!}
-            bgColors={well.colors}
-            wellId={well.wellId}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onClickMask={handleMaskWell}
-            isSelected={selectedWellsArr.includes(well.wellId)}
-            blockBorders={borders}
-          />
-        );
-      });
-    }, [plate, colorConfig, selectedWellsArr, blockBorderMap, view, handleMaskedWell]);
+    const wells = wellColorArr.map((well, _) => {
+      const borders = blockBorderMap ? blockBorderMap.get(well.wellId) : undefined;
+      return (
+        <WellView
+          key={well.wellId}
+          well={plate.getWell(well.wellId)!}
+          bgColors={well.colors}
+          wellId={well.wellId}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onClickMask={handleMaskWell}
+          isSelected={selectedWellsArr.includes(well.wellId)}
+          blockBorders={borders}
+        />
+      );
+    });
 
     const rowLabels = [];
     const columnLabels = [];
@@ -148,11 +146,11 @@ const PlateView: React.FC<PlateViewProps> = (
     return (
       <div className="grid-container" data-view={view}>
         <div
-          className="all-wells-container"
+          className={`all-wells-container ${!handleLabelClick ? 'invisible' : ''}`}
           onClick={mouseLabelClickHandler}
-          >
-            all
-          </div>
+        >
+          all
+        </div>
         <div
           className="col-labels-container"
           onClick={mouseLabelClickHandler}

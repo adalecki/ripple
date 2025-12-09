@@ -1,7 +1,7 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
-import { Pattern } from '../classes/PatternClass';
+import { HslStringType, Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
-import { formatWellBlock, getCoordsFromWellId, splitIntoBlocks } from './plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, splitIntoBlocks, TransferBlock } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
   const wb: WorkBook = utils.book_new();
@@ -169,3 +169,74 @@ export function checkWellsInSelection(startPoint: Point, endPoint: Point, wells:
 
     return wellArr;
   };
+
+export function calculateTransferBorders (plate: Plate, blockString: string): Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>{
+    const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
+    
+    const wells = plate.getSomeWells(blockString);
+    const wellIds = wells.map(w => w.id);
+
+    for (const wellId of wellIds) {
+      const coords = getCoordsFromWellId(wellId);
+      const borders = { top: false, right: false, bottom: false, left: false };
+
+      const topWellId = coords.row > 0 ?
+        getWellIdFromCoords(coords.row - 1, coords.col) : null;
+      if (!topWellId || !wellIds.includes(topWellId)) {
+        borders.top = true;
+      }
+
+      const rightWellId = coords.col < plate.columns - 1 ?
+        getWellIdFromCoords(coords.row, coords.col + 1) : null;
+      if (!rightWellId || !wellIds.includes(rightWellId)) {
+        borders.right = true;
+      }
+
+      const bottomWellId = coords.row < plate.rows - 1 ?
+        getWellIdFromCoords(coords.row + 1, coords.col) : null;
+      if (!bottomWellId || !wellIds.includes(bottomWellId)) {
+        borders.bottom = true;
+      }
+
+      const leftWellId = coords.col > 0 ?
+        getWellIdFromCoords(coords.row, coords.col - 1) : null;
+      if (!leftWellId || !wellIds.includes(leftWellId)) {
+        borders.left = true;
+      }
+
+      borderMap.set(wellId, borders);
+    }
+
+    return borderMap;
+  }
+
+export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBlock[], type: 'source' | 'destination') {
+  const colorMap = new Map<string, HslStringType>();
+  const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
+
+  transferBlocks.forEach(transfer => {
+    const barcode = (type == 'source' ? transfer.sourceBarcode : transfer.destinationBarcode)
+    const block = (type == 'source' ? transfer.sourceBlock : transfer.destinationBlock)
+    const colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)')
+    if (barcode === plate.barcode) {
+      const wells = plate.getSomeWells(block);
+      
+      wells.forEach(well => {
+        colorMap.set(well.id, colorHsl);
+      });
+
+      const blockBorders = calculateTransferBorders(plate, block);
+      blockBorders.forEach((borders, wellId) => {
+        borderMap.set(wellId, borders);
+      });
+    }
+  });
+
+  return {
+    colorConfig: {
+      scheme: 'custom' as const,
+      colorMap
+    },
+    borderMap: borderMap
+  };
+}

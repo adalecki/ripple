@@ -6,6 +6,7 @@ import PlateList from './components/PlateList';
 import { currentPlate, type TransferBlock } from '../../utils/plateUtils';
 import TransferBox from './components/TransferBox';
 import TransferList from './components/TransferList';
+import DualCanvasPlateView from './components/DualCanvasPlateView';
 
 
 function Home() {
@@ -21,7 +22,7 @@ function Home() {
 
 
   return (
-    <Container fluid>
+    <Container fluid className="noselect">
       <Row>
         <Col md={3}>
           <PlateList
@@ -55,8 +56,9 @@ function Home() {
           />
         </Col>
         <Col md={9}>
+
           {srcDisplayPlate && dstDisplayPlate &&
-            <DualPlateView
+            <DualCanvasPlateView
               sourcePlate={srcDisplayPlate}
               destPlate={dstDisplayPlate}
               selectedSrcWells={selectedSrcWells}
@@ -65,6 +67,7 @@ function Home() {
               setSelectedDstWells={setSelectedDstWells}
               transferBlocks={transferBlocks}
             />
+            
           }
         </Col>
       </Row>
