@@ -22,7 +22,6 @@ function Home() {
 
 
   return (
-    <Container fluid className="noselect">
       <Row>
         <Col md={3}>
           <PlateList
@@ -55,7 +54,7 @@ function Home() {
             }}
           />
         </Col>
-        <Col md={9}>
+        <Col md={9} className='p-0 noselect'>
 
           {srcDisplayPlate && dstDisplayPlate &&
             <DualCanvasPlateView
@@ -71,7 +70,6 @@ function Home() {
           }
         </Col>
       </Row>
-    </Container>
   );
 }
 

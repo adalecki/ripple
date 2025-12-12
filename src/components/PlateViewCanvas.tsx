@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
-import { wellColors, ColorConfig } from "../utils/wellColors";
+import { wellColors, ColorConfig, generateCompoundColors } from "../utils/wellColors";
 import { getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from "../utils/plateUtils";
 import WellTooltip from "./WellTooltip";
-//import '../css/PlateComponent.css'
+import '../css/PlateComponent.css'
 
 interface PlateViewCanvasProps {
   plate: Plate;
@@ -24,6 +24,21 @@ interface HoveredWellData {
   transform: string;
 }
 
+const contents = [
+  { compoundId: 'cpd001', concentration: 10, patternName: 'pattern1' },
+  { compoundId: 'cpd002', concentration: 10, patternName: 'pattern2' },
+  { compoundId: 'cpd003', concentration: 10, patternName: 'pattern3' },
+  { compoundId: 'cpd004', concentration: 10, patternName: 'pattern4' },
+  { compoundId: 'cpd005', concentration: 10, patternName: 'pattern5' }
+]
+const testColorMap = generateCompoundColors(contents.map(c => c.compoundId))
+
+const testConfig: ColorConfig = {
+  scheme: 'compound',
+  colorMap: testColorMap,
+  maxConcentration: 10
+}
+
 const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   plate,
   view,
@@ -38,82 +53,91 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wellsContainerRef = useRef<HTMLDivElement | null>(null);
+  const gridContainerRef = useRef<HTMLDivElement | null>(null);
   const [hoveredWell, setHoveredWell] = useState<HoveredWellData | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0, dpr: 1 });
 
   const wellColorArr = wellColors(plate, colorConfig);
+  //const wellColorArr = wellColors(plate, testConfig);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = wellsContainerRef.current;
-    if (!canvas || !container) return;
+    const grid = gridContainerRef.current
+    if (!canvas || !container || !grid) return;
     const observer = new ResizeObserver(drawPlate);
 
-    observer.observe(container);
+    observer.observe(grid);
 
     return () => {
       observer.disconnect();
     };
-  }, [plate, colorConfig, selectedWells, blockBorderMap]);
+  }, [plate, colorConfig, selectedWells, blockBorderMap, canvasSize.dpr]);
 
   function drawPlate() {
     const canvas = canvasRef.current;
     const container = wellsContainerRef.current;
-    
+
     const dpr = window.devicePixelRatio;
 
     if (!canvas || !container) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return
 
-    const rows = plate.rows;
-    const cols = plate.columns;
-
     const availableWidth = container.clientWidth;
     const availableHeight = container.clientHeight;
 
     if (availableWidth === 0 || availableHeight === 0) return;
+    const gap = 96 / plate.columns
+    const wellSize = Math.floor((availableWidth - ((plate.columns - 1) * gap)) / plate.columns)
 
-    const plateAspect = cols / rows;
-    const containerAspect = availableWidth / availableHeight;
-
-    let canvasWidth, canvasHeight;
-
-    if (containerAspect > plateAspect) {
-      canvasHeight = availableHeight;
-      canvasWidth = canvasHeight * plateAspect;
-    } else {
-      canvasWidth = availableWidth;
-      canvasHeight = canvasWidth / plateAspect;
-    }
-
-    //canvas.width = canvasWidth;
-    //canvas.height = canvasHeight;
-    canvas.width = canvasWidth * dpr;
-    canvas.height = canvasHeight * dpr;
-    ctx.scale(dpr,dpr)
+    const canvasWidth = (wellSize * plate.columns) + (plate.columns - 1) * gap + 1
+    const canvasHeight = (wellSize * plate.rows) + (plate.rows - 1) * gap + 1
+    canvas.width = Math.ceil(canvasWidth * dpr);
+    canvas.height = Math.ceil(canvasHeight * dpr);
+    ctx.scale(dpr, dpr);
     canvas.style.width = `${canvasWidth}px`;
     canvas.style.height = `${canvasHeight}px`;
 
-    
-    setCanvasSize({ width: canvas.width, height: canvas.height });
+    setCanvasSize({ width: canvas.width, height: canvas.height, dpr: dpr });
 
-    //ctx.strokeStyle = "#000";
-    //ctx.strokeRect(0, 0, canvasWidth, canvasHeight);
-
-    const gap = 2;
-    const cellSize = canvasWidth / cols;
-    
     for (const { wellId, colors } of wellColorArr) {
       const { row, col } = getCoordsFromWellId(wellId);
-      const x = (col * cellSize);
-      const y = (row * cellSize);
+      const x = (wellSize + gap) * col
+      const y = (wellSize + gap) * row
 
       const well = plate.getWell(wellId)!;
+      if (col == 3) well.markAsUnused()
+      if (col == 4) well.addSolvent({ name: 'DMSO', volume: 20 })
+      if (col == 5) {
+        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
+      }
+      if (col == 6) {
+        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
+      }
+      if (col == 7) {
+        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
+      }
+      if (col == 8) {
+        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[3], 100, { name: 'DMSO', fraction: 1 })
+      }
+      if (col == 9) {
+        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[3], 100, { name: 'DMSO', fraction: 1 })
+        well.addContent(contents[4], 100, { name: 'DMSO', fraction: 1 })
+      }
       const isSelected = selectedWells.includes(wellId);
       const borders = blockBorderMap?.get(wellId);
 
-      drawWell(ctx, (x + gap/2), (y + gap/2), (cellSize - gap), colors, well, isSelected, borders);
+      drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders)
     }
   };
 
@@ -127,34 +151,31 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     isSelected: boolean,
     borders?: { top: boolean; right: boolean; bottom: boolean; left: boolean }
   ) {
-    //ctx.fillStyle = "#fff";
-    //ctx.fillRect(x, y, size, size);
 
-    // draw normal black border
     ctx.strokeStyle = "#000";
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
-    //ctx.strokeRect(x, y, size, size);
+    ctx.strokeRect(x + 0.5, y + 0.5, size, size)
+
     if (colors.length === 1) {
       ctx.fillStyle = colors[0];
-      ctx.fillRect(x+1, y+1, size-2, size-2);
+      ctx.fillRect(x + 1, y + 1, size - 1, size - 1);
     }
     if (colors.length > 1) {
-      drawSegments(ctx, x, y, size, size, colors);
+      drawSegments(ctx, x + 1, y + 1, size - 1, colors);
     }
 
     if (well.getSolvents().some(s => s.name === "DMSO") && !well.getIsUnused()) {
-      drawDmso(ctx, x, y, Math.min(size, size) * 0.3);
+      drawDmso(ctx, x, y);
     }
 
     if (well.getIsUnused()) {
-      drawHatch(ctx, x, y, size, size);
+      drawUnused(ctx, x, y, size);
     }
 
     if (isSelected) {
       ctx.strokeStyle = "blue";
       ctx.lineWidth = 2;
-      ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+      ctx.strokeRect(x + 1, y + 1, size - 1, size - 1);
     }
 
     if (borders) {
@@ -171,57 +192,64 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
-    w: number,
-    h: number,
+    size: number,
     colors: string[]
   ) {
-    const cx = x + w / 2;
-    const cy = y + h / 2;
-    const r = Math.min(w, h) / 2;
+    const cx = x + size / 2;
+    const cy = y + size / 2;
+    const r = size / 1;
     const seg = (2 * Math.PI) / colors.length;
+    ctx.save()
+    ctx.beginPath();
+    ctx.rect(x, y, size, size);
+    ctx.clip();
 
     for (let i = 0; i < colors.length; i++) {
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, i * seg, (i + 1) * seg);
+      ctx.arc(cx, cy, r, i * seg + Math.PI / 2, (i + 1) * seg + Math.PI / 2);
       ctx.closePath();
       ctx.fillStyle = colors[i];
       ctx.fill();
     }
+    ctx.restore()
   };
 
-  function drawDmso(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  function drawDmso(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ) {
+    const triangleSize = 8 / canvasSize.dpr
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x + s, y);
-    ctx.lineTo(x, y + s);
+    ctx.lineTo(x + triangleSize, y);
+    ctx.lineTo(x, y + triangleSize);
     ctx.closePath();
     ctx.fill();
   };
 
-  function drawHatch(
+  function drawUnused(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
-    w: number,
-    h: number
+    size: number
   ) {
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, w, h);
+    ctx.rect(x, y, size, size);
     ctx.clip();
 
-    ctx.strokeStyle = "rgba(0,0,0,0.05)";
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(0,0,0,0.4)";
+    ctx.lineWidth = 1;
 
-    for (let i = -h; i < w + h; i += 6) {
+    for (let i = -size; i < size; i += 6) {
       ctx.beginPath();
       ctx.moveTo(x + i, y);
-      ctx.lineTo(x + i + h, y + h);
+      ctx.lineTo(x + i + size, y + size);
       ctx.stroke();
     }
-
     ctx.restore();
   };
 
@@ -249,13 +277,13 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     let tooltipX = e.clientX + window.scrollX + 20;
     let tooltipY = e.clientY + window.scrollY + 20;
 
-  if (plate.columns / 2 <= wellCoords.col + 1) {
-    x = -100;
-    tooltipX -= 40
-  }
-  if (plate.rows / 2 <= wellCoords.row + 1) {
-    y = -100;
-  }
+    if (plate.columns / 2 <= wellCoords.col + 1) {
+      x = -100;
+      tooltipX -= 40
+    }
+    if (plate.rows / 2 <= wellCoords.row + 1) {
+      y = -100;
+    }
     setHoveredWell({
       well,
       position: { x: tooltipX, y: tooltipY },
@@ -311,25 +339,30 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     );
   }
 
-  const rowHeight = canvasSize.height / plate.rows;
+  const rowHeight = (canvasSize.height / plate.rows) / canvasSize.dpr;
 
   return (
-    <div className="grid-container" data-view={view}>
-
-      <div className="all-wells-container" />
+    <div className="grid-container" ref={gridContainerRef} data-view={view}>
 
       <div
-        className="col-labels-container"
+        className="all-wells-container"
+        style={{ height: `${15 / canvasSize.dpr}px` }}
         onClick={handleLabelClick}
-        style={{ 
-          gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
-        }}>
-        {columnLabels}
+      />
+      <div style={{ maxWidth: canvasSize.width / canvasSize.dpr }}>
+        <div
+          className="col-labels-container"
+          onClick={handleLabelClick}
+          style={{
+            gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`
+          }}>
+          {columnLabels}
+        </div>
       </div>
       <div
         className="row-labels-container"
         onClick={handleLabelClick}
-        style={{ 
+        style={{
           gridTemplateRows: `repeat(${plate.rows}, ${rowHeight}px)`,
         }}>
         {rowLabels}

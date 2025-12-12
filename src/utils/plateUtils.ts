@@ -118,7 +118,6 @@ export function formatWellBlock(wellIds: string[]): string {
   const usedWells = new Set<string>();
 
   while (usedWells.size < wells.length) {
-    console.log(usedWells)
     const startWell = wells.find(well => !usedWells.has(well))!;
     const rect = findBestRectangle(startWell, wellSet, usedWells, {row:maxRow,col:maxCol});
     blocks.push(rect.block);
