@@ -240,3 +240,25 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
     borderMap: borderMap
   };
 }
+
+export function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>, canvasRef: React.RefObject<HTMLCanvasElement | null>, plate: Plate): string | null {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const rows = plate.rows;
+    const cols = plate.columns;
+
+    const cw = canvas.width / cols;
+    const ch = canvas.height / rows;
+
+    const col = Math.floor(x / cw);
+    const row = Math.floor(y / ch);
+
+    if (col < 0 || row < 0 || col >= cols || row >= rows) return null;
+
+    return getWellIdFromCoords(row, col);
+  };

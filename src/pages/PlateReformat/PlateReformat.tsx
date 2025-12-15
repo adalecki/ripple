@@ -1,13 +1,11 @@
-import { Row, Col, Container } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
 import { useState } from 'react';
 import { Plate } from '../../classes/PlateClass'
-import DualPlateView from './components/DualPlateView';
 import PlateList from './components/PlateList';
 import { currentPlate, type TransferBlock } from '../../utils/plateUtils';
 import TransferBox from './components/TransferBox';
 import TransferList from './components/TransferList';
 import DualCanvasPlateView from './components/DualCanvasPlateView';
-
 
 function Home() {
   const [srcPlates, setSrcPlates] = useState<Plate[]>([])
@@ -19,7 +17,6 @@ function Home() {
   const [transferBlocks, setTransferBlocks] = useState<TransferBlock[]>([])
   const srcDisplayPlate = currentPlate(srcPlates, curSrcPlateId)
   const dstDisplayPlate = currentPlate(dstPlates, curDstPlateId)
-
 
   return (
       <Row>
@@ -41,10 +38,8 @@ function Home() {
             selectedDstWells={selectedDstWells}
             onAddTransfer={(transferBlock) => {
               setTransferBlocks(prev => [...prev, transferBlock]);
-            }}
-            onClearSelection={() => {
-              setSelectedSrcWells([]);
-              setSelectedDstWells([]);
+              setSelectedDstWells([])
+              setSelectedSrcWells([])
             }}
           />
           <TransferList
@@ -55,7 +50,6 @@ function Home() {
           />
         </Col>
         <Col md={9} className='p-0 noselect'>
-
           {srcDisplayPlate && dstDisplayPlate &&
             <DualCanvasPlateView
               sourcePlate={srcDisplayPlate}
@@ -66,7 +60,6 @@ function Home() {
               setSelectedDstWells={setSelectedDstWells}
               transferBlocks={transferBlocks}
             />
-            
           }
         </Col>
       </Row>

@@ -2,9 +2,10 @@ import React, { useRef, useEffect, useState } from "react";
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
 import { wellColors, ColorConfig, generateCompoundColors } from "../utils/wellColors";
-import { getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from "../utils/plateUtils";
+import { getCoordsFromWellId, numberToLetters } from "../utils/plateUtils";
 import WellTooltip from "./WellTooltip";
 import '../css/PlateComponent.css'
+import { canvasCoordsToWell } from "../utils/designUtils";
 
 interface PlateViewCanvasProps {
   plate: Plate;
@@ -107,7 +108,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       const y = (wellSize + gap) * row
 
       const well = plate.getWell(wellId)!;
-      if (col == 3) well.markAsUnused()
+      /*if (col == 3) well.markAsUnused()
       if (col == 4) well.addSolvent({ name: 'DMSO', volume: 20 })
       if (col == 5) {
         well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
@@ -133,7 +134,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
         well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
         well.addContent(contents[3], 100, { name: 'DMSO', fraction: 1 })
         well.addContent(contents[4], 100, { name: 'DMSO', fraction: 1 })
-      }
+      }*/
       const isSelected = selectedWells.includes(wellId);
       const borders = blockBorderMap?.get(wellId);
 
@@ -156,11 +157,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, size, size)
 
-    if (colors.length === 1) {
-      ctx.fillStyle = colors[0];
-      ctx.fillRect(x + 1, y + 1, size - 1, size - 1);
-    }
-    if (colors.length > 1) {
+    if (colors.length > 0) {
       drawSegments(ctx, x + 1, y + 1, size - 1, colors);
     }
 
@@ -181,10 +178,10 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     if (borders) {
       ctx.strokeStyle = "black";
       ctx.lineWidth = 3;
-      if (borders.top) ctx.strokeRect(x, y, size, 0);
-      if (borders.bottom) ctx.strokeRect(x, y + size, size, 0);
-      if (borders.left) ctx.strokeRect(x, y, 0, size);
-      if (borders.right) ctx.strokeRect(x + size, y, 0, size);
+      if (borders.top) ctx.strokeRect(x + 1, y + 2, size - 1, 0);
+      if (borders.bottom) ctx.strokeRect(x + 1, y + size - 1, size - 1, 0);
+      if (borders.left) ctx.strokeRect(x + 2, y + 1, 0, size - 1);
+      if (borders.right) ctx.strokeRect(x + size - 1, y + 1, 0, size - 1);
     }
   };
 
@@ -261,7 +258,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   const handleHoveredWellMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const wellId = canvasCoordsToWell(e);
+    const wellId = canvasCoordsToWell(e, canvasRef, plate);
 
     if (!wellId) {
       setHoveredWell(null);
@@ -289,28 +286,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       position: { x: tooltipX, y: tooltipY },
       transform: `translate(${x}%, ${y}%)`
     });
-  };
-
-  function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>): string | null {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const rows = plate.rows;
-    const cols = plate.columns;
-
-    const cw = canvas.width / cols;
-    const ch = canvas.height / rows;
-
-    const col = Math.floor(x / cw);
-    const row = Math.floor(y / ch);
-
-    if (col < 0 || row < 0 || col >= cols || row >= rows) return null;
-
-    return getWellIdFromCoords(row, col);
   };
 
   const rowLabels = [];
