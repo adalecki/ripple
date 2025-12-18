@@ -3,7 +3,7 @@ import { Card, ListGroup, Button, Form, InputGroup } from "react-bootstrap"
 import { Plate, type PlateSize } from "../../../classes/PlateClass"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { clonePlate, currentPlate, modifyPlate } from "../../../utils/plateUtils"
+import { clonePlate, currentPlate, modifyPlate, TransferBlock } from "../../../utils/plateUtils"
 
 interface PlateListProps {
   srcPlates: Plate[],
@@ -13,7 +13,8 @@ interface PlateListProps {
   curSrcPlateId: number | null,
   setCurSrcPlateId: React.Dispatch<React.SetStateAction<number | null>>,
   curDstPlateId: number | null,
-  setCurDstPlateId: React.Dispatch<React.SetStateAction<number | null>>
+  setCurDstPlateId: React.Dispatch<React.SetStateAction<number | null>>,
+  transferBlocks: TransferBlock[]
 }
 
 const PlateList: React.FC<PlateListProps> = ({
@@ -24,7 +25,8 @@ const PlateList: React.FC<PlateListProps> = ({
   curSrcPlateId,
   setCurSrcPlateId,
   curDstPlateId,
-  setCurDstPlateId
+  setCurDstPlateId,
+  transferBlocks
 }) => {
   const [srcPlateSize, setSrcPlateSize] = useState<PlateSize>('384')
   const [dstPlateSize, setDstPlateSize] = useState<PlateSize>('384')
@@ -93,9 +95,7 @@ const PlateList: React.FC<PlateListProps> = ({
               <Form.Select
                 size="sm"
                 value={srcPlateSize}
-                onChange={(e) => {
-                  setSrcPlateSize(e.target.value as PlateSize);
-                }}
+                onChange={(e) => {setSrcPlateSize(e.target.value as PlateSize);}}
                 disabled={srcPlates.length > 0}
               >
                 {plateSizes.map(size => (
@@ -124,12 +124,7 @@ const PlateList: React.FC<PlateListProps> = ({
                   onClick={() => setCurSrcPlateId(plate.id)}
                 >
                   <div className="d-flex align-items-center gap-2">
-                    <span
-                      
-                      style={{ minWidth: '45px', cursor: 'pointer' }}
-                    >
-                      src{index + 1}
-                    </span>
+                    <span>src{index + 1}</span>
                     <InputGroup size="sm" style={{ flex: 1 }}>
                       <Form.Control
                         type="text"
@@ -137,6 +132,7 @@ const PlateList: React.FC<PlateListProps> = ({
                         value={plate.barcode || ''}
                         onChange={(e) => updateSourceBarcode(plate.id, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
+                        disabled={!!(transferBlocks.find(block => block.sourceBarcode == plate.barcode))}
                       />
                     </InputGroup>
                     <Button
@@ -146,6 +142,7 @@ const PlateList: React.FC<PlateListProps> = ({
                         e.stopPropagation();
                         deleteSourcePlate(plate.id);
                       }}
+                      disabled={!!(transferBlocks.find(block => block.sourceBarcode == plate.barcode))}
                       style={{ padding: '0.25rem 0.5rem' }}
                     >
                       x
@@ -164,9 +161,7 @@ const PlateList: React.FC<PlateListProps> = ({
               <Form.Select
                 size="sm"
                 value={dstPlateSize}
-                onChange={(e) => {
-                  setDstPlateSize(e.target.value as PlateSize);
-                }}
+                onChange={(e) => {setDstPlateSize(e.target.value as PlateSize);}}
                 disabled={dstPlates.length > 0}
               >
                 {plateSizes.map(size => (
@@ -195,12 +190,7 @@ const PlateList: React.FC<PlateListProps> = ({
                   onClick={() => setCurDstPlateId(plate.id)}
                 >
                   <div className="d-flex align-items-center gap-2">
-                    <span
-                      
-                      style={{ minWidth: '45px', cursor: 'pointer' }}
-                    >
-                      dst{index + 1}
-                    </span>
+                    <span>dst{index + 1}</span>
                     <InputGroup size="sm" style={{ flex: 1 }}>
                       <Form.Control
                         type="text"
@@ -208,6 +198,7 @@ const PlateList: React.FC<PlateListProps> = ({
                         value={plate.barcode || ''}
                         onChange={(e) => updateDestBarcode(plate.id, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
+                        disabled={!!(transferBlocks.find(block => block.destinationBarcode == plate.barcode))}
                       />
                     </InputGroup>
                     <Button
@@ -217,7 +208,7 @@ const PlateList: React.FC<PlateListProps> = ({
                         e.stopPropagation();
                         deleteDestPlate(plate.id);
                       }}
-                      style={{ padding: '0.25rem 0.5rem' }}
+                      disabled={!!(transferBlocks.find(block => block.destinationBarcode == plate.barcode))}
                     >
                       x
                     </Button>

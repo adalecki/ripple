@@ -128,7 +128,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
   };
 
 
-  const selectorHelper = useCallback((e: React.MouseEvent, wellArr: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) => {
+  const selectorHelper = (e: React.MouseEvent, wellArr: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) => {
     let newSelection = [...selectedWells]
     if (!e.shiftKey) {
       setSelectedWells(wellArr)
@@ -143,9 +143,18 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
           newSelection.push(wellId)
         }
       }
+      newSelection.sort((a, b) => {
+        const aCoords = getCoordsFromWellId(a)
+        const bCoords = getCoordsFromWellId(b)
+        const rowComp = aCoords.row - bCoords.row
+        if (rowComp === 0) {
+          return aCoords.col - bCoords.col
+        }
+        return rowComp
+      })
       setSelectedWells(newSelection)
     }
-  }, [])
+  }
 
   const handleLabelClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const newSelection = new Set<string>();
@@ -173,10 +182,10 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
       }
     })
 
-        if (target.className.includes('all-wells-container') && Array.from(newSelection).length == selectedWells.length) {
-          newSelection.clear()
-        }
-        selectorHelper(e, Array.from(newSelection), selectedWells, setSelectedWells)
+    if (target.className.includes('all-wells-container') && Array.from(newSelection).length == selectedWells.length) {
+      newSelection.clear()
+    }
+    selectorHelper(e, Array.from(newSelection), selectedWells, setSelectedWells)
 
 
   }
@@ -295,9 +304,9 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
         onMouseUp={handleMouseUp}
         className='h-100'
       >
-      <Row className='h-100' style={{ minHeight: 0 }}>
-        <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
-            <PatternManager isEditing={isEditing} setIsEditing={setIsEditing}/>
+        <Row className='h-100' style={{ minHeight: 0 }}>
+          <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
+            <PatternManager isEditing={isEditing} setIsEditing={setIsEditing} />
           </Col>
           <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
             <PlateView
@@ -329,7 +338,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
                 </Col>
                 <Col >
                   <Button
-                    onClick={() => clearPatternFromWells() }
+                    onClick={() => clearPatternFromWells()}
                     disabled={selectedWells.length === 0}
                     className="mt-3 h-75"
                     variant='danger'
@@ -339,7 +348,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
                 </Col>
                 <Col >
                   <Button
-                    onClick={() => clearPatternFromWells(true) }
+                    onClick={() => clearPatternFromWells(true)}
                     className="mt-3 h-75"
                     variant='danger'
                   >
@@ -360,7 +369,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
             </Container>
           </Col>
         </Row>
-        {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup}/> : ''}
+        {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}
         <div ref={selectionRef} style={{ position: 'absolute', pointerEvents: 'none', display: 'none' }} />
       </div>
     </Container>

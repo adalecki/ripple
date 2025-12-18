@@ -15,7 +15,7 @@ import { usePreferences } from '../../../hooks/usePreferences';
 
 import CheckpointDisplayModal from './CheckpointDisplayModal';
 import EchoForm from './EchoForm';
-import TransferListDownload from './TransferListDownload';
+import TransferListDownload from '../../../components/TransferListDownload';
 import PlateView from '../../../components/PlateView';
 
 

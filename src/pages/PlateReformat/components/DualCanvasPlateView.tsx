@@ -155,6 +155,15 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
           newSelection.push(wellId)
         }
       }
+      newSelection.sort((a,b) => {
+        const aCoords = getCoordsFromWellId(a)
+        const bCoords = getCoordsFromWellId(b)
+        const rowComp = aCoords.row - bCoords.row
+        if (rowComp === 0) {
+          return aCoords.col - bCoords.col
+        }
+        return rowComp
+      })
       setSelectedWells(newSelection)
     }
   }

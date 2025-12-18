@@ -30,6 +30,7 @@ function Home() {
             setCurSrcPlateId={setCurSrcPlateId}
             curDstPlateId={curDstPlateId}
             setCurDstPlateId={setCurDstPlateId}
+            transferBlocks={transferBlocks}
           />
           <TransferBox
             sourcePlate={srcDisplayPlate}

@@ -1,9 +1,9 @@
-import { Button, Container } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import JSZip from 'jszip';
-import { TransferStep } from '../classes/EchoCalculatorClass';
-import { getCoordsFromWellId } from '../../../utils/plateUtils';
+import { TransferStep } from '../pages/EchoTransfer/classes/EchoCalculatorClass';
+import { getCoordsFromWellId } from '../utils/plateUtils';
 
-const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]>, splitOutputCSVs: boolean }) => {
+const TransferListDownload = (settings: { transferMap: Map<number, TransferStep[]>, splitOutputCSVs: boolean }) => {
 
   function rowColExport(step: TransferStep) {
     const sourceCoords = getCoordsFromWellId(step.sourceWellId)
@@ -23,33 +23,33 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
     const headers = Object.keys(rows[0]);
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => 
+      ...rows.map(row =>
         headers.map(header => row[header as keyof typeof row]).join(',')
       )
     ].join('\n');
-    
+
     return csvContent;
   }
 
   async function fetchForExport() {
     if (settings.splitOutputCSVs) {
       const zip = new JSZip();
-      const outputPrioSets = [[1], [2], [3,4,5]];
-      
+      const outputPrioSets = [[1], [2], [3, 4, 5]];
+
       for (const set of outputPrioSets) {
         let steps: TransferStep[] = [];
-        
+
         for (const prio of set) {
           const prioSteps = settings.transferMap.get(prio);
           if (prioSteps) {
             steps = steps.concat(prioSteps);
           }
         }
-        
+
         if (steps.length > 0) {
           const rows = steps.map(step => rowColExport(step));
           const csvContent = generateCSV(rows);
-          
+
           let suffix = '';
           switch (set[0]) {
             case 1:
@@ -64,11 +64,11 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
             default:
               suffix = 'all';
           }
-          
+
           zip.file(`transfer_list_${suffix}.csv`, csvContent);
         }
       }
-      
+
       const content = await zip.generateAsync({ type: "blob" });
       const url = window.URL.createObjectURL(content);
       const link = document.createElement('a');
@@ -78,16 +78,16 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
     } else {
       let allSteps: TransferStep[] = [];
       for (const steps of settings.transferMap.values()) {
         allSteps = allSteps.concat(steps);
       }
-      
+
       const rows = allSteps.map(step => rowColExport(step));
       const csvContent = generateCSV(rows);
-      
+
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -101,11 +101,9 @@ const TransferListDownload = (settings: { transferMap: Map<number,TransferStep[]
   }
 
   return (
-    <Container>
-      <Button onClick={fetchForExport} variant='success'>
-        Export {settings.splitOutputCSVs ? 'Files' : 'File'}
-      </Button>
-    </Container>
+    <Button onClick={fetchForExport} variant='success'>
+      Export {settings.splitOutputCSVs ? 'Files' : 'File'}
+    </Button>
   );
 };
 

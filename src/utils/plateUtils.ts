@@ -121,7 +121,7 @@ export function formatWellBlock(wellIds: string[]): string {
     const startWell = wells.find(well => !usedWells.has(well))!;
     const rect = findBestRectangle(startWell, wellSet, usedWells, {row:maxRow,col:maxCol});
     blocks.push(rect.block);
-    rect.wells.forEach(well => usedWells.add(well));
+    rect.wellIds.forEach(well => usedWells.add(well));
   }
 
   return blocks.join(';');
@@ -129,14 +129,14 @@ export function formatWellBlock(wellIds: string[]): string {
 
 interface Rectangle {
   block: string;
-  wells: string[];
+  wellIds: string[];
 }
 
 function findBestRectangle(startWell: string, allWells: Set<string>, usedWells: Set<string>, maxCoords: {row: number, col: number}): Rectangle {
   const startCoords = getCoordsFromWellId(startWell);
   let bestRect: Rectangle = {
     block: startWell,
-    wells: [startWell]
+    wellIds: [startWell]
   };
 
   for (let rowDist = 0; rowDist <= maxCoords.row; rowDist++) {
@@ -163,9 +163,9 @@ function findBestRectangle(startWell: string, allWells: Set<string>, usedWells: 
         if (!validRectangle) break;
       }
 
-      if (validRectangle && rectangleWells.length > bestRect.wells.length) {
+      if (validRectangle && rectangleWells.length > bestRect.wellIds.length) {
         const block = startWell === endWell ? startWell : `${startWell}:${endWell}`;
-        bestRect = { block, wells: rectangleWells };
+        bestRect = { block, wellIds: rectangleWells };
       }
     }
   }

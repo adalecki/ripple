@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, ListGroup, Button } from 'react-bootstrap';
 import type { TransferBlock, TransferStep } from '../../../utils/plateUtils';
-import TransferListDownload from './TransferListDownload';
+import TransferListDownload from '../../../components/TransferListDownload';
+import { MoveRight } from 'lucide-react';
 
 interface TransferListProps {
   transferBlocks: TransferBlock[];
@@ -29,60 +30,36 @@ const TransferList: React.FC<TransferListProps> = ({
         {transferBlocks.length === 0 ? (
           <div className="text-muted small ms-3">No transfers</div>
         ) : (
-          <ListGroup variant="flush">
+          <ListGroup>
             {transferBlocks.map((transfer, index) => (
               <ListGroup.Item
                 key={index}
                 style={{
                   border: 'none',
-                  paddingTop: '0',
-                  paddingBottom: '0',
-                  paddingLeft: '0',
-                  paddingRight: '0'
+                  padding: '0'
                 }}
               >
                 <div className="d-flex align-items-start gap-2">
                   <div className="d-flex align-items-center justify-content-between" style={{ flex: 1, minWidth: 0 }}>
-                    <div className="small mb-1">
-                      <strong>{transfer.sourceBarcode}</strong>
-                      {' → '}
-                      <strong>{transfer.destinationBarcode}</strong>
-                      <div
-                        className="text-muted"
-                        style={{
-                          fontSize: '0.75rem',
-                          lineHeight: '1.2',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {transfer.sourceBlock} → {transfer.destinationBlock}
+                    <div className="mb-1">
+                      <strong>{transfer.sourceBarcode} </strong>
+                      <MoveRight size={16} strokeWidth={1} />
+                      <strong> {transfer.destinationBarcode}</strong>
+                      <div className="text-muted">
+                        {transfer.sourceBlock} <MoveRight size={16} strokeWidth={1} /> {transfer.destinationBlock}
                       </div>
-
                     </div>
-                    <div
-                      className="text-muted"
-                      style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}
-                    >
-                      {transfer.volume} nL · {transfer.transferSteps.length} steps
+                    <div className="text-muted">
+                      {transfer.volume} nL
                     </div>
-
-
-
                   </div>
 
                   <Button
                     variant="danger"
                     size="sm"
                     onClick={() => onDeleteTransfer(index)}
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      fontSize: '0.75rem',
-                      lineHeight: '1'
-                    }}
                   >
-                    ×
+                    x
                   </Button>
                 </div>
               </ListGroup.Item>

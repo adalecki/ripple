@@ -262,3 +262,67 @@ export function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>, canva
 
     return getWellIdFromCoords(row, col);
   };
+
+export interface TileScheme {
+  canTile: boolean;
+  srcSize: {x: number, y: number};
+  dstSize: {x: number, y: number};
+  srcStartWellId: string;
+  srcEndWellId: string;
+  dstStartWellId: string;
+  dstEndWellId: string;
+}
+
+export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
+  const tileScheme: TileScheme = {canTile: false, srcSize: {x: 0, y: 0}, dstSize: {x: 0, y: 0}, srcStartWellId: '', srcEndWellId: '', dstStartWellId: '', dstEndWellId: ''}
+  if (srcBlock.includes(';') || dstBlock.includes(';')) return tileScheme
+  const srcCornerWellIds = srcBlock.split(':')
+  const dstCornerWellIds = dstBlock.split(':')
+  if (srcCornerWellIds.length != 2 || dstCornerWellIds.length != 2) return tileScheme
+  const srcStartWellCoords = getCoordsFromWellId(srcCornerWellIds[0])
+  const srcEndWellCoords = getCoordsFromWellId(srcCornerWellIds[1])
+  const dstStartWellCoords = getCoordsFromWellId(dstCornerWellIds[0])
+  const dstEndWellCoords = getCoordsFromWellId(dstCornerWellIds[1])
+  const srcSize = {x: srcEndWellCoords.col - srcStartWellCoords.col + 1, y: srcEndWellCoords.row - srcStartWellCoords.row + 1}
+  const dstSize = {x: dstEndWellCoords.col - dstStartWellCoords.col + 1, y: dstEndWellCoords.row - dstStartWellCoords.row + 1}
+  tileScheme.canTile = (srcSize.x * srcSize.y != dstSize.x * dstSize.y && dstSize.x % srcSize.x === 0 && dstSize.y % srcSize.y === 0)
+  tileScheme.srcSize = srcSize
+  tileScheme.dstSize = dstSize
+  tileScheme.srcStartWellId = srcCornerWellIds[0]
+  tileScheme.srcEndWellId = srcCornerWellIds[1]
+  tileScheme.dstStartWellId = dstCornerWellIds[0]
+  tileScheme.dstEndWellId = dstCornerWellIds[1]
+  return tileScheme
+}
+
+export function tileTransfers(srcWells: string[], tileScheme: TileScheme): [string, string][] {
+  const srcOffsets = new Map<string, string>();
+  const srcStartWellCoords = getCoordsFromWellId(tileScheme.srcStartWellId)
+  const dstStartWellCoords = getCoordsFromWellId(tileScheme.dstStartWellId)
+  for (const wellId of srcWells) {
+    const { row, col } = getCoordsFromWellId(wellId);
+    const offsetKey = `${row - srcStartWellCoords.row},${col - srcStartWellCoords.col}`;
+    srcOffsets.set(offsetKey, wellId);
+  }
+
+  const tilesHorizontal = tileScheme.dstSize.x / tileScheme.srcSize.x
+  const tilesVertical = tileScheme.dstSize.y / tileScheme.srcSize.y
+  const transfers: [string, string][] = []
+
+  for (let tileRow = 0; tileRow < tilesVertical; tileRow++) {
+    for (let tileCol = 0; tileCol < tilesHorizontal; tileCol++) {
+      const tileOriginRow = dstStartWellCoords.row + (tileRow * tileScheme.srcSize.x);
+      const tileOriginCol = dstStartWellCoords.col + (tileCol * tileScheme.srcSize.y);
+
+      for (const [offsetKey, srcWellId] of srcOffsets) {
+        const [rowOffset, colOffset] = offsetKey.split(',').map(Number);
+        const dstRow = tileOriginRow + rowOffset;
+        const dstCol = tileOriginCol + colOffset;
+        const dstWellId = getWellIdFromCoords(dstRow, dstCol);
+
+        transfers.push([srcWellId, dstWellId]);
+      }
+    }
+  }
+  return transfers
+}

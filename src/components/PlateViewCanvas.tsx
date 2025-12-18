@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
-import { wellColors, ColorConfig, generateCompoundColors } from "../utils/wellColors";
+import { wellColors, ColorConfig } from "../utils/wellColors";
 import { getCoordsFromWellId, numberToLetters } from "../utils/plateUtils";
 import WellTooltip from "./WellTooltip";
 import '../css/PlateComponent.css'
@@ -25,7 +25,7 @@ interface HoveredWellData {
   transform: string;
 }
 
-const contents = [
+/*const contents = [
   { compoundId: 'cpd001', concentration: 10, patternName: 'pattern1' },
   { compoundId: 'cpd002', concentration: 10, patternName: 'pattern2' },
   { compoundId: 'cpd003', concentration: 10, patternName: 'pattern3' },
@@ -38,7 +38,7 @@ const testConfig: ColorConfig = {
   scheme: 'compound',
   colorMap: testColorMap,
   maxConcentration: 10
-}
+}*/
 
 const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   plate,
