@@ -39,7 +39,6 @@ const TransferBox: React.FC<TransferBoxProps> = ({
 
   const handleAddTransfer = () => {
     if (!canAdd || !sourcePlate || !destPlate) return;
-    console.log(tileScheme)
 
     const volumeNum = parseFloat(volume);
     const transferSteps: TransferStep[] = [];

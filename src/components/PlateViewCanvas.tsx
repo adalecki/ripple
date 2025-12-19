@@ -2,8 +2,8 @@ import React, { useRef, useEffect, useState } from "react";
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
 import { wellColors, ColorConfig } from "../utils/wellColors";
-import { getCoordsFromWellId, numberToLetters } from "../utils/plateUtils";
-import WellTooltip from "./WellTooltip";
+import { getCoordsFromWellId, numberToLetters, WellTransferMap } from "../utils/plateUtils";
+import WellTooltip, { HoveredWellData } from "./WellTooltip";
 import '../css/PlateComponent.css'
 import { canvasCoordsToWell } from "../utils/designUtils";
 
@@ -17,12 +17,7 @@ interface PlateViewCanvasProps {
   handleMouseUp?: React.MouseEventHandler<HTMLCanvasElement>
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   blockBorderMap?: Map<string, { top: boolean; right: boolean; bottom: boolean; left: boolean }>;
-}
-
-interface HoveredWellData {
-  well: Well;
-  position: { x: number; y: number };
-  transform: string;
+  transferMap?: WellTransferMap
 }
 
 /*const contents = [
@@ -49,7 +44,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   handleMouseSelectionMove = (() => { }),
   handleMouseUp = (() => { }),
   handleLabelClick = (() => { }),
-  blockBorderMap
+  blockBorderMap,
+  transferMap
 }) => {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -284,7 +280,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     setHoveredWell({
       well,
       position: { x: tooltipX, y: tooltipY },
-      transform: `translate(${x}%, ${y}%)`
+      transform: `translate(${x}%, ${y}%)`,
+      transferList: view.includes('reformat') && transferMap ? transferMap.get(wellId) || [] : undefined
     });
   };
 

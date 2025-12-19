@@ -1,5 +1,6 @@
 import type React from "react"
-import { Card, ListGroup, Button, Form, InputGroup } from "react-bootstrap"
+import type { ClipboardEvent } from "react"
+import { Card, ListGroup, Button, Form, InputGroup, Alert } from "react-bootstrap"
 import { Plate, type PlateSize } from "../../../classes/PlateClass"
 import { Plus } from "lucide-react"
 import { useState } from "react"
@@ -30,6 +31,22 @@ const PlateList: React.FC<PlateListProps> = ({
 }) => {
   const [srcPlateSize, setSrcPlateSize] = useState<PlateSize>('384')
   const [dstPlateSize, setDstPlateSize] = useState<PlateSize>('384')
+  const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([])
+
+  //fix this, need to also trigger when pasting in singular barcodes
+  //finish adapting the arrow key movements from editablevaluetable
+  const AlertDismissible = () => {
+    return (
+      <Alert show={reusedBarcodes.length > 0} variant="warning">
+        {reusedBarcodes.join(', ')} already in list; skipped
+        <div className="d-flex justify-content-end">
+          <Button onClick={() => setReusedBarcodes([])}>
+            Clear
+          </Button>
+        </div>
+      </Alert>
+    );
+  }
 
   const addSourcePlate = () => {
     const newPlate = new Plate({ plateSize: srcPlateSize });
@@ -83,7 +100,39 @@ const PlateList: React.FC<PlateListProps> = ({
     clonedPlate.barcode = barcode
     modifyPlate(clonedPlate, dstPlates, setDstPlates, plateId)
   };
-  const plateSizes = ['12', '24', '48', '96', '384', '1536']
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>, currentId: number, plates: Plate[], onChange: (plates: Plate[]) => void) => {
+
+    const pasteData = e.clipboardData
+      .getData('text')
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line !== '')
+    if (pasteData.length <= 1 || transferBlocks.length > 0) return
+
+    if (pasteData.length > 1) {
+      e.preventDefault();
+      const currentIndex = plates.findIndex(p => p.id === currentId);
+      const newPlates = [...plates];
+
+      pasteData.forEach((barcode, index) => {
+        const targetIndex = currentIndex + index;
+        const reusedBarcode = plates.some(p => p.barcode == barcode)
+        if (reusedBarcode) {
+          setReusedBarcodes(prev => [...prev, barcode])
+        }
+        else {
+          if (targetIndex < newPlates.length) {
+            newPlates[targetIndex].barcode = barcode
+          } else {
+            newPlates.push(new Plate({ id: Date.now() + index, plateSize: dstPlateSize, barcode: barcode }));
+          }
+        }
+      });
+
+      onChange(newPlates);
+    }
+  };
 
   return (
     <Card className="mb-3">
@@ -95,10 +144,10 @@ const PlateList: React.FC<PlateListProps> = ({
               <Form.Select
                 size="sm"
                 value={srcPlateSize}
-                onChange={(e) => {setSrcPlateSize(e.target.value as PlateSize);}}
+                onChange={(e) => { setSrcPlateSize(e.target.value as PlateSize); }}
                 disabled={srcPlates.length > 0}
               >
-                {plateSizes.map(size => (
+                {['384', '1536'].map(size => (
                   <option key={size} value={size}>
                     {size}
                   </option>
@@ -120,21 +169,23 @@ const PlateList: React.FC<PlateListProps> = ({
                 <ListGroup.Item
                   key={plate.id}
                   active={plate.id === curSrcPlateId}
-                  style={{ cursor: 'pointer', border: 'none', paddingTop: '0.25rem', paddingBottom: '0.25rem'}}
+                  style={{ cursor: 'pointer', border: 'none', paddingTop: '0.25rem', paddingBottom: '0.25rem' }}
                   onClick={() => setCurSrcPlateId(plate.id)}
                 >
                   <div className="d-flex align-items-center gap-2">
                     <span>src{index + 1}</span>
-                    <InputGroup size="sm" style={{ flex: 1 }}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter barcode"
-                        value={plate.barcode || ''}
-                        onChange={(e) => updateSourceBarcode(plate.id, e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        disabled={!!(transferBlocks.find(block => block.sourceBarcode == plate.barcode))}
-                      />
-                    </InputGroup>
+
+                    <input
+                      id={plate.id.toString()}
+                      type="text"
+                      placeholder="Enter barcode"
+                      value={plate.barcode || ''}
+                      onChange={(e) => updateSourceBarcode(plate.id, e.target.value)}
+
+                      onPaste={(e) => handlePaste(e, plate.id, srcPlates, setSrcPlates)}
+                      disabled={!!(transferBlocks.find(block => block.sourceBarcode == plate.barcode))}
+                      onFocus={(e) => e.target.select()}
+                    />
                     <Button
                       variant="danger"
                       size="sm"
@@ -161,10 +212,10 @@ const PlateList: React.FC<PlateListProps> = ({
               <Form.Select
                 size="sm"
                 value={dstPlateSize}
-                onChange={(e) => {setDstPlateSize(e.target.value as PlateSize);}}
+                onChange={(e) => { setDstPlateSize(e.target.value as PlateSize); }}
                 disabled={dstPlates.length > 0}
               >
-                {plateSizes.map(size => (
+                {['12', '24', '48', '96', '384', '1536'].map(size => (
                   <option key={size} value={size}>
                     {size}
                   </option>
@@ -219,6 +270,7 @@ const PlateList: React.FC<PlateListProps> = ({
           )}
         </div>
       </Card.Body>
+      <AlertDismissible />
     </Card>
   )
 }

@@ -311,15 +311,14 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): [stri
 
   for (let tileRow = 0; tileRow < tilesVertical; tileRow++) {
     for (let tileCol = 0; tileCol < tilesHorizontal; tileCol++) {
-      const tileOriginRow = dstStartWellCoords.row + (tileRow * tileScheme.srcSize.x);
-      const tileOriginCol = dstStartWellCoords.col + (tileCol * tileScheme.srcSize.y);
+      const tileOriginY = dstStartWellCoords.row + (tileRow * tileScheme.srcSize.y);
+      const tileOriginX = dstStartWellCoords.col + (tileCol * tileScheme.srcSize.x);
 
       for (const [offsetKey, srcWellId] of srcOffsets) {
         const [rowOffset, colOffset] = offsetKey.split(',').map(Number);
-        const dstRow = tileOriginRow + rowOffset;
-        const dstCol = tileOriginCol + colOffset;
+        const dstRow = tileOriginY + rowOffset;
+        const dstCol = tileOriginX + colOffset;
         const dstWellId = getWellIdFromCoords(dstRow, dstCol);
-
         transfers.push([srcWellId, dstWellId]);
       }
     }

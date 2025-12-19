@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { Row, Col } from "react-bootstrap";
 import PlateViewCanvas from "../../../components/PlateViewCanvas";
 import { Plate } from "../../../classes/PlateClass";
-import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, type TransferBlock } from "../../../utils/plateUtils";
+import { buildWellTransferMap, formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, type TransferBlock } from "../../../utils/plateUtils";
 import { getPlateColorAndBorders } from "../../../utils/designUtils";
 //import "../../../css/PlateComponent.css";
 
@@ -213,7 +213,9 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
   };
 
   const { colorConfig: sourceColorConfig, borderMap: sourceBorderMap } = getPlateColorAndBorders(sourcePlate, transferBlocks, "source");
+  const sourceTransferMap = buildWellTransferMap(sourcePlate,transferBlocks,'source')
   const { colorConfig: destColorConfig, borderMap: destBorderMap } = getPlateColorAndBorders(destPlate, transferBlocks, "destination");
+  const destTransferMap = buildWellTransferMap(destPlate,transferBlocks,'destination')
 
   return (
     <div>
@@ -225,7 +227,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
 
           <PlateViewCanvas
             plate={sourcePlate}
-            view="reformatter-source"
+            view="reformat-source"
             colorConfig={sourceColorConfig}
             selectedWells={selectedSrcWells}
             handleLabelClick={handleLabelClick}
@@ -233,6 +235,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
             handleMouseSelectionMove={handleMouseSelectionMove}
             handleMouseUp={handleMouseUp}
             blockBorderMap={sourceBorderMap}
+            transferMap={sourceTransferMap}
           />
 
 
@@ -250,7 +253,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
 
           <PlateViewCanvas
             plate={destPlate}
-            view="reformatter-destination"
+            view="reformat-destination"
             colorConfig={destColorConfig}
             selectedWells={selectedDstWells}
             handleLabelClick={handleLabelClick}
@@ -258,6 +261,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
             handleMouseSelectionMove={handleMouseSelectionMove}
             handleMouseUp={handleMouseUp}
             blockBorderMap={destBorderMap}
+            transferMap={destTransferMap}
           />
 
           {selectedDstWells.length > 0 && (

@@ -9,6 +9,7 @@
   pointer-events: none;
   font-size: 0.8rem;
   width: max-content;
+  min-width: 100px;
 }
 
 .header-section {
@@ -23,6 +24,7 @@
 
 .content-section {
   margin-bottom: 5px;
+  border-collapse: separate;
 }
 
 .content-item {

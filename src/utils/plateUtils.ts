@@ -371,3 +371,37 @@ export function getWellFromBarcodeAndId(barcode: string, wellId: string, plates:
   if (!plate) return null
   return plate.getWell(wellId)
 }
+
+export interface WellTransferSummary {
+  counterpartBarcode: string;
+  counterpartWellId: string;
+  volume: number;
+}
+
+export type WellTransferMap = Map<string, WellTransferSummary[]>;
+
+//for plate reformat primarily
+export function buildWellTransferMap(
+  plate: Plate,
+  transferBlocks: TransferBlock[],
+  type: 'source' | 'destination'
+): WellTransferMap {
+  const map: WellTransferMap = new Map();
+  
+  for (const block of transferBlocks) {
+    const targetBarcode = type === 'source' ? block.sourceBarcode : block.destinationBarcode;
+    if (targetBarcode !== plate.barcode) continue;
+    
+    for (const step of block.transferSteps) {
+      const wellId = type === 'source' ? step.sourceWellId : step.destinationWellId;
+      const counterpartBarcode = type === 'source' ? step.destinationBarcode : step.sourceBarcode;
+      const counterpartWellId = type === 'source' ? step.destinationWellId : step.sourceWellId;
+      
+      const existing = map.get(wellId) ?? [];
+      existing.push({ counterpartBarcode, counterpartWellId, volume: step.volume });
+      map.set(wellId, existing);
+    }
+  }
+  
+  return map;
+}
