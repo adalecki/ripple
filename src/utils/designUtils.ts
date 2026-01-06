@@ -22,16 +22,16 @@ export function generateExcelTemplate(patterns: Pattern[]) {
   });
 
   const patternsWs = utils.json_to_sheet(patternsData);
-  
+
   const patternsHeaders = [
     "Pattern", "Type", "Direction", "Replicates",
-    ...Array.from({length: 20}, (_, i) => `Conc${i + 1}`)
+    ...Array.from({ length: 20 }, (_, i) => `Conc${i + 1}`)
   ];
   utils.sheet_add_aoa(patternsWs, [patternsHeaders], { origin: "A1" });
-  
+
   utils.book_append_sheet(wb, patternsWs, "Patterns");
 
-  const layoutData = patterns.flatMap(pattern => 
+  const layoutData = patterns.flatMap(pattern =>
     pattern.locations.map(location => ({
       Pattern: pattern.name,
       "Well Block": location
@@ -88,7 +88,7 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
   const msgArr: string[] = [];
   if (pattern.type === 'Unused') return msgArr
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
-  
+
   for (const block of blocks) {
     const rects = block.split(";");
     if (rects.length > 1) {
@@ -105,14 +105,14 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
       const endCoords = getCoordsFromWellId(endWell);
       const rectWidth = endCoords.col - startCoords.col + 1;
       const rectHeight = endCoords.row - startCoords.row + 1;
-      
+
       switch (pattern.direction[0]) {
         case "LR": case "RL": {
-          if (rectWidth != pattern.concentrations.length) {msgArr.push(`${rect} width doesn't match concentration number!`)}
+          if (rectWidth != pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number!`) }
           break
         }
         case "TB": case "BT": {
-          if (rectHeight != pattern.concentrations.length) {msgArr.push(`${rect} height doesn't match concentration number!`)}
+          if (rectHeight != pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number!`) }
           break
         }
       }
@@ -134,81 +134,81 @@ interface Rectangle {
 }
 
 export function rectanglesOverlap(rect1: Rectangle, rect2: Rectangle): boolean {
-    return !(rect1.right < rect2.left ||
-      rect1.left > rect2.right ||
-      rect1.bottom < rect2.top ||
-      rect1.top > rect2.bottom);
-  };
+  return !(rect1.right < rect2.left ||
+    rect1.left > rect2.right ||
+    rect1.bottom < rect2.top ||
+    rect1.top > rect2.bottom);
+};
 
 export function checkWellsInSelection(startPoint: Point, endPoint: Point, wells: NodeListOf<Element>): string[] {
-    const wellArr: string[] = [];
-    const selectionRect: Rectangle = {
-      left: Math.min(startPoint.x, endPoint.x),
-      top: Math.min(startPoint.y, endPoint.y),
-      right: Math.max(startPoint.x, endPoint.x),
-      bottom: Math.max(startPoint.y, endPoint.y)
-    };
-    wells.forEach(wellElement => {
-      if (wellElement) {
-        const rect = wellElement.getBoundingClientRect();
-        const wellRect: Rectangle = {
-          left: rect.left + window.scrollX,
-          top: rect.top + window.scrollY,
-          right: rect.right + window.scrollX,
-          bottom: rect.bottom + window.scrollY
-        };
+  const wellArr: string[] = [];
+  const selectionRect: Rectangle = {
+    left: Math.min(startPoint.x, endPoint.x),
+    top: Math.min(startPoint.y, endPoint.y),
+    right: Math.max(startPoint.x, endPoint.x),
+    bottom: Math.max(startPoint.y, endPoint.y)
+  };
+  wells.forEach(wellElement => {
+    if (wellElement) {
+      const rect = wellElement.getBoundingClientRect();
+      const wellRect: Rectangle = {
+        left: rect.left + window.scrollX,
+        top: rect.top + window.scrollY,
+        right: rect.right + window.scrollX,
+        bottom: rect.bottom + window.scrollY
+      };
 
-        if (rectanglesOverlap(wellRect, selectionRect)) {
-          const wellId = wellElement.getAttribute('data-wellid');
-          if (wellId) {
-            wellArr.push(wellId);
-          }
+      if (rectanglesOverlap(wellRect, selectionRect)) {
+        const wellId = wellElement.getAttribute('data-wellid');
+        if (wellId) {
+          wellArr.push(wellId);
         }
       }
-    });
+    }
+  });
 
-    return wellArr;
-  };
+  return wellArr;
+};
 
-export function calculateTransferBorders (plate: Plate, blockString: string): Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>{
-    const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
-    
-    const wells = plate.getSomeWells(blockString);
-    const wellIds = wells.map(w => w.id);
+export function calculateTransferBorders(plate: Plate, blockString: string): Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }> {
+  const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
 
-    for (const wellId of wellIds) {
-      const coords = getCoordsFromWellId(wellId);
-      const borders = { top: false, right: false, bottom: false, left: false };
+  const wells = plate.getSomeWells(blockString);
+  const wellIds = wells.map(w => w.id);
 
-      const topWellId = coords.row > 0 ?
-        getWellIdFromCoords(coords.row - 1, coords.col) : null;
-      if (!topWellId || !wellIds.includes(topWellId)) {
-        borders.top = true;
-      }
+  for (const wellId of wellIds) {
+    const coords = getCoordsFromWellId(wellId);
+    const borders = { top: false, right: false, bottom: false, left: false };
 
-      const rightWellId = coords.col < plate.columns - 1 ?
-        getWellIdFromCoords(coords.row, coords.col + 1) : null;
-      if (!rightWellId || !wellIds.includes(rightWellId)) {
-        borders.right = true;
-      }
-
-      const bottomWellId = coords.row < plate.rows - 1 ?
-        getWellIdFromCoords(coords.row + 1, coords.col) : null;
-      if (!bottomWellId || !wellIds.includes(bottomWellId)) {
-        borders.bottom = true;
-      }
-
-      const leftWellId = coords.col > 0 ?
-        getWellIdFromCoords(coords.row, coords.col - 1) : null;
-      if (!leftWellId || !wellIds.includes(leftWellId)) {
-        borders.left = true;
-      }
-
-      borderMap.set(wellId, borders);
+    const topWellId = coords.row > 0 ?
+      getWellIdFromCoords(coords.row - 1, coords.col) : null;
+    if (!topWellId || !wellIds.includes(topWellId)) {
+      borders.top = true;
     }
 
-    return borderMap;
+    const rightWellId = coords.col < plate.columns - 1 ?
+      getWellIdFromCoords(coords.row, coords.col + 1) : null;
+    if (!rightWellId || !wellIds.includes(rightWellId)) {
+      borders.right = true;
+    }
+
+    const bottomWellId = coords.row < plate.rows - 1 ?
+      getWellIdFromCoords(coords.row + 1, coords.col) : null;
+    if (!bottomWellId || !wellIds.includes(bottomWellId)) {
+      borders.bottom = true;
+    }
+
+    const leftWellId = coords.col > 0 ?
+      getWellIdFromCoords(coords.row, coords.col - 1) : null;
+    if (!leftWellId || !wellIds.includes(leftWellId)) {
+      borders.left = true;
+    }
+
+    borderMap.set(wellId, borders);
   }
+
+  return borderMap;
+}
 
 export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBlock[], type: 'source' | 'destination') {
   const colorMap = new Map<string, HslStringType>();
@@ -220,15 +220,35 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
     const colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)')
     if (barcode === plate.barcode) {
       const wells = plate.getSomeWells(block);
-      
+
       wells.forEach(well => {
         colorMap.set(well.id, colorHsl);
       });
 
-      const blockBorders = calculateTransferBorders(plate, block);
-      blockBorders.forEach((borders, wellId) => {
-        borderMap.set(wellId, borders);
-      });
+      if (transfer.destinationTiles && transfer.destinationTiles.length > 0 && type === 'destination') {
+        transfer.destinationTiles.forEach((block) => {
+          const blockBorders = calculateTransferBorders(plate, block)
+          blockBorders.forEach((borders, wellId) => {
+            const existingMap = borderMap.get(wellId) || { top: false, right: false, bottom: false, left: false }
+            existingMap.top = existingMap.top || borders.top
+            existingMap.right = existingMap.right || borders.right
+            existingMap.bottom = existingMap.bottom || borders.bottom
+            existingMap.left = existingMap.left || borders.left
+            borderMap.set(wellId, existingMap)
+          });
+        })
+      }
+      else {
+        const blockBorders = calculateTransferBorders(plate, block);
+        blockBorders.forEach((borders, wellId) => {
+          const existingMap = borderMap.get(wellId) || { top: false, right: false, bottom: false, left: false }
+          existingMap.top = existingMap.top || borders.top
+          existingMap.right = existingMap.right || borders.right
+          existingMap.bottom = existingMap.bottom || borders.bottom
+          existingMap.left = existingMap.left || borders.left
+          borderMap.set(wellId, existingMap)
+        });
+      }
     }
   });
 
@@ -242,31 +262,31 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
 }
 
 export function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>, canvasRef: React.RefObject<HTMLCanvasElement | null>, plate: Plate): string | null {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
+  const canvas = canvasRef.current;
+  if (!canvas) return null;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
-    const rows = plate.rows;
-    const cols = plate.columns;
+  const rows = plate.rows;
+  const cols = plate.columns;
 
-    const cw = canvas.width / cols;
-    const ch = canvas.height / rows;
+  const cw = canvas.width / cols;
+  const ch = canvas.height / rows;
 
-    const col = Math.floor(x / cw);
-    const row = Math.floor(y / ch);
+  const col = Math.floor(x / cw);
+  const row = Math.floor(y / ch);
 
-    if (col < 0 || row < 0 || col >= cols || row >= rows) return null;
+  if (col < 0 || row < 0 || col >= cols || row >= rows) return null;
 
-    return getWellIdFromCoords(row, col);
-  };
+  return getWellIdFromCoords(row, col);
+};
 
 export interface TileScheme {
   canTile: boolean;
-  srcSize: {x: number, y: number};
-  dstSize: {x: number, y: number};
+  srcSize: { x: number, y: number };
+  dstSize: { x: number, y: number };
   srcStartWellId: string;
   srcEndWellId: string;
   dstStartWellId: string;
@@ -274,7 +294,7 @@ export interface TileScheme {
 }
 
 export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
-  const tileScheme: TileScheme = {canTile: false, srcSize: {x: 0, y: 0}, dstSize: {x: 0, y: 0}, srcStartWellId: '', srcEndWellId: '', dstStartWellId: '', dstEndWellId: ''}
+  const tileScheme: TileScheme = { canTile: false, srcSize: { x: 0, y: 0 }, dstSize: { x: 0, y: 0 }, srcStartWellId: '', srcEndWellId: '', dstStartWellId: '', dstEndWellId: '' }
   if (srcBlock.includes(';') || dstBlock.includes(';')) return tileScheme
   const srcCornerWellIds = srcBlock.split(':')
   const dstCornerWellIds = dstBlock.split(':')
@@ -283,8 +303,8 @@ export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
   const srcEndWellCoords = getCoordsFromWellId(srcCornerWellIds[1])
   const dstStartWellCoords = getCoordsFromWellId(dstCornerWellIds[0])
   const dstEndWellCoords = getCoordsFromWellId(dstCornerWellIds[1])
-  const srcSize = {x: srcEndWellCoords.col - srcStartWellCoords.col + 1, y: srcEndWellCoords.row - srcStartWellCoords.row + 1}
-  const dstSize = {x: dstEndWellCoords.col - dstStartWellCoords.col + 1, y: dstEndWellCoords.row - dstStartWellCoords.row + 1}
+  const srcSize = { x: srcEndWellCoords.col - srcStartWellCoords.col + 1, y: srcEndWellCoords.row - srcStartWellCoords.row + 1 }
+  const dstSize = { x: dstEndWellCoords.col - dstStartWellCoords.col + 1, y: dstEndWellCoords.row - dstStartWellCoords.row + 1 }
   tileScheme.canTile = (srcSize.x * srcSize.y != dstSize.x * dstSize.y && dstSize.x % srcSize.x === 0 && dstSize.y % srcSize.y === 0)
   tileScheme.srcSize = srcSize
   tileScheme.dstSize = dstSize
@@ -295,7 +315,7 @@ export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
   return tileScheme
 }
 
-export function tileTransfers(srcWells: string[], tileScheme: TileScheme): [string, string][] {
+export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pairs: [string, string][], tiles: string[] } {
   const srcOffsets = new Map<string, string>();
   const srcStartWellCoords = getCoordsFromWellId(tileScheme.srcStartWellId)
   const dstStartWellCoords = getCoordsFromWellId(tileScheme.dstStartWellId)
@@ -307,10 +327,11 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): [stri
 
   const tilesHorizontal = tileScheme.dstSize.x / tileScheme.srcSize.x
   const tilesVertical = tileScheme.dstSize.y / tileScheme.srcSize.y
-  const transfers: [string, string][] = []
+  const transfers: { pairs: [string, string][], tiles: string[] } = { pairs: [], tiles: [] }
 
   for (let tileRow = 0; tileRow < tilesVertical; tileRow++) {
     for (let tileCol = 0; tileCol < tilesHorizontal; tileCol++) {
+      const tileTsfrs: string[] = []
       const tileOriginY = dstStartWellCoords.row + (tileRow * tileScheme.srcSize.y);
       const tileOriginX = dstStartWellCoords.col + (tileCol * tileScheme.srcSize.x);
 
@@ -319,8 +340,10 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): [stri
         const dstRow = tileOriginY + rowOffset;
         const dstCol = tileOriginX + colOffset;
         const dstWellId = getWellIdFromCoords(dstRow, dstCol);
-        transfers.push([srcWellId, dstWellId]);
+        transfers.pairs.push([srcWellId, dstWellId]);
+        tileTsfrs.push(dstWellId)
       }
+      transfers.tiles.push(formatWellBlock(tileTsfrs))
     }
   }
   return transfers

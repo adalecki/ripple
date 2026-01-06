@@ -16,6 +16,7 @@ export interface TransferBlock {
   sourceBlock: string;
   destinationBarcode: string;
   destinationBlock: string;
+  destinationTiles?: string[];
   volume: number;
   transferSteps: TransferStep[];
 }

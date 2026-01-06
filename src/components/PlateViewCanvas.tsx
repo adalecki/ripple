@@ -20,21 +20,6 @@ interface PlateViewCanvasProps {
   transferMap?: WellTransferMap
 }
 
-/*const contents = [
-  { compoundId: 'cpd001', concentration: 10, patternName: 'pattern1' },
-  { compoundId: 'cpd002', concentration: 10, patternName: 'pattern2' },
-  { compoundId: 'cpd003', concentration: 10, patternName: 'pattern3' },
-  { compoundId: 'cpd004', concentration: 10, patternName: 'pattern4' },
-  { compoundId: 'cpd005', concentration: 10, patternName: 'pattern5' }
-]
-const testColorMap = generateCompoundColors(contents.map(c => c.compoundId))
-
-const testConfig: ColorConfig = {
-  scheme: 'compound',
-  colorMap: testColorMap,
-  maxConcentration: 10
-}*/
-
 const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   plate,
   view,
@@ -52,10 +37,9 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   const wellsContainerRef = useRef<HTMLDivElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
   const [hoveredWell, setHoveredWell] = useState<HoveredWellData | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0, dpr: 1 });
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0, dpr: 1, wellSize: 0, gap: 0 });
 
   const wellColorArr = wellColors(plate, colorConfig);
-  //const wellColorArr = wellColors(plate, testConfig);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -96,7 +80,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     canvas.style.width = `${canvasWidth}px`;
     canvas.style.height = `${canvasHeight}px`;
 
-    setCanvasSize({ width: canvas.width, height: canvas.height, dpr: dpr });
+    setCanvasSize({ width: canvas.width, height: canvas.height, dpr: dpr, wellSize: wellSize, gap: gap });
 
     for (const { wellId, colors } of wellColorArr) {
       const { row, col } = getCoordsFromWellId(wellId);
@@ -104,33 +88,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       const y = (wellSize + gap) * row
 
       const well = plate.getWell(wellId)!;
-      /*if (col == 3) well.markAsUnused()
-      if (col == 4) well.addSolvent({ name: 'DMSO', volume: 20 })
-      if (col == 5) {
-        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
-      }
-      if (col == 6) {
-        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
-      }
-      if (col == 7) {
-        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
-      }
-      if (col == 8) {
-        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[3], 100, { name: 'DMSO', fraction: 1 })
-      }
-      if (col == 9) {
-        well.addContent(contents[0], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[1], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[2], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[3], 100, { name: 'DMSO', fraction: 1 })
-        well.addContent(contents[4], 100, { name: 'DMSO', fraction: 1 })
-      }*/
       const isSelected = selectedWells.includes(wellId);
       const borders = blockBorderMap?.get(wellId);
 
@@ -267,15 +224,18 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     const wellCoords = getCoordsFromWellId(wellId);
     let x = 0;
     let y = 0;
-    let tooltipX = e.clientX + window.scrollX + 20;
-    let tooltipY = e.clientY + window.scrollY + 20;
+
+    let tooltipX = (canvasSize.wellSize + canvasSize.gap) * wellCoords.col + canvas.getBoundingClientRect().x + canvasSize.wellSize
+    let tooltipY = (canvasSize.wellSize + canvasSize.gap) * wellCoords.row + canvas.getBoundingClientRect().y + canvasSize.wellSize
 
     if (plate.columns / 2 <= wellCoords.col + 1) {
       x = -100;
-      tooltipX -= 40
+      tooltipX -= canvasSize.wellSize
+      //tooltipX -= 40
     }
     if (plate.rows / 2 <= wellCoords.row + 1) {
       y = -100;
+      tooltipY -= canvasSize.wellSize
     }
     setHoveredWell({
       well,

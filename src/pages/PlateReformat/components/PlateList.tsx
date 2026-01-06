@@ -1,6 +1,6 @@
 import type React from "react"
-import type { ClipboardEvent } from "react"
-import { Card, ListGroup, Button, Form, InputGroup, Alert } from "react-bootstrap"
+import type { ClipboardEvent, KeyboardEvent } from "react"
+import { Card, ListGroup, Button, Form, Alert } from "react-bootstrap"
 import { Plate, type PlateSize } from "../../../classes/PlateClass"
 import { Plus } from "lucide-react"
 import { useState } from "react"
@@ -32,20 +32,77 @@ const PlateList: React.FC<PlateListProps> = ({
   const [srcPlateSize, setSrcPlateSize] = useState<PlateSize>('384')
   const [dstPlateSize, setDstPlateSize] = useState<PlateSize>('384')
   const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([])
+  const [alertMessage, setAlertMessage] = useState<string>('')
 
-  //fix this, need to also trigger when pasting in singular barcodes
-  //finish adapting the arrow key movements from editablevaluetable
-  const AlertDismissible = () => {
+  const BarcodeAlert = () => {
     return (
       <Alert show={reusedBarcodes.length > 0} variant="warning">
-        {reusedBarcodes.join(', ')} already in list; skipped
+        {reusedBarcodes.join(', ')} {alertMessage}
         <div className="d-flex justify-content-end">
-          <Button onClick={() => setReusedBarcodes([])}>
+          <Button onClick={() => { setReusedBarcodes([]); setAlertMessage('') }}>
             Clear
           </Button>
         </div>
       </Alert>
     );
+  }
+
+  const renderList = (
+    plates: Plate[],
+    setPlates: React.Dispatch<React.SetStateAction<Plate[]>>,
+    type: "src" | "dst",
+    curPlateId: number | null,
+    setCurPlateId: (value: React.SetStateAction<number | null>) => void,
+    addPlate: () => void,
+    updateBarcode: (plateId: number, barcode: string) => void,
+    deletePlate: (plateId: number) => void
+  ) => {
+    return (
+      <ListGroup variant="flush">
+        {plates.map((plate, index) => (
+          <ListGroup.Item
+            key={plate.id}
+            id={(type + (index + 1))}
+            active={plate.id === curPlateId}
+            style={{ cursor: 'pointer', paddingTop: '0.25rem', paddingBottom: '0.25rem' }}
+            onClick={() => setCurPlateId(plate.id)}
+          >
+            <div
+              onKeyDown={(e) => handleKeyDown(e, curPlateId, setCurPlateId, plates, addPlate, type)}
+              className="d-flex align-items-center gap-2"
+            >
+              <span>{(type + (index + 1))}</span>
+              <div style={{ flex: 1 }}>
+                <input
+                  id={plate.id.toString()}
+                  type="text"
+                  placeholder="Enter barcode"
+                  value={plate.barcode || ''}
+                  onChange={(e) => updateBarcode(plate.id, e.target.value)}
+                  onPaste={(e) => handlePaste(e, plate.id, plates, setPlates)}
+                  onBlur={() => handleBlur(plate.barcode, plates)}
+                  disabled={!!(transferBlocks.find(block => (type === "src" ? block.sourceBarcode == plate.barcode : block.destinationBarcode == plate.barcode)))}
+                  onFocus={(e) => e.target.select()}
+                  className="form-control form-control-sm"
+                />
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deletePlate(plate.id);
+                }}
+                disabled={!!(transferBlocks.find(block => (type === "src" ? block.sourceBarcode == plate.barcode : block.destinationBarcode == plate.barcode)))}
+                style={{ padding: '0.25rem 0.5rem' }}
+              >
+                x
+              </Button>
+            </div>
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
+    )
   }
 
   const addSourcePlate = () => {
@@ -56,8 +113,7 @@ const PlateList: React.FC<PlateListProps> = ({
     }
     newPlate.barcode = 'src' + inc
     setSrcPlates(prev => [...prev, newPlate]);
-
-    if (!curSrcPlateId) setCurSrcPlateId(newPlate.id);
+    setCurSrcPlateId(newPlate.id);
   };
 
   const addDestPlate = () => {
@@ -68,7 +124,7 @@ const PlateList: React.FC<PlateListProps> = ({
     }
     newPlate.barcode = 'dst' + inc
     setDstPlates(prev => [...prev, newPlate]);
-    if (!curDstPlateId) setCurDstPlateId(newPlate.id);
+    setCurDstPlateId(newPlate.id);
   };
 
   const deleteSourcePlate = (plateId: number) => {
@@ -101,14 +157,64 @@ const PlateList: React.FC<PlateListProps> = ({
     modifyPlate(clonedPlate, dstPlates, setDstPlates, plateId)
   };
 
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement>, currentId: number, plates: Plate[], onChange: (plates: Plate[]) => void) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>, curId: number | null, setCurId: (value: React.SetStateAction<number | null>) => void, plateList: Plate[], addPlate: () => void, srcOrDst: string) => {
+    const currentIndex = plateList.findIndex(v => v.id === curId);
 
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (currentIndex < plateList.length - 1) {
+        setCurId(plateList[currentIndex + 1].id);
+        const selectorGroup = document.getElementById(`${srcOrDst}${currentIndex + 2}`);
+        if (selectorGroup) {
+          const inputToFocus = selectorGroup.querySelector('input');
+          if (inputToFocus) {
+            inputToFocus.focus();
+          }
+        }
+      } else {
+        addPlate()
+        //timeout to allow time to render new plate in list, then focus on the text field
+        setTimeout(() => {
+          const selectorGroup = document.getElementById(`${srcOrDst}${plateList.length + 1}`);
+          if (selectorGroup) {
+            const inputToFocus = selectorGroup.querySelector('input');
+            if (inputToFocus) {
+              inputToFocus.focus();
+            }
+          }
+        }, 0);
+      }
+    } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+      e.preventDefault();
+      setCurId(plateList[currentIndex - 1].id);
+      const selectorGroup = document.getElementById(`${srcOrDst}${currentIndex}`);
+      if (selectorGroup) {
+        const inputToFocus = selectorGroup.querySelector('input');
+        if (inputToFocus) {
+          inputToFocus.focus();
+        }
+      }
+    }
+  };
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>, currentId: number, plates: Plate[], onChange: (plates: Plate[]) => void) => {
+    const duplicateBarcodes: string[] = []
     const pasteData = e.clipboardData
       .getData('text')
       .split(/\r?\n/)
       .map(line => line.trim())
       .filter(line => line !== '')
-    if (pasteData.length <= 1 || transferBlocks.length > 0) return
+    if (pasteData.length < 1 || transferBlocks.length > 0) return
+
+    if (pasteData.length == 1) {
+      if (plates.some(p => p.barcode == pasteData[0])) {
+        e.preventDefault()
+        duplicateBarcodes.push(pasteData[0])
+      }
+      else {
+        return
+      }
+    }
 
     if (pasteData.length > 1) {
       e.preventDefault();
@@ -119,7 +225,7 @@ const PlateList: React.FC<PlateListProps> = ({
         const targetIndex = currentIndex + index;
         const reusedBarcode = plates.some(p => p.barcode == barcode)
         if (reusedBarcode) {
-          setReusedBarcodes(prev => [...prev, barcode])
+          duplicateBarcodes.push(barcode)
         }
         else {
           if (targetIndex < newPlates.length) {
@@ -131,6 +237,15 @@ const PlateList: React.FC<PlateListProps> = ({
       });
 
       onChange(newPlates);
+    }
+    setReusedBarcodes(prev => [...prev, ...duplicateBarcodes])
+    setAlertMessage('already in list; skipped')
+  };
+
+  const handleBlur = (barcode: string, plates: Plate[]) => {
+    if (plates.filter(p => p.barcode == barcode).length > 1) {
+      setReusedBarcodes([barcode])
+      setAlertMessage('already in plate list, change to avoid unexpected behavior')
     }
   };
 
@@ -163,46 +278,7 @@ const PlateList: React.FC<PlateListProps> = ({
 
           {srcPlates.length === 0 ? (
             <div className="text-muted small ms-3">No source plates</div>
-          ) : (
-            <ListGroup variant="flush">
-              {srcPlates.map((plate, index) => (
-                <ListGroup.Item
-                  key={plate.id}
-                  active={plate.id === curSrcPlateId}
-                  style={{ cursor: 'pointer', border: 'none', paddingTop: '0.25rem', paddingBottom: '0.25rem' }}
-                  onClick={() => setCurSrcPlateId(plate.id)}
-                >
-                  <div className="d-flex align-items-center gap-2">
-                    <span>src{index + 1}</span>
-
-                    <input
-                      id={plate.id.toString()}
-                      type="text"
-                      placeholder="Enter barcode"
-                      value={plate.barcode || ''}
-                      onChange={(e) => updateSourceBarcode(plate.id, e.target.value)}
-
-                      onPaste={(e) => handlePaste(e, plate.id, srcPlates, setSrcPlates)}
-                      disabled={!!(transferBlocks.find(block => block.sourceBarcode == plate.barcode))}
-                      onFocus={(e) => e.target.select()}
-                    />
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteSourcePlate(plate.id);
-                      }}
-                      disabled={!!(transferBlocks.find(block => block.sourceBarcode == plate.barcode))}
-                      style={{ padding: '0.25rem 0.5rem' }}
-                    >
-                      x
-                    </Button>
-                  </div>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          )}
+          ) : (<div>{renderList(srcPlates, setSrcPlates, "src", curSrcPlateId, setCurSrcPlateId, addSourcePlate, updateSourceBarcode, deleteSourcePlate)}</div>)}
         </div>
 
         <div className="mb-4">
@@ -231,46 +307,10 @@ const PlateList: React.FC<PlateListProps> = ({
 
           {dstPlates.length === 0 ? (
             <div className="text-muted small ms-3">No destination plates</div>
-          ) : (
-            <ListGroup variant="flush">
-              {dstPlates.map((plate, index) => (
-                <ListGroup.Item
-                  key={plate.id}
-                  active={plate.id === curDstPlateId}
-                  style={{ cursor: 'pointer', border: 'none', paddingTop: '0.25rem', paddingBottom: '0.25rem' }}
-                  onClick={() => setCurDstPlateId(plate.id)}
-                >
-                  <div className="d-flex align-items-center gap-2">
-                    <span>dst{index + 1}</span>
-                    <InputGroup size="sm" style={{ flex: 1 }}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter barcode"
-                        value={plate.barcode || ''}
-                        onChange={(e) => updateDestBarcode(plate.id, e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        disabled={!!(transferBlocks.find(block => block.destinationBarcode == plate.barcode))}
-                      />
-                    </InputGroup>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteDestPlate(plate.id);
-                      }}
-                      disabled={!!(transferBlocks.find(block => block.destinationBarcode == plate.barcode))}
-                    >
-                      x
-                    </Button>
-                  </div>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          )}
+          ) : (<div>{renderList(dstPlates, setDstPlates, "dst", curDstPlateId, setCurDstPlateId, addDestPlate, updateDestBarcode, deleteDestPlate)}</div>)}
         </div>
       </Card.Body>
-      <AlertDismissible />
+      <BarcodeAlert />
     </Card>
   )
 }

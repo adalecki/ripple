@@ -42,10 +42,19 @@ const TransferBox: React.FC<TransferBoxProps> = ({
 
     const volumeNum = parseFloat(volume);
     const transferSteps: TransferStep[] = [];
+    const transferBlock: TransferBlock = {
+      sourceBarcode: sourcePlate.barcode || '',
+      sourceBlock,
+      destinationBarcode: destPlate.barcode || '',
+      destinationBlock,
+      destinationTiles: [],
+      volume: volumeNum,
+      transferSteps: []
+    };
 
     if (tileScheme.canTile) {
       const tileTsfrs = tileTransfers(selectedSrcWells, tileScheme)
-      for (const tsfr of tileTsfrs) {
+      for (const tsfr of tileTsfrs.pairs) {
         transferSteps.push({
           sourceBarcode: sourcePlate.barcode || '',
           sourceWellId: tsfr[0],
@@ -54,6 +63,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
           volume: volumeNum
         })
       }
+      transferBlock.destinationTiles = tileTsfrs.tiles
     }
     else {
       for (let i = 0; i < selectedSrcWells.length; i++) {
@@ -67,14 +77,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
       }
     }
 
-    const transferBlock: TransferBlock = {
-      sourceBarcode: sourcePlate.barcode || '',
-      sourceBlock,
-      destinationBarcode: destPlate.barcode || '',
-      destinationBlock,
-      volume: volumeNum,
-      transferSteps
-    };
+    transferBlock.transferSteps = transferSteps
 
     onAddTransfer(transferBlock);
   };

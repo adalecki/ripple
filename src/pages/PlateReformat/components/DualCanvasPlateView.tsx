@@ -1,10 +1,9 @@
-import React, { useRef, useEffect } from "react";
-import { Row, Col } from "react-bootstrap";
+import React, { useRef } from "react";
+import { Row, Col, Container } from "react-bootstrap";
 import PlateViewCanvas from "../../../components/PlateViewCanvas";
 import { Plate } from "../../../classes/PlateClass";
 import { buildWellTransferMap, formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, type TransferBlock } from "../../../utils/plateUtils";
 import { getPlateColorAndBorders } from "../../../utils/designUtils";
-//import "../../../css/PlateComponent.css";
 
 interface DualPlateViewProps {
   sourcePlate: Plate;
@@ -17,7 +16,6 @@ interface DualPlateViewProps {
   destLabel?: string;
   transferBlocks?: TransferBlock[];
 }
-
 
 const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
   sourcePlate,
@@ -32,20 +30,6 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
 }) => {
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handlePageDblClick, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handlePageDblClick);
-    };
-  }, []);
-
-  const handlePageDblClick = (e: any) => {
-    if (e.detail > 1) {
-      setSelectedSrcWells(prev => (prev.length ? [] : prev));
-      setSelectedDstWells(prev => (prev.length ? [] : prev));
-    }
-  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -218,7 +202,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
   const destTransferMap = buildWellTransferMap(destPlate,transferBlocks,'destination')
 
   return (
-    <div>
+    <Container fluid>
       <Row>
         <Col md={6}>
           <h5 className="text-center mb-3">
@@ -272,7 +256,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
         </Col>
       </Row>
       <div ref={selectionRef} style={{ position: "absolute", pointerEvents: "none", display: "none" }} />
-    </div>
+    </Container>
 
   );
 };
