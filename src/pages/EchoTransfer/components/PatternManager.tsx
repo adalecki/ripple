@@ -8,9 +8,13 @@ import { HslStringColorPicker } from 'react-colorful';
 import '../../../css/PatternManager.css'
 import { FormField } from '../../../components/FormField';
 
-const PatternManager: React.FC = () => {
+interface PatternManagerProps {
+  isEditing: boolean;
+  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}) => {
   const { patterns, setPatterns, selectedPatternId, setSelectedPatternId } = useContext(PatternsContext);
-  const [isEditing, setIsEditing] = useState(false);
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
   const [isNewPattern, setIsNewPattern] = useState<boolean>(false)
@@ -180,7 +184,7 @@ const PatternManager: React.FC = () => {
                   name='direction'
                   type='select'
                   label='Direction'
-                  value={editingPattern.direction}
+                  value={editingPattern.direction[0]}
                   onChange={(value) => handleFieldChange("direction", [value])}
                   required={true}
                   disabled={!isEditing}

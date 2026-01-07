@@ -2,7 +2,7 @@ import { utils, WorkBook, WorkSheet } from 'xlsx'
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { InputDataType } from './echoUtils';
 import { PreferencesState } from '../../../hooks/usePreferences';
-import { getCoordsFromWellId } from './plateUtils';
+import { getCoordsFromWellId } from '../../../utils/plateUtils';
 
 function arraysMatch(arr1: any[], arr2: any[]) {
   if (arr1.length !== arr2.length) return false
@@ -89,19 +89,19 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
 
 function stringConversion(inputData: InputDataType) {
   for (let lineIdx in inputData.Layout) {
-    inputData.Layout[lineIdx]['Pattern'] = (inputData.Layout[lineIdx]['Pattern']?.toString() || '');
+    inputData.Layout[lineIdx]['Pattern'] = (inputData.Layout[lineIdx]['Pattern']?.toString().trim() || '');
   }
   for (let lineIdx in inputData.Patterns) {
-    inputData.Patterns[lineIdx]['Pattern'] = (inputData.Patterns[lineIdx]['Pattern']?.toString() || '');
+    inputData.Patterns[lineIdx]['Pattern'] = (inputData.Patterns[lineIdx]['Pattern']?.toString().trim() || '');
   }
   for (let lineIdx in inputData.Compounds) {
-    inputData.Compounds[lineIdx]['Compound ID'] = (inputData.Compounds[lineIdx]['Compound ID']?.toString() || '');
-    inputData.Compounds[lineIdx]['Pattern'] = (inputData.Compounds[lineIdx]['Pattern']?.toString() || '');
-    inputData.Compounds[lineIdx]['Source Barcode'] = (inputData.Compounds[lineIdx]['Source Barcode']?.toString() || '');
+    inputData.Compounds[lineIdx]['Compound ID'] = (inputData.Compounds[lineIdx]['Compound ID']?.toString().trim() || '');
+    inputData.Compounds[lineIdx]['Pattern'] = (inputData.Compounds[lineIdx]['Pattern']?.toString().trim() || '');
+    inputData.Compounds[lineIdx]['Source Barcode'] = (inputData.Compounds[lineIdx]['Source Barcode']?.toString().trim() || '');
   }
   for (let lineIdx in inputData.Barcodes) {
-    if (inputData.Barcodes[lineIdx]['Destination Plate Barcodes']) {(inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes']?.toString() || '');}
-    if (inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']) {(inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']?.toString() || '');}
+    if (inputData.Barcodes[lineIdx]['Destination Plate Barcodes']) {(inputData.Barcodes[lineIdx]['Destination Plate Barcodes'] = inputData.Barcodes[lineIdx]['Destination Plate Barcodes']?.toString().trim() || '');}
+    if (inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']) {(inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes'] = inputData.Barcodes[lineIdx]['Intermediate Plate Barcodes']?.toString().trim() || '');}
   }
   return inputData
 }

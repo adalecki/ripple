@@ -1,8 +1,9 @@
-import { EchoCalculator, TransferInfo, TransferStep } from '../classes/EchoCalculatorClass';
+import { EchoCalculator, TransferInfo } from '../classes/EchoCalculatorClass';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { DilutionPattern } from '../../../classes/PatternClass';
 import { CompoundInventory } from '../classes/EchoPreCalculatorClass';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
+import { TransferStepExport } from '../../../utils/plateUtils';
 
 export type InputDataType = {
   'Layout': {
@@ -185,9 +186,9 @@ function getRole(barcode: string, plateArr: Plate[]) {
   return 'Unknown';
 }
 
-export function customSort(arr: TransferStep[], echoCalc: EchoCalculator): Map<number, TransferStep[]> {
+export function customSort(arr: TransferStepExport[], echoCalc: EchoCalculator): Map<number, TransferStepExport[]> {
   const plateArr = [...echoCalc.sourcePlates, ...echoCalc.intermediatePlates, ...echoCalc.destinationPlates]
-  const tsfrMap: Map<number, TransferStep[]> = new Map()
+  const tsfrMap: Map<number, TransferStepExport[]> = new Map()
   for (let i = 0; i < 6; i++) {
     tsfrMap.set(i + 1, [])
   }
@@ -515,7 +516,7 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
   return srcPlates;
 }
 
-export function executeAndRecordTransfer(transferStep: TransferStep, transferInfo: TransferInfo, sourcePlates: Plate[], intermediatePlates: Plate[], destinationPlates: Plate[]): boolean {
+export function executeAndRecordTransfer(transferStep: TransferStepExport, transferInfo: TransferInfo, sourcePlates: Plate[], intermediatePlates: Plate[], destinationPlates: Plate[]): boolean {
   const srcPlate = [...sourcePlates, ...intermediatePlates].find(plate => plate.barcode == transferStep.sourceBarcode);
   const destPlate = [...intermediatePlates, ...destinationPlates].find(plate => plate.barcode == transferStep.destinationBarcode);
 

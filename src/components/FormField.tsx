@@ -158,7 +158,7 @@ export const FormField: React.FC<FormFieldProps> =
       </div>
     ) : (
       <div className={baseClassName}>
-        <label htmlFor={id} className="form-label">{label}</label>
+        <label htmlFor={id} className={className.includes('default-label-text') ? '' : "form-label"}>{label}</label>
         <div className="form-field-input">
           {renderInput()}
         </div>

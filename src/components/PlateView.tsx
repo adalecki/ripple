@@ -1,11 +1,11 @@
-import React, { useState, MutableRefObject } from 'react';
+import React, { useState } from 'react';
 import WellTooltip from './WellTooltip';
-import { wellColors, ColorConfig } from '../pages/EchoTransfer/utils/wellColors';
-import { getCoordsFromWellId } from '../pages/EchoTransfer/utils/plateUtils';
+import { wellColors, type ColorConfig } from '../utils/wellColors';
+import { getCoordsFromWellId } from '../utils/plateUtils';
 import { Plate } from '../classes/PlateClass';
 import { Well } from '../classes/WellClass';
 import WellView from './WellView';
-import '../css/PlateComponent.css'
+import '../css/PlateComponent.css';
 
 interface PlateViewProps {
   plate: Plate;
@@ -17,11 +17,8 @@ interface PlateViewProps {
   handleMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleMouseUp?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  selectionStyle?: React.CSSProperties;
   blockBorderMap?: Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>;
 }
-
-type PlateViewRef = ((instance: HTMLDivElement[] | null) => void) | MutableRefObject<HTMLDivElement[] | null>;
 
 interface HoveredWellData {
   well: Well;
@@ -30,39 +27,49 @@ interface HoveredWellData {
 }
 
 function tooltipTransform(plate: Plate, wellRect: DOMRect, wellId: string): { x: number, y: number, transform: string } {
-  const wellCoords = getCoordsFromWellId(wellId)
+  const wellCoords = getCoordsFromWellId(wellId);
   let x = 0;
   let y = 0;
-  let tooltipX = wellRect.right + window.scrollX
-  let tooltipY = wellRect.bottom + window.scrollY
+  let tooltipX = wellRect.right + window.scrollX;
+  let tooltipY = wellRect.bottom + window.scrollY;
 
   if (plate.columns / 2 <= wellCoords.col + 1) {
-    x = -100
-    tooltipX = wellRect.left + window.scrollX
+    x = -100;
+    tooltipX = wellRect.left + window.scrollX;
   }
   if (plate.rows / 2 <= wellCoords.row + 1) {
-    y = -100
-    tooltipY = wellRect.top + window.scrollY
+    y = -100;
+    tooltipY = wellRect.top + window.scrollY;
   }
-  return { x: tooltipX, y: tooltipY, transform: `translate(${x}%, ${y}%)` }
+  return { x: tooltipX, y: tooltipY, transform: `translate(${x}%, ${y}%)` };
 }
 
-const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
-  ({ plate, view, colorConfig, handleMaskedWell, selectedWells = [], handleMouseDown, handleMouseMove, handleMouseUp, handleLabelClick, selectionStyle, blockBorderMap }, ref) => {
+const PlateView: React.FC<PlateViewProps> = (
+  ({
+    plate,
+    view,
+    colorConfig,
+    handleMaskedWell,
+    selectedWells = [],
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleLabelClick,
+    blockBorderMap
+  }) => {
     const [hoveredWell, setHoveredWell] = useState<HoveredWellData | null>(null);
 
     const mouseDownHandler = handleMouseDown || (() => { });
     const mouseMoveHandler = handleMouseMove || (() => { });
     const mouseUpHandler = handleMouseUp || (() => { });
     const mouseLabelClickHandler = handleLabelClick || (() => { });
-    const selectorStyle = selectionStyle || undefined;
     const selectedWellsArr = selectedWells;
 
     const handleMouseEnter = (wellId: string, e: React.MouseEvent<HTMLDivElement>) => {
       const wellData = plate.getWell(wellId);
       const wellElement = e.currentTarget;
       const wellRect = wellElement.getBoundingClientRect();
-      const { x, y, transform } = tooltipTransform(plate, wellRect, wellId)
+      const { x, y, transform } = tooltipTransform(plate, wellRect, wellId);
 
       if (wellData) {
         setHoveredWell({
@@ -83,12 +90,9 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
       }
     };
 
-    const isRefObject = (ref: PlateViewRef): ref is MutableRefObject<HTMLDivElement[] | null> => {
-      return (ref as MutableRefObject<HTMLDivElement[] | null>).current !== undefined;
-    };
     const wellColorArr = wellColors(plate, colorConfig);
-    const wells = wellColorArr.map((well, idx) => {
-      const borders = (blockBorderMap ? blockBorderMap.get(well.wellId) : undefined)
+    const wells = wellColorArr.map((well, _) => {
+      const borders = blockBorderMap ? blockBorderMap.get(well.wellId) : undefined;
       return (
         <WellView
           key={well.wellId}
@@ -100,18 +104,6 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
           onClickMask={handleMaskWell}
           isSelected={selectedWellsArr.includes(well.wellId)}
           blockBorders={borders}
-          ref={(element: HTMLDivElement | null) => {
-            if (element && ref) {
-              if (isRefObject(ref)) {
-                if (!ref.current) ref.current = [];
-                ref.current[idx] = element;
-              } else {
-                const arr: HTMLDivElement[] = [];
-                arr[idx] = element;
-                ref(arr);
-              }
-            }
-          }}
         />
       );
     });
@@ -139,6 +131,7 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
         </div>
       );
     }
+
     for (let colIndex = 0; colIndex < plate.columns; colIndex++) {
       columnLabels.push(
         <div
@@ -146,11 +139,18 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
           className='plate-grid-label'
         >
           {colIndex + 1}
-        </div>);
+        </div>
+      );
     }
 
     return (
-      <div className="grid-container">
+      <div className="grid-container" data-view={view}>
+        <div
+          className={`all-wells-container ${!handleLabelClick ? 'invisible' : ''}`}
+          onClick={mouseLabelClickHandler}
+        >
+          all
+        </div>
         <div
           className="col-labels-container"
           onClick={mouseLabelClickHandler}
@@ -172,10 +172,11 @@ const PlateView = React.forwardRef<Array<HTMLDivElement>, PlateViewProps>(
           {wells}
         </div>
         {hoveredWell && <WellTooltip hoveredWell={hoveredWell} />}
-        <div className={selectorStyle ? "selection-rectangle" : ''} style={selectorStyle}></div>
       </div>
     );
   }
 );
+
+PlateView.displayName = 'PlateView';
 
 export default PlateView;

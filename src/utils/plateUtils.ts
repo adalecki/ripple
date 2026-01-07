@@ -1,7 +1,33 @@
-import { Pattern } from "../../../classes/PatternClass";
-import { Plate } from "../../../classes/PlateClass"
-import { Well } from "../../../classes/WellClass";
-import { PlatesContextType } from "../../../contexts/Context";
+import { Pattern } from "../classes/PatternClass";
+import { Plate } from "../classes/PlateClass";
+import { Well } from "../classes/WellClass";
+import type { PlatesContextType } from "../contexts/Context";
+
+export interface TransferStepExport {
+  sourceBarcode: string;
+  sourceWellId: string;
+  destinationBarcode: string;
+  destinationWellId: string;
+  volume: number;
+}
+
+export interface TransferStepInternal {
+  sourcePlateId: number;
+  sourceWellId: string;
+  destinationPlateId: number;
+  destinationWellId: string;
+  volume: number;
+}
+
+export interface TransferBlock {
+  sourcePlateId: number;
+  sourceBlock: string;
+  destinationPlateId: number;
+  destinationBlock: string;
+  destinationTiles?: string[];
+  volume: number;
+  transferSteps: TransferStepInternal[];
+}
 
 export function numberToLetters(num: number): string {
   let result = '';
@@ -65,22 +91,46 @@ export function modifyPlate(clonePlate: Plate, plates: Plate[], setPlates: Plate
 export function formatWellBlock(wellIds: string[]): string {
   if (wellIds.length === 0) return '';
   if (wellIds.length === 1) return wellIds[0];
-
+  let maxRow = 0;
+  let maxCol = 0;
   const wells = [...new Set(wellIds)].sort((a, b) => {
     const coordsA = getCoordsFromWellId(a);
     const coordsB = getCoordsFromWellId(b);
+    maxRow = Math.max(maxRow,coordsA.row,coordsB.row)
+    maxCol = Math.max(maxCol,coordsA.col,coordsB.col)
     return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsA.row - coordsB.row;
-  })
+  });
+
+  const wellSet = new Set(wells);
+  
+  const firstCoords = getCoordsFromWellId(wells[0]);
+  const lastCoords = getCoordsFromWellId(wells[wells.length - 1]);
+  const expectedCount = (lastCoords.row - firstCoords.row + 1) * (lastCoords.col - firstCoords.col + 1);
+  
+  if (expectedCount === wells.length) {
+    let isComplete = true;
+    for (let row = firstCoords.row; row <= lastCoords.row && isComplete; row++) {
+      for (let col = firstCoords.col; col <= lastCoords.col; col++) {
+        if (!wellSet.has(getWellIdFromCoords(row, col))) {
+          isComplete = false;
+          break;
+        }
+      }
+    }
+    
+    if (isComplete) {
+      return `${wells[0]}:${wells[wells.length - 1]}`;
+    }
+  }
 
   const blocks: string[] = [];
   const usedWells = new Set<string>();
 
   while (usedWells.size < wells.length) {
     const startWell = wells.find(well => !usedWells.has(well))!;
-
-    const rect = findBestRectangle(startWell, wells, usedWells);
+    const rect = findBestRectangle(startWell, wellSet, usedWells, {row:maxRow,col:maxCol});
     blocks.push(rect.block);
-    rect.wells.forEach(well => usedWells.add(well));
+    rect.wellIds.forEach(well => usedWells.add(well));
   }
 
   return blocks.join(';');
@@ -88,60 +138,48 @@ export function formatWellBlock(wellIds: string[]): string {
 
 interface Rectangle {
   block: string;
-  wells: string[];
+  wellIds: string[];
 }
 
-function findBestRectangle(startWell: string, allWells: string[], usedWells: Set<string>): Rectangle {
-  const startRow = startWell.match(/^[A-Z]+/)![0];
-  const startCol = parseInt(startWell.slice(startRow.length));
+function findBestRectangle(startWell: string, allWells: Set<string>, usedWells: Set<string>, maxCoords: {row: number, col: number}): Rectangle {
+  const startCoords = getCoordsFromWellId(startWell);
   let bestRect: Rectangle = {
     block: startWell,
-    wells: [startWell]
+    wellIds: [startWell]
   };
 
-  const potentialEnds = allWells.filter(well => {
-    const endRow = well.match(/^[A-Z]+/)![0];
-    const endCol = parseInt(well.slice(endRow.length));
-    const startRowNum = lettersToNumber(startRow);
-    const endRowNum = lettersToNumber(endRow);
-    return (endRowNum >= startRowNum && endCol >= startCol) && !usedWells.has(well);
-  });
+  for (let rowDist = 0; rowDist <= maxCoords.row; rowDist++) {
+    for (let colDist = 0; colDist <= maxCoords.col; colDist++) {
+      const endRow = startCoords.row + rowDist;
+      const endCol = startCoords.col + colDist;
+      const endWell = getWellIdFromCoords(endRow, endCol);
+      
+      if (!allWells.has(endWell) || usedWells.has(endWell)) continue;
+      
+      let validRectangle = true;
+      const rectangleWells: string[] = [];
+      
+      for (let row = startCoords.row; row <= endRow; row++) {
+        for (let col = startCoords.col; col <= endCol; col++) {
+          const wellId = getWellIdFromCoords(row, col);
+          rectangleWells.push(wellId);
+          
+          if (!allWells.has(wellId) || usedWells.has(wellId)) {
+            validRectangle = false;
+            break;
+          }
+        }
+        if (!validRectangle) break;
+      }
 
-  for (const endWell of potentialEnds) {
-    const rectangleWells = getRectangleWells(startWell, endWell);
-
-    const validRectangle = rectangleWells.every(well =>
-      allWells.includes(well) && !usedWells.has(well)
-    );
-
-    if (validRectangle && rectangleWells.length > bestRect.wells.length) {
-      const block = startWell === endWell ? startWell : `${startWell}:${endWell}`;
-      bestRect = { block, wells: rectangleWells };
+      if (validRectangle && rectangleWells.length > bestRect.wellIds.length) {
+        const block = startWell === endWell ? startWell : `${startWell}:${endWell}`;
+        bestRect = { block, wellIds: rectangleWells };
+      }
     }
   }
 
   return bestRect;
-}
-
-function getRectangleWells(startWell: string, endWell: string): string[] {
-  const startRow = startWell.match(/^[A-Z]+/)![0];
-  const endRow = endWell.match(/^[A-Z]+/)![0];
-  const startCol = parseInt(startWell.slice(startRow.length));
-  const endCol = parseInt(endWell.slice(endRow.length));
-
-  const startRowNum = lettersToNumber(startRow);
-  const endRowNum = lettersToNumber(endRow);
-
-  const wells: string[] = [];
-
-  for (let rowNum = startRowNum; rowNum <= endRowNum; rowNum++) {
-    const rowLabel = numberToLetters(rowNum);
-    for (let col = startCol; col <= endCol; col++) {
-      wells.push(`${rowLabel}${col.toString().padStart(2, '0')}`);
-    }
-  }
-
-  return wells;
 }
 
 export function mapWellsToConcentrations(
@@ -341,4 +379,40 @@ export function getWellFromBarcodeAndId(barcode: string, wellId: string, plates:
   const plate = plates.find(p => p.barcode === barcode)
   if (!plate) return null
   return plate.getWell(wellId)
+}
+
+export interface WellTransferSummary {
+  counterpartBarcode: string;
+  counterpartWellId: string;
+  volume: number;
+}
+
+export type WellTransferMap = Map<string, WellTransferSummary[]>;
+
+//for plate reformat primarily
+export function buildWellTransferMap(
+  plate: Plate,
+  transferBlocks: TransferBlock[],
+  type: 'source' | 'destination',
+  plateBarcodeCache: Map<number, string>
+): WellTransferMap {
+  const map: WellTransferMap = new Map();
+  
+  for (const block of transferBlocks) {
+    const targetBarcode = type === 'source' ? plateBarcodeCache.get(block.sourcePlateId) : plateBarcodeCache.get(block.destinationPlateId);
+    if (targetBarcode !== plate.barcode) continue;
+    
+    for (const step of block.transferSteps) {
+      const wellId = type === 'source' ? step.sourceWellId : step.destinationWellId;
+      const counterpartBarcode = type === 'source' ? plateBarcodeCache.get(step.destinationPlateId) : plateBarcodeCache.get(step.sourcePlateId);
+      const counterpartWellId = type === 'source' ? step.destinationWellId : step.sourceWellId;
+      if (!counterpartBarcode) continue;
+      
+      const existing = map.get(wellId) ?? [];
+      existing.push({ counterpartBarcode, counterpartWellId, volume: step.volume });
+      map.set(wellId, existing);
+    }
+  }
+  
+  return map;
 }

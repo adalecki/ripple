@@ -6,9 +6,9 @@ import PatternManager from './PatternManager';
 import { Plate } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { PatternsContext } from '../../../contexts/Context';
-import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, numberToLetters, splitIntoBlocks } from '../utils/plateUtils';
-import { ColorConfig, generatePatternColors } from '../utils/wellColors';
-import { checkWellsInSelection, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, Point, sensibleWellSelection } from '../utils/designUtils';
+import { calculateBlockBorders, formatWellBlock, getCoordsFromWellId, numberToLetters, splitIntoBlocks } from '../../../utils/plateUtils';
+import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
+import { checkWellsInSelection, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
 
 import '../../../css/PlateComponent.css'
 import '../../../css/DesignWizard.css'
@@ -23,27 +23,25 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
   const { patterns, setPatterns, selectedPatternId } = useContext(PatternsContext);
   const [selectedPattern, setSelectedPattern] = useState<Pattern | undefined>(undefined)
   const [colorConfig, setColorConfig] = useState<ColorConfig>({ scheme: 'pattern', colorMap: generatePatternColors(patterns) })
-  const [dragging, setDragging] = useState(false);
-  const [startPoint, setStartPoint] = useState<Point>({ x: 0, y: 0 });
-  const [endPoint, setEndPoint] = useState<Point>({ x: 0, y: 0 });
+  const [isEditing, setIsEditing] = useState(false);
   const [selectedWells, setSelectedWells] = useState<string[]>([]);
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
-  const wellsRef = useRef<(HTMLDivElement)[]>([]);
+
+  const selectionRef = useRef<HTMLDivElement | null>(null);
+  const dragState = useRef({ dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
 
   useEffect(() => {
-    document.addEventListener('mousedown', (e) => handlePageDblClick(e));
+    document.addEventListener('mousedown', handlePageDblClick, { passive: true });
     return () => {
-      document.removeEventListener('mousedown', (e) => handlePageDblClick(e));
+      document.removeEventListener('mousedown', handlePageDblClick);
     };
   }, []);
 
-  //necessary for switching plate sizes and then resetting ref
-  useEffect(() => {
-    const newPlateSize = patternPlate.columns * patternPlate.rows;
-    if (wellsRef.current.length != newPlateSize) {
-      wellsRef.current = [];
+  const handlePageDblClick = useCallback((e: any) => {
+    if (e.detail > 1) {
+      setSelectedWells(prev => (prev.length ? [] : prev));
     }
-  }, [patternPlate.columns, patternPlate.rows])
+  }, [])
 
   useEffect(() => {
     let maxConcentration: number | null = null;
@@ -76,98 +74,121 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     setApplyPopup({ event: null, msgArr: [] });
   };
 
-  const handlePageDblClick = (e: any) => {
-    if (e.detail > 1) {
-      setSelectedWells([])
-    }
-  }
-
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    setDragging(true);
     const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-    setStartPoint(start);
-    setEndPoint(start)
+
+    dragState.current.dragging = true;
+    dragState.current.startX = start.x;
+    dragState.current.startY = start.y
+    dragState.current.endX = start.x
+    dragState.current.endY = start.y
+    const el = selectionRef.current;
+    if (el) {
+      el.style.display = 'block';
+      el.style.left = `${start.x}px`;
+      el.style.top = `${start.y}px`;
+      el.style.width = '0px';
+      el.style.height = '0px';
+      el.className = 'selection-rectangle';
+    }
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragging) {
-      setEndPoint({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
+    if (!dragState.current.dragging) return
+    dragState.current.endX = e.clientX + window.scrollX
+    dragState.current.endY = e.clientY + window.scrollY
+    const left = Math.min(dragState.current.startX, dragState.current.endX)
+    const top = Math.min(dragState.current.startY, dragState.current.endY)
+    const width = Math.abs(dragState.current.startX - dragState.current.endX)
+    const height = Math.abs(dragState.current.startY - dragState.current.endY)
+    const el = selectionRef.current;
+    if (el) {
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
     }
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (dragging) {
-      setDragging(false);
-      let wellArr = checkWellsInSelection(startPoint,endPoint,wellsRef);
-      let newSelection = [...selectedWells]
-      if (!e.shiftKey) {
-        setSelectedWells(wellArr)
-      }
-      else {
-        for (let wellId of wellArr) {
-          let idx = newSelection.indexOf(wellId)
-          if (idx > -1) {
-            newSelection.splice(idx, 1)
-          }
-          else {
-            newSelection.push(wellId)
-          }
-        }
-        setSelectedWells(newSelection)
-      }
+    if (!dragState.current.dragging) return
+    dragState.current.dragging = false
+    const el = selectionRef.current;
+    if (el) el.style.display = 'none';
+
+    const startWell = document.elementFromPoint(dragState.current.startX, dragState.current.startY)
+    if (startWell && startWell.closest("[data-view]")) {
+      const parentPlate = startWell.closest("[data-view]")
+      if (!parentPlate) return
+      const wells = parentPlate.querySelectorAll('[data-wellid]')
+      let wellArr = checkWellsInSelection({ x: dragState.current.startX, y: dragState.current.startY }, { x: dragState.current.endX, y: dragState.current.endY }, wells);
+      selectorHelper(e, wellArr, selectedWells, setSelectedWells)
     }
   };
 
-  const handleLabelClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLDivElement;
-    const targetLabel = target.innerText;
-    const isRow = isNaN(parseInt(targetLabel));
 
+  const selectorHelper = (e: React.MouseEvent, wellArr: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) => {
+    let newSelection = [...selectedWells]
     if (!e.shiftKey) {
-      setSelectedWells(_ => {
-        const newSelection = new Set<string>();
-        wellsRef.current.forEach(wellElement => {
-          if (wellElement) {
-            const wellId = wellElement.getAttribute('data-wellid');
-            if (!wellId) return
-            const wellCoords = getCoordsFromWellId(wellId);
-            const shouldSelect = isRow
-              ? numberToLetters(wellCoords.row) === targetLabel
-              : (wellCoords.col + 1).toString() === targetLabel;
-
-            if (shouldSelect) {
-              newSelection.add(wellId);
-            }
-          }
-        });
-        return Array.from(newSelection);
-      });
+      setSelectedWells(wellArr)
     }
     else {
-      setSelectedWells(prevSelected => {
-        const newSelection = new Set(prevSelected);
-        wellsRef.current.forEach(wellElement => {
-          if (wellElement) {
-            const wellId = wellElement.getAttribute('data-wellid');
-            if (!wellId) return
-            const wellCoords = getCoordsFromWellId(wellId);
-            const shouldSelect = isRow
-              ? numberToLetters(wellCoords.row) === targetLabel
-              : (wellCoords.col + 1).toString() === targetLabel;
-            if (shouldSelect) {
-              if (newSelection.has(wellId)) {
-                newSelection.delete(wellId);
-              } else {
-                newSelection.add(wellId);
-              }
-            }
-          }
-        });
-        return Array.from(newSelection);
-      });
+      for (let wellId of wellArr) {
+        let idx = newSelection.indexOf(wellId)
+        if (idx > -1) {
+          newSelection.splice(idx, 1)
+        }
+        else {
+          newSelection.push(wellId)
+        }
+      }
+      newSelection.sort((a, b) => {
+        const aCoords = getCoordsFromWellId(a)
+        const bCoords = getCoordsFromWellId(b)
+        const rowComp = aCoords.row - bCoords.row
+        if (rowComp === 0) {
+          return aCoords.col - bCoords.col
+        }
+        return rowComp
+      })
+      setSelectedWells(newSelection)
     }
-  }, [wellsRef]);
+  }
+
+  const handleLabelClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const newSelection = new Set<string>();
+    const target = e.target as HTMLDivElement;
+    const targetLabel = target.innerText;
+    const parentPlate = target.closest("[data-view]")
+    if (!parentPlate) return
+    const wells = parentPlate.querySelectorAll('[data-wellid]')
+    wells.forEach(wellElement => {
+      if (!wellElement) return
+      const wellId = wellElement.getAttribute('data-wellid')
+      if (!wellId) return
+      if (target.className.includes('all-wells-container')) {
+        newSelection.add(wellId)
+      }
+      else {
+        const wellCoords = getCoordsFromWellId(wellId)
+        const shouldSelect = isNaN(parseInt(targetLabel))
+          ? numberToLetters(wellCoords.row) === targetLabel
+          : (wellCoords.col + 1).toString() === targetLabel;
+
+        if (shouldSelect) {
+          newSelection.add(wellId);
+        }
+      }
+    })
+
+    if (target.className.includes('all-wells-container') && Array.from(newSelection).length == selectedWells.length) {
+      newSelection.clear()
+    }
+    selectorHelper(e, Array.from(newSelection), selectedWells, setSelectedWells)
+
+
+  }
 
   const applyPatternToWells = () => {
     if (selectedPatternId && selectedWells.length > 0) {
@@ -271,13 +292,6 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
     }
   }
 
-  const selectionStyle = {
-    left: Math.min(startPoint.x, endPoint.x),
-    top: Math.min(startPoint.y, endPoint.y),
-    width: Math.abs(startPoint.x - endPoint.x),
-    height: Math.abs(startPoint.y - endPoint.y),
-  };
-
 
   const blockBorderMap = useMemo(() => {
     return calculateBlockBorders(patternPlate);
@@ -290,9 +304,9 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
         onMouseUp={handleMouseUp}
         className='h-100'
       >
-      <Row className='h-100' style={{ minHeight: 0 }}>
-        <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
-            <PatternManager />
+        <Row className='h-100' style={{ minHeight: 0 }}>
+          <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
+            <PatternManager isEditing={isEditing} setIsEditing={setIsEditing} />
           </Col>
           <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
             <PlateView
@@ -303,8 +317,6 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
               handleLabelClick={handleLabelClick}
               handleMouseDown={handleMouseDown}
               blockBorderMap={blockBorderMap}
-              selectionStyle={dragging ? selectionStyle : undefined}
-              ref={wellsRef}
             />
             <Container>
               <Row>
@@ -316,7 +328,8 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
                     disabled={
                       !selectedPattern ||
                       selectedWells.length === 0 ||
-                      (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWells.length / (selectedPattern.replicates * selectedPattern.concentrations.length)))
+                      (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWells.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
+                      isEditing
                     }
                     className="mt-3 h-75"
                   >
@@ -325,7 +338,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
                 </Col>
                 <Col >
                   <Button
-                    onClick={() => clearPatternFromWells() }
+                    onClick={() => clearPatternFromWells()}
                     disabled={selectedWells.length === 0}
                     className="mt-3 h-75"
                     variant='danger'
@@ -335,7 +348,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
                 </Col>
                 <Col >
                   <Button
-                    onClick={() => clearPatternFromWells(true) }
+                    onClick={() => clearPatternFromWells(true)}
                     className="mt-3 h-75"
                     variant='danger'
                   >
@@ -356,7 +369,8 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
             </Container>
           </Col>
         </Row>
-        {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup}/> : ''}
+        {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}
+        <div ref={selectionRef} style={{ position: 'absolute', pointerEvents: 'none', display: 'none' }} />
       </div>
     </Container>
   );

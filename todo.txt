@@ -9,7 +9,8 @@
 #x Need to find a better way to do DMSO solvent. Right now the Excel sheet doesn't automatically come with a DMSO pattern. Why bother putting it in at all? Shouldn't the validation step just insert the pattern for you?
 #x Filename parsing in Protocol Manager isn't intuitive. At minimum add a tooltip to explain it.
 #x Add "clear plates" button to other tabs in mapperparser
-# Find better workflow for saving protocols. Right now users make an edit, then navigate away. Maybe an alert when tab changes if it's editing?
+#x Find better workflow for saving protocols. Right now users make an edit, then navigate away. Maybe an alert when tab changes if it's editing?
 # When changing plate size in Protocol Manager, if going to a smaller size and controls are outside the limit, get an error
-# Trim pattern and cpd names from input sheet for trailing white spaces
+#x Trim pattern and cpd names from input sheet for trailing white spaces
 # Uploading data files under wrong protocol just silently fails
+#x Remove TransferStep from EchoCalculatorClass, consolidate to TransferStepExport in plateUtils

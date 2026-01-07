@@ -3,19 +3,19 @@ import { Col, Container, Row } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
-import { EchoCalculator, TransferStep } from '../classes/EchoCalculatorClass';
+import { EchoCalculator } from '../classes/EchoCalculatorClass';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { customSort, InputDataType } from '../utils/echoUtils';
 import { echoInputValidation } from '../utils/validationUtils';
-import { currentPlate } from '../utils/plateUtils';
-import { ColorConfig, generateCompoundColors } from '../utils/wellColors';
+import { currentPlate, TransferStepExport } from '../../../utils/plateUtils';
+import { ColorConfig, generateCompoundColors } from '../../../utils/wellColors';
 import { PlatesContext } from '../../../contexts/Context';
 import { HslStringType } from '../../../classes/PatternClass';
 import { usePreferences } from '../../../hooks/usePreferences';
 
 import CheckpointDisplayModal from './CheckpointDisplayModal';
 import EchoForm from './EchoForm';
-import TransferListDownload from './TransferListDownload';
+import TransferListDownload from '../../../components/TransferListDownload';
 import PlateView from '../../../components/PlateView';
 
 
@@ -27,7 +27,7 @@ const EchoCalc: React.FC = () => {
   const [echoPreCalc, setEchoPreCalc] = useState<EchoPreCalculator | null>(null);
   const [checkpointTracker, setCheckpointTracker] = useState(new CheckpointTracker());
   const [compoundColorMap, setCompoundColorMap] = useState<Map<string, HslStringType>>(new Map());
-  const [transferMap, setTransferMap] = useState<Map<number, TransferStep[]>>(new Map())
+  const [transferMap, setTransferMap] = useState<Map<number, TransferStepExport[]>>(new Map())
   const { preferences } = usePreferences()
 
   const handleClose = () => setShowModal(false);
