@@ -15,6 +15,10 @@ interface PlateListProps {
   setCurSrcPlateId: React.Dispatch<React.SetStateAction<number | null>>,
   curDstPlateId: number | null,
   setCurDstPlateId: React.Dispatch<React.SetStateAction<number | null>>,
+  srcPlateSize: PlateSize,
+  setSrcPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>,
+  dstPlateSize: PlateSize,
+  setDstPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>
   transferBlocks: TransferBlock[]
 }
 
@@ -27,10 +31,12 @@ const PlateList: React.FC<PlateListProps> = ({
   setCurSrcPlateId,
   curDstPlateId,
   setCurDstPlateId,
+  srcPlateSize,
+  setSrcPlateSize,
+  dstPlateSize,
+  setDstPlateSize,
   transferBlocks
 }) => {
-  const [srcPlateSize, setSrcPlateSize] = useState<PlateSize>('384')
-  const [dstPlateSize, setDstPlateSize] = useState<PlateSize>('384')
   const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([])
   const [alertMessage, setAlertMessage] = useState<string>('')
 
