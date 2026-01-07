@@ -215,10 +215,11 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
   const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
 
   transferBlocks.forEach(transfer => {
-    const barcode = (type == 'source' ? transfer.sourceBarcode : transfer.destinationBarcode)
+    //const barcode = (type == 'source' ? transfer.sourceBarcode : transfer.destinationBarcode)
+    const plateId = (type == 'source' ? transfer.sourcePlateId : transfer.destinationPlateId)
     const block = (type == 'source' ? transfer.sourceBlock : transfer.destinationBlock)
     const colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)')
-    if (barcode === plate.barcode) {
+    if (plateId === plate.id) {
       const wells = plate.getSomeWells(block);
 
       wells.forEach(well => {

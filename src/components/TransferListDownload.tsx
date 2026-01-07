@@ -1,11 +1,10 @@
 import { Button } from 'react-bootstrap';
 import JSZip from 'jszip';
-import { TransferStep } from '../pages/EchoTransfer/classes/EchoCalculatorClass';
-import { getCoordsFromWellId } from '../utils/plateUtils';
+import { getCoordsFromWellId, TransferStepExport } from '../utils/plateUtils';
 
-const TransferListDownload = (settings: { transferMap: Map<number, TransferStep[]>, splitOutputCSVs: boolean }) => {
+const TransferListDownload = (settings: { transferMap: Map<number, TransferStepExport[]>, splitOutputCSVs: boolean }) => {
 
-  function rowColExport(step: TransferStep) {
+  function rowColExport(step: TransferStepExport) {
     const sourceCoords = getCoordsFromWellId(step.sourceWellId)
     const destCoords = getCoordsFromWellId(step.destinationWellId)
     return {
@@ -37,7 +36,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStep[
       const outputPrioSets = [[1], [2], [3, 4, 5]];
 
       for (const set of outputPrioSets) {
-        let steps: TransferStep[] = [];
+        let steps: TransferStepExport[] = [];
 
         for (const prio of set) {
           const prioSteps = settings.transferMap.get(prio);
@@ -80,7 +79,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStep[
       window.URL.revokeObjectURL(url);
 
     } else {
-      let allSteps: TransferStep[] = [];
+      let allSteps: TransferStepExport[] = [];
       for (const steps of settings.transferMap.values()) {
         allSteps = allSteps.concat(steps);
       }

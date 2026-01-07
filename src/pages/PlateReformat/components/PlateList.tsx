@@ -81,7 +81,6 @@ const PlateList: React.FC<PlateListProps> = ({
                   onChange={(e) => updateBarcode(plate.id, e.target.value)}
                   onPaste={(e) => handlePaste(e, plate.id, plates, setPlates)}
                   onBlur={() => handleBlur(plate.barcode, plates)}
-                  disabled={!!(transferBlocks.find(block => (type === "src" ? block.sourceBarcode == plate.barcode : block.destinationBarcode == plate.barcode)))}
                   onFocus={(e) => e.target.select()}
                   className="form-control form-control-sm"
                 />
@@ -93,7 +92,7 @@ const PlateList: React.FC<PlateListProps> = ({
                   e.stopPropagation();
                   deletePlate(plate.id);
                 }}
-                disabled={!!(transferBlocks.find(block => (type === "src" ? block.sourceBarcode == plate.barcode : block.destinationBarcode == plate.barcode)))}
+                disabled={!!(transferBlocks.find(block => (type === "src" ? block.sourcePlateId == plate.id : block.destinationPlateId == plate.id)))}
                 style={{ padding: '0.25rem 0.5rem' }}
               >
                 x

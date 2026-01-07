@@ -1,14 +1,14 @@
 import { WorkBook, read, utils, writeFile } from "xlsx";
 import { PreferencesState } from "../../../hooks/usePreferences";
-import { TransferInfo, TransferStep } from "../classes/EchoCalculatorClass";
+import { TransferInfo } from "../classes/EchoCalculatorClass";
 import { CompoundInventory } from "../classes/EchoPreCalculatorClass";
 import { HslStringType } from "../../../classes/PatternClass";
 import { Plate, PlateSize } from "../../../classes/PlateClass";
 import { buildSrcCompoundInventory, analyzeDilutionPatterns, prepareSrcPlates, InputDataType, executeAndRecordTransfer } from "./echoUtils";
 import { generateCompoundColors } from "../../../utils/wellColors";
-import { formatWellBlock } from "../../../utils/plateUtils";
+import { formatWellBlock, TransferStepExport } from "../../../utils/plateUtils";
 
-export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStep[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
+export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStepExport[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
   const newPlates: { 'source': Plate[], 'intermediate': Plate[], 'destination': Plate[] } = {
     'source': [],
     'intermediate': [],
@@ -104,7 +104,7 @@ export function constructPlatesFromTransfers(inputData: InputDataType, transfers
   return { newPlates, compoundMap }
 };
 
-export function performTransfers(newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, transfers: TransferStep[], compoundMap: CompoundInventory): { allPlates: Plate[], colorMap: Map<string, HslStringType>, failures: string[] } {
+export function performTransfers(newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, transfers: TransferStepExport[], compoundMap: CompoundInventory): { allPlates: Plate[], colorMap: Map<string, HslStringType>, failures: string[] } {
 
   const allPlates = [...newPlates['source'], ...newPlates['intermediate'], ...newPlates['destination']]
   const failures: string[] = []
@@ -144,7 +144,7 @@ export function performTransfers(newPlates: { "source": Plate[], "intermediate":
   return { allPlates, colorMap, failures }
 }
 
-export async function parseTransferLog(file: File): Promise<{ transfers: TransferStep[], surveyedVolumes: Map<string, Map<string, number>> }> {
+export async function parseTransferLog(file: File): Promise<{ transfers: TransferStepExport[], surveyedVolumes: Map<string, Map<string, number>> }> {
   const surveyedVolumes: Map<string, Map<string, number>> = new Map() //barcode, then wellId
   const text = await file.text();
   const lines = text.split('\n').filter(line => line.trim());
@@ -167,7 +167,7 @@ export async function parseTransferLog(file: File): Promise<{ transfers: Transfe
     throw new Error('Transfer log is missing required columns');
   }
 
-  const transfers: TransferStep[] = [];
+  const transfers: TransferStepExport[] = [];
 
   for (let i = startIdx + 2; i < lines.length; i++) {
     const line = lines[i].trim();

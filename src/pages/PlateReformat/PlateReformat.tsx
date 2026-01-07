@@ -33,6 +33,11 @@ function Home() {
     }
   };
 
+  const plateBarcodeCache: Map<number, string> = new Map()
+  for (const plate of [...srcPlates,...dstPlates]) {
+    plateBarcodeCache.set(plate.id, plate.barcode)
+  }
+
   return (
     <Row>
       <Col md={3}>
@@ -63,11 +68,13 @@ function Home() {
           onDeleteTransfer={(index) => {
             setTransferBlocks(prev => prev.filter((_, i) => i !== index));
           }}
+          plates={[...srcPlates,...dstPlates]}
         />
       </Col>
       <Col md={9} className='p-0 noselect'>
         {srcDisplayPlate && dstDisplayPlate &&
           <DualCanvasPlateView
+            plateBarcodeCache={plateBarcodeCache}
             sourcePlate={srcDisplayPlate}
             destPlate={dstDisplayPlate}
             selectedSrcWells={selectedSrcWells}

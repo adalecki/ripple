@@ -3,7 +3,7 @@ import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
 import type { PlatesContextType } from "../contexts/Context";
 
-export interface TransferStep {
+export interface TransferStepExport {
   sourceBarcode: string;
   sourceWellId: string;
   destinationBarcode: string;
@@ -11,14 +11,22 @@ export interface TransferStep {
   volume: number;
 }
 
+export interface TransferStepInternal {
+  sourcePlateId: number;
+  sourceWellId: string;
+  destinationPlateId: number;
+  destinationWellId: string;
+  volume: number;
+}
+
 export interface TransferBlock {
-  sourceBarcode: string;
+  sourcePlateId: number;
   sourceBlock: string;
-  destinationBarcode: string;
+  destinationPlateId: number;
   destinationBlock: string;
   destinationTiles?: string[];
   volume: number;
-  transferSteps: TransferStep[];
+  transferSteps: TransferStepInternal[];
 }
 
 export function numberToLetters(num: number): string {
@@ -385,18 +393,20 @@ export type WellTransferMap = Map<string, WellTransferSummary[]>;
 export function buildWellTransferMap(
   plate: Plate,
   transferBlocks: TransferBlock[],
-  type: 'source' | 'destination'
+  type: 'source' | 'destination',
+  plateBarcodeCache: Map<number, string>
 ): WellTransferMap {
   const map: WellTransferMap = new Map();
   
   for (const block of transferBlocks) {
-    const targetBarcode = type === 'source' ? block.sourceBarcode : block.destinationBarcode;
+    const targetBarcode = type === 'source' ? plateBarcodeCache.get(block.sourcePlateId) : plateBarcodeCache.get(block.destinationPlateId);
     if (targetBarcode !== plate.barcode) continue;
     
     for (const step of block.transferSteps) {
       const wellId = type === 'source' ? step.sourceWellId : step.destinationWellId;
-      const counterpartBarcode = type === 'source' ? step.destinationBarcode : step.sourceBarcode;
+      const counterpartBarcode = type === 'source' ? plateBarcodeCache.get(step.destinationPlateId) : plateBarcodeCache.get(step.sourcePlateId);
       const counterpartWellId = type === 'source' ? step.destinationWellId : step.sourceWellId;
+      if (!counterpartBarcode) continue;
       
       const existing = map.get(wellId) ?? [];
       existing.push({ counterpartBarcode, counterpartWellId, volume: step.volume });

@@ -6,6 +6,7 @@ import { buildWellTransferMap, formatWellBlock, getCoordsFromWellId, getWellIdFr
 import { getPlateColorAndBorders } from "../../../utils/designUtils";
 
 interface DualPlateViewProps {
+  plateBarcodeCache: Map<number,string>
   sourcePlate: Plate;
   destPlate: Plate;
   selectedSrcWells: string[];
@@ -18,6 +19,7 @@ interface DualPlateViewProps {
 }
 
 const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
+  plateBarcodeCache,
   sourcePlate,
   destPlate,
   selectedSrcWells,
@@ -197,9 +199,9 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
   };
 
   const { colorConfig: sourceColorConfig, borderMap: sourceBorderMap } = getPlateColorAndBorders(sourcePlate, transferBlocks, "source");
-  const sourceTransferMap = buildWellTransferMap(sourcePlate,transferBlocks,'source')
+  const sourceTransferMap = buildWellTransferMap(sourcePlate,transferBlocks,'source', plateBarcodeCache)
   const { colorConfig: destColorConfig, borderMap: destBorderMap } = getPlateColorAndBorders(destPlate, transferBlocks, "destination");
-  const destTransferMap = buildWellTransferMap(destPlate,transferBlocks,'destination')
+  const destTransferMap = buildWellTransferMap(destPlate,transferBlocks,'destination', plateBarcodeCache)
 
   return (
     <Container fluid>

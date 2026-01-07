@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { Plate } from '../../../classes/PlateClass';
-import { formatWellBlock, type TransferBlock, type TransferStep } from '../../../utils/plateUtils';
+import { formatWellBlock, type TransferBlock, type TransferStepInternal } from '../../../utils/plateUtils';
 import { FormField } from '../../../components/FormField';
 import { MoveRight } from 'lucide-react';
 import { getTileScheme, tileTransfers } from '../../../utils/designUtils';
@@ -41,11 +41,11 @@ const TransferBox: React.FC<TransferBoxProps> = ({
     if (!canAdd || !sourcePlate || !destPlate) return;
 
     const volumeNum = parseFloat(volume);
-    const transferSteps: TransferStep[] = [];
+    const transferSteps: TransferStepInternal[] = [];
     const transferBlock: TransferBlock = {
-      sourceBarcode: sourcePlate.barcode || '',
+      sourcePlateId: sourcePlate.id,
       sourceBlock,
-      destinationBarcode: destPlate.barcode || '',
+      destinationPlateId: destPlate.id,
       destinationBlock,
       destinationTiles: [],
       volume: volumeNum,
@@ -56,9 +56,9 @@ const TransferBox: React.FC<TransferBoxProps> = ({
       const tileTsfrs = tileTransfers(selectedSrcWells, tileScheme)
       for (const tsfr of tileTsfrs.pairs) {
         transferSteps.push({
-          sourceBarcode: sourcePlate.barcode || '',
+          sourcePlateId: sourcePlate.id,
           sourceWellId: tsfr[0],
-          destinationBarcode: destPlate.barcode || '',
+          destinationPlateId: destPlate.id,
           destinationWellId: tsfr[1],
           volume: volumeNum
         })
@@ -68,9 +68,9 @@ const TransferBox: React.FC<TransferBoxProps> = ({
     else {
       for (let i = 0; i < selectedSrcWells.length; i++) {
         transferSteps.push({
-          sourceBarcode: sourcePlate.barcode || '',
+          sourcePlateId: sourcePlate.id,
           sourceWellId: selectedSrcWells[i],
-          destinationBarcode: destPlate.barcode || '',
+          destinationPlateId: destPlate.id,
           destinationWellId: selectedDstWells[i],
           volume: volumeNum
         });

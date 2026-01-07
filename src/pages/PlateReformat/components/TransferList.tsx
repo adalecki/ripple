@@ -1,22 +1,37 @@
 import React from 'react';
 import { Card, ListGroup, Button } from 'react-bootstrap';
-import type { TransferBlock, TransferStep } from '../../../utils/plateUtils';
+import type { TransferBlock, TransferStepExport } from '../../../utils/plateUtils';
 import TransferListDownload from '../../../components/TransferListDownload';
 import { MoveRight } from 'lucide-react';
+import { Plate } from '../../../classes/PlateClass';
 
 interface TransferListProps {
   transferBlocks: TransferBlock[];
   onDeleteTransfer: (index: number) => void;
+  plates: Plate[];
 }
 
 const TransferList: React.FC<TransferListProps> = ({
   transferBlocks,
-  onDeleteTransfer
+  onDeleteTransfer,
+  plates
 }) => {
-  const transferMap: Map<number, TransferStep[]> = new Map()
-  const transferSteps: TransferStep[] = []
+  const transferMap: Map<number, TransferStepExport[]> = new Map()
+  const plateBarcodeCache: Map<number, string> = new Map()
+
+  for (const plate of plates) {
+    plateBarcodeCache.set(plate.id, plate.barcode)
+  }
+  const transferSteps: TransferStepExport[] = []
   for (const block of transferBlocks) {
-    transferSteps.push(...block.transferSteps)
+    const exportSteps = block.transferSteps.map((step) => ({
+      sourceBarcode: plateBarcodeCache.get(step.sourcePlateId)!,
+      sourceWellId: step.sourceWellId,
+      destinationBarcode: plateBarcodeCache.get(step.destinationPlateId)!,
+      destinationWellId: step.destinationWellId,
+      volume: step.volume
+    }))
+    transferSteps.push(...exportSteps)
   }
   if (transferSteps.length > 0) transferMap.set(3, transferSteps)
   return (
@@ -31,7 +46,7 @@ const TransferList: React.FC<TransferListProps> = ({
           <div className="text-muted small ms-3">No transfers</div>
         ) : (
           <ListGroup>
-            {transferBlocks.map((transfer, index) => (
+            {transferBlocks.map((block, index) => (
               <ListGroup.Item
                 key={index}
                 style={{
@@ -42,15 +57,15 @@ const TransferList: React.FC<TransferListProps> = ({
                 <div className="d-flex align-items-start gap-2">
                   <div className="d-flex align-items-center justify-content-between" style={{ flex: 1, minWidth: 0 }}>
                     <div className="mb-1">
-                      <strong>{transfer.sourceBarcode} </strong>
+                      <strong>{plateBarcodeCache.get(block.sourcePlateId)!} </strong>
                       <MoveRight size={16} strokeWidth={1} />
-                      <strong> {transfer.destinationBarcode}</strong>
+                      <strong> {plateBarcodeCache.get(block.destinationPlateId)!}</strong>
                       <div className="text-muted">
-                        {transfer.sourceBlock} <MoveRight size={16} strokeWidth={1} /> {transfer.destinationBlock}
+                        {block.sourceBlock} <MoveRight size={16} strokeWidth={1} /> {block.destinationBlock}
                       </div>
                     </div>
                     <div className="text-muted">
-                      {transfer.volume} nL
+                      {block.volume} nL
                     </div>
                   </div>
 
