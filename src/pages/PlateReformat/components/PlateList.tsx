@@ -209,7 +209,7 @@ const PlateList: React.FC<PlateListProps> = ({
       .split(/\r?\n/)
       .map(line => line.trim())
       .filter(line => line !== '')
-    if (pasteData.length < 1 || transferBlocks.length > 0) return
+    if (pasteData.length < 1) return
 
     if (pasteData.length == 1) {
       if (plates.some(p => p.barcode == pasteData[0])) {
@@ -243,7 +243,7 @@ const PlateList: React.FC<PlateListProps> = ({
 
       onChange(newPlates);
     }
-    setReusedBarcodes(prev => [...prev, ...duplicateBarcodes])
+    setReusedBarcodes(prev => Array.from(new Set([...prev, ...duplicateBarcodes])))
     setAlertMessage('already in list; skipped')
   };
 
