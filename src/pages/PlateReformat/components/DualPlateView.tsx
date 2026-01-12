@@ -3,7 +3,8 @@ import { Container, Row, Col } from 'react-bootstrap';
 import PlateView from '../../../components/PlateView';
 import { Plate } from '../../../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, numberToLetters, type TransferBlock } from '../../../utils/plateUtils';
-import { checkWellsInSelection, getPlateColorAndBorders } from '../../../utils/designUtils';
+import { checkWellsInSelection } from '../../../utils/designUtils';
+import { getPlateColorAndBorders } from '../utils/reformatUtils';
 import '../../../css/PlateComponent.css';
 
 interface DualPlateViewProps {
