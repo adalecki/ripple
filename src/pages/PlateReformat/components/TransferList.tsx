@@ -38,45 +38,41 @@ const TransferList: React.FC<TransferListProps> = ({
     <Card className="mb-3">
       <Card.Body>
         <div className="d-flex align-items-center justify-content-between pb-2 border-bottom mb-2">
-          <h6 className="mb-2 pb-2">Transfers</h6>
+          <h6>Transfers</h6>
           {transferMap.size > 0 && <TransferListDownload transferMap={transferMap} splitOutputCSVs={false} />}
         </div>
 
         {transferBlocks.length === 0 ? (
           <div className="text-muted small ms-3">No transfers</div>
         ) : (
-          <ListGroup>
+          <ListGroup variant="flush" className="d-flex flex-column ">
             {transferBlocks.map((block, index) => (
               <ListGroup.Item
                 key={index}
-                style={{
-                  border: 'none',
-                  padding: '0'
-                }}
+                className="d-flex align-items-center p-1"
               >
-                <div className="d-flex align-items-start gap-2">
-                  <div className="d-flex align-items-center justify-content-between" style={{ flex: 1, minWidth: 0 }}>
-                    <div className="mb-1">
-                      <strong>{plateBarcodeCache.get(block.sourcePlateId)!} </strong>
-                      <MoveRight size={16} strokeWidth={1} />
-                      <strong> {plateBarcodeCache.get(block.destinationPlateId)!}</strong>
-                      <div className="text-muted">
-                        {block.sourceBlock} <MoveRight size={16} strokeWidth={1} /> {block.destinationBlock}
-                      </div>
-                    </div>
-                    <div className="text-muted">
-                      {block.volume} nL
-                    </div>
+                <div className="flex-grow-1 small" style={{ lineHeight: 1.3, minWidth: 0 }}>
+                  <div className="d-flex align-items-center gap-1">
+                    <strong>{plateBarcodeCache.get(block.sourcePlateId)}</strong>
+                    <MoveRight size={12} strokeWidth={1.5} />
+                    <strong>{plateBarcodeCache.get(block.destinationPlateId)}</strong>
+                    <span className="text-muted ms-2">{block.volume} nL</span>
                   </div>
-
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => onDeleteTransfer(index)}
-                  >
-                    x
-                  </Button>
+                  <div className="text-muted d-flex align-items-center gap-1">
+                    <span className="flex-shrink-0">{block.sourceBlock}</span>
+                    <MoveRight size={10} strokeWidth={1.5} />
+                    <span className="transfer-list-item">{block.destinationBlock}</span>
+                  </div>
                 </div>
+
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => onDeleteTransfer(index)}
+                  style={{ padding: '0.15rem 0.4rem', lineHeight: 1 }}
+                >
+                  ×
+                </Button>
               </ListGroup.Item>
             ))}
           </ListGroup>

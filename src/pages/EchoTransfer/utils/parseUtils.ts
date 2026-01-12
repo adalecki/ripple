@@ -5,7 +5,7 @@ import { CompoundInventory } from "../classes/EchoPreCalculatorClass";
 import { HslStringType } from "../../../classes/PatternClass";
 import { Plate, PlateSize } from "../../../classes/PlateClass";
 import { buildSrcCompoundInventory, analyzeDilutionPatterns, prepareSrcPlates, InputDataType, executeAndRecordTransfer } from "./echoUtils";
-import { generateCompoundColors } from "../../../utils/wellColors";
+import { generateEntityColors } from "../../../utils/wellColors";
 import { formatWellBlock, TransferStepExport } from "../../../utils/plateUtils";
 
 export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStepExport[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
@@ -140,7 +140,7 @@ export function performTransfers(newPlates: { "source": Plate[], "intermediate":
     }
     allPlates[i].metadata.globalMaxConcentration = maxConcentration
   }
-  const colorMap = generateCompoundColors(Array.from(compoundMap.keys()))
+  const colorMap = generateEntityColors(Array.from(compoundMap.keys()))
   return { allPlates, colorMap, failures }
 }
 

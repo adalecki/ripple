@@ -1,7 +1,7 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
-import { HslStringType, Pattern } from '../classes/PatternClass';
+import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
-import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, splitIntoBlocks, TransferBlock } from './plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
   const wb: WorkBook = utils.book_new();
@@ -210,58 +210,6 @@ export function calculateTransferBorders(plate: Plate, blockString: string): Map
   return borderMap;
 }
 
-export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBlock[], type: 'source' | 'destination') {
-  const colorMap = new Map<string, HslStringType>();
-  const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
-
-  transferBlocks.forEach(transfer => {
-    //const barcode = (type == 'source' ? transfer.sourceBarcode : transfer.destinationBarcode)
-    const plateId = (type == 'source' ? transfer.sourcePlateId : transfer.destinationPlateId)
-    const block = (type == 'source' ? transfer.sourceBlock : transfer.destinationBlock)
-    const colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)')
-    if (plateId === plate.id) {
-      const wells = plate.getSomeWells(block);
-
-      wells.forEach(well => {
-        colorMap.set(well.id, colorHsl);
-      });
-
-      if (transfer.destinationTiles && transfer.destinationTiles.length > 0 && type === 'destination') {
-        transfer.destinationTiles.forEach((block) => {
-          const blockBorders = calculateTransferBorders(plate, block)
-          blockBorders.forEach((borders, wellId) => {
-            const existingMap = borderMap.get(wellId) || { top: false, right: false, bottom: false, left: false }
-            existingMap.top = existingMap.top || borders.top
-            existingMap.right = existingMap.right || borders.right
-            existingMap.bottom = existingMap.bottom || borders.bottom
-            existingMap.left = existingMap.left || borders.left
-            borderMap.set(wellId, existingMap)
-          });
-        })
-      }
-      else {
-        const blockBorders = calculateTransferBorders(plate, block);
-        blockBorders.forEach((borders, wellId) => {
-          const existingMap = borderMap.get(wellId) || { top: false, right: false, bottom: false, left: false }
-          existingMap.top = existingMap.top || borders.top
-          existingMap.right = existingMap.right || borders.right
-          existingMap.bottom = existingMap.bottom || borders.bottom
-          existingMap.left = existingMap.left || borders.left
-          borderMap.set(wellId, existingMap)
-        });
-      }
-    }
-  });
-
-  return {
-    colorConfig: {
-      scheme: 'custom' as const,
-      colorMap
-    },
-    borderMap: borderMap
-  };
-}
-
 export function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>, canvasRef: React.RefObject<HTMLCanvasElement | null>, plate: Plate): string | null {
   const canvas = canvasRef.current;
   if (!canvas) return null;
@@ -273,8 +221,8 @@ export function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>, canva
   const rows = plate.rows;
   const cols = plate.columns;
 
-  const cw = canvas.width / cols;
-  const ch = canvas.height / rows;
+  const cw = rect.width / cols;
+  const ch = rect.height / rows;
 
   const col = Math.floor(x / cw);
   const row = Math.floor(y / ch);
@@ -287,65 +235,102 @@ export function canvasCoordsToWell(e: React.MouseEvent<HTMLCanvasElement>, canva
 export interface TileScheme {
   canTile: boolean;
   srcSize: { x: number, y: number };
-  dstSize: { x: number, y: number };
   srcStartWellId: string;
   srcEndWellId: string;
-  dstStartWellId: string;
-  dstEndWellId: string;
+  explicitDestBlocks?: string[];
 }
 
 export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
-  const tileScheme: TileScheme = { canTile: false, srcSize: { x: 0, y: 0 }, dstSize: { x: 0, y: 0 }, srcStartWellId: '', srcEndWellId: '', dstStartWellId: '', dstEndWellId: '' }
-  if (srcBlock.includes(';') || dstBlock.includes(';')) return tileScheme
-  const srcCornerWellIds = srcBlock.split(':')
-  const dstCornerWellIds = dstBlock.split(':')
-  if (srcCornerWellIds.length != 2 || dstCornerWellIds.length != 2) return tileScheme
-  const srcStartWellCoords = getCoordsFromWellId(srcCornerWellIds[0])
-  const srcEndWellCoords = getCoordsFromWellId(srcCornerWellIds[1])
-  const dstStartWellCoords = getCoordsFromWellId(dstCornerWellIds[0])
-  const dstEndWellCoords = getCoordsFromWellId(dstCornerWellIds[1])
-  const srcSize = { x: srcEndWellCoords.col - srcStartWellCoords.col + 1, y: srcEndWellCoords.row - srcStartWellCoords.row + 1 }
-  const dstSize = { x: dstEndWellCoords.col - dstStartWellCoords.col + 1, y: dstEndWellCoords.row - dstStartWellCoords.row + 1 }
-  tileScheme.canTile = (srcSize.x * srcSize.y != dstSize.x * dstSize.y && dstSize.x % srcSize.x === 0 && dstSize.y % srcSize.y === 0)
-  tileScheme.srcSize = srcSize
-  tileScheme.dstSize = dstSize
-  tileScheme.srcStartWellId = srcCornerWellIds[0]
-  tileScheme.srcEndWellId = srcCornerWellIds[1]
-  tileScheme.dstStartWellId = dstCornerWellIds[0]
-  tileScheme.dstEndWellId = dstCornerWellIds[1]
-  return tileScheme
+  const tileScheme: TileScheme = { canTile: false, srcSize: { x: 0, y: 0 }, srcStartWellId: '', srcEndWellId: '' }
+  if (srcBlock.length === 0 || dstBlock.length === 0) return tileScheme
+  //handle src first, as it's straightforward
+  //can't be noncontiguous blocks, but can be a single well
+  if (srcBlock.includes(';')) return tileScheme;
+
+  const srcCornerWellIds = srcBlock.split(':');
+  if (srcCornerWellIds.length > 2 || srcCornerWellIds.length < 1) return tileScheme;
+  const srcStartWellId = srcCornerWellIds[0]
+  const srcEndWellId = (srcCornerWellIds.length === 1 ? srcCornerWellIds[0] : srcCornerWellIds[1])
+
+  const srcStartWellCoords = getCoordsFromWellId(srcStartWellId);
+  const srcEndWellCoords = getCoordsFromWellId(srcEndWellId);
+  const srcSize = { x: srcEndWellCoords.col - srcStartWellCoords.col + 1, y: srcEndWellCoords.row - srcStartWellCoords.row + 1 };
+
+  tileScheme.srcSize = srcSize;
+  tileScheme.srcStartWellId = srcStartWellId;
+  tileScheme.srcEndWellId = srcEndWellId;
+
+  //dst plate is complicated
+  //can be noncontiguous blocks, but each must be exactly the same size as source tile
+  const dstBlocks = dstBlock.split(';')
+  if (dstBlocks.length < 1) return tileScheme
+
+  const validBlocks: string[] = [];
+
+  for (const block of dstBlocks) {
+    const blockWellIds = block.split(':');
+    if (blockWellIds.length > 2 || blockWellIds.length < 1) return tileScheme
+    const blockStartWellId = blockWellIds[0]
+    const blockEndWellId = (blockWellIds.length === 1 ? blockWellIds[0] : blockWellIds[1])
+    const blockStartWellCoords = getCoordsFromWellId(blockStartWellId);
+    const blockEndWellCoords = getCoordsFromWellId(blockEndWellId);
+    const blockSize = { x: blockEndWellCoords.col - blockStartWellCoords.col + 1, y: blockEndWellCoords.row - blockStartWellCoords.row + 1 };
+
+    if (blockSize.x % srcSize.x != 0 || blockSize.y % srcSize.y != 0) {
+      return tileScheme;
+    }
+    const tilesHorizontal = blockSize.x / tileScheme.srcSize.x
+    const tilesVertical = blockSize.y / tileScheme.srcSize.y
+    for (let tileRow = 0; tileRow < tilesVertical; tileRow++) {
+      for (let tileCol = 0; tileCol < tilesHorizontal; tileCol++) {
+        const tileOriginY = blockStartWellCoords.row + (tileRow * tileScheme.srcSize.y);
+        const tileOriginX = blockStartWellCoords.col + (tileCol * tileScheme.srcSize.x);
+        const tileEndY = tileOriginY + tileScheme.srcSize.y - 1
+        const tileEndX = tileOriginX + tileScheme.srcSize.x - 1
+        const tileOriginWellId = getWellIdFromCoords(tileOriginY, tileOriginX)
+        const tileEndWellId = getWellIdFromCoords(tileEndY, tileEndX)
+        if (tileOriginWellId == tileEndWellId) { validBlocks.push(tileOriginWellId) }
+        else { validBlocks.push(tileOriginWellId + ":" + tileEndWellId) }
+      }
+    }
+  }
+
+  tileScheme.canTile = true;
+  tileScheme.explicitDestBlocks = validBlocks;
+  return tileScheme;
 }
 
-export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pairs: [string, string][], tiles: string[] } {
+export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pairs: [string, string][]; tiles: string[] } {
+
+  const fillFromOffset = (srcOffsets: Map<string, string>, originX: number, originY: number) => {
+    const tileTsfrs: string[] = []
+    for (const [offsetKey, srcWellId] of srcOffsets) {
+      const [rowOffset, colOffset] = offsetKey.split(',').map(Number);
+      const dstRow = originY + rowOffset;
+      const dstCol = originX + colOffset;
+      const dstWellId = getWellIdFromCoords(dstRow, dstCol);
+      transfers.pairs.push([srcWellId, dstWellId]);
+      tileTsfrs.push(dstWellId)
+    }
+    return tileTsfrs
+  }
+
+  const transfers: { pairs: [string, string][], tiles: string[] } = { pairs: [], tiles: [] }
   const srcOffsets = new Map<string, string>();
   const srcStartWellCoords = getCoordsFromWellId(tileScheme.srcStartWellId)
-  const dstStartWellCoords = getCoordsFromWellId(tileScheme.dstStartWellId)
   for (const wellId of srcWells) {
     const { row, col } = getCoordsFromWellId(wellId);
     const offsetKey = `${row - srcStartWellCoords.row},${col - srcStartWellCoords.col}`;
     srcOffsets.set(offsetKey, wellId);
   }
 
-  const tilesHorizontal = tileScheme.dstSize.x / tileScheme.srcSize.x
-  const tilesVertical = tileScheme.dstSize.y / tileScheme.srcSize.y
-  const transfers: { pairs: [string, string][], tiles: string[] } = { pairs: [], tiles: [] }
-
-  for (let tileRow = 0; tileRow < tilesVertical; tileRow++) {
-    for (let tileCol = 0; tileCol < tilesHorizontal; tileCol++) {
-      const tileTsfrs: string[] = []
-      const tileOriginY = dstStartWellCoords.row + (tileRow * tileScheme.srcSize.y);
-      const tileOriginX = dstStartWellCoords.col + (tileCol * tileScheme.srcSize.x);
-
-      for (const [offsetKey, srcWellId] of srcOffsets) {
-        const [rowOffset, colOffset] = offsetKey.split(',').map(Number);
-        const dstRow = tileOriginY + rowOffset;
-        const dstCol = tileOriginX + colOffset;
-        const dstWellId = getWellIdFromCoords(dstRow, dstCol);
-        transfers.pairs.push([srcWellId, dstWellId]);
-        tileTsfrs.push(dstWellId)
-      }
-      transfers.tiles.push(formatWellBlock(tileTsfrs))
+  if (tileScheme.explicitDestBlocks && tileScheme.explicitDestBlocks.length > 0) {
+    for (const block of tileScheme.explicitDestBlocks) {
+      const blockWellIds = block.split(':');
+      const blockStartCoords = getCoordsFromWellId(blockWellIds[0]);
+      const tileTsfrs = fillFromOffset(srcOffsets, blockStartCoords.col, blockStartCoords.row)
+      transfers.tiles.push(formatWellBlock(tileTsfrs));
     }
   }
-  return transfers
+  return transfers;
 }

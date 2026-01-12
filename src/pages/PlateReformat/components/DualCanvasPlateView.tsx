@@ -3,7 +3,7 @@ import { Row, Col, Container } from "react-bootstrap";
 import PlateViewCanvas from "../../../components/PlateViewCanvas";
 import { Plate } from "../../../classes/PlateClass";
 import { buildWellTransferMap, formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, type TransferBlock } from "../../../utils/plateUtils";
-import { getPlateColorAndBorders } from "../../../utils/designUtils";
+import { getPlateColorAndBorders } from "../utils/reformatUtils";
 
 interface DualPlateViewProps {
   plateBarcodeCache: Map<number,string>

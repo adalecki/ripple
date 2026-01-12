@@ -14,3 +14,6 @@
 #x Trim pattern and cpd names from input sheet for trailing white spaces
 # Uploading data files under wrong protocol just silently fails
 #x Remove TransferStep from EchoCalculatorClass, consolidate to TransferStepExport in plateUtils
+# Hide "Backfill" field when "use intermediate plates" is not selected
+# Change default preference to *not* split CSVs and zip
+#x In TransferList, the delete button is pushed to the side if the transfer block is too long

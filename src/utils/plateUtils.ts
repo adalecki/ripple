@@ -1,4 +1,4 @@
-import { Pattern } from "../classes/PatternClass";
+import { HslStringType, Pattern } from "../classes/PatternClass";
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
 import type { PlatesContextType } from "../contexts/Context";
@@ -27,6 +27,7 @@ export interface TransferBlock {
   destinationTiles?: string[];
   volume: number;
   transferSteps: TransferStepInternal[];
+  color?: HslStringType
 }
 
 export function numberToLetters(num: number): string {

@@ -1,6 +1,8 @@
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { TransferBlock, TransferStepInternal } from '../../../utils/plateUtils';
-import { getTileScheme, tileTransfers } from '../../../utils/designUtils';
+import { calculateTransferBorders, getTileScheme, tileTransfers } from '../../../utils/designUtils';
+import { HslStringType } from '../../../classes/PatternClass';
+import { generateSingleColor } from '../../../utils/wellColors';
 
 const STORAGE_KEY = 'ripple-reformat-schemes';
 
@@ -11,6 +13,7 @@ export interface SavedTransferBlock {
   destinationBlock: string;
   destinationTiles?: string[];
   volume: number;
+  color?: HslStringType;
 }
 
 export interface ReformatScheme {
@@ -62,7 +65,8 @@ export function createSchemeFromCurrentState(
     destinationPlateIndex: dstPlateIdToIndex.get(block.destinationPlateId) ?? 1,
     destinationBlock: block.destinationBlock,
     destinationTiles: block.destinationTiles?.length ? block.destinationTiles : undefined,
-    volume: block.volume
+    volume: block.volume,
+    color: block.color ? block.color : undefined
   }));
 
   return {
@@ -169,4 +173,57 @@ function regenerateTransferSteps(
 
 export function deleteScheme(schemes: ReformatScheme[], schemeId: number): ReformatScheme[] {
   return schemes.filter(s => s.id !== schemeId);
+}
+
+export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBlock[], type: 'source' | 'destination') {
+  const colorMap = new Map<string, HslStringType>();
+  const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
+
+  transferBlocks.forEach((transfer, idx) => {
+    const plateId = (type == 'source' ? transfer.sourcePlateId : transfer.destinationPlateId)
+    const block = (type == 'source' ? transfer.sourceBlock : transfer.destinationBlock)
+    let colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)') as HslStringType
+    if (transfer.color) {colorHsl = transfer.color}
+    else {colorHsl = generateSingleColor(0.13276786491229609, idx+1)}
+    if (plateId === plate.id) {
+      const wells = plate.getSomeWells(block);
+
+      wells.forEach(well => {
+        colorMap.set(well.id, colorHsl);
+      });
+
+      if (transfer.destinationTiles && transfer.destinationTiles.length > 0 && type === 'destination') {
+        transfer.destinationTiles.forEach((block) => {
+          const blockBorders = calculateTransferBorders(plate, block)
+          blockBorders.forEach((borders, wellId) => {
+            const existingMap = borderMap.get(wellId) || { top: false, right: false, bottom: false, left: false }
+            existingMap.top = existingMap.top || borders.top
+            existingMap.right = existingMap.right || borders.right
+            existingMap.bottom = existingMap.bottom || borders.bottom
+            existingMap.left = existingMap.left || borders.left
+            borderMap.set(wellId, existingMap)
+          });
+        })
+      }
+      else {
+        const blockBorders = calculateTransferBorders(plate, block);
+        blockBorders.forEach((borders, wellId) => {
+          const existingMap = borderMap.get(wellId) || { top: false, right: false, bottom: false, left: false }
+          existingMap.top = existingMap.top || borders.top
+          existingMap.right = existingMap.right || borders.right
+          existingMap.bottom = existingMap.bottom || borders.bottom
+          existingMap.left = existingMap.left || borders.left
+          borderMap.set(wellId, existingMap)
+        });
+      }
+    }
+  });
+
+  return {
+    colorConfig: {
+      scheme: 'custom' as const,
+      colorMap
+    },
+    borderMap: borderMap
+  };
 }

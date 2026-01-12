@@ -21,7 +21,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
   selectedDstWells,
   onAddTransfer,
 }) => {
-  const [volume, setVolume] = useState<string>('100');
+  const [volume, setVolume] = useState<string>('100')
   const sourceBlock = formatWellBlock(selectedSrcWells)
   const destinationBlock = formatWellBlock(selectedDstWells)
   const tileScheme = getTileScheme(sourceBlock, destinationBlock)
