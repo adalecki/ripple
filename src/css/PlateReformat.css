@@ -1,0 +1,19 @@
+.plate-reformat {
+  display: flex;
+  height: calc(100vh - var(--navbar-height));
+}
+
+.plate-reformat-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.transfer-list-item {
+  min-width: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}

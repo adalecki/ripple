@@ -16,6 +16,8 @@ import {
   applyScheme,
   deleteScheme
 } from './utils/reformatUtils';
+import '../../css/PlateReformat.css'
+import { generateSingleColor } from '../../utils/wellColors';
 
 function PlateReformat() {
   const [srcPlates, setSrcPlates] = useState<Plate[]>([]);
@@ -29,6 +31,7 @@ function PlateReformat() {
   const [transferBlocks, setTransferBlocks] = useState<TransferBlock[]>([]);
   const [schemes, setSchemes] = useState<ReformatScheme[]>(() => loadSchemes());
   const [showManageModal, setShowManageModal] = useState(false);
+  const [tsfrIdx, setTsfrIdx] = useState<number>(0)
 
   const srcDisplayPlate = currentPlate(srcPlates, curSrcPlateId);
   const dstDisplayPlate = currentPlate(dstPlates, curDstPlateId);
@@ -53,6 +56,7 @@ function PlateReformat() {
     setSrcPlates(result.srcPlates);
     setDstPlates(result.dstPlates);
     setTransferBlocks(result.transferBlocks);
+    setTsfrIdx(result.transferBlocks.length)
     setCurSrcPlateId(result.srcPlates[0]?.id ?? null);
     setCurDstPlateId(result.dstPlates[0]?.id ?? null);
     setSelectedSrcWells([]);
@@ -80,6 +84,16 @@ function PlateReformat() {
     saveSchemes(updated);
   };
 
+  const handleAddTransfer = (transferBlock: TransferBlock) => {
+    const newTsfrIdx = tsfrIdx + 1
+    const color = generateSingleColor(0.13276786491229609, newTsfrIdx) //arbitrary random seed because it looks decent
+    transferBlock.color = color
+    setTsfrIdx(newTsfrIdx)
+    setTransferBlocks(prev => [...prev, transferBlock]);
+    setSelectedDstWells([]);
+    setSelectedSrcWells([]);
+  }
+
 
   const hasUnsavedChanges = transferBlocks.length > 0;
   const canSave = srcPlates.length > 0 && dstPlates.length > 0 && transferBlocks.length > 0;
@@ -90,13 +104,20 @@ function PlateReformat() {
   }
 
   return (
-    <Row>
-      <Col md={3}>
+    <Row className='plate-reformat'>
+      <Col md={3} className='plate-reformat-sidebar'>
         <ReformatSchemesCard
           schemes={schemes}
           onLoadScheme={handleLoadScheme}
           onManageClick={() => setShowManageModal(true)}
           hasUnsavedChanges={hasUnsavedChanges}
+        />
+        <TransferBox
+          sourcePlate={srcDisplayPlate}
+          destPlate={dstDisplayPlate}
+          selectedSrcWells={selectedSrcWells}
+          selectedDstWells={selectedDstWells}
+          onAddTransfer={handleAddTransfer}
         />
         <PlateList
           srcPlates={srcPlates}
@@ -112,17 +133,6 @@ function PlateReformat() {
           dstPlateSize={dstPlateSize}
           setDstPlateSize={setDstPlateSize}
           transferBlocks={transferBlocks}
-        />
-        <TransferBox
-          sourcePlate={srcDisplayPlate}
-          destPlate={dstDisplayPlate}
-          selectedSrcWells={selectedSrcWells}
-          selectedDstWells={selectedDstWells}
-          onAddTransfer={(transferBlock) => {
-            setTransferBlocks(prev => [...prev, transferBlock]);
-            setSelectedDstWells([]);
-            setSelectedSrcWells([]);
-          }}
         />
         <TransferList
           transferBlocks={transferBlocks}

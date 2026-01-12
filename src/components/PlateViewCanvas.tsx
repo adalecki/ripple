@@ -130,11 +130,11 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
     if (borders) {
       ctx.strokeStyle = "black";
-      ctx.lineWidth = 3;
-      if (borders.top) ctx.strokeRect(x + 1, y + 2, size - 1, 0);
-      if (borders.bottom) ctx.strokeRect(x + 1, y + size - 1, size - 1, 0);
-      if (borders.left) ctx.strokeRect(x + 2, y + 1, 0, size - 1);
-      if (borders.right) ctx.strokeRect(x + size - 1, y + 1, 0, size - 1);
+      ctx.lineWidth = 2;
+      if (borders.top) ctx.strokeRect(x + 1, y + 1, size - 1, 0);
+      if (borders.bottom) ctx.strokeRect(x + 1, y + size - 0, size - 1, 0);
+      if (borders.left) ctx.strokeRect(x + 1, y + 1, 0, size - 1);
+      if (borders.right) ctx.strokeRect(x + size - 0, y + 1, 0, size - 1);
     }
   };
 
@@ -231,7 +231,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     if (plate.columns / 2 <= wellCoords.col + 1) {
       x = -100;
       tooltipX -= canvasSize.wellSize
-      //tooltipX -= 40
     }
     if (plate.rows / 2 <= wellCoords.row + 1) {
       y = -100;

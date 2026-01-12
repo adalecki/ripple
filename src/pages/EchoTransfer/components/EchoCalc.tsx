@@ -8,7 +8,7 @@ import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { customSort, InputDataType } from '../utils/echoUtils';
 import { echoInputValidation } from '../utils/validationUtils';
 import { currentPlate, TransferStepExport } from '../../../utils/plateUtils';
-import { ColorConfig, generateCompoundColors } from '../../../utils/wellColors';
+import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
 import { PlatesContext } from '../../../contexts/Context';
 import { HslStringType } from '../../../classes/PatternClass';
 import { usePreferences } from '../../../hooks/usePreferences';
@@ -98,7 +98,7 @@ const EchoCalc: React.FC = () => {
         compounds.push(cpd['Compound ID'])
       }
       compounds = Array.from(new Set(compounds))
-      setCompoundColorMap(generateCompoundColors(compounds))
+      setCompoundColorMap(generateEntityColors(compounds))
       const sortedTransferMap = customSort(structuredClone(calc.transferSteps), calc)
       setTransferMap(sortedTransferMap)
       console.log(calc, echoPreCalc)
