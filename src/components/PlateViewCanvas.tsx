@@ -12,9 +12,6 @@ interface PlateViewCanvasProps {
   view: string;
   colorConfig: ColorConfig;
   selectedWells?: string[];
-  handleMouseDown?: React.MouseEventHandler<HTMLCanvasElement>
-  handleMouseSelectionMove?: React.MouseEventHandler<HTMLCanvasElement>
-  handleMouseUp?: React.MouseEventHandler<HTMLCanvasElement>
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   blockBorderMap?: Map<string, { top: boolean; right: boolean; bottom: boolean; left: boolean }>;
   transferMap?: WellTransferMap
@@ -25,9 +22,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   view,
   colorConfig,
   selectedWells = [],
-  handleMouseDown = (() => { }),
-  handleMouseSelectionMove = (() => { }),
-  handleMouseUp = (() => { }),
   handleLabelClick = (() => { }),
   blockBorderMap,
   transferMap
@@ -203,11 +197,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx.restore();
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    handleMouseSelectionMove(e);
-    handleHoveredWellMove(e);
-  }
-
   const handleHoveredWellMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -253,6 +242,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       <div
         key={`plate-row-label-${row}`}
         className="plate-grid-label"
+        onClick={handleLabelClick}
       >
         {row}
       </div>
@@ -264,6 +254,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       <div
         key={`plate-col-label-${colIndex + 1}`}
         className='plate-grid-label'
+        style={{paddingBottom: 5}}
+        onClick={handleLabelClick}
       >
         {(colIndex + 1)}
       </div>
@@ -280,19 +272,17 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
         style={{ height: `${15 / canvasSize.dpr}px` }}
         onClick={handleLabelClick}
       />
-      <div style={{ maxWidth: canvasSize.width / canvasSize.dpr }}>
         <div
           className="col-labels-container"
-          onClick={handleLabelClick}
           style={{
-            gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`
+            gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
+            maxWidth: canvasSize.width / canvasSize.dpr
           }}>
           {columnLabels}
         </div>
-      </div>
       <div
         className="row-labels-container"
-        onClick={handleLabelClick}
+        
         style={{
           gridTemplateRows: `repeat(${plate.rows}, ${rowHeight}px)`,
         }}>
@@ -302,9 +292,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       <div className="wells-container" ref={wellsContainerRef} style={{ aspectRatio: `${plate.columns} / ${plate.rows}` }}>
         <canvas
           ref={canvasRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+          onMouseMove={handleHoveredWellMove}
           onMouseLeave={() => setHoveredWell(null)}
         />
       </div>

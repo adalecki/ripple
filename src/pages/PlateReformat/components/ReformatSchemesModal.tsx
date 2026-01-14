@@ -27,6 +27,8 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
   const [newDescription, setNewDescription] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
+  const existingNames = schemes.flatMap(s => s.name)
+
   const handleSave = () => {
     if (!newName.trim()) return;
     onSaveScheme(newName.trim(), newDescription.trim());
@@ -93,7 +95,7 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
                   <Button
                     variant="primary"
                     onClick={handleSave}
-                    disabled={!newName.trim()}
+                    disabled={!newName.trim() || existingNames.includes(newName.trim())}
                   >
                     <Save size={16} className="me-1" />
                     Save Scheme

@@ -33,7 +33,7 @@ export function generateEntityColors(entities: string[], hSeed: number = Math.ra
 export function generateSingleColor(hSeed: number = Math.random(), start: number = 1){
   const goldenRatioConjugate = 0.618033988749895;
   let h = hSeed;
-  const iter = Math.trunc((start-1)/8) * 0.15 //golden ratio wraps around at 8, so offset every 8 colors
+  const iter = Math.trunc((start-1)/8) * 0.23 //golden ratio wraps around at 8, so offset every 8 colors
   h += (goldenRatioConjugate * start + iter);
   h %= 1;
   h = h*360
