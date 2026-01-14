@@ -1,8 +1,8 @@
 import { Row, Col } from 'react-bootstrap';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plate, PlateSize } from '../../classes/PlateClass';
 import PlateList from './components/PlateList';
-import { currentPlate, type TransferBlock } from '../../utils/plateUtils';
+import { currentPlate, getWellIdFromCoords, type TransferBlock } from '../../utils/plateUtils';
 import TransferBox from './components/TransferBox';
 import TransferList from './components/TransferList';
 import DualCanvasPlateView from './components/DualCanvasPlateView';
@@ -18,6 +18,7 @@ import {
 } from './utils/reformatUtils';
 import '../../css/PlateReformat.css'
 import { generateSingleColor } from '../../utils/wellColors';
+import { labelDrag, selectorHelper } from '../../utils/designUtils';
 
 function PlateReformat() {
   const [srcPlates, setSrcPlates] = useState<Plate[]>([]);
@@ -36,12 +37,114 @@ function PlateReformat() {
   const srcDisplayPlate = currentPlate(srcPlates, curSrcPlateId);
   const dstDisplayPlate = currentPlate(dstPlates, curDstPlateId);
 
+  const selectionRef = useRef<HTMLDivElement | null>(null);
+  const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
+
   useEffect(() => {
     document.addEventListener("mousedown", handlePageDblClick);
     return () => {
       document.removeEventListener("mousedown", handlePageDblClick);
     };
   }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    //e.preventDefault();
+    const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+
+    dragState.current.mouseDown = true;
+    dragState.current.startX = start.x;
+    dragState.current.startY = start.y;
+    dragState.current.endX = start.x;
+    dragState.current.endY = start.y;
+
+    const el = selectionRef.current;
+    if (el) {
+      el.style.left = `${start.x}px`;
+      el.style.top = `${start.y}px`;
+      el.style.width = "0px";
+      el.style.height = "0px";
+      el.className = "selection-rectangle";
+    }
+  };
+
+  const handleMouseSelectionMove = (e: React.MouseEvent) => {
+    if (!dragState.current.mouseDown) return;
+    dragState.current.dragging = true;
+    dragState.current.endX = e.clientX + window.scrollX;
+    dragState.current.endY = e.clientY + window.scrollY;
+
+    const left = Math.min(dragState.current.startX, dragState.current.endX);
+    const top = Math.min(dragState.current.startY, dragState.current.endY);
+    const width = Math.abs(dragState.current.startX - dragState.current.endX);
+    const height = Math.abs(dragState.current.startY - dragState.current.endY);
+
+    const el = selectionRef.current;
+    if (el) {
+      el.style.display = "block"
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!dragState.current.mouseDown) return;
+    dragState.current.mouseDown = false;
+    dragState.current.dragging = false;
+    const el = selectionRef.current;
+    if (el) el.style.display = "none";
+    const parent = (e.target as HTMLElement).closest("[data-view]");
+    if (!parent) return;
+    const selectorQuery = parent.getAttribute("data-view")?.split("-")[1];
+    if (!selectorQuery) return;
+    const plate = selectorQuery === "source" ? srcDisplayPlate : dstDisplayPlate;
+    if (!plate) return;
+    const selected = selectorQuery === "source" ? selectedSrcWells : selectedDstWells;
+    const setSelected = selectorQuery === "source" ? setSelectedSrcWells : setSelectedDstWells;
+    const region = {
+      x1: Math.min(dragState.current.startX, dragState.current.endX),
+      y1: Math.min(dragState.current.startY, dragState.current.endY),
+      x2: Math.max(dragState.current.startX, dragState.current.endX),
+      y2: Math.max(dragState.current.startY, dragState.current.endY)
+    };
+    const startEl = document.elementFromPoint(region.x1, region.y1)
+    const endEl = document.elementFromPoint(region.x2, region.y2)
+    const labelWells = labelDrag(startEl, endEl, plate)
+    if (labelWells.length > 0) {
+      selectorHelper(e, labelWells, selected, setSelected)
+    }
+    else {
+      const canvas = parent.getElementsByTagName('canvas')[0]
+      const rect = canvas.getBoundingClientRect();
+      const cx = region.x1 - rect.left;
+      const cy = region.y1 - rect.top;
+      const cw = region.x2 - rect.left;
+      const ch = region.y2 - rect.top;
+
+      const width = rect.width;
+      const height = rect.height;
+      const cellW = width / plate.columns;
+      const cellH = height / plate.rows;
+
+      const newSelected: string[] = [];
+
+      for (let r = 0; r < plate.rows; r++) {
+        for (let c = 0; c < plate.columns; c++) {
+          const wx1 = c * cellW;
+          const wy1 = r * cellH;
+          const wx2 = wx1 + cellW;
+          const wy2 = wy1 + cellH;
+
+          const intersects = wx2 >= cx && wx1 <= cw && wy2 >= cy && wy1 <= ch;
+          if (intersects) {
+            newSelected.push(getWellIdFromCoords(r, c));
+          }
+        }
+      }
+      selectorHelper(e, newSelected, selected, setSelected);
+    }
+  };
 
   const handlePageDblClick = (e: MouseEvent) => {
     if (e.detail > 1) {
@@ -86,7 +189,7 @@ function PlateReformat() {
 
   const handleAddTransfer = (transferBlock: TransferBlock) => {
     const newTsfrIdx = tsfrIdx + 1
-    const color = generateSingleColor(0.13276786491229609, newTsfrIdx) //arbitrary random seed because it looks decent
+    const color = generateSingleColor(0.75638, newTsfrIdx) //arbitrary random seed because it looks decent
     transferBlock.color = color
     setTsfrIdx(newTsfrIdx)
     setTransferBlocks(prev => [...prev, transferBlock]);
@@ -104,7 +207,10 @@ function PlateReformat() {
   }
 
   return (
-    <Row className='plate-reformat'>
+    <Row className='plate-reformat'
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseSelectionMove}
+      onMouseUp={handleMouseUp}>
       <Col md={3} className='plate-reformat-sidebar'>
         <ReformatSchemesCard
           schemes={schemes}
@@ -132,6 +238,8 @@ function PlateReformat() {
           setSrcPlateSize={setSrcPlateSize}
           dstPlateSize={dstPlateSize}
           setDstPlateSize={setDstPlateSize}
+          setSelectedSrcWells={setSelectedSrcWells}
+          setSelectedDstWells={setSelectedDstWells}
           transferBlocks={transferBlocks}
         />
         <TransferList
@@ -152,6 +260,8 @@ function PlateReformat() {
             setSelectedSrcWells={setSelectedSrcWells}
             selectedDstWells={selectedDstWells}
             setSelectedDstWells={setSelectedDstWells}
+
+            selectionRef={selectionRef}
             transferBlocks={transferBlocks}
           />
         }

@@ -123,6 +123,7 @@ export function applyScheme(scheme: ReformatScheme): AppliedSchemeResult {
       destinationBlock: saved.destinationBlock,
       destinationTiles: saved.destinationTiles ?? [],
       volume: saved.volume,
+      color: saved.color,
       transferSteps
     };
   });
@@ -184,7 +185,7 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
     const block = (type == 'source' ? transfer.sourceBlock : transfer.destinationBlock)
     let colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)') as HslStringType
     if (transfer.color) {colorHsl = transfer.color}
-    else {colorHsl = generateSingleColor(0.13276786491229609, idx+1)}
+    else {colorHsl = generateSingleColor(0.75638, idx+1)}
     if (plateId === plate.id) {
       const wells = plate.getSomeWells(block);
 

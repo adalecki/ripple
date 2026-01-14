@@ -1,7 +1,7 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
 import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
-import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, splitIntoBlocks } from './plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
 export function generateExcelTemplate(patterns: Pattern[]) {
   const wb: WorkBook = utils.book_new();
@@ -333,4 +333,60 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pai
     }
   }
   return transfers;
+}
+
+export function selectorHelper(e: React.MouseEvent, newSelected: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) {
+  let newSelection = [...selectedWells]
+  if (!e.shiftKey) {
+    setSelectedWells(newSelected)
+  }
+  else {
+    for (let wellId of newSelected) {
+      let idx = newSelection.indexOf(wellId)
+      if (idx > -1) {
+        newSelection.splice(idx, 1)
+      }
+      else {
+        newSelection.push(wellId)
+      }
+    }
+    newSelection.sort((a, b) => {
+      const aCoords = getCoordsFromWellId(a)
+      const bCoords = getCoordsFromWellId(b)
+      const rowComp = aCoords.row - bCoords.row
+      if (rowComp === 0) {
+        return aCoords.col - bCoords.col
+      }
+      return rowComp
+    })
+    setSelectedWells(newSelection)
+  }
+}
+
+export function labelDrag(startEl: Element | null, endEl: Element | null, plate: Plate): string[] {
+  const newSelected: string[] = []
+  if (!(startEl instanceof HTMLDivElement) || !(endEl instanceof HTMLDivElement)) return newSelected
+  if (startEl === endEl) return newSelected
+  if (startEl.parentElement != endEl.parentElement) return newSelected
+  const startLabel = startEl.innerText
+  const endLabel = endEl.innerText
+  const rowRange = {start: 0, end: 0}
+  const colRange = {start: 0, end: 0}
+  if (isNaN(parseInt(startLabel))) {
+    rowRange.start = lettersToNumber(startLabel)
+    rowRange.end = lettersToNumber(endLabel)
+    colRange.end = plate.columns - 1
+  }
+  else {
+    rowRange.end = plate.rows - 1
+    colRange.start = parseInt(startLabel) - 1
+    colRange.end = parseInt(endLabel) - 1
+  }
+  for (let r = rowRange.start; r < rowRange.end + 1; r++) {
+    for (let c = colRange.start; c < colRange.end + 1; c++) {
+      const wellId = getWellIdFromCoords(r, c);
+      newSelected.push(wellId);
+    }
+  }
+  return newSelected
 }

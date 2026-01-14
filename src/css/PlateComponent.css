@@ -103,17 +103,9 @@
   grid-area: rowLabels;
 }
 
-.wells-container2 {
-  grid-area: wells;
-
-  min-width: 0;
-  min-height: 0;
-}
-
 .wells-container {
   grid-area: wells;
   width: 100%;
-
   min-width: 0;
   min-height: 0;
   position: relative;

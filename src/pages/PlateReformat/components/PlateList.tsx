@@ -18,7 +18,9 @@ interface PlateListProps {
   srcPlateSize: PlateSize,
   setSrcPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>,
   dstPlateSize: PlateSize,
-  setDstPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>
+  setDstPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>,
+  setSelectedSrcWells: React.Dispatch<React.SetStateAction<string[]>>,
+  setSelectedDstWells: React.Dispatch<React.SetStateAction<string[]>>,
   transferBlocks: TransferBlock[]
 }
 
@@ -35,6 +37,8 @@ const PlateList: React.FC<PlateListProps> = ({
   setSrcPlateSize,
   dstPlateSize,
   setDstPlateSize,
+  setSelectedSrcWells,
+  setSelectedDstWells,
   transferBlocks
 }) => {
   const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([])
@@ -136,6 +140,7 @@ const PlateList: React.FC<PlateListProps> = ({
     setSrcPlates(prev => prev.filter(p => p.id !== plateId));
     if (curSrcPlateId === plateId) {
       setCurSrcPlateId(srcPlates.length > 1 ? srcPlates[0].id : null);
+      setSelectedSrcWells([])
     }
   };
 
@@ -143,6 +148,7 @@ const PlateList: React.FC<PlateListProps> = ({
     setDstPlates(prev => prev.filter(p => p.id !== plateId));
     if (curDstPlateId === plateId) {
       setCurDstPlateId(dstPlates.length > 1 ? dstPlates[0].id : null);
+      setSelectedDstWells([])
     }
   };
 

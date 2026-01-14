@@ -54,9 +54,9 @@ const ReformatSchemesCard: React.FC<ReformatSchemeCardProps> = ({
             </Dropdown.Menu>
           </Dropdown>
 
-          <Button variant="outline-secondary" size="sm" onClick={onManageClick}>
+          <Button variant="outline-primary" size="sm" onClick={onManageClick}>
             <Settings size={14} className="me-1" />
-            Manage
+            Save/Manage
           </Button>
         </div>
       </Card.Body>
