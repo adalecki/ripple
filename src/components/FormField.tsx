@@ -89,7 +89,7 @@ export const FormField: React.FC<FormFieldProps> =
               disabled={disabled}
               placeholder={placeholder}
               step={step}
-              className="form-control"
+              className={`form-control ${(isNaN(parseFloat(displayValue)) || parseFloat(displayValue) % (step || 1) !== 0) ? 'is-invalid text-start': ''}`}
             />
           );
 

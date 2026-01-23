@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { Plate } from '../../../classes/PlateClass';
-import { formatWellBlock, type TransferBlock, type TransferStepInternal } from '../../../utils/plateUtils';
+import { formatWellBlock, type TransferBlock } from '../../../utils/plateUtils';
 import { FormField } from '../../../components/FormField';
 import { MoveRight } from 'lucide-react';
-import { getTileScheme, tileTransfers } from '../../../utils/designUtils';
+import { getTileScheme } from '../../../utils/designUtils';
+import InfoTooltip from '../../../components/InfoTooltip';
+import { calculateTransferBlock } from '../utils/reformatUtils';
 
 interface TransferBoxProps {
   sourcePlate: Plate | null;
@@ -22,6 +24,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
   onAddTransfer,
 }) => {
   const [volume, setVolume] = useState<string>('100')
+  const [treatIdentical, setTreatIdentical] = useState(false)
   const sourceBlock = formatWellBlock(selectedSrcWells)
   const destinationBlock = formatWellBlock(selectedDstWells)
   const tileScheme = getTileScheme(sourceBlock, destinationBlock)
@@ -31,54 +34,17 @@ const TransferBox: React.FC<TransferBoxProps> = ({
       sourcePlate !== null &&
       destPlate !== null &&
       selectedSrcWells.length > 0 &&
-      selectedDstWells.length >= selectedSrcWells.length &&
-      (selectedDstWells.length == selectedSrcWells.length || tileScheme.canTile) &&
+      (!treatIdentical ? (selectedDstWells.length >= selectedSrcWells.length &&
+        (selectedDstWells.length == selectedSrcWells.length || tileScheme.canTile)) :
+        selectedDstWells.length > 0) &&
       !isNaN(parseFloat(volume)) &&
-      parseFloat(volume) > 0
+      parseFloat(volume) > 0 &&
+      parseFloat(volume) % 2.5 == 0
     );
 
   const handleAddTransfer = () => {
     if (!canAdd || !sourcePlate || !destPlate) return;
-
-    const volumeNum = parseFloat(volume);
-    const transferSteps: TransferStepInternal[] = [];
-    const transferBlock: TransferBlock = {
-      sourcePlateId: sourcePlate.id,
-      sourceBlock,
-      destinationPlateId: destPlate.id,
-      destinationBlock,
-      destinationTiles: [],
-      volume: volumeNum,
-      transferSteps: []
-    };
-
-    if (tileScheme.canTile) {
-      const tileTsfrs = tileTransfers(selectedSrcWells, tileScheme)
-      for (const tsfr of tileTsfrs.pairs) {
-        transferSteps.push({
-          sourcePlateId: sourcePlate.id,
-          sourceWellId: tsfr[0],
-          destinationPlateId: destPlate.id,
-          destinationWellId: tsfr[1],
-          volume: volumeNum
-        })
-      }
-      transferBlock.destinationTiles = tileTsfrs.tiles
-    }
-    else {
-      for (let i = 0; i < selectedSrcWells.length; i++) {
-        transferSteps.push({
-          sourcePlateId: sourcePlate.id,
-          sourceWellId: selectedSrcWells[i],
-          destinationPlateId: destPlate.id,
-          destinationWellId: selectedDstWells[i],
-          volume: volumeNum
-        });
-      }
-    }
-
-    transferBlock.transferSteps = transferSteps
-
+    const transferBlock = calculateTransferBlock(sourcePlate,destPlate,sourceBlock,destinationBlock,parseFloat(volume),treatIdentical,selectedSrcWells,selectedDstWells)
     onAddTransfer(transferBlock);
   };
 
@@ -98,6 +64,20 @@ const TransferBox: React.FC<TransferBoxProps> = ({
           step={2.5}
           className='default-label-text border-bottom pb-2 mb-2'
         />
+        <span className="d-flex">
+          <FormField
+            key={'identical'}
+            id={'identical'}
+            name={'Identical'}
+            type={'switch'}
+            label={'Treat source wells as identical'}
+            value={treatIdentical}
+            onChange={(value) => setTreatIdentical(value)}
+            required={true}
+            className='default-label-text'
+          />
+          <InfoTooltip text="Source wells will be depleted evenly to apply to all selected destination wells. Source layout isn't preserved on destination." />
+        </span>
 
         <div className="mb-2">
           <div className="mb-2">
@@ -137,6 +117,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
                 'Select wells to add transfer'
               )}
             </span>
+
             <Button
               variant="primary"
               size="sm"
@@ -146,6 +127,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
               Add
             </Button>
           </div>
+
         </div>
       </Card.Body>
     </Card>

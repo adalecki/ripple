@@ -115,13 +115,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     if (well.getIsUnused()) {
       drawUnused(ctx, x, y, size);
     }
-
-    if (isSelected) {
-      ctx.strokeStyle = "blue";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x + 1, y + 1, size - 1, size - 1);
-    }
-
     if (borders) {
       ctx.strokeStyle = "black";
       ctx.lineWidth = 2;
@@ -129,6 +122,12 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       if (borders.bottom) ctx.strokeRect(x + 1, y + size - 0, size - 1, 0);
       if (borders.left) ctx.strokeRect(x + 1, y + 1, 0, size - 1);
       if (borders.right) ctx.strokeRect(x + size - 0, y + 1, 0, size - 1);
+    }
+    
+    if (isSelected) {
+      ctx.strokeStyle = "blue";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, size - 1, size - 1);
     }
   };
 

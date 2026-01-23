@@ -19,6 +19,7 @@ import {
 import '../../css/PlateReformat.css'
 import { generateSingleColor } from '../../utils/wellColors';
 import { labelDrag, selectorHelper } from '../../utils/designUtils';
+import { defaults } from './utils/defaultSchemes';
 
 function PlateReformat() {
   const [srcPlates, setSrcPlates] = useState<Plate[]>([]);
@@ -189,14 +190,18 @@ function PlateReformat() {
 
   const handleAddTransfer = (transferBlock: TransferBlock) => {
     const newTsfrIdx = tsfrIdx + 1
-    const color = generateSingleColor(0.75638, newTsfrIdx) //arbitrary random seed because it looks decent
-    transferBlock.color = color
+    if (!transferBlock.color) { transferBlock.color = generateSingleColor(0.75638, newTsfrIdx) }
     setTsfrIdx(newTsfrIdx)
     setTransferBlocks(prev => [...prev, transferBlock]);
     setSelectedDstWells([]);
     setSelectedSrcWells([]);
   }
 
+  const handleLoadDefaults = () => {
+    const existingIds = new Set(schemes.map(s => s.id));
+    const newDefaults = defaults.filter(d => !existingIds.has(d.id));
+    setSchemes([...schemes, ...newDefaults]);
+  };
 
   const hasUnsavedChanges = transferBlocks.length > 0;
   const canSave = srcPlates.length > 0 && dstPlates.length > 0 && transferBlocks.length > 0;
@@ -208,7 +213,6 @@ function PlateReformat() {
 
   return (
     <Row className='plate-reformat'
-      onMouseDown={handleMouseDown}
       onMouseMove={handleMouseSelectionMove}
       onMouseUp={handleMouseUp}>
       <Col md={3} className='plate-reformat-sidebar'>
@@ -244,13 +248,14 @@ function PlateReformat() {
         />
         <TransferList
           transferBlocks={transferBlocks}
+          setTransferBlocks={setTransferBlocks}
           onDeleteTransfer={(index) => {
             setTransferBlocks(prev => prev.filter((_, i) => i !== index));
           }}
           plates={[...srcPlates, ...dstPlates]}
         />
       </Col>
-      <Col md={9} className='p-0 noselect'>
+      <Col md={9} className='noselect' onMouseDown={handleMouseDown}>
         {srcDisplayPlate && dstDisplayPlate &&
           <DualCanvasPlateView
             plateBarcodeCache={plateBarcodeCache}
@@ -275,6 +280,7 @@ function PlateReformat() {
         onDeleteScheme={handleDeleteScheme}
         onLoadScheme={handleLoadScheme}
         canSave={canSave}
+        onLoadDefaults={handleLoadDefaults}
       />
     </Row>
   );
