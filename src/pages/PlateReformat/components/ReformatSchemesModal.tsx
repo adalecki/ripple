@@ -11,6 +11,7 @@ interface ReformatSchemesModalProps {
   onDeleteScheme: (schemeId: number) => void;
   onLoadScheme: (scheme: ReformatScheme) => void;
   canSave: boolean;
+  onLoadDefaults: () => void;
 }
 
 const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
@@ -20,7 +21,8 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
   onSaveScheme,
   onDeleteScheme,
   onLoadScheme,
-  canSave
+  canSave,
+  onLoadDefaults
 }) => {
   const [activeTab, setActiveTab] = useState<string>('save');
   const [newName, setNewName] = useState('');
@@ -153,6 +155,13 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
         </Tabs>
       </Modal.Body>
       <Modal.Footer>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={onLoadDefaults}
+        >
+          Load Default Schemes
+        </Button>
         <Button variant="secondary" onClick={handleClose}>
           Close
         </Button>

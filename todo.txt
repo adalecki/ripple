@@ -17,3 +17,6 @@
 # Hide "Backfill" field when "use intermediate plates" is not selected
 # Change default preference to *not* split CSVs and zip
 #x In TransferList, the delete button is pushed to the side if the transfer block is too long
+#x Add ability to edit transfer volumes
+# Add default plate reformat transfers - compress, decompress, interleave
+#x "Treat as identical" option for any number of src wells to any number of dst wells

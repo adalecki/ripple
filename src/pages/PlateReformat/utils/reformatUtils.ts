@@ -11,9 +11,9 @@ export interface SavedTransferBlock {
   sourceBlock: string;
   destinationPlateIndex: number;
   destinationBlock: string;
-  destinationTiles?: string[];
   volume: number;
   color?: HslStringType;
+  treatIdentical?: boolean;
 }
 
 export interface ReformatScheme {
@@ -64,9 +64,9 @@ export function createSchemeFromCurrentState(
     sourceBlock: block.sourceBlock,
     destinationPlateIndex: dstPlateIdToIndex.get(block.destinationPlateId) ?? 1,
     destinationBlock: block.destinationBlock,
-    destinationTiles: block.destinationTiles?.length ? block.destinationTiles : undefined,
     volume: block.volume,
-    color: block.color ? block.color : undefined
+    color: block.color ? block.color : undefined,
+    treatIdentical: block.treatIdentical ? block.treatIdentical : false
   }));
 
   return {
@@ -104,72 +104,14 @@ export function applyScheme(scheme: ReformatScheme): AppliedSchemeResult {
   }
 
   const transferBlocks: TransferBlock[] = scheme.transfers.map(saved => {
-    const sourcePlate = srcPlates[saved.sourcePlateIndex - 1];
-    const destPlate = dstPlates[saved.destinationPlateIndex - 1];
-
-    const transferSteps = regenerateTransferSteps(
-      sourcePlate,
-      destPlate,
-      saved.sourceBlock,
-      saved.destinationBlock,
-      saved.destinationTiles,
-      saved.volume
-    );
-
-    return {
-      sourcePlateId: sourcePlate.id,
-      sourceBlock: saved.sourceBlock,
-      destinationPlateId: destPlate.id,
-      destinationBlock: saved.destinationBlock,
-      destinationTiles: saved.destinationTiles ?? [],
-      volume: saved.volume,
-      color: saved.color,
-      transferSteps
-    };
+    const srcPlate = srcPlates[saved.sourcePlateIndex - 1];
+    const dstPlate = dstPlates[saved.destinationPlateIndex - 1];
+    const treatIdentical = saved.treatIdentical ? saved.treatIdentical : false
+    const transferBlock = calculateTransferBlock(srcPlate,dstPlate,saved.sourceBlock,saved.destinationBlock,saved.volume,treatIdentical,undefined,undefined,saved.color)
+    return transferBlock
   });
 
   return { srcPlates, dstPlates, transferBlocks };
-}
-
-function regenerateTransferSteps(
-  sourcePlate: Plate,
-  destPlate: Plate,
-  sourceBlock: string,
-  destinationBlock: string,
-  destinationTiles: string[] | undefined,
-  volume: number
-): TransferStepInternal[] {
-  const srcWellIds = sourcePlate.getSomeWells(sourceBlock).map(w => w.id);
-  const transferSteps: TransferStepInternal[] = [];
-
-  if (destinationTiles && destinationTiles.length > 0) {
-    const tileScheme = getTileScheme(sourceBlock, destinationBlock);
-    if (tileScheme.canTile) {
-      const tileTsfrs = tileTransfers(srcWellIds, tileScheme);
-      for (const tsfr of tileTsfrs.pairs) {
-        transferSteps.push({
-          sourcePlateId: sourcePlate.id,
-          sourceWellId: tsfr[0],
-          destinationPlateId: destPlate.id,
-          destinationWellId: tsfr[1],
-          volume
-        });
-      }
-    }
-  } else {
-    const dstWells = destPlate.getSomeWells(destinationBlock).map(w => w.id);
-    for (let i = 0; i < srcWellIds.length && i < dstWells.length; i++) {
-      transferSteps.push({
-        sourcePlateId: sourcePlate.id,
-        sourceWellId: srcWellIds[i],
-        destinationPlateId: destPlate.id,
-        destinationWellId: dstWells[i],
-        volume
-      });
-    }
-  }
-
-  return transferSteps;
 }
 
 export function deleteScheme(schemes: ReformatScheme[], schemeId: number): ReformatScheme[] {
@@ -227,4 +169,65 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
     },
     borderMap: borderMap
   };
+}
+
+export function calculateTransferBlock(srcPlate: Plate, dstPlate: Plate, srcBlock: string, dstBlock: string, volume: number, treatIdentical: boolean, selectedSrcWells: string[] = [], selectedDstWells: string[] = [], color?: HslStringType): TransferBlock {
+    const tileScheme = getTileScheme(srcBlock,dstBlock)
+    if (selectedSrcWells.length === 0) {selectedSrcWells = srcPlate.getSomeWells(srcBlock).map(w => w.id)}
+    if (selectedDstWells.length === 0) {selectedDstWells = dstPlate.getSomeWells(dstBlock).map(w => w.id)}
+
+    const transferSteps: TransferStepInternal[] = [];
+    const transferBlock: TransferBlock = {
+      sourcePlateId: srcPlate.id,
+      sourceBlock: srcBlock,
+      destinationPlateId: dstPlate.id,
+      destinationBlock: dstBlock,
+      destinationTiles: [],
+      volume,
+      transferSteps: [],
+      treatIdentical: treatIdentical
+    };
+    
+    if (!treatIdentical && tileScheme.canTile) {
+      const tileTsfrs = tileTransfers(selectedSrcWells, tileScheme)
+      for (const tsfr of tileTsfrs.pairs) {
+        transferSteps.push({
+          sourcePlateId: srcPlate.id,
+          sourceWellId: tsfr[0],
+          destinationPlateId: dstPlate.id,
+          destinationWellId: tsfr[1],
+          volume
+        })
+      }
+      transferBlock.destinationTiles = tileTsfrs.tiles
+    }
+    else {
+      if (treatIdentical) {
+        for (let i = 0; i < selectedDstWells.length; i++) {
+          const srcIndex = i % selectedSrcWells.length;
+          transferSteps.push({
+            sourcePlateId: srcPlate.id,
+            sourceWellId: selectedSrcWells[srcIndex],
+            destinationPlateId: dstPlate.id,
+            destinationWellId: selectedDstWells[i],
+            volume
+          })
+        }
+       }
+      else {
+        for (let i = 0; i < selectedSrcWells.length; i++) {
+          transferSteps.push({
+            sourcePlateId: srcPlate.id,
+            sourceWellId: selectedSrcWells[i],
+            destinationPlateId: dstPlate.id,
+            destinationWellId: selectedDstWells[i],
+            volume
+          });
+        }
+      }
+    }
+
+    transferBlock.transferSteps = transferSteps
+    if (color) {transferBlock.color = color}
+    return transferBlock
 }

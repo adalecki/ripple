@@ -27,6 +27,7 @@ export interface TransferBlock {
   destinationTiles?: string[];
   volume: number;
   transferSteps: TransferStepInternal[];
+  treatIdentical: boolean;
   color?: HslStringType
 }
 
