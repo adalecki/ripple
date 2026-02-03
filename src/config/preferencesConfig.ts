@@ -12,6 +12,8 @@ export interface Setting {
   defaultValue: any;
   unit?: string | React.ReactNode;
   step?: number;
+  max?: number;
+  min?: number;
   options?: SettingOption[];
 }
 
@@ -82,13 +84,15 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'DMSO Tolerance',
         type: 'number',
         defaultValue: 0.005,
-        step: 0.001
+        step: 0.001,
+        min: 0
       },
       {
         prefId: 'defaultAssayVolume',
         name: 'Well Volume (µL)',
         type: 'number',
         defaultValue: 25,
+        min: 0,
         unit: 'µL'
       },
       {
@@ -96,6 +100,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'Backfill (µL)',
         type: 'number',
         defaultValue: 10,
+        min: 0,
         unit: 'µL'
       },
       {
@@ -103,13 +108,15 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'Allowed Error',
         type: 'number',
         defaultValue: 0.1,
-        step: 0.01
+        step: 0.01,
+        min: 0
       },
       {
         prefId: 'defaultDestinationReplicates',
         name: 'Destination Replicates',
         type: 'number',
-        defaultValue: 1
+        defaultValue: 1,
+        min: 0
       },
       {
         prefId: 'useIntermediatePlates',

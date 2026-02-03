@@ -83,7 +83,9 @@ export const FormField: React.FC<FormFieldProps> =
       switch (type) {
         case 'number':
           const displayFloat = parseFloat(displayValue)
-          const isInvalid = (isNaN(displayFloat) || displayFloat % (step || 1) !== 0 || displayFloat < min || displayFloat > max)
+          const remainder = Math.abs(displayFloat % (step || 1));
+          const isStepValid = step === undefined || Math.abs(remainder) < 1e-10 || Math.abs(remainder - step) < 1e-10;
+          const isInvalid = isNaN(displayFloat) || !isStepValid || displayFloat < min || displayFloat > max;
           return (
             <input
               type="number"
@@ -97,7 +99,7 @@ export const FormField: React.FC<FormFieldProps> =
               step={step}
               min={min}
               max={max}
-              className={`form-control ${isInvalid ? 'is-invalid text-start': ''}`}
+              className={`form-control ${isInvalid ? 'is-invalid text-start' : ''}`}
             />
           );
 

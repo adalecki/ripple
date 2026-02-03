@@ -167,7 +167,11 @@ const EchoForm: React.FC<EchoFormProps> = ({
 
 
 
-        {fields.map((field) => (
+        {fields.filter(field =>
+          field.name !== 'Backfill (µL)' ||
+          setTransferFile ||
+          formValues['Use Intermediate Plates']
+        ).map((field) => (
           <FormField
             key={field.name}
             id={field.prefId}
@@ -179,6 +183,8 @@ const EchoForm: React.FC<EchoFormProps> = ({
             required={true}
             unit={field.unit}
             step={field.step}
+            max={field.max}
+            min={field.min}
           />
         ))}
 
