@@ -62,6 +62,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
           required={true}
           unit={'nL'}
           step={2.5}
+          min={0}
           className='default-label-text border-bottom pb-2 mb-2'
         />
         <span className="d-flex">
@@ -103,11 +104,13 @@ const TransferBox: React.FC<TransferBoxProps> = ({
               {selectedSrcWells.length > 0 || selectedDstWells.length > 0 ? (
                 <>
                   {selectedSrcWells.length} <MoveRight size={16} strokeWidth={2} /> {selectedDstWells.length} wells
-                  {selectedDstWells.length % selectedSrcWells.length != 0 && (
+                  {selectedDstWells.length % selectedSrcWells.length != 0 &&
+                   !treatIdentical && (
                     <span className="text-danger ms-1">(size mismatch)</span>
                   )}
                   {selectedDstWells.length > selectedSrcWells.length &&
                     selectedDstWells.length % selectedSrcWells.length === 0 &&
+                    !treatIdentical &&
                     (tileScheme.canTile ?
                       <span className="text-warning ms-1">(repeated transfer blocks)</span> :
                       <span className="text-danger ms-1">(not contiguous blocks)</span>
@@ -127,7 +130,6 @@ const TransferBox: React.FC<TransferBoxProps> = ({
               Add
             </Button>
           </div>
-
         </div>
       </Card.Body>
     </Card>

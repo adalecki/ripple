@@ -70,8 +70,8 @@ const TransferList: React.FC<TransferListProps> = ({
     setEditingIndex(null);
     setEditingVolume('');
   };
-
-  const invalidEditingVolume = (isNaN(parseFloat(editingVolume)) || parseFloat(editingVolume) % 2.5 !== 0)
+  const volumeFloat = parseFloat(editingVolume)
+  const invalidEditingVolume = (isNaN(volumeFloat) || volumeFloat % 2.5 !== 0 || volumeFloat <= 0)
 
   return (
     <Card className="mb-3">

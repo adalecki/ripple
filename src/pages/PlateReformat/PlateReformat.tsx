@@ -163,6 +163,8 @@ function PlateReformat() {
     setTsfrIdx(result.transferBlocks.length)
     setCurSrcPlateId(result.srcPlates[0]?.id ?? null);
     setCurDstPlateId(result.dstPlates[0]?.id ?? null);
+    setSrcPlateSize(scheme.srcPlateSize)
+    setDstPlateSize(scheme.dstPlateSize)
     setSelectedSrcWells([]);
     setSelectedDstWells([]);
   };
@@ -201,6 +203,7 @@ function PlateReformat() {
     const existingIds = new Set(schemes.map(s => s.id));
     const newDefaults = defaults.filter(d => !existingIds.has(d.id));
     setSchemes([...schemes, ...newDefaults]);
+    saveSchemes([...schemes,...newDefaults]);
   };
 
   const hasUnsavedChanges = transferBlocks.length > 0;
