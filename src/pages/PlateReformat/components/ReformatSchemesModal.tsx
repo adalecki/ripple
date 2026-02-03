@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, ListGroup, Tab, Tabs } from 'react-bootstrap';
+import { Modal, Button, Form, ListGroup, Col, Row } from 'react-bootstrap';
 import { Dot, MoveRight, Save, Trash2 } from 'lucide-react';
 import { ReformatScheme } from '../utils/reformatUtils';
 
@@ -24,7 +24,6 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
   canSave,
   onLoadDefaults
 }) => {
-  const [activeTab, setActiveTab] = useState<string>('save');
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -36,7 +35,6 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
     onSaveScheme(newName.trim(), newDescription.trim());
     setNewName('');
     setNewDescription('');
-    setActiveTab('browse');
   };
 
   const handleDelete = (schemeId: number) => {
@@ -66,8 +64,8 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
         <Modal.Title>Manage Reformat Schemes</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'save')}>
-          <Tab eventKey="save" title="Save Current">
+        <Row>
+          <Col>
             <div className="pt-3">
               {!canSave ? (
                 <p className="text-muted">
@@ -105,8 +103,8 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
                 </Form>
               )}
             </div>
-          </Tab>
-          <Tab eventKey="browse" title={`Saved Schemes (${schemes.length})`}>
+          </Col>
+          <Col>
             <div className="pt-3">
               {schemes.length === 0 ? (
                 <p className="text-muted">No saved schemes yet.</p>
@@ -121,9 +119,9 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
                             <small className="text-muted d-block">{scheme.description}</small>
                           )}
                           <small className="text-muted">
-                            {scheme.srcPlateCount} source plate{scheme.srcPlateCount !== 1 ? 's' : ''} ({scheme.srcPlateSize}-well)
+                            {scheme.srcPlateCount} src plate{scheme.srcPlateCount !== 1 ? 's' : ''} ({scheme.srcPlateSize}-well)
                             <MoveRight size={16} strokeWidth={1} />
-                            {scheme.dstPlateCount} destination plate{scheme.dstPlateCount !== 1 ? 's' : ''} ({scheme.dstPlateSize}-well)
+                            {scheme.dstPlateCount} dst plate{scheme.dstPlateCount !== 1 ? 's' : ''} ({scheme.dstPlateSize}-well)
                             <Dot size={16} strokeWidth={5} />
                             {scheme.transfers.length} transfer{scheme.transfers.length !== 1 ? 's' : ''}
                           </small>
@@ -151,8 +149,8 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
                 </ListGroup>
               )}
             </div>
-          </Tab>
-        </Tabs>
+          </Col>
+          </Row>
       </Modal.Body>
       <Modal.Footer>
         <Button

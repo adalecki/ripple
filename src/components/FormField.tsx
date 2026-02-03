@@ -25,6 +25,8 @@ export interface FormFieldProps {
   className?: string;
   error?: string;
   debounce?: number;
+  min?: number;
+  max?: number;
 }
 
 export const FormField: React.FC<FormFieldProps> =
@@ -43,7 +45,9 @@ export const FormField: React.FC<FormFieldProps> =
     step,
     className = '',
     error,
-    debounce
+    debounce,
+    min = -Infinity,
+    max = Infinity
   }) => {
     const [internalValue, setInternalValue] = useState(value);
     const [debouncedValue] = useDebounce(internalValue, debounce || 0);
@@ -78,6 +82,8 @@ export const FormField: React.FC<FormFieldProps> =
 
       switch (type) {
         case 'number':
+          const displayFloat = parseFloat(displayValue)
+          const isInvalid = (isNaN(displayFloat) || displayFloat % (step || 1) !== 0 || displayFloat < min || displayFloat > max)
           return (
             <input
               type="number"
@@ -89,7 +95,9 @@ export const FormField: React.FC<FormFieldProps> =
               disabled={disabled}
               placeholder={placeholder}
               step={step}
-              className={`form-control ${(isNaN(parseFloat(displayValue)) || parseFloat(displayValue) % (step || 1) !== 0) ? 'is-invalid text-start': ''}`}
+              min={min}
+              max={max}
+              className={`form-control ${isInvalid ? 'is-invalid text-start': ''}`}
             />
           );
 
