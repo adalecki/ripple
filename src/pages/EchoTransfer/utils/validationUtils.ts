@@ -66,11 +66,12 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
       layoutTabValidation(inputData, dstTestPlate, availablePatternNames, errors)
       const srcBarcodes = compoundsTabValidation(inputData, srcTestPlate, availablePatternNames, errors)
       barcodesTabValidation(inputData, srcBarcodes, errors)
-      if (!isNaN(formValues['DMSO Tolerance']) && !isNaN(formValues['Well Volume (µL)']) && !isNaN(formValues['Backfill (µL)']) && !isNaN(formValues['Allowed Error'])) {
+      console.log(formValues)
+      if (!isNaN(formValues['DMSO Tolerance']) && !isNaN(formValues['Well Volume (µL)']) && (!formValues.hasOwnProperty('Use Intermediate Plates') || !isNaN(formValues['Backfill (µL)'])) && !isNaN(formValues['Allowed Error'])) {
         const CommonData: InputDataType['CommonData'] = {
           maxDMSOFraction: parseFloat(formValues['DMSO Tolerance']),
           finalAssayVolume: parseFloat(formValues['Well Volume (µL)']),
-          intermediateBackfillVolume: parseFloat(formValues['Backfill (µL)']),
+          intermediateBackfillVolume: parseFloat(formValues['Backfill (µL)']) || 0,
           allowableError: parseFloat(formValues['Allowed Error']),
           destReplicates: parseInt(formValues['Destination Replicates']),
           createIntConcs: Boolean(formValues['Use Intermediate Plates']),
