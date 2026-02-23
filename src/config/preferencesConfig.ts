@@ -15,6 +15,7 @@ export interface Setting {
   max?: number;
   min?: number;
   options?: SettingOption[];
+  tooltip?: string;
 }
 
 export interface SettingCategory {
@@ -85,7 +86,8 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'number',
         defaultValue: 0.005,
         step: 0.001,
-        min: 0
+        min: 0,
+        tooltip: 'Enter as a decimal, e.g. 0.005 = 0.5%'
       },
       {
         prefId: 'defaultAssayVolume',
@@ -101,7 +103,8 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'number',
         defaultValue: 10,
         min: 0,
-        unit: 'µL'
+        unit: 'µL',
+        tooltip: 'Volume added to intermediate plates'
       },
       {
         prefId: 'defaultAllowedError',
@@ -109,7 +112,8 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'number',
         defaultValue: 0.1,
         step: 0.01,
-        min: 0
+        min: 0,
+        tooltip: 'Enter as a decimal, e.g. 0.1 = 10%'
       },
       {
         prefId: 'defaultDestinationReplicates',

@@ -185,6 +185,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
             step={field.step}
             max={field.max}
             min={field.min}
+            tooltip={field.tooltip}
           />
         ))}
 

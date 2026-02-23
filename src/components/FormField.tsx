@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import '../css/FormField.css'
+import InfoTooltip from './InfoTooltip';
 
 export type FormFieldType = 'text' | 'number' | 'select' | 'switch';
 
@@ -27,6 +28,7 @@ export interface FormFieldProps {
   debounce?: number;
   min?: number;
   max?: number;
+  tooltip?: string;
 }
 
 export const FormField: React.FC<FormFieldProps> =
@@ -47,7 +49,8 @@ export const FormField: React.FC<FormFieldProps> =
     error,
     debounce,
     min = -Infinity,
-    max = Infinity
+    max = Infinity,
+    tooltip
   }) => {
     const [internalValue, setInternalValue] = useState(value);
     const [debouncedValue] = useDebounce(internalValue, debounce || 0);
@@ -168,7 +171,10 @@ export const FormField: React.FC<FormFieldProps> =
       </div>
     ) : (
       <div className={baseClassName}>
-        <label htmlFor={id} className={className.includes('default-label-text') ? '' : "form-label"}>{label}</label>
+        <label htmlFor={id} className={className.includes('default-label-text') ? '' : "form-label"}>
+          {label}
+          {tooltip && <InfoTooltip text={tooltip} />}
+        </label>
         <div className="form-field-input">
           {renderInput()}
         </div>

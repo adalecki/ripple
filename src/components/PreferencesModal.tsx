@@ -93,6 +93,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
                 options={setting.options}
                 unit={setting.unit}
                 step={setting.step}
+                tooltip={setting.tooltip}
                 className="preferences-field"
               />
             ))}
