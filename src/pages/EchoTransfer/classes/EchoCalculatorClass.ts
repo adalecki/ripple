@@ -79,7 +79,7 @@ export class EchoCalculator {
   //prepares necessary number of intermediate plates 
   prepareIntPlates(): Plate[] {
     let totalIntWellsNeeded = { level1: 0, level2: 0 };
-    const echoIntDeadVolume = this.intermediateBackfillVolume < 15000 ? 2500 : 15000
+    const echoIntDeadVolume = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000
 
     for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {
       const middleMap = this.echoPreCalc.totalVolumes.get(compoundId);
@@ -155,7 +155,7 @@ export class EchoCalculator {
   }
 
   fillIntPlates() {
-    const echoIntDeadVolume = this.intermediateBackfillVolume < 15000 ? 2500 : 15000
+    const echoIntDeadVolume = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000
     const intermediateNeeds = new Map<string, Map<number, number>>();
 
     for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {

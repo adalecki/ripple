@@ -275,7 +275,7 @@ export class EchoPreCalculator {
 
     for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
       let intermediatePlateDeadVolume = 15000;
-      if (this.intermediateBackfillVolume < 15000) {
+      if (this.intermediateBackfillVolume <= 15000) {
         intermediatePlateDeadVolume = 2500;
       }
       const intWellsNeeded = Math.ceil(
