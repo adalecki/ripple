@@ -10,6 +10,7 @@ import { PreferencesProvider } from "./hooks/usePreferences";
 import MapperParser from "./pages/MapperParser/MapperParser";
 
 import './css/router.css'
+import PlateReformat from "./pages/PlateReformat/PlateReformat";
 
 const Layout = () => (
   <PreferencesProvider>
@@ -27,6 +28,7 @@ const router = createHashRouter(
       <Route path="echotsfr" element={<EchoTransfer />} />
       <Route path="dilutiondesigner" element={<DilutionDesigner />} />
       <Route path="mapperparser" element={<MapperParser />} />
+      <Route path="platereformat" element={<PlateReformat />} />
       <Route path="*" element={<NoPage />} />
     </Route>
   )

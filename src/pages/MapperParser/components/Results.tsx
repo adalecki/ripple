@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { Col, Row, Container } from 'react-bootstrap';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
-import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
+import { currentPlate } from '../../../utils/plateUtils';
 import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';

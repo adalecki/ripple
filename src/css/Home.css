@@ -1,5 +1,8 @@
 .tool-card {
   transition: all 0.2s ease-in-out;
+  width: 450px;
+  max-width: 100%;
+  display: flex;
 }
 
 .tool-card:hover {
@@ -21,5 +24,5 @@
 }
 
 .tool-card:hover .tool-icon {
-  color: #0445ad !important;  /* Bootstrap primary color */
+  color: #0445ad !important;
 }

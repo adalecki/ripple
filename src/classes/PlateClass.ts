@@ -1,4 +1,4 @@
-import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../pages/EchoTransfer/utils/plateUtils";
+import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../utils/plateUtils";
 import { Pattern } from "./PatternClass";
 import { Well } from "./WellClass";
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
@@ -23,7 +23,7 @@ export class Plate {
   }) {
     this.id = config.id || Date.now();
     this.barcode = config.barcode || '';
-    this.metadata = config.metadata || {globalMaxConcentration: 0};
+    this.metadata = config.metadata || { globalMaxConcentration: 0 };
     const plateDimensions = this.getPlateDimensions(config.plateSize || '384');
     this.rows = plateDimensions.rows;
     this.columns = plateDimensions.cols;
@@ -100,7 +100,7 @@ export class Plate {
   getWell(wellId: string): Well | null {
     let paddedWellId = wellId
     const splitWell = wellId.match(/([A-Z]+)(\d+)/)
-    
+
     if (splitWell && splitWell[2].length === 1) {
       paddedWellId = `${splitWell[1]}${splitWell[2].toString().padStart(2, '0')}`
     }
@@ -123,7 +123,8 @@ export class Plate {
       const endMatch = endWell.match(/([A-Z]+)(\d+)/);
 
       if (!startMatch || !endMatch || !(startMatch[0] == startWell) || !(endMatch[0] == endWell)) {
-        throw new Error(`Invalid well format in range: ${range}`);
+        console.warn(`Invalid well format in range: ${range}`);
+        return [] //return empty array, don't kill program
       }
 
       const startCoords = getCoordsFromWellId(startWell);
@@ -140,20 +141,19 @@ export class Plate {
           wellIDs.push(getWellIdFromCoords(rowNum, colNum));
         }
       }
-      
       return wellIDs;
     };
 
     const blockRanges = rawRange.split(';');
     const wellIDs: string[] = blockRanges.flatMap(blockRange => getWellsFromRange(blockRange.trim()));
+    const wells: Well[] = wellIDs.reduce((wells: Well[], wellID) => {
+      const well = this.wells[wellID]
+      if (well) {wells.push(well)}
+      else {console.warn(`Well ${wellID} not found`)}
+      return wells
+    }, [])
 
-    return wellIDs.map(wellID => {
-      const well = this.wells[wellID];
-      if (!well) {
-        throw new Error(`Well ${wellID} not found`);
-      }
-      return well;
-    });
+    return wells
   }
 
   applyPattern(wellBlock: string, pattern: Pattern): void {
@@ -164,11 +164,11 @@ export class Plate {
       }
     } else {
       const concentrations = pattern.concentrations.filter(c => c != null)
-      const concentrationArr = mapWellsToConcentrations(this,wellBlock,concentrations,pattern.direction[0])
+      const concentrationArr = mapWellsToConcentrations(this, wellBlock, concentrations, pattern.direction[0])
       for (const concIdx in concentrations) {
         for (const wellId of concentrationArr[concIdx]) {
           const well = this.getWell(wellId)
-          if (well) {well.applyPattern(pattern.name,concentrations[concIdx])}
+          if (well) { well.applyPattern(pattern.name, concentrations[concIdx]) }
         }
       }
     }
@@ -196,7 +196,7 @@ export class Plate {
       this.patterns[patternName].locations = this.patterns[patternName].locations.filter(
         block => block !== wellBlock
       );
-      
+
       if (this.patterns[patternName].locations.length === 0) {
         delete this.patterns[patternName];
       }

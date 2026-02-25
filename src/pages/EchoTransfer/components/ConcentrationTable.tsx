@@ -37,7 +37,7 @@ const ConcentrationTable: React.FC<ConcentrationTableProps> = ({
       onChange={handleValuesChange}
       disabled={disabled}
       showLabels={true}
-      valueLabel="Concentration"
+      valueLabel="Concentration (µM)"
       canAdd={true}
       onAdd={handleAdd}
     />

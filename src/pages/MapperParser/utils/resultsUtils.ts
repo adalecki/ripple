@@ -1,7 +1,7 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
 import { Protocol } from '../../../types/mapperTypes';
-import { getWellIndex } from '../../EchoTransfer/utils/plateUtils';
+import { getWellIndex } from '../../../utils/plateUtils';
 
 export interface TreatmentWell {
   wellId: string;

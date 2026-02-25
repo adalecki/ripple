@@ -1,7 +1,7 @@
 import { utils, read, WorkSheet } from 'xlsx';
 import { ControlDefinition, Protocol } from '../../../types/mapperTypes';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
-import { getWellIdFromCoords, numberToLetters } from '../../EchoTransfer/utils/plateUtils';
+import { getWellIdFromCoords, numberToLetters } from '../../../utils/plateUtils';
 import { getDestinationPlates } from './exportUtils';
 import { Well } from '../../../classes/WellClass';
 

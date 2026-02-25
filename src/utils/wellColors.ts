@@ -1,6 +1,6 @@
-import { Plate } from "../../../classes/PlateClass";
-import { Well } from "../../../classes/WellClass";
-import { HslStringType, Pattern } from "../../../classes/PatternClass";
+import { Plate } from "../classes/PlateClass";
+import { Well } from "../classes/WellClass";
+import { HslStringType, Pattern } from "../classes/PatternClass";
 import * as d3 from 'd3'
 
 export interface HslType {
@@ -10,24 +10,37 @@ export interface HslType {
 }
 
 export interface ColorConfig {
-  scheme: 'compound' | 'pattern' | 'rawResponse' | 'normalizedResponse';
+  scheme: 'compound' | 'pattern' | 'rawResponse' | 'normalizedResponse' | 'custom';
   colorMap: Map<string, HslStringType>;
   maxConcentration?: number;
   responseRange?: { min: number; max: number };
 }
 
-export function generateCompoundColors(compounds: string[]): Map<string, HslStringType> {
+export function generateEntityColors(entities: string[], hSeed: number = Math.random()): Map<string, HslStringType> {
   const saturation = '100'
   const lightness = '80'
   const colorMap = new Map<string, HslStringType>();
-  const n = compounds.length;
-  const hues = buildHues(n)
-  compounds.forEach((compound, index) => {
+  const n = entities.length;
+  const hues = buildHues(n,hSeed)
+  entities.forEach((entity, index) => {
     let color = `hsl(${hues[index]},${saturation}%,${lightness}%)` as HslStringType
-    colorMap.set(compound, color)
+    colorMap.set(entity, color)
   });
 
   return colorMap;
+}
+
+export function generateSingleColor(hSeed: number = Math.random(), start: number = 1){
+  const goldenRatioConjugate = 0.618033988749895;
+  let h = hSeed;
+  const iter = Math.trunc((start-1)/8) * 0.23 //golden ratio wraps around at 8, so offset every 8 colors
+  h += (goldenRatioConjugate * start + iter);
+  h %= 1;
+  h = h*360
+
+  const color = `hsl(${h},100%,67%)` as HslStringType
+
+  return color;
 }
 
 export function generatePatternColors(patterns: Pattern[]) {
@@ -59,6 +72,8 @@ export function wellColors(plate: Plate, config: ColorConfig): { wellId: string;
       case 'pattern':
         colors = getPatternColor(well, config);
         break;
+      case 'custom':
+        colors = config.colorMap.get(well.id) ? [config.colorMap.get(well.id)!] : []
     }
 
     wellColors.push({
@@ -121,9 +136,9 @@ function wellLightness(well: Well, concentration: number, maxValue: number) {
   return lightness
 }
 
-function buildHues(count: number): number[] {
+function buildHues(count: number, hSeed: number): number[] {
   const goldenRatioConjugate = 0.618033988749895;
-  let h = Math.random();
+  let h = hSeed;
   const hues = [];
 
   for (let i = 0; i < count; i++) {

@@ -1,19 +1,10 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
-import { formatWellBlock, getWellFromBarcodeAndId, mapWellsToConcentrations } from '../utils/plateUtils';
+import { formatWellBlock, getWellFromBarcodeAndId, mapWellsToConcentrations, TransferStepExport } from '../../../utils/plateUtils';
 import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
 import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { DilutionPattern } from '../../../classes/PatternClass';
-
-// strings recorded instead of class references to avoid object reference issues
-export interface TransferStep {
-  sourceBarcode: string;
-  sourceWellId: string;
-  destinationBarcode: string;
-  destinationWellId: string;
-  volume: number;
-}
 
 export interface TransferInfo {
   transferType: 'compound' | 'solvent';
@@ -43,7 +34,7 @@ export class EchoCalculator {
   sourcePlates: Plate[];
   intermediatePlates: Plate[];
   destinationPlates: Plate[];
-  transferSteps: TransferStep[];
+  transferSteps: TransferStepExport[];
   maxDMSOFraction: number;
   intermediateBackfillVolume: number;
   finalAssayVolume: number;
@@ -220,7 +211,7 @@ export class EchoCalculator {
           const sourceWell = this.findSourceWell(possibleLocs,concInfo.volToTsfr,this.evenDepletion)
           if (!sourceWell) break;
 
-          const transferStep: TransferStep = {
+          const transferStep: TransferStepExport = {
             sourceBarcode: sourceWell.barcode,
             sourceWellId: sourceWell.wellId,
             destinationBarcode: intPlate.barcode,
@@ -456,7 +447,7 @@ export class EchoCalculator {
           if (volToAdd > 0) {
             const srcWell = this.findSourceWell(possibleLocs,volToAdd,this.evenDepletion)
             if (srcWell) {
-              const transferStep: TransferStep = {
+              const transferStep: TransferStepExport = {
                 sourceBarcode: srcWell.barcode,
                 sourceWellId: srcWell.wellId,
                 destinationBarcode: plate.barcode,
@@ -502,7 +493,7 @@ export class EchoCalculator {
         }
         const srcWell = this.findSourceWell(possibleSrcLocs, concInfo.volToTsfr, this.evenDepletion)
         if (srcWell) {
-          const transferStep: TransferStep = {
+          const transferStep: TransferStepExport = {
             sourceBarcode: srcWell.barcode,
             sourceWellId: srcWell.wellId,
             destinationBarcode: destPlate.barcode,
@@ -678,7 +669,7 @@ export class EchoCalculator {
     plate.metadata.globalMaxConcentration = maxConcentration;
   }
 
-  getTransferSteps(): TransferStep[] {
+  getTransferSteps(): TransferStepExport[] {
     return this.transferSteps;
   }
 }

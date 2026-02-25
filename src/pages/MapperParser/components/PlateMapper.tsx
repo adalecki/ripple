@@ -3,12 +3,12 @@ import { Row, Col, Alert, Container, Button } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 import { HslStringType } from '../../../classes/PatternClass';
 import PlateView from '../../../components/PlateView';
-import { ColorConfig } from '../../EchoTransfer/utils/wellColors';
+import { ColorConfig } from '../../../utils/wellColors';
 import '../../../css/PlateComponent.css';
 import { echoInputValidation } from '../../EchoTransfer/utils/validationUtils';
 import { usePreferences } from '../../../hooks/usePreferences';
 import { MappedPlatesContext } from '../../../contexts/Context';
-import { currentPlate } from '../../EchoTransfer/utils/plateUtils';
+import { currentPlate } from '../../../utils/plateUtils';
 import { constructPlatesFromTransfers, generateNewExcelTemplate, parseTransferLog, performTransfers } from '../../EchoTransfer/utils/parseUtils';
 import EchoForm from '../../EchoTransfer/components/EchoForm';
 
