@@ -208,7 +208,7 @@ export class EchoCalculator {
         for (const intWell of wellBlock) {
 
           const possibleLocs = this.findAvailableIntermediates(compoundId, concInfo)
-          const sourceWell = this.findSourceWell(possibleLocs,concInfo.volToTsfr,this.evenDepletion)
+          const sourceWell = this.findSourceWell(possibleLocs, concInfo.volToTsfr, this.evenDepletion)
           if (!sourceWell) break;
 
           const transferStep: TransferStepExport = {
@@ -284,7 +284,7 @@ export class EchoCalculator {
       for (const compoundGroup of patternMap.values()) {
         for (const loc of compoundGroup.locations) {
           if (loc.concentration === concInfo.sourceConc) {
-              possibleLocs.push({barcode: loc.barcode, wellId: loc.wellId});
+            possibleLocs.push({ barcode: loc.barcode, wellId: loc.wellId });
           }
         }
       }
@@ -427,12 +427,24 @@ export class EchoCalculator {
   }
 
   dmsoNormalization() {
-    let possibleLocs: {barcode: string, wellId: string}[] = []
+    let possibleLocs: { barcode: string, wellId: string }[] = []
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates]) {
       for (const well of plate) {
-        if (well && well.isSolventOnlyWell('DMSO')) {possibleLocs.push({barcode: well.parentBarcode, wellId: well.id})}
+        if (well && well.isSolventOnlyWell('DMSO')) { possibleLocs.push({ barcode: well.parentBarcode, wellId: well.id }) }
       }
     }
+    const treatmentWellIds = new Set<string>()
+    if (this.inputData.CommonData.skipUnusedBlocks) {
+      const treatmentPatternNames = new Set<string>()
+      this.echoPreCalc.dilutionPatterns.forEach((v, k) => { if (v.type == 'Treatment') treatmentPatternNames.add(k) })
+
+      for (const line of this.echoPreCalc.inputData.Layout) {
+        if (treatmentPatternNames.has(line.Pattern)) {
+          this.destinationPlates[0].getSomeWells(line['Well Block']).map((w) => w.id).forEach((id) => treatmentWellIds.add(id))
+        }
+      }
+    }
+
     for (const plate of this.destinationPlates) {
       let maxVolume = 0
       for (const well of plate) {
@@ -442,10 +454,10 @@ export class EchoCalculator {
         }
       }
       for (const well of plate) {
-        if (well && !well.getIsUnused()) {
+        if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length == 0)) {
           const volToAdd = (maxVolume - well.getTotalVolume())
           if (volToAdd > 0) {
-            const srcWell = this.findSourceWell(possibleLocs,volToAdd,this.evenDepletion)
+            const srcWell = this.findSourceWell(possibleLocs, volToAdd, this.evenDepletion)
             if (srcWell) {
               const transferStep: TransferStepExport = {
                 sourceBarcode: srcWell.barcode,

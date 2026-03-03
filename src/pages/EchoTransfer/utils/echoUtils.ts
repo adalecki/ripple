@@ -58,6 +58,7 @@ export type InputDataType = {
     'dmsoNormalization': boolean;
     'evenDepletion': boolean;
     'updateFromSurveyVolumes': boolean;
+    'skipUnusedBlocks': boolean;
   }
 }
 

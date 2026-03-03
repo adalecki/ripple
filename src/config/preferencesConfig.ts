@@ -135,6 +135,13 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         defaultValue: true
       },
       {
+        prefId: 'skipUnusedBlocks',
+        name: 'Skip Unused Treatment Blocks',
+        type: 'switch',
+        defaultValue: true,
+        tooltip: 'Do not DMSO normalize unused treatment blocks'
+      },
+      {
         prefId: 'evenDepletion',
         name: 'Evenly Deplete Source Wells',
         type: 'switch',
