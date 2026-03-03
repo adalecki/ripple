@@ -428,6 +428,7 @@ export class EchoCalculator {
 
   dmsoNormalization() {
     let possibleLocs: { barcode: string, wellId: string }[] = []
+    let failedNorms: Map<string,Set<string>> = new Map()
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates]) {
       for (const well of plate) {
         if (well && well.isSolventOnlyWell('DMSO')) { possibleLocs.push({ barcode: well.parentBarcode, wellId: well.id }) }
@@ -472,9 +473,23 @@ export class EchoCalculator {
               }
               executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
             }
+            else {
+              let plateFails = failedNorms.get(plate.barcode)
+              if (!plateFails) {
+                failedNorms.set(plate.barcode, new Set<string>())
+                plateFails = failedNorms.get(plate.barcode)
+              }
+              plateFails!.add(well.id)
+            }
           }
         }
       }
+    }
+    if (failedNorms.size > 0) {
+      failedNorms.forEach((v,k) => {
+        let wellBlock = formatWellBlock(Array.from(v))
+        this.errors.push(`Insufficient DMSO to normalize ${k} - ${wellBlock}`)
+      })
     }
   }
 
