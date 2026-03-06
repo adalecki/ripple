@@ -3,6 +3,7 @@ import { Button, Row, Col } from 'react-bootstrap';
 import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
 import { FormField } from '../../../components/FormField';
+import { plateZPrimeFactor } from '../utils/resultsUtils';
 
 export interface PlateResultsOptions {
   normalized: boolean;
@@ -11,6 +12,7 @@ export interface PlateResultsOptions {
   responseRangeMin: number | '';
   responseRangeMax: number | '';
   graphsPerRow: number;
+  showAllPlates: boolean;
 }
 
 interface PlateResultsCardProps {
@@ -42,6 +44,7 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
               <div><strong>Plate ID:</strong> {plate.id}</div>
               <div><strong>Barcode:</strong> {plate.barcode || 'None'}</div>
               <div><strong>Wells:</strong> {Object.keys(plate.getWells()).length}</div>
+              {protocol && <div><strong>Z' Factor:</strong> {plateZPrimeFactor(plate,protocol).toFixed(3)}</div>}
             </div>
 
             {protocol && protocol.dataProcessing.controls.length > 0 && (
@@ -52,8 +55,8 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
                     {control.type}: {control.wells}
                   </div>
                 ))}
-                <div className="small text-muted mt-1">
-                  <em>Controls are excluded from DRCs</em>
+                <div className="small text-muted mt-1 fst-italic">
+                  Controls are excluded from DRCs
                 </div>
                 {maskedWells.length > 0 && (
                   <div className="small text-muted mt-1">
@@ -88,6 +91,14 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
               label="Show All Wells"
               value={options.showAllWells}
               onChange={(value) => onOptionsChange({ showAllWells: value })}
+            />
+            <FormField
+              id="showAllPlates"
+              name="showAllPlates"
+              type="switch"
+              label="Show All Plates"
+              value={options.showAllPlates}
+              onChange={(value) => onOptionsChange({ showAllPlates: value })}
             />
             <FormField
               id="graphsPerRow"

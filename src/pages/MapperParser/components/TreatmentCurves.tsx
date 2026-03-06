@@ -9,7 +9,7 @@ import { CurveData, hasResponseData } from '../utils/resultsUtils';
 import { pdfExport } from '../utils/exportUtils';
 
 interface TreatmentCurvesProps {
-  plate: Plate;
+  plates: Plate[];
   curveData: CurveData[];
   yLo: number;
   yHi: number;
@@ -19,7 +19,7 @@ interface TreatmentCurvesProps {
 }
 
 const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({
-  plate,
+  plates,
   curveData,
   yLo,
   yHi,
@@ -98,8 +98,8 @@ const exportToPDF = async () => {
     });
 
     const timestamp = new Date().toISOString().slice(0, 10);
-    const plateId = plate.barcode || `Plate_${plate.id}`;
-    const filename = `${plateId}_dose_response_curves_${timestamp}.pdf`;
+    const plateId = plates[0].barcode || `Plate_${plates[0].id}`;
+    const filename = plates.length > 1 ? `dose_response_curves_${timestamp}.pdf` : `${plateId}_dose_response_curves_${timestamp}.pdf`;
     pdf.save(filename);
   } catch (error) {
     console.error('Error exporting PDF:', error);
@@ -161,7 +161,7 @@ const exportToPDF = async () => {
         </div>
       </Card.Header>
       <Card.Body className='overflow-auto' style={{ scrollbarGutter: 'stable' }}>
-        {!plate || !hasResponseData(plate) ?
+        {!plates[0] || !hasResponseData(plates[0]) ?
           <div>
             <h5>No plate data</h5>
             <p className='text-muted'>Please upload and parse plates to view response data</p>

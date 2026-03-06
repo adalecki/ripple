@@ -7,12 +7,10 @@ import { read, utils as xlsxUtils } from 'xlsx';
 import { fileHeaders } from '../../utils/validationUtils'
 import '@testing-library/jest-dom'
 
-// Mock dependencies
 jest.mock('../../../../hooks/usePreferences', () => ({
   usePreferences: jest.fn(),
 }));
 
-// Mock the xlsx library
 jest.mock('xlsx', () => ({
   read: jest.fn(),
   utils: {
@@ -20,7 +18,6 @@ jest.mock('xlsx', () => ({
   }
 }));
 
-// Mock validationUtils to control fileHeaders behavior
 jest.mock('../../utils/validationUtils', () => {
   const originalModule = jest.requireActual('../../utils/validationUtils');
   return {
@@ -320,7 +317,6 @@ it('onSubmit sees files in formData submitted with both files', async () => {
         const mockAssaySheet = { A1: { t: 's', v: 'WrongHeader1' }, B1: { t: 's', v: 'WrongHeader2' } };
         (read as jest.Mock).mockReturnValue({ SheetNames: ['Assay'], Sheets: { 'Assay': mockAssaySheet }});
         (xlsxUtils.sheet_to_json as jest.Mock).mockReturnValue([{ NotASetting: 'SomeVal', NotAValue: 'AnotherVal' }]);
-        //const excelInput = screen.getByLabelText(/Input File \(Excel\)/i);
         const excelInput = screen.getByLabelText(/Ripple Input/i);
         await act(async () => { fireEvent.change(excelInput, { target: { files: [excelFile] } }); });
         const alert = screen.queryByRole('alert');

@@ -8,7 +8,7 @@ import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import TreatmentCurves from './TreatmentCurves';
 import ScatterPlot from './ScatterPlot';
 import PlateResultsCard, { PlateResultsOptions } from './PlateResultsCard';
-import { getPlatesWithData, getMaskedWells, getPlateData, yAxisDomains } from '../utils/resultsUtils';
+import { getPlatesWithData, getMaskedWells, getPlateData, yAxisDomains, getAllPlatesData, yAxisDomainsMultiPlate } from '../utils/resultsUtils';
 
 const Results: React.FC = () => {
   const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
@@ -20,9 +20,9 @@ const Results: React.FC = () => {
     showAllWells: false,
     responseRangeMin: '',
     responseRangeMax: '',
-    graphsPerRow: 2
+    graphsPerRow: 2,
+    showAllPlates: false
   });
-
   let plate = currentPlate(mappedPlates, curMappedPlateId);
   if (plate == null) { plate = new Plate({}); }
 
@@ -67,16 +67,21 @@ const Results: React.FC = () => {
   const maskedWells = getMaskedWells(plate);
   const platesWithData = getPlatesWithData(mappedPlates);
   const showExportButton = platesWithData.length > 0 && !!selectedProtocol;
- 
-  const { curveData, sPData } = useMemo(() => getPlateData(plate, options.normalized, selectedProtocol || undefined), [plate, options.normalized, selectedProtocol]);
-  
-  const { yLo: autoYLo, yHi: autoYHi } = useMemo(() => yAxisDomains(plate, options.normalized), [plate, options.normalized]);
+
+  const { curveData, sPData } = (options.showAllPlates && platesWithData.length > 0) ?
+    getAllPlatesData(platesWithData, options.normalized, selectedProtocol || undefined) :
+    getPlateData(plate, options.normalized, selectedProtocol || undefined);
+
+  const { yLo: autoYLo, yHi: autoYHi } = (options.showAllPlates && platesWithData.length > 0) ?
+    yAxisDomainsMultiPlate(platesWithData, options.normalized) :
+    yAxisDomains(plate, options.normalized)
+
   const yLo = (options.responseRangeMin !== '' && options.responseRangeMin !== null) ? Number(options.responseRangeMin) : autoYLo;
   const yHi = (options.responseRangeMax !== '' && options.responseRangeMax !== null) ? Number(options.responseRangeMax) : autoYHi;
 
   const filteredSPData = useMemo(() => {
     if (options.showAllWells) {
-      const allDRCPoints = curveData.flatMap(curve => 
+      const allDRCPoints = curveData.flatMap(curve =>
         curve.points.map(point => ({
           controlType: 'None' as const,
           contents: [{
@@ -94,7 +99,7 @@ const Results: React.FC = () => {
 
   return (
     <Container fluid className="h-100 pb-2">
-      <Row className="h-100" style={{ minHeight: 0}}>
+      <Row className="h-100" style={{ minHeight: 0 }}>
         <Col
           md="4"
           className="d-flex flex-column h-100 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}
@@ -108,20 +113,20 @@ const Results: React.FC = () => {
             onExportCSV={handleExportCSV}
             showExportButton={showExportButton}
           />
-          
+
           <ScatterPlot
             key={`${plate.id}-${filteredSPData.length}`}
-            sPData={filteredSPData} 
-            yLo={yLo} 
-            yHi={yHi} 
+            sPData={filteredSPData}
+            yLo={yLo}
+            yHi={yHi}
           />
         </Col>
         <Col md="8" className="d-flex h-100" style={{ scrollbarGutter: 'stable' }}>
-          <TreatmentCurves 
-            plate={plate} 
-            curveData={curveData} 
-            yLo={yLo} 
-            yHi={yHi} 
+          <TreatmentCurves
+            plates={(options.showAllPlates && platesWithData.length > 0) ? platesWithData : [plate]}
+            curveData={curveData}
+            yLo={yLo}
+            yHi={yHi}
             protocol={selectedProtocol || undefined}
             showFitParams={options.showFitParams}
             gridSize={options.graphsPerRow}
