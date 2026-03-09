@@ -142,6 +142,7 @@ export const FormField: React.FC<FormFieldProps> =
                 <label className="form-check-label" htmlFor={id}>
                   {label}
                 </label>
+                {tooltip && <InfoTooltip text={tooltip} />}
               </div>
             </div>
           );

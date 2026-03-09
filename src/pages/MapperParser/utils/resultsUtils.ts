@@ -131,6 +131,46 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
   }
 };
 
+export function getAllPlatesData(
+  plates: Plate[],
+  normalized: boolean,
+  protocol?: Protocol
+): { curveData: CurveData[]; sPData: SinglePoint[] } {
+  const allSPData: SinglePoint[] = [];
+  const allCurveData: CurveData[] = [];
+
+  for (const plate of plates) {
+    const { curveData, sPData } = getPlateData(plate, normalized, protocol);
+    curveData.forEach((data) => data.treatmentId = plate.barcode + "_" + data.treatmentId)
+
+
+    allCurveData.push(...curveData)
+    allSPData.push(...sPData);
+  }
+
+  return {
+    curveData: allCurveData,
+    sPData: allSPData,
+  };
+}
+
+export function yAxisDomainsMultiPlate(
+  plates: Plate[],
+  normalized: boolean
+): { yLo: number; yHi: number } {
+  let globalMin = Infinity;
+  let globalMax = -Infinity;
+
+  for (const plate of plates) {
+    const { yLo, yHi } = yAxisDomains(plate, normalized);
+    globalMin = Math.min(globalMin, yLo);
+    globalMax = Math.max(globalMax, yHi);
+  }
+
+  if (globalMin === Infinity) return { yLo: 0, yHi: 100 };
+  return { yLo: globalMin, yHi: globalMax };
+}
+
 export function getTreatmentKey(well: Well): string {
   const compoundIds = well.getContents()
     .filter(content => !isNaN(content.concentration) && content.compoundId !== null && content.compoundId !== undefined)
@@ -259,3 +299,52 @@ export function createLogTicks(min: number, max: number, gridSize: number) {
   }
   return ticks;
 };
+
+export function plateZPrimeFactor(plate: Plate, protocol: Protocol, robust: Boolean = false): number {
+  let zFactor = 0
+  const maxCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MaxCtrl')
+  const minCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MinCtrl')
+  if (!(maxCtrl && minCtrl)) return zFactor
+  const maxResps = plate.getSomeWells(maxCtrl.wells).map((well) => well.rawResponse).filter((resp) => typeof(resp) === 'number')
+  const minResps = plate.getSomeWells(minCtrl.wells).map((well) => well.rawResponse).filter((resp) => typeof(resp) === 'number')
+  if (maxResps.length < 3 || minResps.length < 3) return zFactor
+  const maxMean = maxResps.reduce((a,b) => a+b)/maxResps.length
+  const minMean = minResps.reduce((a,b) => a+b)/minResps.length
+  const maxStdev = getStandardDeviation(maxResps) as number
+  const minStdev = getStandardDeviation(minResps) as number
+  const maxMAD = getMedianAbsoluteDeviation(maxResps)
+  const minMAD = getMedianAbsoluteDeviation(minResps)
+  robust ? zFactor = 1 - ((3 * (maxMAD + minMAD))/Math.abs(getMedian(maxResps) - getMedian(minResps)))
+         : zFactor = 1 - ((3 * (maxStdev + minStdev))/Math.abs(maxMean - minMean))
+  return zFactor
+}
+
+export function getStandardDeviation(array: number[]) {
+  if (array.length < 2) {
+    return undefined;
+  }
+  const n = array.length;
+  const mean = array.reduce((a, b) => a + b) / n;
+  return Math.sqrt(
+    array.map((x) => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / (n - 1),
+  );
+}
+
+export function getMedianAbsoluteDeviation(array: number[]) {
+  const arrayMedian = getMedian(array)
+  const deviations: number[] = []
+  for (const num of array) {
+    deviations.push(Math.abs(num - arrayMedian))
+  }
+  return getMedian(deviations)
+}
+
+export function getMedian(array: number[]): number {
+  const sortedArr = [...array].sort((a,b) => a - b)
+  const middle = Math.floor(sortedArr.length/2)
+  if (sortedArr.length % 2 !== 0) {
+    return sortedArr[middle]
+  } else {
+    return (sortedArr[middle - 1] + sortedArr[middle])/2
+  }
+}

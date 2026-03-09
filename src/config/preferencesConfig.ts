@@ -135,6 +135,13 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         defaultValue: true
       },
       {
+        prefId: 'skipUnusedBlocks',
+        name: 'Skip Unused Treatment Blocks',
+        type: 'switch',
+        defaultValue: true,
+        tooltip: 'Do not DMSO normalize unused treatment blocks'
+      },
+      {
         prefId: 'evenDepletion',
         name: 'Evenly Deplete Source Wells',
         type: 'switch',
@@ -143,6 +150,54 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
       {
         prefId: 'useSurveyVols',
         name: 'Use Source Survey Volumes',
+        type: 'switch',
+        defaultValue: false
+      }
+    ]
+  },
+  {
+    id: 'analysis-defaults',
+    label: 'Default Mapper/Parser Values',
+    settings: [
+      {
+        prefId: 'normalized',
+        name: 'Normalized',
+        type: 'switch',
+        defaultValue: false
+      },
+      {
+        prefId: 'showFitParams',
+        name: 'Show Fit Parameters',
+        type: 'switch',
+        defaultValue: false
+      },
+      {
+        prefId: 'showAllWells',
+        name: 'Show All Wells',
+        type: 'switch',
+        defaultValue: false
+      },
+      {
+        prefId: 'showAllPlates',
+        name: 'Show All Plates',
+        type: 'switch',
+        defaultValue: false
+      },
+      {
+        prefId: 'graphsPerRow',
+        name: 'Graphs Per Row',
+        type: 'select',
+        defaultValue: '2',
+        options: [
+          { value: '1', label: '1'},
+          { value: '2', label: '2'},
+          { value: '3', label: '3'},
+          { value: '4', label: '4'}
+        ]
+      },
+      {
+        prefId: 'robustZFactor',
+        name: `Robust Z' Factor`,
         type: 'switch',
         defaultValue: false
       }

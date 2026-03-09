@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
+import { Alert, Col, Container, Row } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -28,6 +28,7 @@ const EchoCalc: React.FC = () => {
   const [checkpointTracker, setCheckpointTracker] = useState(new CheckpointTracker());
   const [compoundColorMap, setCompoundColorMap] = useState<Map<string, HslStringType>>(new Map());
   const [transferMap, setTransferMap] = useState<Map<number, TransferStepExport[]>>(new Map())
+  const [showAlert, setShowAlert] = useState<string[]>([])
   const { preferences } = usePreferences()
 
   const handleClose = () => setShowModal(false);
@@ -44,6 +45,7 @@ const EchoCalc: React.FC = () => {
     setTransferMap(new Map())
     setPlates([])
     setFile(null)
+    setShowAlert([])
 
   }
 
@@ -78,6 +80,7 @@ const EchoCalc: React.FC = () => {
     }
 
     setCheckpointTracker(mutableCheckpointTracker);
+    setShowAlert([])
     setShowModal(true);
   };
 
@@ -101,6 +104,7 @@ const EchoCalc: React.FC = () => {
       setCompoundColorMap(generateEntityColors(compounds))
       const sortedTransferMap = customSort(structuredClone(calc.transferSteps), calc)
       setTransferMap(sortedTransferMap)
+      if (calc.errors.length > 0) setShowAlert([...calc.errors])
       console.log(calc, echoPreCalc)
     }
 
@@ -147,6 +151,13 @@ const EchoCalc: React.FC = () => {
             /> : "Please submit a template file to calculate transfer list"}
           <br />
           {transferMap.size > 0 && echoPreCalc && <TransferListDownload transferMap={transferMap} splitOutputCSVs={preferences.splitOutputCSVs as boolean} />}
+          <br />
+          <Alert variant='danger' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
+            The following errors occurred:
+            <ul>
+              {showAlert.map((alert, idx) => <li key={idx}>{alert}</li>)}
+            </ul>
+          </Alert>
         </Col>
       </Row>
     </Container>

@@ -275,7 +275,7 @@ export class EchoPreCalculator {
 
     for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
       let intermediatePlateDeadVolume = 15000;
-      if (this.intermediateBackfillVolume < 15000) {
+      if (this.intermediateBackfillVolume <= 15000) {
         intermediatePlateDeadVolume = 2500;
       }
       const intWellsNeeded = Math.ceil(
@@ -557,18 +557,26 @@ export class EchoPreCalculator {
 
   calculateFinalDMSONeeded() {
     const totalDestinationWells = this.destinationPlatesCount * parseInt(this.dstPltSize)
-    
+    const testPlate = new Plate({ plateSize: this.dstPltSize });
     let unusedWellsCount = 0;
     for (const layout of this.inputData.Layout) {
       const pattern = this.dilutionPatterns.get(layout.Pattern);
       if (pattern && pattern.type === 'Unused') {
-        const testPlate = new Plate({ plateSize: this.dstPltSize });
+        
         const wells = testPlate.getSomeWells(layout['Well Block']);
         unusedWellsCount += wells.length * this.destinationPlatesCount;
       }
     }
+    let totalPatternWells = 0
+    if (this.inputData.CommonData.skipUnusedBlocks) {
+      for (const layout of this.inputData.Layout) {
+        const wells = testPlate.getSomeWells(layout['Well Block'])
+        totalPatternWells += wells.length
+      }
+    }
+    console.log(totalPatternWells)
     
-    const unusedDestinationWells = totalDestinationWells - this.destinationWellsCount - unusedWellsCount;
+    const unusedDestinationWells = (this.inputData.CommonData.skipUnusedBlocks ? totalDestinationWells - totalPatternWells * this.destinationPlatesCount : totalDestinationWells - this.destinationWellsCount - unusedWellsCount);
     const additionalDMSOVol = unusedDestinationWells * this.maxDMSOVol
     this.totalDMSOBackfillVol += additionalDMSOVol
   }

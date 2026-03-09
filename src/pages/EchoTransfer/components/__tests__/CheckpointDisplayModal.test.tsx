@@ -6,7 +6,6 @@ import { EchoPreCalculator } from '../../classes/EchoPreCalculatorClass';
 import { InputDataType } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
 
-// Mocks
 jest.mock('../../classes/EchoPreCalculatorClass');
 jest.mock('../../classes/CheckpointTrackerClass');
 
@@ -29,7 +28,8 @@ const createMockInputData = (): InputDataType => ({
   Compounds: [], Patterns: [], Layout: [], Barcodes: [],
   CommonData: {
     maxDMSOFraction: 0.005, finalAssayVolume: 25000, intermediateBackfillVolume: 10000,
-    allowableError: 0.1, destReplicates: 1, createIntConcs: true, dmsoNormalization: true, evenDepletion: false, updateFromSurveyVolumes: false
+    allowableError: 0.1, destReplicates: 1, createIntConcs: true, dmsoNormalization: true, evenDepletion: false, updateFromSurveyVolumes: false,
+    skipUnusedBlocks: false
   },
 });
 
@@ -43,28 +43,21 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
   let mockHandleContinue: jest.Mock;
 
   beforeEach(() => {
-    // Create fresh mocks for each test
     mockCheckpointTracker = new CheckpointTracker() as jest.Mocked<CheckpointTracker>;
     mockCheckpointTracker.checkpoints = new Map([['Test Checkpoint', { status: 'Passed', message: [] }]]);
     
-    // Mock EchoPreCalculator instance
-    // Note: The actual EchoPreCalculator constructor might do more.
-    // We're mocking methods/properties used by the modal.
     mockEchoPreCalc = new EchoPreCalculator(createMockInputData(), mockCheckpointTracker, mockPreferences) as jest.Mocked<EchoPreCalculator>;
     mockEchoPreCalc.plateDeadVolumes = new Map([
       ['P1', 2500], // 2.5 µL
       ['P2', 15000], // 15 µL
     ]);
-    // Mock the updateDeadVolume method specifically for a class instance
     mockEchoPreCalc.updateDeadVolume = jest.fn<void, [string, number]>();
-    // Mock checkpointTracker property on the instance
     mockEchoPreCalc.checkpointTracker = mockCheckpointTracker;
-    // Initialize properties accessed by CheckpointSummary
     mockEchoPreCalc.totalDMSOBackfillVol = 0;
     mockEchoPreCalc.maxDMSOVol = 0;
-    mockEchoPreCalc.destinationPlatesCount = 0; // Assuming this is also needed by CheckpointSummary
-    mockEchoPreCalc.srcCompoundInventory = new Map(); // Assuming this is also needed by CheckpointSummary
-    mockEchoPreCalc.dilutionPatterns = new Map(); // Assuming this is also needed by CheckpointSummary
+    mockEchoPreCalc.destinationPlatesCount = 0;
+    mockEchoPreCalc.srcCompoundInventory = new Map();
+    mockEchoPreCalc.dilutionPatterns = new Map();
 
 
     mockSetEchoPreCalc = jest.fn();
@@ -92,7 +85,6 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
   describe('Display of Dead Volumes', () => {
     it('should display the "Source Plate Dead Volumes" section if echoPreCalc has plateDeadVolumes', () => {
       renderModal();
-      // The accordion header acts as the entry point to this section
       expect(screen.getByText('Edit Source Plate Dead Volumes')).toBeInTheDocument();
     });
 
@@ -107,15 +99,15 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
 
     it('should render input fields for each plate barcode and display correct dead volume in µL', () => {
       renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes')); // Open accordion
+      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
 
       const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
       expect(inputP1).toBeInTheDocument();
-      expect(inputP1.value).toBe('2.5'); // 2500 nL -> 2.5 µL
+      expect(inputP1.value).toBe('2.5');
 
       const inputP2 = screen.getByLabelText('P2') as HTMLInputElement;
       expect(inputP2).toBeInTheDocument();
-      expect(inputP2.value).toBe('15'); // 15000 nL -> 15 µL
+      expect(inputP2.value).toBe('15');
     });
   });
 
@@ -126,13 +118,9 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
 
       const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
       fireEvent.change(inputP1, { target: { value: '3.5' } });
-      
-      // editableDeadVolumes is internal state. We verify its effect by checking input value
-      // and then by clicking "Update" and checking mock calls.
+
       expect(inputP1.value).toBe('3.5');
-      
-      // To further confirm, if we were to click "Update Dead Volumes" now,
-      // updateDeadVolume on echoPreCalc should be called with 3500 for P1.
+
       fireEvent.click(screen.getByText('Update Dead Volumes'));
       await waitFor(() => {
         expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P1', 3500);
@@ -145,19 +133,10 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
       
       const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
       fireEvent.change(inputP1, { target: { value: '-1' } });
-      // The browser might prevent this, or our handler might ignore it based on min="0"
-      // For this test, we check if the change handler correctly handles it.
-      // The `handleDeadVolumeChange` has `if (!isNaN(newVolumeNL) && newVolumeNL >= 0)`
-      // So, a negative value should not propagate to an update call if "Update" is clicked.
-      // The input value will revert because setEditableDeadVolumes isn't called with the invalid value.
       expect(inputP1.value).toBe('2.5'); 
 
       fireEvent.click(screen.getByText('Update Dead Volumes'));
       await waitFor(() => {
-        // updateDeadVolume for P1 should NOT have been called with a negative value.
-        // It also should not have been called with the original value IF no *valid* change was made for P1.
-        // Since only an invalid change was attempted for P1, and no other fields were changed,
-        // updateDeadVolume for P1 should not be called at all.
         const p1Call = (mockEchoPreCalc.updateDeadVolume as jest.Mock).mock.calls.find(call => call[0] === 'P1');
         expect(p1Call).toBeUndefined(); 
       });
@@ -170,16 +149,16 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
       fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
 
       const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      fireEvent.change(inputP1, { target: { value: '5' } }); // Original 2.5 µL (2500 nL)
+      fireEvent.change(inputP1, { target: { value: '5' } });
 
       const inputP2 = screen.getByLabelText('P2') as HTMLInputElement;
-      fireEvent.change(inputP2, { target: { value: '10' } }); // Original 15 µL (15000 nL)
+      fireEvent.change(inputP2, { target: { value: '10' } });
 
       fireEvent.click(screen.getByText('Update Dead Volumes'));
 
       await waitFor(() => {
-        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P1', 5000); // 5 µL
-        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P2', 10000); // 10 µL
+        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P1', 5000);
+        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P2', 10000);
       });
     });
 
@@ -194,11 +173,9 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
 
       await waitFor(() => {
         expect(mockSetEchoPreCalc).toHaveBeenCalledTimes(1);
-        // Check that the argument to setEchoPreCalc is an EchoPreCalculator instance
         expect(mockSetEchoPreCalc.mock.calls[0][0]).toBeInstanceOf(EchoPreCalculator);
         
-        expect(mockSetCheckpointTracker).toHaveBeenCalledTimes(1); // Corrected typo
-        // Check that the argument to setCheckpointTracker is a CheckpointTracker instance
+        expect(mockSetCheckpointTracker).toHaveBeenCalledTimes(1);
         expect(mockSetCheckpointTracker.mock.calls[0][0]).toBeInstanceOf(CheckpointTracker);
       });
     });
@@ -207,10 +184,9 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
       renderModal();
       fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
       
-      // No changes made to inputs
       fireEvent.click(screen.getByText('Update Dead Volumes'));
 
-      await waitFor(() => { // Use waitFor to ensure any async operations complete
+      await waitFor(() => {
         expect(mockEchoPreCalc.updateDeadVolume).not.toHaveBeenCalled();
         expect(mockSetEchoPreCalc).not.toHaveBeenCalled();
         expect(mockSetCheckpointTracker).not.toHaveBeenCalled();
@@ -218,13 +194,9 @@ describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
     });
 
      it('should correctly use the updated checkpointTracker from the modified echoPreCalc instance', async () => {
-      // Simulate that updateDeadVolume (and thus calculateNeeds) modified the checkpointTracker inside echoPreCalc
       const updatedMockTracker = new CheckpointTracker() as jest.Mocked<CheckpointTracker>;
       updatedMockTracker.checkpoints = new Map([['Test Checkpoint', { status: 'Warning', message: ["New warning!"] }]]);
-      
-      // Configure the mock implementation for updateDeadVolume for this specific test
-      // This setup ensures that when updateDeadVolume is called, it modifies the
-      // checkpointTracker on the mockEchoPreCalc instance, simulating the real behavior.
+
       (mockEchoPreCalc.updateDeadVolume as jest.Mock).mockImplementation(() => {
         (mockEchoPreCalc as any).checkpointTracker = updatedMockTracker;
       });

@@ -33,7 +33,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
   async function fetchForExport() {
     if (settings.splitOutputCSVs) {
       const zip = new JSZip();
-      const outputPrioSets = [[1], [2], [3, 4, 5]];
+      const outputPrioSets = [[1], [2], [3], [4, 5]];
 
       for (const set of outputPrioSets) {
         let steps: TransferStepExport[] = [];
@@ -58,7 +58,10 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
               suffix = 'int1-int2';
               break;
             case 3:
-              suffix = 'all-dest';
+              suffix = 'src-dest';
+              break;
+            case 4:
+              suffix = 'int-dest';
               break;
             default:
               suffix = 'all';
