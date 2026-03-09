@@ -9,19 +9,21 @@ import TreatmentCurves from './TreatmentCurves';
 import ScatterPlot from './ScatterPlot';
 import PlateResultsCard, { PlateResultsOptions } from './PlateResultsCard';
 import { getPlatesWithData, getMaskedWells, getPlateData, yAxisDomains, getAllPlatesData, yAxisDomainsMultiPlate } from '../utils/resultsUtils';
+import { usePreferences } from '../../../hooks/usePreferences';
 
 const Results: React.FC = () => {
   const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
   const { protocols } = useContext(ProtocolsContext);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
+  const { preferences } = usePreferences();
   const [options, setOptions] = useState<PlateResultsOptions>({
-    normalized: false,
-    showFitParams: false,
-    showAllWells: false,
+    normalized: preferences.normalized as boolean,
+    showFitParams: preferences.showFitParams as boolean,
+    showAllWells: preferences.showAllWells as boolean,
     responseRangeMin: '',
     responseRangeMax: '',
-    graphsPerRow: 2,
-    showAllPlates: false
+    graphsPerRow: Number(preferences.graphsPerRow) || 2,
+    showAllPlates: preferences.showAllPlates as boolean,
   });
   let plate = currentPlate(mappedPlates, curMappedPlateId);
   if (plate == null) { plate = new Plate({}); }

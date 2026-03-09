@@ -4,6 +4,7 @@ import { Plate } from '../../../classes/PlateClass';
 import { Protocol } from '../../../types/mapperTypes';
 import { FormField } from '../../../components/FormField';
 import { plateZPrimeFactor } from '../utils/resultsUtils';
+import { usePreferences } from '../../../hooks/usePreferences';
 
 export interface PlateResultsOptions {
   normalized: boolean;
@@ -34,6 +35,8 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
   onExportCSV,
   showExportButton
 }) => {
+  const { preferences } = usePreferences();
+  console.log(preferences.robustZFactor)
   return (
     <div>
       <h4 >Plate Results</h4>
@@ -44,7 +47,7 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
               <div><strong>Plate ID:</strong> {plate.id}</div>
               <div><strong>Barcode:</strong> {plate.barcode || 'None'}</div>
               <div><strong>Wells:</strong> {Object.keys(plate.getWells()).length}</div>
-              {protocol && <div><strong>Z' Factor:</strong> {plateZPrimeFactor(plate,protocol).toFixed(3)}</div>}
+              {protocol && <div><strong>Z' Factor:</strong> {plateZPrimeFactor(plate,protocol,preferences.robustZFactor as boolean || false).toFixed(3)}</div>}
             </div>
 
             {protocol && protocol.dataProcessing.controls.length > 0 && (
