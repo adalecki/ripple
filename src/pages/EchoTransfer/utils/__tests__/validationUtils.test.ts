@@ -597,6 +597,7 @@ describe('echoInputValidation - Form Values Validation', () => {
       createIntConcs: true,
       dmsoNormalization: true,
       evenDepletion: false,
+      skipUnusedBlocks: false,
       updateFromSurveyVolumes: false
     });
   });
