@@ -36,7 +36,6 @@ const PlateResultsCard: React.FC<PlateResultsCardProps> = ({
   showExportButton
 }) => {
   const { preferences } = usePreferences();
-  console.log(preferences.robustZFactor)
   return (
     <div>
       <h4 >Plate Results</h4>
