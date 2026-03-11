@@ -11,23 +11,26 @@ import { FormField } from '../../../components/FormField';
 interface PatternManagerProps {
   isEditing: boolean;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  patterns: Pattern[];
+  setPatterns: React.Dispatch<React.SetStateAction<Pattern[]>>;
+  curPatternId: number | null;
+  setCurPatternId: React.Dispatch<React.SetStateAction<number | null>>
 }
 
-const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}) => {
-  const { patterns, setPatterns, selectedPatternId, setSelectedPatternId } = useContext(PatternsContext);
+const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing, patterns, setPatterns, curPatternId, setCurPatternId}) => {
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
   const [isNewPattern, setIsNewPattern] = useState<boolean>(false)
 
   useEffect(() => {
-    const selectedPattern = patterns.find(p => p.id === selectedPatternId);
+    const selectedPattern = patterns.find(p => p.id === curPatternId);
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
     setIsPickingColor(false);
     if (!isNewPattern) {
       setIsEditing(false)
     }
     setIsNewPattern(false)
-  }, [selectedPatternId, patterns]);
+  }, [curPatternId, patterns]);
 
   const handleAddPattern = () => {
     let iter = patterns.length + 1;
@@ -45,7 +48,8 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}
     });
     setIsPickingColor(false)
     setPatterns([...patterns, newPattern]);
-    setSelectedPatternId(newPattern.id);
+    console.log(patterns,newPattern)
+    setCurPatternId(newPattern.id);
     setIsNewPattern(true)
     setIsEditing(true);
   };

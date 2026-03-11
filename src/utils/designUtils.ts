@@ -3,6 +3,14 @@ import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
+export function currentPattern(patterns: Pattern[], curPatternId: number | null) {
+  let pattern = null
+  if (curPatternId != null) {
+    pattern = patterns.find((pattern) => pattern.id == curPatternId) || null
+  }
+  return pattern
+}
+
 export function generateExcelTemplate(patterns: Pattern[]) {
   const wb: WorkBook = utils.book_new();
 
