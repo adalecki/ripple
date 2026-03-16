@@ -85,7 +85,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'DMSO Tolerance',
         type: 'number',
         defaultValue: 0.005,
-        step: 0.001,
+        step: 0.0001,
         min: 0,
         tooltip: 'Enter as a decimal, e.g. 0.005 = 0.5%'
       },
