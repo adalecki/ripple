@@ -3,12 +3,12 @@ import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
-export function currentPattern(patterns: Pattern[], curPatternId: number | null) {
-  let pattern = null
-  if (curPatternId != null) {
-    pattern = patterns.find((pattern) => pattern.id == curPatternId) || null
+export function currentItem(items: any[], curItemId: number | null){
+  let item = null;
+  if (curItemId != null) {
+    item = items.find((item) => item.id == curItemId) || null
   }
-  return pattern
+  return item
 }
 
 export function generateExcelTemplate(patterns: Pattern[]) {

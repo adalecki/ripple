@@ -1,17 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Col, Row, Tabs, Tab } from 'react-bootstrap';
-import { PlatesContext, PatternsContext } from '../../contexts/Context.ts';
+import { PlatesContext } from '../../contexts/Context.ts';
 import { Plate, PlateSize } from '../../classes/PlateClass.ts';
 import { Pattern } from '../../classes/PatternClass.ts';
 import Sidebar from '../../components/Sidebar.tsx';
 import EchoCalc from './components/EchoCalc.tsx';
-import DesignWizard from './components/DesignWizard.tsx';
 import EchoInstructions from './components/EchoInstructions.tsx';
 import About from './components/About.tsx';
 import { usePreferences } from '../../hooks/usePreferences';
 import DesignWizardDst from './components/DesignWizardDst.tsx';
 import { labelDrag, selectorHelper } from '../../utils/designUtils.ts';
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils.ts';
+import { Compound } from '../../types/mapperTypes.ts';
 
 const EchoTransferNew: React.FC = () => {
   const { preferences } = usePreferences()
@@ -28,6 +28,8 @@ const EchoTransferNew: React.FC = () => {
   const [patternPlate, setPatternPlate] = useState<Plate>(new Plate({ plateSize: preferences.destinationPlateSize as PlateSize }));
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [curPlateId, setCurPlateId] = useState<number | null>(null);
+  const [compounds, setCompounds] = useState<Compound[]>([]);
+  const [curCompoundId, setCurCompoundId] = useState<number | null>(null)
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
@@ -138,7 +140,7 @@ const EchoTransferNew: React.FC = () => {
   };
 
   const handleMouseSelectionMove = (e: React.MouseEvent) => {
-    
+
     if (!dragState.current.mouseDown) return;
     dragState.current.dragging = true;
     dragState.current.endX = e.clientX + window.scrollX;
@@ -225,10 +227,10 @@ const EchoTransferNew: React.FC = () => {
   };
 
   const handleLabelClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    
+
     const target = e.target as HTMLDivElement;
     const targetLabel = target.innerText;
-    
+
     const parentPlate = target.closest("[data-view]");
     if (!parentPlate) return;
 
@@ -243,7 +245,7 @@ const EchoTransferNew: React.FC = () => {
       default:
         plate = null;
     }
-    
+
     if (!plate) return
 
     const newSelected: string[] = [];
@@ -277,47 +279,49 @@ const EchoTransferNew: React.FC = () => {
 
   return (
     <PlatesContext.Provider value={{ plates, setPlates, curPlateId, setCurPlateId }}>
-        <Row>
-          <Col md="2">{renderSidebar()}</Col>
-          <Col md="10" style={{ minHeight: 0 }} onMouseMove={handleMouseSelectionMove} onMouseUp={handleMouseUp}>
-            <div className="page-tabs">
-              <Tabs
-                id="echo-tab-select"
-                activeKey={tabKey}
-                onSelect={handleSelect}
-                mountOnEnter
-              >
-                <Tab eventKey="instructions" title="Instructions">
-                  <EchoInstructions />
-                </Tab>
-                <Tab eventKey="designDst" title="Design - Destination" onMouseDown={handleMouseDown}>
-                  <DesignWizardDst
-                    designDstPlates={designDstPlates}
-                    setDesignDstPlates={setDesignDstPlates}
-                    curDesignDstPlateId={curDesignDstPlateId}
-                    setCurDesignDstPlateId={setCurDesignDstPlateId}
-                    patterns={patterns}
-                    setPatterns={setPatterns}
-                    curPatternId={curPatternId}
-                    setCurPatternId={setCurPatternId}
-                    patternPlate={patternPlate}
-                    setPatternPlate={setPatternPlate}
-                    selectedWellIds={selectedWellIds}
-                    setSelectedWellIds={setSelectedWellIds}
-                    handleLabelClick={handleLabelClick}
-                  />
-                </Tab>
-                <Tab eventKey="echo" title="Calculator">
-                  <EchoCalc />
-                </Tab>
-                <Tab eventKey="about" title="About">
-                  <About />
-                </Tab>
-              </Tabs>
-            </div>
-          </Col>
-        </Row>
-        <div ref={selectionRef} style={{ position: "absolute", pointerEvents: "none", display: "none" }} />
+      <Row>
+        <Col md="2">{renderSidebar()}</Col>
+        <Col md="10" style={{ minHeight: 0 }}
+          onMouseMove={handleMouseSelectionMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp} //kill the selection rectangle as we can't detect mouseup on, say, the nav bar
+        >
+          <div className="page-tabs">
+            <Tabs
+              id="echo-tab-select"
+              activeKey={tabKey}
+              onSelect={handleSelect}
+              mountOnEnter
+            >
+              <Tab eventKey="instructions" title="Instructions">
+                <EchoInstructions />
+              </Tab>
+              <Tab eventKey="designDst" title="Design - Destination">
+                <DesignWizardDst
+                  designDstPlates={designDstPlates}
+                  setDesignDstPlates={setDesignDstPlates}
+                  curDesignDstPlateId={curDesignDstPlateId}
+                  setCurDesignDstPlateId={setCurDesignDstPlateId}
+                  patterns={patterns}
+                  setPatterns={setPatterns}
+                  curPatternId={curPatternId}
+                  setCurPatternId={setCurPatternId}
+                  selectedWellIds={selectedWellIds}
+                  handleLabelClick={handleLabelClick}
+                  handleMouseDown={handleMouseDown}
+                />
+              </Tab>
+              <Tab eventKey="echo" title="Calculator">
+                <EchoCalc />
+              </Tab>
+              <Tab eventKey="about" title="About">
+                <About />
+              </Tab>
+            </Tabs>
+          </div>
+        </Col>
+      </Row>
+      <div ref={selectionRef} style={{ position: "absolute", pointerEvents: "none", display: "none" }} />
     </PlatesContext.Provider>
   )
 }

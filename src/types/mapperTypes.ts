@@ -14,6 +14,13 @@ export type NormalizationType = typeof NORMALIZATION_TYPES[number];
 export type FieldType = typeof FIELD_TYPES[number];
 export type BarcodeLocation = typeof BARCODE_LOCATIONS[number];
 
+//not for mapper; move to own type file
+export interface Compound {
+  id: number;
+  name: string;
+  patterns: string[];
+}
+
 export interface MetadataField {
   name: string;
   type: FieldType;

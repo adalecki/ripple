@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { Pattern } from '../../../classes/PatternClass';
-import { PatternsContext } from '../../../contexts/Context';
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
 
@@ -23,7 +22,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
   const [isNewPattern, setIsNewPattern] = useState<boolean>(false)
 
   useEffect(() => {
-    const selectedPattern = patterns.find(p => p.id === curPatternId);
+    const selectedPattern = patterns ? patterns.find(p => p.id === curPatternId) : undefined;
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
     setIsPickingColor(false);
     if (!isNewPattern) {
@@ -48,7 +47,6 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
     });
     setIsPickingColor(false)
     setPatterns([...patterns, newPattern]);
-    console.log(patterns,newPattern)
     setCurPatternId(newPattern.id);
     setIsNewPattern(true)
     setIsEditing(true);

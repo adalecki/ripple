@@ -6,10 +6,8 @@ import { Plate } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
-import { currentPattern, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
+import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
 
-import '../../../css/PlateComponent.css'
-import '../../../css/DesignWizard.css'
 import ApplyTooltip from './ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
@@ -23,31 +21,31 @@ interface DesignWizardProps {
   curPatternId: number | null;
   setCurPatternId: React.Dispatch<React.SetStateAction<number | null>>;
   selectedWellIds: string[];
-  setSelectedWellIds: React.Dispatch<React.SetStateAction<string[]>>;
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  patternPlate: Plate;
-  setPatternPlate: React.Dispatch<React.SetStateAction<Plate>>;
+  handleMouseDown?: (e: React.MouseEvent<Element, MouseEvent>) => void;
 }
 
-const DesignWizard: React.FC<DesignWizardProps> = ({
+const DesignWizardDst: React.FC<DesignWizardProps> = ({
   designDstPlates,
   setDesignDstPlates,
+  //these are for a future with multiple dest design patterns, requiring a major rewrite of core calculator logic; don't worry about it anytime soon
+  //@ts-ignore
   curDesignDstPlateId,
+  //@ts-ignore
   setCurDesignDstPlateId,
   patterns,
   setPatterns,
   curPatternId,
   setCurPatternId,
   selectedWellIds,
-  setSelectedWellIds,
   handleLabelClick = (() => { }),
-  patternPlate,
-  setPatternPlate }) => {
+  handleMouseDown = (() => { }) 
+}) => {
   const [colorConfig, setColorConfig] = useState<ColorConfig>({ scheme: 'pattern', colorMap: generatePatternColors(patterns) })
   const [isEditing, setIsEditing] = useState(false);
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
 
-  const selectedPattern = currentPattern(patterns,curPatternId)
+  const selectedPattern = currentItem(patterns,curPatternId)
 
   useEffect(() => {
     let maxConcentration: number | null = null;
@@ -68,7 +66,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
   }, [patterns])
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    const msgArr = sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, patternPlate)
+    const msgArr = sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0])
     setApplyPopup({ event: e, msgArr: msgArr })
   };
 
@@ -81,7 +79,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
       const pattern = patterns.find(p => p.id == curPatternId)
       if (pattern) {
         const newPattern = pattern.clone()
-        const newPlate = patternPlate.clone();
+        const newPlate = designDstPlates[0].clone();
         if (pattern.type === 'Unused') {
           for (const wellId of selectedWellIds) {
             const well = newPlate.getWell(wellId);
@@ -97,7 +95,7 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
           newPattern.locations = [];
           newPlate.applyPattern(mergedBlock, newPattern);
           newPattern.locations = [mergedBlock];
-          setPatternPlate(newPlate);
+          setDesignDstPlates([newPlate]);
           setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
           return;
         }
@@ -107,16 +105,16 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
           alert(`The number of selected wells must be a multiple of ${patternSize} (replicates * concentrations).`);
           return;
         }
-        const blocks = splitIntoBlocks(selectedWellIds, newPattern, patternPlate);
+        const blocks = splitIntoBlocks(selectedWellIds, newPattern, designDstPlates[0]);
         for (const block of blocks) {
-          if (isBlockOverlapping(patternPlate, block, newPattern.locations)) {
+          if (isBlockOverlapping(designDstPlates[0], block, newPattern.locations)) {
             alert(`The selected wells overlap with existing patterns. Please choose different wells.`);
             return;
           }
           newPlate.applyPattern(block, newPattern);
           newPattern.locations.push(block);
         }
-        setPatternPlate(newPlate);
+        setDesignDstPlates([newPlate]);
         setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
       }
     }
@@ -124,9 +122,9 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
 
   const clearPatternFromWells = (clearAll?: boolean) => {
     if (clearAll || selectedWellIds.length > 0) {
-      const wellSelection = clearAll ? patternPlate.getWellIds() : [...selectedWellIds]
-      const newPlate = patternPlate.clone();
-      const wellsToCheck = patternPlate.getSomeWells(wellSelection.join(';'))
+      const wellSelection = clearAll ? designDstPlates[0].getWellIds() : [...selectedWellIds]
+      const newPlate = designDstPlates[0].clone();
+      const wellsToCheck = designDstPlates[0].getSomeWells(wellSelection.join(';'))
       const patternNamesToCheck = [...new Set(wellsToCheck.flatMap(w => w.getPatterns()))]
 
       const unusedPatterns = patterns.filter(p => p.type === 'Unused')
@@ -174,14 +172,14 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
       }
 
       setPatterns(patterns.map(p => newPatternArr.some(nP => nP.id == p.id) ? newPatternArr.find(nP => nP.id == p.id) as Pattern : p));
-      setPatternPlate(newPlate)
+      setDesignDstPlates([newPlate])
     }
   }
 
 
   const blockBorderMap = useMemo(() => {
-    return calculateBlockBorders(patternPlate);
-  }, [patterns, patternPlate.rows, patternPlate.columns]);
+    return calculateBlockBorders(designDstPlates[0]);
+  }, [patterns, designDstPlates[0].rows, designDstPlates[0].columns]);
 
   return (
     <Container fluid className='noselect h-100 pb-2'>
@@ -192,9 +190,9 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
           <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
             <PatternManager isEditing={isEditing} setIsEditing={setIsEditing} patterns={patterns} setPatterns={setPatterns} curPatternId={curPatternId} setCurPatternId={setCurPatternId} />
           </Col>
-          <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
+          <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }} onMouseDown={handleMouseDown}>
             <PlateViewCanvas
-              plate={patternPlate}
+              plate={designDstPlates[0]}
               view='design'
               colorConfig={colorConfig}
               selectedWells={selectedWellIds}
@@ -258,4 +256,4 @@ const DesignWizard: React.FC<DesignWizardProps> = ({
   );
 };
 
-export default DesignWizard;
+export default DesignWizardDst;
