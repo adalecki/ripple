@@ -1,35 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Col, Row, Tabs, Tab } from 'react-bootstrap';
-import { PlatesContext } from '../../contexts/Context.ts';
 import { Plate, PlateSize } from '../../classes/PlateClass.ts';
 import { Pattern } from '../../classes/PatternClass.ts';
-import Sidebar from '../../components/Sidebar.tsx';
-import EchoCalc from './components/EchoCalc.tsx';
-import EchoInstructions from './components/EchoInstructions.tsx';
-import About from './components/About.tsx';
 import { usePreferences } from '../../hooks/usePreferences';
 import DesignWizardDst from './components/DesignWizardDst.tsx';
 import { labelDrag, selectorHelper } from '../../utils/designUtils.ts';
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils.ts';
-import { Compound } from '../../types/mapperTypes.ts';
+import DesignWizardSrc from './components/DesignWizardSrc.tsx';
+import Sidebar from '../../components/Sidebar.tsx';
 
-const EchoTransferNew: React.FC = () => {
+const PlateDesigner: React.FC = () => {
   const { preferences } = usePreferences()
-  const [tabKey, setTabKey] = useState<string>('instructions');
-  const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ plateSize: preferences.sourcePlateSize as PlateSize })]);
-  const [designDstPlates, setDesignDstPlates] = useState<Plate[]>([new Plate({ plateSize: preferences.destinationPlateSize as PlateSize })]);
-  const [transferPlates, setTransferPlates] = useState<Plate[]>([]);
-  const [curDesignSrcPlateId, setCurDesignSrcPlateId] = useState<number | null>(designSrcPlates[0].id || null)
-  const [curDesignDstPlateId, setCurDesignDstPlateId] = useState<number | null>(designDstPlates[0].id || null)
-  const [curTransferPlateId, setCurTransferPlateId] = useState<number | null>(null)
+  const [tabKey, setTabKey] = useState<string>('designDst');
+  const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ barcode: 'SRC001', plateSize: preferences.sourcePlateSize as PlateSize })]);
+  const [designDstPlates, setDesignDstPlates] = useState<Plate[]>([new Plate({ barcode: 'DST001', plateSize: preferences.destinationPlateSize as PlateSize })]);
+  const [curDesignSrcPlateId, setCurDesignSrcPlateId] = useState<number | null>(designSrcPlates[0] ? designSrcPlates[0].id || null : null)
+  const [curDesignDstPlateId, setCurDesignDstPlateId] = useState<number | null>(designDstPlates[0] ? designDstPlates[0].id || null : null)
   const [curPatternId, setCurPatternId] = useState<number | null>(null)
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([])
-  const [plates, setPlates] = useState<Plate[]>([]);
-  const [patternPlate, setPatternPlate] = useState<Plate>(new Plate({ plateSize: preferences.destinationPlateSize as PlateSize }));
   const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [curPlateId, setCurPlateId] = useState<number | null>(null);
-  const [compounds, setCompounds] = useState<Compound[]>([]);
-  const [curCompoundId, setCurCompoundId] = useState<number | null>(null)
+  const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false })
+  const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize)
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
@@ -41,56 +32,10 @@ const EchoTransferNew: React.FC = () => {
     };
   }, []);
 
-  const handlePageDblClick = (e: MouseEvent) => {
-    if (e.detail > 1) {
-      e.preventDefault();
-      setSelectedWellIds(prev => (prev.length ? [] : prev));
-    }
-  };
-
-  const handleSelect = (k: string | null) => {
-    if (k !== null) {
-      setTabKey(k);
-    }
-  };
-
-  //has to be here because using sidebar for deletion
-  const handleDeletePattern = (patternId: number) => {
-    const newPlate = patternPlate.clone()
-    const pattern = patterns.find(p => p.id == patternId)
-    if (pattern) {
-      for (const loc of pattern.locations) {
-        newPlate.removePattern(loc, pattern.name)
-      }
-    }
-
-    setPatterns(patterns.filter(p => p.id !== patternId));
-    if (curPatternId === patternId) {
-      setCurPatternId(null);
-    }
-    setPatternPlate(newPlate)
-  };
-
   const renderSidebar = () => {
-    if (tabKey === 'echo') {
+    if (tabKey === 'designDst') {
       return (
-        <Sidebar
-          items={plates.map(plate => ({
-            id: plate.id,
-            name: plate.barcode || `Plate ${plate.id}`,
-            type: plate.plateRole,
-            details: {
-              items: Object.values(plate.wells).filter(well => well.getContents().length > 0).length,
-            },
-          }))}
-          selectedItemId={curPlateId}
-          setSelectedItemId={setCurPlateId}
-          filterOptions={['source', 'intermediate1', 'intermediate2', 'destination']}
-          title="Plates"
-        />
-      );
-    } else if (tabKey === 'designDst') {
-      return (
+
         <Sidebar
           items={patterns.map(pattern => ({
             id: pattern.id,
@@ -103,21 +48,106 @@ const EchoTransferNew: React.FC = () => {
           }))}
           selectedItemId={curPatternId}
           setSelectedItemId={setCurPatternId}
-          filterOptions={['Control', 'Treatment']}
           title="Patterns"
+          onAddItem={handleAddPattern}
           onDeleteItem={handleDeletePattern}
+        />
+      );
+    } else if (tabKey === 'designSrc') {
+      return (
+        <Sidebar
+          items={designSrcPlates.map(plate => ({
+            id: plate.id,
+            name: plate.barcode || `Plate ${plate.id}`,
+            type: plate.plateRole,
+            details: {
+              items: Object.values(plate.wells).filter(well => well.getContents().length > 0).length,
+            },
+          }))}
+          selectedItemId={curDesignSrcPlateId}
+          setSelectedItemId={setCurDesignSrcPlateId}
+          title="Plates"
+          onAddItem={handleAddPlate}
+          onDeleteItem={handleDeletePlate}
         />
       );
     }
     return (
-      <Sidebar
-        items={[]}
-        selectedItemId={null}
-        setSelectedItemId={setCurPatternId}
-        filterOptions={[]}
-        title=""
-      />
+      <div />
     );
+  };
+
+  const handleAddPattern = () => {
+    let iter = patterns.length + 1;
+    while (patterns.find(p => p.name == `Pattern ${iter}`)) {
+      iter += 1
+    }
+    const name = `Pattern ${iter}`
+    const newPattern = new Pattern({
+      name: name,
+      type: 'Treatment',
+      replicates: 1,
+      direction: ['LR'],
+      concentrations: [null],
+      locations: []
+    });
+    setPatterns([...patterns, newPattern]);
+    setCurPatternId(newPattern.id);
+    setPatternState({ isEditing: true, isNewPattern: true, isPickingColor: false })
+  };
+
+  const handleDeletePattern = (patternId: number) => {
+    const pattern = patterns.find(p => p.id === patternId);
+    if (pattern) {
+      const newPlate = designDstPlates[0].clone();
+      for (const loc of pattern.locations) {
+        newPlate.removePattern(loc, pattern.name);
+      }
+      setDesignDstPlates([newPlate]);
+    }
+    setPatterns(patterns.filter(p => p.id !== patternId));
+    if (curPatternId === patternId) {
+      setCurPatternId(null);
+    }
+  }
+
+  const handleAddPlate = () => {
+    let iter = designSrcPlates.length + 1;
+    while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3,'0')}`)) {
+      iter += 1
+    }
+    const barcode = `SRC${iter.toString().padStart(3,'0')}`;
+    const newPlate = new Plate({barcode: barcode, plateSize: preferences.destinationPlateSize as PlateSize})
+    setDesignSrcPlates([...designSrcPlates,newPlate])
+    setCurDesignSrcPlateId(newPlate.id)
+  }
+
+  const handleDeletePlate = (plateId: number) => {
+    const remainingSrcPlates = designSrcPlates.filter(p => p.id !== plateId)
+    if (remainingSrcPlates.length < 1) {
+      const newPlate = new Plate({barcode: 'SRC001', plateSize: designSrcPlateSize})
+      setDesignSrcPlates([newPlate])
+      setCurDesignSrcPlateId(newPlate.id)
+    }
+    else {
+      setDesignSrcPlates([...remainingSrcPlates])
+    }
+    if (curDesignSrcPlateId === plateId) {
+      setCurDesignSrcPlateId(null)
+    }
+  }
+
+  const handlePageDblClick = (e: MouseEvent) => {
+    if (e.detail > 1) {
+      e.preventDefault();
+      setSelectedWellIds(prev => (prev.length ? [] : prev));
+    }
+  };
+
+  const handleSelect = (k: string | null) => {
+    if (k !== null) {
+      setTabKey(k);
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -278,7 +308,7 @@ const EchoTransferNew: React.FC = () => {
   };
 
   return (
-    <PlatesContext.Provider value={{ plates, setPlates, curPlateId, setCurPlateId }}>
+    <div>
       <Row>
         <Col md="2">{renderSidebar()}</Col>
         <Col md="10" style={{ minHeight: 0 }}
@@ -288,14 +318,11 @@ const EchoTransferNew: React.FC = () => {
         >
           <div className="page-tabs">
             <Tabs
-              id="echo-tab-select"
+              id="design-tab-select"
               activeKey={tabKey}
               onSelect={handleSelect}
               mountOnEnter
             >
-              <Tab eventKey="instructions" title="Instructions">
-                <EchoInstructions />
-              </Tab>
               <Tab eventKey="designDst" title="Design - Destination">
                 <DesignWizardDst
                   designDstPlates={designDstPlates}
@@ -305,25 +332,31 @@ const EchoTransferNew: React.FC = () => {
                   patterns={patterns}
                   setPatterns={setPatterns}
                   curPatternId={curPatternId}
-                  setCurPatternId={setCurPatternId}
+                  selectedWellIds={selectedWellIds}
+                  handleLabelClick={handleLabelClick}
+                  handleMouseDown={handleMouseDown}
+                  patternState={patternState}
+                  setPatternState={setPatternState}
+                />
+              </Tab>
+              <Tab eventKey="designSrc" title="Design - Source">
+                <DesignWizardSrc
+                  designSrcPlates={designSrcPlates}
+                  setDesignSrcPlates={setDesignSrcPlates}
+                  curDesignSrcPlateId={curDesignSrcPlateId}
+                  patterns={patterns}
                   selectedWellIds={selectedWellIds}
                   handleLabelClick={handleLabelClick}
                   handleMouseDown={handleMouseDown}
                 />
-              </Tab>
-              <Tab eventKey="echo" title="Calculator">
-                <EchoCalc />
-              </Tab>
-              <Tab eventKey="about" title="About">
-                <About />
               </Tab>
             </Tabs>
           </div>
         </Col>
       </Row>
       <div ref={selectionRef} style={{ position: "absolute", pointerEvents: "none", display: "none" }} />
-    </PlatesContext.Provider>
+    </div>
   )
 }
 
-export default EchoTransferNew;
+export default PlateDesigner;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ListGroup, Form, Button } from 'react-bootstrap';
 
 import '../css/Sidebar.css'
+import { Plus, X } from 'lucide-react';
 
 interface SidebarItem {
   id: number;
@@ -14,8 +15,9 @@ interface SidebarProps {
   items: SidebarItem[];
   selectedItemId: number | null;
   setSelectedItemId: (id: number | null) => void;
-  filterOptions: string[];
+  filterOptions?: string[];
   title: string;
+  onAddItem?: () => void;
   onDeleteItem?: (id: number) => void;
   initialFilter?: string
 }
@@ -26,10 +28,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   setSelectedItemId,
   filterOptions,
   title,
+  onAddItem,
   onDeleteItem,
   initialFilter
 }) => {
   const [filter, setFilter] = useState<string>(initialFilter || 'all');
+
+  const singularTitle = title.endsWith('s') ? title.slice(0, -1) : title;
 
   useEffect(() => {
     if (!selectedItemId) return;
@@ -47,32 +52,42 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [filter, items, selectedItemId, setSelectedItemId]);
 
-  const filteredItems = items.filter(item =>
-    filter === 'all' ? true : item.type === filter
-  );
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilter(e.target.value);
-  };
+  const filteredItems = filterOptions
+    ? items.filter(item => filter === 'all' || item.type === filter)
+    : items;
 
   return (
     <div className="sidebar">
 
       {title && (
-        <>
-          <h5>{title}</h5>
-          <Form.Select
-            size="sm"
-            value={filter}
-            onChange={handleFilterChange}
-            className="mb-3"
-          >
-            <option value="all">All {title}</option>
-            {filterOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </Form.Select>
-        </>
+        <div>
+          <div className='item-list-header'>
+            <h5>{title}</h5>
+            {onAddItem &&
+              <button
+                type="button"
+                className="item-list-btn"
+                onClick={onAddItem}
+                title={`Add ${singularTitle}`}
+              >
+                <Plus size={16} />
+              </button>}
+          </div>
+          {filterOptions && filterOptions.length > 0 && (
+            <Form.Select
+              size="sm"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="mb-3"
+            >
+              <option value="all">All</option>
+              {filterOptions.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </Form.Select>
+          )}
+
+        </div>
       )}
       <div className="item-list-container">
         <ListGroup className="item-list">
@@ -86,17 +101,16 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className="item-info">
                 <span className="item-name">{item.name}</span>
                 {onDeleteItem && (
-                  <Button
-                    variant="danger"
-                    size="sm"
+                  <button
+                    type='button'
+                    className='item-list-btn item-list-btn-delete'
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteItem(item.id);
                     }}
-                    className="btn btn-danger btn-small"
                   >
-                    X
-                  </Button>
+                    <X size={16} />
+                  </button>
                 )}
               </div>
               <div className="item-details">

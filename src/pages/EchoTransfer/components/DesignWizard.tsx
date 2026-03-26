@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } 
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PlateView from '../../../components/PlateView';
-import PatternManager from './PatternManager';
+import PatternManager from '../../PlateDesigner/components/PatternManager';
 import { Plate } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { PatternsContext } from '../../../contexts/Context';
@@ -12,7 +12,7 @@ import { checkWellsInSelection, generateExcelTemplate, getPatternWells, isBlockO
 
 import '../../../css/PlateComponent.css'
 import '../../../css/DesignWizard.css'
-import ApplyTooltip from './ApplyTooltip';
+import ApplyTooltip from '../../PlateDesigner/components/ApplyTooltip';
 
 interface DesignWizardProps {
   patternPlate: Plate;

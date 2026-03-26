@@ -3,7 +3,7 @@ import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
-export function currentItem(items: any[], curItemId: number | null){
+export function currentItem(items: any[], curItemId: number | null) {
   let item = null;
   if (curItemId != null) {
     item = items.find((item) => item.id == curItemId) || null
@@ -11,7 +11,7 @@ export function currentItem(items: any[], curItemId: number | null){
   return item
 }
 
-export function generateExcelTemplate(patterns: Pattern[]) {
+export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) {
   const wb: WorkBook = utils.book_new();
 
   const patternsData = patterns.map(pattern => {
@@ -50,6 +50,42 @@ export function generateExcelTemplate(patterns: Pattern[]) {
 
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
+  if (srcPlates && srcPlates.length > 0) {
+    const compoundRows = [];
+    for (const plate of srcPlates) {
+      const sortedWells = Object.values(plate.getWells())
+        .filter(well => well.getContents().length != 0)
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      const compoundInventory: Map<string, Map<number, Map<number, Map<string, string[]>>>> = new Map() //compound ID, concentration, volume, pattern name, well IDs
+
+      for (const well of sortedWells) {
+        const content = well.getContents()[0]
+        if (!content.compoundId) continue
+        if (!compoundInventory.has(content.compoundId)) { compoundInventory.set(content.compoundId, new Map()) }
+        const concentrationMap = compoundInventory.get(content.compoundId)!
+        if (!concentrationMap.has(content.concentration)) { concentrationMap.set(content.concentration, new Map()) }
+        const volumeMap = concentrationMap.get(content.concentration)!
+        if (!volumeMap.has(well.getTotalVolume())) { volumeMap.set(well.getTotalVolume(), new Map()) }
+        const patternMap = volumeMap.get(well.getTotalVolume())!
+        if (!patternMap.has(content.patternName)) { patternMap.set(content.patternName, []) }
+        const wellIds = patternMap.get(content.patternName)!
+        if (!wellIds.includes(well.id)) { wellIds.push(well.id) }
+      }
+
+      for (const [compoundId, concentrationMap] of compoundInventory) {
+        for (const [concentration, volumeMap] of concentrationMap) {
+          for (const [volume, patternMap] of volumeMap) {
+            for (const [pattern, wellIds] of patternMap) {
+              compoundRows.push([plate.barcode, formatWellBlock(wellIds), concentration, compoundId, volume, pattern])
+            }
+          }
+        }
+      }
+    }
+    utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: "A2" })
+  }
+
   utils.book_append_sheet(wb, compoundsWs, "Compounds");
 
   const barcodesHeaders = ["Intermediate Plate Barcodes", "Destination Plate Barcodes"];
@@ -378,8 +414,8 @@ export function labelDrag(startEl: Element | null, endEl: Element | null, plate:
   if (startEl.parentElement != endEl.parentElement) return newSelected
   const startLabel = startEl.innerText
   const endLabel = endEl.innerText
-  const rowRange = {start: 0, end: 0}
-  const colRange = {start: 0, end: 0}
+  const rowRange = { start: 0, end: 0 }
+  const colRange = { start: 0, end: 0 }
   if (isNaN(parseInt(startLabel))) {
     rowRange.start = lettersToNumber(startLabel)
     rowRange.end = lettersToNumber(endLabel)

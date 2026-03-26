@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PatternManager from './PatternManager';
@@ -11,7 +11,7 @@ import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping
 import ApplyTooltip from './ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
-interface DesignWizardProps {
+interface DesignWizardDstProps {
   designDstPlates: Plate[];
   setDesignDstPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
   curDesignDstPlateId: number | null;
@@ -19,13 +19,22 @@ interface DesignWizardProps {
   patterns: Pattern[];
   setPatterns: React.Dispatch<React.SetStateAction<Pattern[]>>;
   curPatternId: number | null;
-  setCurPatternId: React.Dispatch<React.SetStateAction<number | null>>;
   selectedWellIds: string[];
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleMouseDown?: (e: React.MouseEvent<Element, MouseEvent>) => void;
+  patternState: {
+    isEditing: boolean;
+    isNewPattern: boolean;
+    isPickingColor: boolean;
+  }
+  setPatternState: React.Dispatch<React.SetStateAction<{
+    isEditing: boolean;
+    isNewPattern: boolean;
+    isPickingColor: boolean;
+  }>>
 }
 
-const DesignWizardDst: React.FC<DesignWizardProps> = ({
+const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   designDstPlates,
   setDesignDstPlates,
   //these are for a future with multiple dest design patterns, requiring a major rewrite of core calculator logic; don't worry about it anytime soon
@@ -36,16 +45,16 @@ const DesignWizardDst: React.FC<DesignWizardProps> = ({
   patterns,
   setPatterns,
   curPatternId,
-  setCurPatternId,
   selectedWellIds,
   handleLabelClick = (() => { }),
-  handleMouseDown = (() => { }) 
+  handleMouseDown = (() => { }),
+  patternState,
+  setPatternState
 }) => {
   const [colorConfig, setColorConfig] = useState<ColorConfig>({ scheme: 'pattern', colorMap: generatePatternColors(patterns) })
-  const [isEditing, setIsEditing] = useState(false);
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
 
-  const selectedPattern = currentItem(patterns,curPatternId)
+  const selectedPattern = currentItem(patterns, curPatternId)
 
   useEffect(() => {
     let maxConcentration: number | null = null;
@@ -74,7 +83,7 @@ const DesignWizardDst: React.FC<DesignWizardProps> = ({
     setApplyPopup({ event: null, msgArr: [] });
   };
 
-  const applyPatternToWells = () => {
+  function applyPatternToWells() {
     if (curPatternId && selectedWellIds.length > 0) {
       const pattern = patterns.find(p => p.id == curPatternId)
       if (pattern) {
@@ -120,7 +129,7 @@ const DesignWizardDst: React.FC<DesignWizardProps> = ({
     }
   };
 
-  const clearPatternFromWells = (clearAll?: boolean) => {
+  function clearPatternFromWells(clearAll?: boolean) {
     if (clearAll || selectedWellIds.length > 0) {
       const wellSelection = clearAll ? designDstPlates[0].getWellIds() : [...selectedWellIds]
       const newPlate = designDstPlates[0].clone();
@@ -176,19 +185,60 @@ const DesignWizardDst: React.FC<DesignWizardProps> = ({
     }
   }
 
-
-  const blockBorderMap = useMemo(() => {
-    return calculateBlockBorders(designDstPlates[0]);
-  }, [patterns, designDstPlates[0].rows, designDstPlates[0].columns]);
+  //className="d-flex justify-content-between align-items-center mb-3"
+  const blockBorderMap = calculateBlockBorders(designDstPlates[0]);
 
   return (
-    <Container fluid className='noselect h-100 pb-2'>
-      <div
-        className='h-100'
-      >
+    <Container fluid className='noselect h-100 pb-2 pt-2'>
+      <div className='h-100'>
         <Row className='h-100' style={{ minHeight: 0 }}>
           <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
-            <PatternManager isEditing={isEditing} setIsEditing={setIsEditing} patterns={patterns} setPatterns={setPatterns} curPatternId={curPatternId} setCurPatternId={setCurPatternId} />
+            <div className='mb-3' style={{display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '2em', rowGap: '0.5em'}}>
+              <Button
+                onClick={applyPatternToWells}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                disabled={
+                  !selectedPattern ||
+                  selectedWellIds.length === 0 ||
+                  (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
+                  patternState.isEditing
+                }
+                size='sm'
+              >
+                Apply to Wells
+              </Button>
+              <Button
+                onClick={() => clearPatternFromWells()}
+                disabled={selectedWellIds.length === 0}
+                variant='danger'
+                size='sm'
+              >
+                Clear from Wells
+              </Button>
+              <Button
+                onClick={() => clearPatternFromWells(true)}
+                variant='danger'
+                size='sm'
+              >
+                Clear from All Wells
+              </Button>
+              <Button
+                onClick={() => generateExcelTemplate(patterns)}
+                disabled={patterns.length < 1}
+                variant='success'
+                size='sm'
+              >
+                Generate Template
+              </Button>
+            </div>
+            <PatternManager
+              patternState={patternState}
+              setPatternState={setPatternState}
+              patterns={patterns}
+              setPatterns={setPatterns}
+              curPatternId={curPatternId}
+            />
           </Col>
           <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }} onMouseDown={handleMouseDown}>
             <PlateViewCanvas
@@ -199,55 +249,7 @@ const DesignWizardDst: React.FC<DesignWizardProps> = ({
               handleLabelClick={handleLabelClick}
               blockBorderMap={blockBorderMap}
             />
-            <Container>
-              <Row>
-                <Col>
-                  <Button
-                    onClick={applyPatternToWells}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    disabled={
-                      !selectedPattern ||
-                      selectedWellIds.length === 0 ||
-                      (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
-                      isEditing
-                    }
-                    className="mt-3 h-75"
-                  >
-                    Apply Pattern to Selected Wells
-                  </Button>
-                </Col>
-                <Col >
-                  <Button
-                    onClick={() => clearPatternFromWells()}
-                    disabled={selectedWellIds.length === 0}
-                    className="mt-3 h-75"
-                    variant='danger'
-                  >
-                    Clear Patterns from Selected Wells
-                  </Button>
-                </Col>
-                <Col >
-                  <Button
-                    onClick={() => clearPatternFromWells(true)}
-                    className="mt-3 h-75"
-                    variant='danger'
-                  >
-                    Clear Patterns from All Wells
-                  </Button>
-                </Col>
-                <Col >
-                  <Button
-                    onClick={() => generateExcelTemplate(patterns)}
-                    className="mt-3 h-75"
-                    disabled={patterns.length < 1}
-                    variant='success'
-                  >
-                    Generate Excel Template
-                  </Button>
-                </Col>
-              </Row>
-            </Container>
+
           </Col>
         </Row>
         {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}

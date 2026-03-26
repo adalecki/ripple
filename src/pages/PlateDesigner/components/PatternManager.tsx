@@ -8,52 +8,32 @@ import '../../../css/PatternManager.css'
 import { FormField } from '../../../components/FormField';
 
 interface PatternManagerProps {
-  isEditing: boolean;
-  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
   patterns: Pattern[];
   setPatterns: React.Dispatch<React.SetStateAction<Pattern[]>>;
   curPatternId: number | null;
-  setCurPatternId: React.Dispatch<React.SetStateAction<number | null>>
+  patternState: {
+    isEditing: boolean;
+    isNewPattern: boolean;
+    isPickingColor: boolean;
+  }
+  setPatternState: React.Dispatch<React.SetStateAction<{
+    isEditing: boolean;
+    isNewPattern: boolean;
+    isPickingColor: boolean;
+  }>>
 }
 
-const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing, patterns, setPatterns, curPatternId, setCurPatternId}) => {
-  const [isPickingColor, setIsPickingColor] = useState(false);
+const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState }) => {
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
-  const [isNewPattern, setIsNewPattern] = useState<boolean>(false)
 
   useEffect(() => {
     const selectedPattern = patterns ? patterns.find(p => p.id === curPatternId) : undefined;
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
-    setIsPickingColor(false);
-    if (!isNewPattern) {
-      setIsEditing(false)
-    }
-    setIsNewPattern(false)
+    setPatternState({ isEditing: (patternState.isNewPattern ? true : false), isNewPattern: false, isPickingColor: false })
   }, [curPatternId, patterns]);
 
-  const handleAddPattern = () => {
-    let iter = patterns.length + 1;
-    while (patterns.find(p => p.name == `Pattern ${iter}`)) {
-      iter += 1
-    }
-    const name = `Pattern ${iter}`
-    const newPattern = new Pattern({
-      name: name,
-      type: 'Treatment',
-      replicates: 1,
-      direction: ['LR'],
-      concentrations: [null],
-      locations: []
-    });
-    setIsPickingColor(false)
-    setPatterns([...patterns, newPattern]);
-    setCurPatternId(newPattern.id);
-    setIsNewPattern(true)
-    setIsEditing(true);
-  };
-
   const handleEditPattern = () => {
-    setIsEditing(true);
+    setPatternState({ ...patternState, isEditing: true })
     if (editingPattern && editingPattern.concentrations.length == 0) {
       setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }))
     }
@@ -64,8 +44,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
       const concentrations = editingPattern.concentrations.filter(c => c != null)
       const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations })
       setPatterns(patterns.map(p => p.id === savePattern.id ? savePattern : p));
-      setIsEditing(false);
-      setIsPickingColor(false);
+      setPatternState({ ...patternState, isEditing: false, isPickingColor: false })
     }
   };
 
@@ -109,16 +88,10 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
 
   return (
     <div className="d-flex flex-column">
-      <h4>Plate Designer</h4>
-      <p>Add patterns and map them to your plate for a downloadable template</p>
-      <Button variant="primary" onClick={handleAddPattern} className="mb-3">
-        Add Pattern
-      </Button>
-
       {editingPattern ? (
         <div>
           <div className="d-flex justify-content-between align-items-center mb-3">
-            {isEditing ? (
+            {patternState.isEditing ? (
               <Button variant="success" size="sm" onClick={handleSavePattern}>
                 Save
               </Button>
@@ -148,7 +121,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
               value={editingPattern.name}
               onChange={(value) => handleFieldChange("name", value)}
               required={true}
-              disabled={!isEditing}
+              disabled={!patternState.isEditing}
             />
             <FormField
               key='pattern-type'
@@ -159,7 +132,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
               value={editingPattern.type}
               onChange={(value) => handleFieldChange("type", value)}
               required={true}
-              disabled={!isEditing}
+              disabled={!patternState.isEditing}
               options={[
                 { label: "Control", value: "Control" },
                 { label: "Treatment", value: "Treatment" },
@@ -167,7 +140,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
               ]}
             />
             {editingPattern.type !== 'Unused' && (
-              <>
+              <div>
                 <FormField
                   key='pattern-replicates'
                   id='pattern-replicates'
@@ -177,7 +150,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
                   value={editingPattern.replicates}
                   onChange={(value) => handleFieldChange("replicates", value)}
                   required={true}
-                  disabled={!isEditing}
+                  disabled={!patternState.isEditing}
                   step={1}
                 />
                 <FormField
@@ -189,7 +162,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
                   value={editingPattern.direction[0]}
                   onChange={(value) => handleFieldChange("direction", [value])}
                   required={true}
-                  disabled={!isEditing}
+                  disabled={!patternState.isEditing}
                   options={[
                     { label: "Left to Right", value: "LR" },
                     { label: "Right to Left", value: "RL" },
@@ -202,10 +175,10 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
                   <div
                     className="color-preview form-field-input"
                     style={{ backgroundColor: editingPattern.color }}
-                    onClick={() => isEditing && setIsPickingColor(!isPickingColor)}
+                    onClick={() => patternState.isEditing && setPatternState({ ...patternState, isPickingColor: !patternState.isPickingColor })}
                   />
                 </div>
-                {isPickingColor && (
+                {patternState.isPickingColor && (
                   <div className="mb-3">
                     <HslStringColorPicker
                       color={editingPattern.color}
@@ -218,10 +191,10 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing,
                   <ConcentrationTable
                     concentrations={editingPattern.concentrations}
                     onChange={handleConcentrationChange}
-                    disabled={!isEditing}
+                    disabled={!patternState.isEditing}
                   />
                 </div>
-              </>
+              </div>
             )}
           </Form>
         </div>
