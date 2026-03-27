@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ListGroup, Form, Button } from 'react-bootstrap';
+import { ListGroup, Form } from 'react-bootstrap';
 
 import '../css/Sidebar.css'
 import { Plus, X } from 'lucide-react';

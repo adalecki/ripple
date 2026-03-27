@@ -7,8 +7,7 @@ import { FormField } from '../../../components/FormField';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
-import { currentPlate } from '../../../utils/plateUtils';
-import { generateExcelTemplate } from '../../../utils/designUtils';
+import { currentItem, generateExcelTemplate, plateMaxConcentration } from '../../../utils/designUtils';
 
 export interface WellContentsForm {
   compoundId: string;
@@ -37,20 +36,20 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   handleMouseDown = (() => { }),
 }) => {
   const [wellContentsForm, setWellContentsForm] = useState<WellContentsForm>({ compoundId: '', concentration: '', volume: '', patternNames: [] })
-  console.log(designSrcPlates)
-  const plate = currentPlate(designSrcPlates, curDesignSrcPlateId)
+  const plate = currentItem(designSrcPlates, curDesignSrcPlateId) as Plate
   if (!plate) return (<div>Please select a source plate</div>)
 
   const compoundIdsSet = new Set<string>()
   for (const plate of designSrcPlates) {
-    const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)))
+    const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)))//filters out empty strings
     compoundIds.forEach((id) => compoundIdsSet.add(id))
   }
 
 
   const colorConfig: ColorConfig = {
     scheme: 'compound',
-    colorMap: generateEntityColors([...compoundIdsSet], 0.5)
+    colorMap: generateEntityColors([...compoundIdsSet], 0.5),
+    maxConcentration: plate.metadata.globalMaxConcentration
   };
 
   const canApply = selectedWellIds.length > 0 &&
@@ -73,6 +72,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
         patternName
       });
     }
+    newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate)
     setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
   };
 
@@ -82,6 +82,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
       const well = newPlate.getWell(wellId);
       if (well) well.clearContents();
     }
+    newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate)
     setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
   };
 
@@ -144,7 +145,6 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
             className='default-label-text'
           />
           <ContentsManager
-            plate={plate}
             selectedWellIds={selectedWellIds}
             patterns={patterns}
             wellContentsForm={wellContentsForm}

@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { Button, Form } from 'react-bootstrap';
+import React from 'react';
+import { Form } from 'react-bootstrap';
 import { Pattern } from '../../../classes/PatternClass';
-import { Plate } from '../../../classes/PlateClass';
 import { FormField } from '../../../components/FormField';
 import { WellContentsForm } from './DesignWizardSrc';
 
 
 
 interface ContentsManagerProps {
-  plate: Plate;
   selectedWellIds: string[];
   patterns: Pattern[];
   wellContentsForm: WellContentsForm,
@@ -16,7 +14,6 @@ interface ContentsManagerProps {
 }
 
 const ContentsManager: React.FC<ContentsManagerProps> = ({
-  plate,
   selectedWellIds,
   patterns,
   wellContentsForm,

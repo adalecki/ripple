@@ -20,6 +20,8 @@ const PlateDesigner: React.FC = () => {
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([])
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false })
+  //implement plate size selection directly instead of relying on preferences
+  //@ts-ignore
   const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize)
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
@@ -113,7 +115,7 @@ const PlateDesigner: React.FC = () => {
 
   const handleAddPlate = () => {
     let iter = designSrcPlates.length + 1;
-    while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3,'0')}`)) {
+    while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3,'0')}`) != undefined) {
       iter += 1
     }
     const barcode = `SRC${iter.toString().padStart(3,'0')}`;

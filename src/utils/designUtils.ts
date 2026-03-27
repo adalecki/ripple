@@ -51,36 +51,39 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
   if (srcPlates && srcPlates.length > 0) {
+    //uuid used as delimiter to avoid weird edge cases
+    //e.g. 'test1' + '10' would be the same as 'test11' + '1' without delims
+    //could use a bar or something else, but uuid avoids all naming conflicts
+    const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02'
     const compoundRows = [];
     for (const plate of srcPlates) {
       const sortedWells = Object.values(plate.getWells())
         .filter(well => well.getContents().length != 0)
         .sort((a, b) => a.id.localeCompare(b.id));
 
-      const compoundInventory: Map<string, Map<number, Map<number, Map<string, string[]>>>> = new Map() //compound ID, concentration, volume, pattern name, well IDs
+      const compoundInventory = new Map<string, { concentration: number, compoundId: string, volume: number, patternName: string, wellIds: string[] }>();
 
       for (const well of sortedWells) {
-        const content = well.getContents()[0]
-        if (!content.compoundId) continue
-        if (!compoundInventory.has(content.compoundId)) { compoundInventory.set(content.compoundId, new Map()) }
-        const concentrationMap = compoundInventory.get(content.compoundId)!
-        if (!concentrationMap.has(content.concentration)) { concentrationMap.set(content.concentration, new Map()) }
-        const volumeMap = concentrationMap.get(content.concentration)!
-        if (!volumeMap.has(well.getTotalVolume())) { volumeMap.set(well.getTotalVolume(), new Map()) }
-        const patternMap = volumeMap.get(well.getTotalVolume())!
-        if (!patternMap.has(content.patternName)) { patternMap.set(content.patternName, []) }
-        const wellIds = patternMap.get(content.patternName)!
-        if (!wellIds.includes(well.id)) { wellIds.push(well.id) }
+        const content = well.getContents()[0];
+        if (!content.compoundId) continue;
+
+        const volume = well.getTotalVolume();
+        const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
+
+        if (!compoundInventory.has(key)) {
+          compoundInventory.set(key, {
+            compoundId: content.compoundId,
+            concentration: content.concentration,
+            volume,
+            patternName: content.patternName,
+            wellIds: [],
+          });
+        }
+        compoundInventory.get(key)!.wellIds.push(well.id);
       }
 
-      for (const [compoundId, concentrationMap] of compoundInventory) {
-        for (const [concentration, volumeMap] of concentrationMap) {
-          for (const [volume, patternMap] of volumeMap) {
-            for (const [pattern, wellIds] of patternMap) {
-              compoundRows.push([plate.barcode, formatWellBlock(wellIds), concentration, compoundId, volume, pattern])
-            }
-          }
-        }
+      for (const { compoundId, concentration, volume, patternName, wellIds } of compoundInventory.values()) {
+        compoundRows.push([plate.barcode, formatWellBlock(wellIds), concentration, compoundId, volume, patternName]);
       }
     }
     utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: "A2" })
@@ -433,4 +436,11 @@ export function labelDrag(startEl: Element | null, endEl: Element | null, plate:
     }
   }
   return newSelected
+}
+
+export function plateMaxConcentration(plate: Plate): number {
+  const wells = Array.from(plate)
+  const concs = wells.flatMap(w => w.getContents().map(c => c.concentration)).filter(c => typeof c === 'number')
+  if (concs.length < 1) return 0
+  return Math.max(...concs)
 }
