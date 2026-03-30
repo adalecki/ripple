@@ -75,7 +75,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   }
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    const msgArr = sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0])
+    const msgArr = selectedWellIds.length > 0 ? sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0]) : []
     if (patternState.isEditing) {
       msgArr.splice(0, 0, 'isEditing')
     }
