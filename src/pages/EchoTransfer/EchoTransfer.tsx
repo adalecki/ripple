@@ -124,7 +124,7 @@ const EchoTransfer: React.FC = () => {
                   <Tab eventKey="instructions" title="Instructions">
                     <EchoInstructions />
                   </Tab>
-                  <Tab eventKey="design" title="Design - Destination">
+                  <Tab eventKey="design" title="Design">
                     <DesignWizard
                       patternPlate={patternPlate}
                       setPatternPlate={setPatternPlate}

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } 
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PlateView from '../../../components/PlateView';
-import PatternManager from '../../PlateDesigner/components/PatternManager';
+import PatternManager from './PatternManager';
 import { Plate } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { PatternsContext } from '../../../contexts/Context';

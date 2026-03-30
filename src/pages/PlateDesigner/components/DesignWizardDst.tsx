@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PatternManager from './PatternManager';
@@ -51,12 +51,12 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   patternState,
   setPatternState
 }) => {
-  const [colorConfig, setColorConfig] = useState<ColorConfig>({ scheme: 'pattern', colorMap: generatePatternColors(patterns) })
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
 
   const selectedPattern = currentItem(patterns, curPatternId)
+  const colorConfig = buildColorConfig(patterns);
 
-  useEffect(() => {
+  function buildColorConfig(patterns: Pattern[]): ColorConfig {
     let maxConcentration: number | null = null;
     for (const pattern of patterns) {
       for (const concentration of pattern.concentrations) {
@@ -67,15 +67,18 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
         }
       }
     }
-    setColorConfig({
+    return {
       scheme: 'pattern',
       colorMap: generatePatternColors(patterns),
-      maxConcentration: maxConcentration || 0
-    })
-  }, [patterns])
+      maxConcentration: maxConcentration || 0,
+    };
+  }
 
   const handleMouseEnter = (e: React.MouseEvent) => {
     const msgArr = sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0])
+    if (patternState.isEditing) {
+      msgArr.splice(0, 0, 'isEditing')
+    }
     setApplyPopup({ event: e, msgArr: msgArr })
   };
 
@@ -193,21 +196,24 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
       <div className='h-100'>
         <Row className='h-100' style={{ minHeight: 0 }}>
           <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
-            <div className='mb-3' style={{display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '2em', rowGap: '0.5em'}}>
-              <Button
-                onClick={applyPatternToWells}
+            <div className='mb-3' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '2em', rowGap: '0.5em' }}>
+              <div
                 onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                disabled={
-                  !selectedPattern ||
-                  selectedWellIds.length === 0 ||
-                  (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
-                  patternState.isEditing
-                }
-                size='sm'
-              >
-                Apply to Wells
-              </Button>
+                onMouseLeave={handleMouseLeave}>
+                <Button
+                  onClick={applyPatternToWells}
+                  disabled={
+                    !selectedPattern ||
+                    selectedWellIds.length === 0 ||
+                    (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
+                    patternState.isEditing
+                  }
+                  size='sm'
+                  style={{width: '100%'}}
+                >
+                  Apply to Wells
+                </Button>
+              </div>
               <Button
                 onClick={() => clearPatternFromWells()}
                 disabled={selectedWellIds.length === 0}

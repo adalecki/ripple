@@ -309,6 +309,8 @@ const PlateDesigner: React.FC = () => {
     selectorHelper(e, newSelected, selectedWellIds, setSelectedWellIds)
   };
 
+  if (patterns.length === 0) handleAddPattern()
+
   return (
     <div>
       <Row>
