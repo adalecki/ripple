@@ -21,7 +21,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
 }) => {
 
 
-  const handleFieldChange = (fieldName: string, value: number | string | string[]) => {
+  const handleFieldChange = (fieldName: string, value: number | string | string[] | boolean) => {
 
     switch (fieldName) {
       case 'name':
@@ -32,6 +32,9 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
         break
       case 'volume':
         setWellContentsForm({ ...wellContentsForm, volume: value as number })
+        break
+      case 'dmso':
+        setWellContentsForm({...wellContentsForm, dmsoWells: value as boolean})
         break
       case 'pattern':
         setWellContentsForm({ ...wellContentsForm, patternNames: (wellContentsForm.patternNames.includes(value as string) ? wellContentsForm.patternNames.filter(p => p !== value as string) : [...wellContentsForm.patternNames, value as string]) })
@@ -53,6 +56,17 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
       </div>
       <Form>
         <FormField
+          id="src-dmso-check"
+          key="src-dmso-check"
+          name="dmso"
+          type="switch"
+          label="DMSO-only Wells"
+          value={wellContentsForm.dmsoWells}
+          onChange={(value) => handleFieldChange('dmso', value)}
+          required
+          tooltip="When checked, designates wells as solvent-only for downstream DMSO normalization"
+        />
+        <FormField
           id="src-compound-id"
           key="src-compound-id"
           name="name"
@@ -60,7 +74,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
           label="Compound ID"
           value={wellContentsForm.compoundId}
           onChange={(value) => handleFieldChange('name', value)}
-          disabled={!(selectedWellIds.length > 0)}
+          disabled={!(selectedWellIds.length > 0) || wellContentsForm.dmsoWells}
           required
         />
 
@@ -72,7 +86,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
           label="Concentration"
           value={wellContentsForm.concentration}
           onChange={(value) => handleFieldChange('concentration', value)}
-          disabled={!(selectedWellIds.length > 0)}
+          disabled={!(selectedWellIds.length > 0) || wellContentsForm.dmsoWells}
           unit="µM"
           min={0}
           required
@@ -106,7 +120,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
                     className="form-check-input"
                     checked={wellContentsForm.patternNames.includes(pattern.name)}
                     onChange={() => handleFieldChange('pattern', pattern.name)}
-                    disabled={!(selectedWellIds.length > 0)}
+                    disabled={!(selectedWellIds.length > 0) || wellContentsForm.dmsoWells}
                   />
                   <label
                     htmlFor={`src-pattern-${pattern.id}`}

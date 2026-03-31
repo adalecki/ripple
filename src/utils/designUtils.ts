@@ -67,7 +67,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
         const content = well.getContents()[0];
         if (!content.compoundId) continue;
 
-        const volume = well.getTotalVolume();
+        const volume = well.getTotalVolume()/1000;
         const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
 
         if (!compoundInventory.has(key)) {
@@ -84,6 +84,25 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
 
       for (const { compoundId, concentration, volume, patternName, wellIds } of compoundInventory.values()) {
         compoundRows.push([plate.barcode, formatWellBlock(wellIds), concentration, compoundId, volume, patternName]);
+      }
+
+      const solventWells = Object.values(plate.getWells())
+        .filter(well => well.isSolventOnlyWell('DMSO'))
+        .sort((a, b) => a.id.localeCompare(b.id))
+      if (solventWells.length > 0) {
+        const solventInventory = new Map<number, string[]>()
+        for (const well of solventWells) {
+          const volume = well.getTotalVolume()/1000;
+          if (!solventInventory.has(volume)) {
+            solventInventory.set(volume,[])
+          }
+          solventInventory.get(volume)!.push(well.id)
+        }
+        for (const [vol,wellIds] of solventInventory) {
+          compoundRows.push([plate.barcode, formatWellBlock(wellIds), 0, 'DMSO', vol, 'DMSO'])
+        }
+        const patternsWs = wb.Sheets["Patterns"]
+        utils.sheet_add_aoa(patternsWs,[['DMSO','Solvent']],{origin: -1})
       }
     }
     utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: "A2" })

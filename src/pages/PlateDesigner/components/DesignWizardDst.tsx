@@ -11,6 +11,8 @@ import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping
 import ApplyTooltip from './ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
+import '../../../css/DesignWizard.css'
+
 interface DesignWizardDstProps {
   designDstPlates: Plate[];
   setDesignDstPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
@@ -75,7 +77,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   }
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    const msgArr = selectedWellIds.length > 0 ? sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0]) : []
+    const curPattern = patterns.find(p => p.id == curPatternId)
+    const msgArr = (selectedWellIds.length > 0 && curPattern && curPattern.concentrations.filter(c => c != null).length > 0) ? sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0]) : []
     if (patternState.isEditing) {
       msgArr.splice(0, 0, 'isEditing')
     }
@@ -188,78 +191,75 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
     }
   }
 
-  //className="d-flex justify-content-between align-items-center mb-3"
   const blockBorderMap = calculateBlockBorders(designDstPlates[0]);
 
   return (
-    <Container fluid className='noselect h-100 pb-2 pt-2'>
-      <div className='h-100'>
-        <Row className='h-100' style={{ minHeight: 0 }}>
-          <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
-            <div className='mb-3' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '2em', rowGap: '0.5em' }}>
-              <div
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}>
-                <Button
-                  onClick={applyPatternToWells}
-                  disabled={
-                    !selectedPattern ||
-                    selectedWellIds.length === 0 ||
-                    (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
-                    patternState.isEditing
-                  }
-                  size='sm'
-                  style={{width: '100%'}}
-                >
-                  Apply to Wells
-                </Button>
-              </div>
+    <Container fluid className='noselect design-wizard-container'>
+      <Row className='design-wizard-row'>
+        <Col md={3} className='design-wizard-col'>
+          <div className='design-wizard-button-grid'>
+            <div
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              >
               <Button
-                onClick={() => clearPatternFromWells()}
-                disabled={selectedWellIds.length === 0}
-                variant='danger'
+                onClick={applyPatternToWells}
+                disabled={
+                  !selectedPattern ||
+                  selectedWellIds.length === 0 ||
+                  (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
+                  patternState.isEditing
+                }
                 size='sm'
               >
-                Clear from Wells
-              </Button>
-              <Button
-                onClick={() => clearPatternFromWells(true)}
-                variant='danger'
-                size='sm'
-              >
-                Clear from All Wells
-              </Button>
-              <Button
-                onClick={() => generateExcelTemplate(patterns)}
-                disabled={patterns.length < 1}
-                variant='success'
-                size='sm'
-              >
-                Generate Template
+                Apply to Wells
               </Button>
             </div>
-            <PatternManager
-              patternState={patternState}
-              setPatternState={setPatternState}
-              patterns={patterns}
-              setPatterns={setPatterns}
-              curPatternId={curPatternId}
-            />
-          </Col>
-          <Col md={8} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }} onMouseDown={handleMouseDown}>
-            <PlateViewCanvas
-              plate={designDstPlates[0]}
-              view='design'
-              colorConfig={colorConfig}
-              selectedWells={selectedWellIds}
-              handleLabelClick={handleLabelClick}
-              blockBorderMap={blockBorderMap}
-            />
+            <Button
+              onClick={() => clearPatternFromWells()}
+              disabled={selectedWellIds.length === 0}
+              variant='danger'
+              size='sm'
+            >
+              Clear from Wells
+            </Button>
+            <Button
+              onClick={() => clearPatternFromWells(true)}
+              variant='danger'
+              size='sm'
+            >
+              Clear from All Wells
+            </Button>
+            <Button
+              onClick={() => generateExcelTemplate(patterns)}
+              disabled={patterns.length < 1}
+              variant='success'
+              size='sm'
+            >
+              Generate Template
+            </Button>
+          </div>
+          <PatternManager
+            patternState={patternState}
+            setPatternState={setPatternState}
+            patterns={patterns}
+            setPatterns={setPatterns}
+            curPatternId={curPatternId}
+          />
+        </Col>
+        <Col md={9} className='design-wizard-col' onMouseDown={handleMouseDown}>
+          <PlateViewCanvas
+            plate={designDstPlates[0]}
+            view='design'
+            colorConfig={colorConfig}
+            selectedWells={selectedWellIds}
+            handleLabelClick={handleLabelClick}
+            blockBorderMap={blockBorderMap}
+          />
 
-          </Col>
-        </Row>
-        {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}
-      </div>
+        </Col>
+      </Row>
+      {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}
     </Container>
   );
 };

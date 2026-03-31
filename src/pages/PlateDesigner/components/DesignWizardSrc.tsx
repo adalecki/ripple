@@ -9,10 +9,13 @@ import { Pattern } from '../../../classes/PatternClass';
 import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
 import { currentItem, generateExcelTemplate, plateMaxConcentration } from '../../../utils/designUtils';
 
+import '../../../css/DesignWizard.css'
+
 export interface WellContentsForm {
   compoundId: string;
   concentration: number | '';
   volume: number | '';
+  dmsoWells: boolean;
   patternNames: string[];
 }
 
@@ -35,7 +38,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   handleLabelClick = (() => { }),
   handleMouseDown = (() => { }),
 }) => {
-  const [wellContentsForm, setWellContentsForm] = useState<WellContentsForm>({ compoundId: '', concentration: '', volume: '', patternNames: [] })
+  const [wellContentsForm, setWellContentsForm] = useState<WellContentsForm>({ compoundId: '', concentration: '', volume: '', dmsoWells: false, patternNames: [] })
   const plate = currentItem(designSrcPlates, curDesignSrcPlateId) as Plate
   if (!plate) return (<div>Please select a source plate</div>)
 
@@ -65,12 +68,19 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
       const well = newPlate.getWell(wellId);
       if (!well) continue;
       well.clearContents();
-      well.bulkFill(wellContentsForm.volume as number, 'DMSO');
-      well.contents.push({
-        compoundId: wellContentsForm.compoundId || undefined,
-        concentration: wellContentsForm.concentration as number,
-        patternName
-      });
+      if (wellContentsForm.dmsoWells) {
+        well.bulkFill(wellContentsForm.volume as number * 1000, 'DMSO')
+      }
+      else {
+        well.addContent({
+          compoundId: wellContentsForm.compoundId || undefined,
+          concentration: wellContentsForm.concentration as number,
+          patternName
+        },
+          wellContentsForm.volume as number * 1000, //uL to nL
+          { name: 'DMSO', fraction: 1 }
+        )
+      }
     }
     newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate)
     setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
@@ -99,10 +109,10 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   };
 
   return (
-    <Container fluid className='noselect h-100 pb-2 pt-2'>
-      <Row className='h-100' style={{ minHeight: 0 }}>
-        <Col md={4} className='d-flex flex-column h-100 overflow-y-auto' style={{ scrollbarGutter: 'stable' }}>
-          <div className='mb-3' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '2em', rowGap: '0.5em' }}>
+    <Container fluid className='noselect design-wizard-container'>
+      <Row className='design-wizard-row'>
+        <Col md={3} className='design-wizard-col'>
+          <div className='design-wizard-button-grid'>
             <Button
               onClick={applyContentsToWells}
               disabled={!canApply}
@@ -152,8 +162,8 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           />
         </Col>
         <Col
-          md={8}
-          className='d-flex flex-column h-100 overflow-y-auto'
+          md={9}
+          className='design-wizard-col'
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}
         >
