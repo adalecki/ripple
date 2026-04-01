@@ -21,11 +21,11 @@ function Navigation() {
             <Nav className="me-auto">
               <Link to="/" className="nav-link">Home</Link>
               <NavDropdown title="Utilities" id="utils">
-                <LinkContainer to="echotsfr"><NavDropdown.Item>Echo Calculator</NavDropdown.Item></LinkContainer>
-                <LinkContainer to="platedesigner"><NavDropdown.Item>Plate Designer</NavDropdown.Item></LinkContainer>
-                <LinkContainer to="mapperparser"><NavDropdown.Item>Mapper/Parser</NavDropdown.Item></LinkContainer>
-                <LinkContainer to="platereformat"><NavDropdown.Item>Plate Reformat</NavDropdown.Item></LinkContainer>
                 <LinkContainer to="dilutiondesigner"><NavDropdown.Item>Dilution Designer</NavDropdown.Item></LinkContainer>
+                <LinkContainer to="platedesigner"><NavDropdown.Item>Plate Designer</NavDropdown.Item></LinkContainer>
+                <LinkContainer to="echotsfr"><NavDropdown.Item>Echo Calculator</NavDropdown.Item></LinkContainer>
+                <LinkContainer to="platereformat"><NavDropdown.Item>Plate Reformat</NavDropdown.Item></LinkContainer>
+                <LinkContainer to="mapperparser"><NavDropdown.Item>Mapper/Parser</NavDropdown.Item></LinkContainer>
               </NavDropdown>
             </Nav>
             <Nav>

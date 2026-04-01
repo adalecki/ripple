@@ -463,3 +463,30 @@ export function plateMaxConcentration(plate: Plate): number {
   if (concs.length < 1) return 0
   return Math.max(...concs)
 }
+
+export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"): string[] {
+  const newSelectedWellIds: string[] = [];
+  for (const wellId of selectedWellIds) {
+    const oldWellCoords = getCoordsFromWellId(wellId);
+    const newWellCords = {row: oldWellCoords.row, col: oldWellCoords.col}
+    switch(key) {
+      case "ArrowUp":
+        newWellCords.row -= 1
+        break
+      case "ArrowDown":
+        newWellCords.row += 1
+        break
+      case "ArrowLeft":
+        newWellCords.col -= 1
+        break
+      case "ArrowRight":
+        newWellCords.col += 1
+        break
+    }
+    const newWellId = getWellIdFromCoords(newWellCords.row, newWellCords.col)
+    if (plate.getWell(newWellId)) {
+      newSelectedWellIds.push(newWellId)
+    }
+  }
+  return newSelectedWellIds
+}

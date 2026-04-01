@@ -4,7 +4,7 @@ import { Plate, PlateSize } from '../../classes/PlateClass.ts';
 import { Pattern } from '../../classes/PatternClass.ts';
 import { usePreferences } from '../../hooks/usePreferences';
 import DesignWizardDst from './components/DesignWizardDst.tsx';
-import { labelDrag, selectorHelper } from '../../utils/designUtils.ts';
+import { labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils.ts';
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils.ts';
 import DesignWizardSrc from './components/DesignWizardSrc.tsx';
 import Sidebar from '../../components/Sidebar.tsx';
@@ -28,8 +28,17 @@ const PlateDesigner: React.FC = () => {
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
 
   useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      setSelectedWellIds(prevWells => moveWellSelection(designSrcPlates[0], prevWells, e.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"))
+    }
+  };
+
+    document.addEventListener('keydown', handleKeyDown);
     document.addEventListener("mousedown", handlePageDblClick);
     return () => {
+      document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener("mousedown", handlePageDblClick);
     };
   }, []);
@@ -115,19 +124,19 @@ const PlateDesigner: React.FC = () => {
 
   const handleAddPlate = () => {
     let iter = designSrcPlates.length + 1;
-    while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3,'0')}`) != undefined) {
+    while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3, '0')}`) != undefined) {
       iter += 1
     }
-    const barcode = `SRC${iter.toString().padStart(3,'0')}`;
-    const newPlate = new Plate({barcode: barcode, plateSize: preferences.destinationPlateSize as PlateSize})
-    setDesignSrcPlates([...designSrcPlates,newPlate])
+    const barcode = `SRC${iter.toString().padStart(3, '0')}`;
+    const newPlate = new Plate({ barcode: barcode, plateSize: preferences.destinationPlateSize as PlateSize })
+    setDesignSrcPlates([...designSrcPlates, newPlate])
     setCurDesignSrcPlateId(newPlate.id)
   }
 
   const handleDeletePlate = (plateId: number) => {
     const remainingSrcPlates = designSrcPlates.filter(p => p.id !== plateId)
     if (remainingSrcPlates.length < 1) {
-      const newPlate = new Plate({barcode: 'SRC001', plateSize: designSrcPlateSize})
+      const newPlate = new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize })
       setDesignSrcPlates([newPlate])
       setCurDesignSrcPlateId(newPlate.id)
     }
