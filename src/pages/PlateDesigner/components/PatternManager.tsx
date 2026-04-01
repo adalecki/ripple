@@ -189,6 +189,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                 <Form.Label>Concentrations</Form.Label>
                 <div className="concentration-table-container">
                   <ConcentrationTable
+                    tableId="pattern-conc-table"
                     concentrations={editingPattern.concentrations}
                     onChange={handleConcentrationChange}
                     disabled={!patternState.isEditing}

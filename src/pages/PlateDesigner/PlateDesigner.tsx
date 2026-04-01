@@ -26,20 +26,15 @@ const PlateDesigner: React.FC = () => {
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
+  //ref is used on ContentsManager to get around stale state closure 
+  const enterCallbackRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-      e.preventDefault();
-      setSelectedWellIds(prevWells => moveWellSelection(designSrcPlates[0], prevWells, e.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"))
-    }
-  };
-
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener("mousedown", handlePageDblClick);
+    document.addEventListener('mousedown', handlePageDblClick);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener("mousedown", handlePageDblClick);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handlePageDblClick);
     };
   }, []);
 
@@ -152,6 +147,20 @@ const PlateDesigner: React.FC = () => {
     if (e.detail > 1) {
       e.preventDefault();
       setSelectedWellIds(prev => (prev.length ? [] : prev));
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    const tag = (document.activeElement as HTMLElement)?.tagName;
+    if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag)) return
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      setSelectedWellIds(prevWells =>
+        moveWellSelection(designSrcPlates[0], prevWells, e.key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight')
+      );
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      enterCallbackRef.current?.();
     }
   };
 
@@ -361,6 +370,7 @@ const PlateDesigner: React.FC = () => {
                   selectedWellIds={selectedWellIds}
                   handleLabelClick={handleLabelClick}
                   handleMouseDown={handleMouseDown}
+                  enterCallbackRef={enterCallbackRef}
                 />
               </Tab>
             </Tabs>

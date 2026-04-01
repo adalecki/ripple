@@ -8,6 +8,7 @@ import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
 import { currentItem, generateExcelTemplate, plateMaxConcentration } from '../../../utils/designUtils';
+import { formatWellBlock, mapWellsToConcentrations } from '../../../utils/plateUtils';
 
 import '../../../css/DesignWizard.css'
 
@@ -27,6 +28,7 @@ interface DesignWizardSrcProps {
   selectedWellIds: string[];
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleMouseDown?: (e: React.MouseEvent<Element, MouseEvent>) => void;
+  enterCallbackRef: React.RefObject<(() => void) | null>
 }
 
 const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
@@ -37,6 +39,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   selectedWellIds,
   handleLabelClick = (() => { }),
   handleMouseDown = (() => { }),
+  enterCallbackRef
 }) => {
   const [wellContentsForm, setWellContentsForm] = useState<WellContentsForm>({ compoundId: '', concentration: '', volume: '', dmsoWells: false, patternNames: [] })
   const plate = currentItem(designSrcPlates, curDesignSrcPlateId) as Plate
@@ -47,7 +50,6 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)))//filters out empty strings
     compoundIds.forEach((id) => compoundIdsSet.add(id))
   }
-
 
   const colorConfig: ColorConfig = {
     scheme: 'compound',
@@ -85,6 +87,37 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate)
     setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
   };
+
+  function applyAdvancedContentsToWells(
+    compoundId: string,
+    concentrations: number[],
+    direction: 'LR' | 'RL' | 'TB' | 'BT',
+    volume: number,
+    patternNames: string[]
+  ) {
+    const newPlate = plate.clone();
+    const patternName = patternNames.join(';');
+    const wellBlock = formatWellBlock(selectedWellIds);
+
+    const wellsByConcentration = mapWellsToConcentrations(newPlate, wellBlock, concentrations, direction);
+
+    wellsByConcentration.forEach((wells, concIdx) => {
+      const concentration = concentrations[concIdx];
+      for (const wellId of wells) {
+        const well = newPlate.getWell(wellId);
+        if (!well) continue;
+        well.clearContents();
+        well.addContent(
+          { compoundId: compoundId || undefined, concentration, patternName },
+          volume * 1000,
+          { name: 'DMSO', fraction: 1 }
+        );
+      }
+    });
+
+    newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate);
+    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p));
+  }
 
   function clearContentsFromWells() {
     const newPlate = plate!.clone();
@@ -159,6 +192,8 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
             patterns={patterns}
             wellContentsForm={wellContentsForm}
             setWellContentsForm={setWellContentsForm}
+            onApplyAdvanced={applyAdvancedContentsToWells}
+            enterCallbackRef={enterCallbackRef}
           />
         </Col>
         <Col
@@ -167,7 +202,6 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}
         >
-
           <PlateViewCanvas
             plate={plate}
             view='design'

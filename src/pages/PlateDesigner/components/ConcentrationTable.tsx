@@ -2,12 +2,14 @@ import React from 'react';
 import EditableValueTable, { TableValue } from '../../../components/EditableValueTable';
 
 interface ConcentrationTableProps {
+  tableId: string;
   concentrations: (number | null)[];
   onChange: (concentrations: (number | null)[]) => void;
   disabled: boolean;
 }
 
 const ConcentrationTable: React.FC<ConcentrationTableProps> = ({
+  tableId,
   concentrations,
   onChange,
   disabled
@@ -32,7 +34,7 @@ const ConcentrationTable: React.FC<ConcentrationTableProps> = ({
 
   return (
     <EditableValueTable
-      tableId='patternConcs'
+      tableId={tableId}
       values={tableValues}
       onChange={handleValuesChange}
       disabled={disabled}
