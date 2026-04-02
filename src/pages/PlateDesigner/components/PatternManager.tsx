@@ -164,10 +164,10 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   required={true}
                   disabled={!patternState.isEditing}
                   options={[
-                    { label: "Left to Right", value: "LR" },
-                    { label: "Right to Left", value: "RL" },
-                    { label: "Top to Bottom", value: "TB" },
-                    { label: "Bottom to Top", value: "BT" }
+                    { label: "LR", value: "LR" },
+                    { label: "RL", value: "RL" },
+                    { label: "TB", value: "TB" },
+                    { label: "BT", value: "BT" }
                   ]}
                 />
                 <div className='form-field'>

@@ -46,6 +46,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
     }))
   );
   const layoutWs = utils.json_to_sheet(layoutData);
+  utils.sheet_add_aoa(layoutWs,[['Pattern','Well Block']],{origin: 'A1'})
   utils.book_append_sheet(wb, layoutWs, "Layout");
 
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
@@ -153,6 +154,7 @@ export function isBlockOverlapping(plate: Plate, newBlock: string, existingLocat
 export function sensibleWellSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
   const msgArr: string[] = [];
   if (pattern.type === 'Unused') return msgArr
+  if (selectedWellIds.length % pattern.concentrations.length != 0) return ['The number of wells must be divisible by the number of concentrations']
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
 
   for (const block of blocks) {
@@ -464,8 +466,8 @@ export function plateMaxConcentration(plate: Plate): number {
   return Math.max(...concs)
 }
 
-export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"): string[] {
-  const newSelectedWellIds: string[] = [];
+export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", e: KeyboardEvent): string[] {
+  const newSelectedWellIdsSet: Set<string> = new Set()
   for (const wellId of selectedWellIds) {
     const oldWellCoords = getCoordsFromWellId(wellId);
     const newWellCords = {row: oldWellCoords.row, col: oldWellCoords.col}
@@ -485,8 +487,11 @@ export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: 
     }
     const newWellId = getWellIdFromCoords(newWellCords.row, newWellCords.col)
     if (plate.getWell(newWellId)) {
-      newSelectedWellIds.push(newWellId)
+      newSelectedWellIdsSet.add(newWellId)
+    }
+    if (e.shiftKey && e.shiftKey == true) {
+      newSelectedWellIdsSet.add(wellId)
     }
   }
-  return newSelectedWellIds
+  return Array.from(newSelectedWellIdsSet)
 }

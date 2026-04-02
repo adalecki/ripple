@@ -156,7 +156,7 @@ const PlateDesigner: React.FC = () => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
       setSelectedWellIds(prevWells =>
-        moveWellSelection(designSrcPlates[0], prevWells, e.key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight')
+        moveWellSelection(designSrcPlates[0], prevWells, e.key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', e)
       );
     } else if (e.key === 'Enter') {
       e.preventDefault();
@@ -351,6 +351,7 @@ const PlateDesigner: React.FC = () => {
                   setDesignDstPlates={setDesignDstPlates}
                   curDesignDstPlateId={curDesignDstPlateId}
                   setCurDesignDstPlateId={setCurDesignDstPlateId}
+                  designSrcPlates={designSrcPlates}
                   patterns={patterns}
                   setPatterns={setPatterns}
                   curPatternId={curPatternId}

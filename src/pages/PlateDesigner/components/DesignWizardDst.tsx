@@ -18,6 +18,7 @@ interface DesignWizardDstProps {
   setDesignDstPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
   curDesignDstPlateId: number | null;
   setCurDesignDstPlateId: React.Dispatch<React.SetStateAction<number | null>>;
+  designSrcPlates: Plate[];
   patterns: Pattern[];
   setPatterns: React.Dispatch<React.SetStateAction<Pattern[]>>;
   curPatternId: number | null;
@@ -44,6 +45,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   curDesignDstPlateId,
   //@ts-ignore
   setCurDesignDstPlateId,
+  designSrcPlates,
   patterns,
   setPatterns,
   curPatternId,
@@ -77,12 +79,13 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   }
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    const curPattern = patterns.find(p => p.id == curPatternId)
-    const msgArr = (selectedWellIds.length > 0 && curPattern && curPattern.concentrations.filter(c => c != null).length > 0) ? sensibleWellSelection(selectedWellIds, patterns.find(p => p.id == curPatternId)!, designDstPlates[0]) : []
-    if (patternState.isEditing) {
-      msgArr.splice(0, 0, 'isEditing')
+    const msgArr: string[] = [];
+    if (patternState.isEditing) msgArr.push('Save the pattern before applying to plate');
+    const curPattern = patterns.find(p => p.id == curPatternId);
+    if (selectedWellIds.length > 0 && curPattern && curPattern.concentrations.filter(c => c != null).length > 0) {
+      msgArr.push(...sensibleWellSelection(selectedWellIds, curPattern, designDstPlates[0]));
     }
-    setApplyPopup({ event: e, msgArr: msgArr })
+    setApplyPopup({ event: msgArr.length > 0 ? e : null, msgArr });
   };
 
   const handleMouseLeave = () => {
@@ -201,7 +204,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             <div
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
-              >
+            >
               <Button
                 onClick={applyPatternToWells}
                 disabled={
@@ -231,7 +234,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
               Clear from All Wells
             </Button>
             <Button
-              onClick={() => generateExcelTemplate(patterns)}
+              onClick={() => generateExcelTemplate(patterns, designSrcPlates)}
               disabled={patterns.length < 1}
               variant='success'
               size='sm'
