@@ -12,21 +12,20 @@ import Sidebar from '../../components/Sidebar.tsx';
 const PlateDesigner: React.FC = () => {
   const { preferences } = usePreferences()
   const [tabKey, setTabKey] = useState<string>('designDst');
-  const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ barcode: 'SRC001', plateSize: preferences.sourcePlateSize as PlateSize })]);
-  const [designDstPlates, setDesignDstPlates] = useState<Plate[]>([new Plate({ barcode: 'DST001', plateSize: preferences.destinationPlateSize as PlateSize })]);
+  const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize)
+  const [designDstPlateSize, setDesignDstPlateSize] = useState(preferences.destinationPlateSize as PlateSize)
+  const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize })]);
+  const [designDstPlates, setDesignDstPlates] = useState<Plate[]>([new Plate({ barcode: 'DST001', plateSize: designDstPlateSize })]);
   const [curDesignSrcPlateId, setCurDesignSrcPlateId] = useState<number | null>(designSrcPlates[0] ? designSrcPlates[0].id || null : null)
   const [curDesignDstPlateId, setCurDesignDstPlateId] = useState<number | null>(designDstPlates[0] ? designDstPlates[0].id || null : null)
   const [curPatternId, setCurPatternId] = useState<number | null>(null)
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([])
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false })
-  //implement plate size selection directly instead of relying on preferences
-  //@ts-ignore
-  const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize)
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
-  //ref is used on ContentsManager to get around stale state closure 
+  //ref is used on DesignWizardSrc to get around stale state closure 
   const enterCallbackRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -123,7 +122,7 @@ const PlateDesigner: React.FC = () => {
       iter += 1
     }
     const barcode = `SRC${iter.toString().padStart(3, '0')}`;
-    const newPlate = new Plate({ barcode: barcode, plateSize: preferences.destinationPlateSize as PlateSize })
+    const newPlate = new Plate({ barcode: barcode, plateSize: designSrcPlateSize })
     setDesignSrcPlates([...designSrcPlates, newPlate])
     setCurDesignSrcPlateId(newPlate.id)
   }
@@ -352,6 +351,8 @@ const PlateDesigner: React.FC = () => {
                   curDesignDstPlateId={curDesignDstPlateId}
                   setCurDesignDstPlateId={setCurDesignDstPlateId}
                   designSrcPlates={designSrcPlates}
+                  designDstPlateSize={designDstPlateSize}
+                  setDesignDstPlateSize={setDesignDstPlateSize}
                   patterns={patterns}
                   setPatterns={setPatterns}
                   curPatternId={curPatternId}
@@ -367,6 +368,9 @@ const PlateDesigner: React.FC = () => {
                   designSrcPlates={designSrcPlates}
                   setDesignSrcPlates={setDesignSrcPlates}
                   curDesignSrcPlateId={curDesignSrcPlateId}
+                  designSrcPlateSize={designSrcPlateSize}
+                  setDesignSrcPlateSize={setDesignSrcPlateSize}
+                  setCurDesignSrcPlateId={setCurDesignSrcPlateId}
                   patterns={patterns}
                   selectedWellIds={selectedWellIds}
                   handleLabelClick={handleLabelClick}

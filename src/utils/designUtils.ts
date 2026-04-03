@@ -46,7 +46,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
     }))
   );
   const layoutWs = utils.json_to_sheet(layoutData);
-  utils.sheet_add_aoa(layoutWs,[['Pattern','Well Block']],{origin: 'A1'})
+  utils.sheet_add_aoa(layoutWs, [['Pattern', 'Well Block']], { origin: 'A1' })
   utils.book_append_sheet(wb, layoutWs, "Layout");
 
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
@@ -57,6 +57,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
     //could use a bar or something else, but uuid avoids all naming conflicts
     const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02'
     const compoundRows = [];
+    let dmsoPatternAdded: boolean = false;
     for (const plate of srcPlates) {
       const sortedWells = Object.values(plate.getWells())
         .filter(well => well.getContents().length != 0)
@@ -68,7 +69,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
         const content = well.getContents()[0];
         if (!content.compoundId) continue;
 
-        const volume = well.getTotalVolume()/1000;
+        const volume = well.getTotalVolume() / 1000;
         const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
 
         if (!compoundInventory.has(key)) {
@@ -93,17 +94,20 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
       if (solventWells.length > 0) {
         const solventInventory = new Map<number, string[]>()
         for (const well of solventWells) {
-          const volume = well.getTotalVolume()/1000;
+          const volume = well.getTotalVolume() / 1000;
           if (!solventInventory.has(volume)) {
-            solventInventory.set(volume,[])
+            solventInventory.set(volume, [])
           }
           solventInventory.get(volume)!.push(well.id)
         }
-        for (const [vol,wellIds] of solventInventory) {
+        for (const [vol, wellIds] of solventInventory) {
           compoundRows.push([plate.barcode, formatWellBlock(wellIds), 0, 'DMSO', vol, 'DMSO'])
         }
-        const patternsWs = wb.Sheets["Patterns"]
-        utils.sheet_add_aoa(patternsWs,[['DMSO','Solvent']],{origin: -1})
+        if (!dmsoPatternAdded) {
+          const patternsWs = wb.Sheets["Patterns"]
+          utils.sheet_add_aoa(patternsWs, [['DMSO', 'Solvent']], { origin: -1 })
+          dmsoPatternAdded = true
+        }
       }
     }
     utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: "A2" })
@@ -470,8 +474,8 @@ export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: 
   const newSelectedWellIdsSet: Set<string> = new Set()
   for (const wellId of selectedWellIds) {
     const oldWellCoords = getCoordsFromWellId(wellId);
-    const newWellCords = {row: oldWellCoords.row, col: oldWellCoords.col}
-    switch(key) {
+    const newWellCords = { row: oldWellCoords.row, col: oldWellCoords.col }
+    switch (key) {
       case "ArrowUp":
         newWellCords.row -= 1
         break

@@ -24,9 +24,4 @@
 # Option to fill intermediate plates column-wise instead of row-wise?
 # Can I include "0" as a concentration in patterns?
 # Need better way to describe DMSO normalization on intermediate plate, including the expectation of filling whole plate (or not filling whole plate). 
-
-# Make compound colors more deterministic. Adding a new compound in between two existing compounds on source plate recolors everything.
-# DMSO only apply not activating Apply button if there isn't a pattern selected
-# Src Conc table needs to default to one value always there, even when last is deleted
-# Better user feedback on what's happening when iterating through compounds on Advanced tab
-# Enable the Apply button when Advanced criteria is met, and allow that to also do what the Enter button does
+# In the calculator, detect the likely plate size of src and dst and offer to switch rather than just outright failing

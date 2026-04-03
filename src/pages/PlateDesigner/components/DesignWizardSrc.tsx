@@ -29,6 +29,9 @@ interface DesignWizardSrcProps {
   designSrcPlates: Plate[];
   setDesignSrcPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
   curDesignSrcPlateId: number | null;
+  designSrcPlateSize: PlateSize;
+  setDesignSrcPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>;
+  setCurDesignSrcPlateId: React.Dispatch<React.SetStateAction<number | null>>;
   patterns: Pattern[];
   selectedWellIds: string[];
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
@@ -40,6 +43,9 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   designSrcPlates,
   setDesignSrcPlates,
   curDesignSrcPlateId,
+  designSrcPlateSize,
+  setDesignSrcPlateSize,
+  setCurDesignSrcPlateId,
   patterns,
   selectedWellIds,
   handleLabelClick = (() => { }),
@@ -192,6 +198,20 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
   };
 
+  const handlePlateSizeChange = (value: PlateSize) => {
+    if (value === designSrcPlateSize) return
+    const filledWells = Object.values(designSrcPlates[0].getWells()).filter(well => well.getTotalVolume() > 0)
+    if (filledWells.length > 0 || designSrcPlates.length > 1) {
+      if (!window.confirm("Changing plate size will delete all existing plates. Continue?")) {
+        return
+      }
+    }
+    const newPlate = new Plate({ barcode: 'SRC001', plateSize: value })
+    setDesignSrcPlateSize(value)
+    setDesignSrcPlates([newPlate])
+    setCurDesignSrcPlateId(newPlate.id)
+  }
+
   const handleMouseEnter = (e: React.MouseEvent) => {
     const reasons = getApplyDisabledReasons();
     setApplyPopup({ event: reasons.length > 0 ? e : null, msgArr: reasons });
@@ -261,6 +281,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}
         >
+          <span className="d-flex justify-content-between">
           <FormField
             id="src-plate-barcode"
             name="barcode"
@@ -269,8 +290,22 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
             value={plate.barcode}
             onChange={handleBarcodeChange}
             placeholder="e.g. SRC001"
-            className='default-label-text'
+            className="default-label-text w-auto form-field-compact"
           />
+          <FormField
+            id="src-plate-size"
+            name="src-plate-size"
+            type="select"
+            label="Source Plate Size"
+            value={designSrcPlateSize}
+            onChange={handlePlateSizeChange}
+            options={[
+              { value: '384', label: '384' },
+              { value: '1536', label: '1536' }]
+            }
+            className="default-label-text w-auto form-field-compact"
+          />
+          </span>
           <PlateViewCanvas
             plate={plate}
             view='design'

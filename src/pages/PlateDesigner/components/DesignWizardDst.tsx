@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PatternManager from './PatternManager';
-import { Plate } from '../../../classes/PlateClass';
+import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
@@ -12,6 +12,7 @@ import ApplyTooltip from './ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
 import '../../../css/DesignWizard.css'
+import { FormField } from '../../../components/FormField';
 
 interface DesignWizardDstProps {
   designDstPlates: Plate[];
@@ -19,6 +20,8 @@ interface DesignWizardDstProps {
   curDesignDstPlateId: number | null;
   setCurDesignDstPlateId: React.Dispatch<React.SetStateAction<number | null>>;
   designSrcPlates: Plate[];
+  designDstPlateSize: PlateSize;
+  setDesignDstPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>;
   patterns: Pattern[];
   setPatterns: React.Dispatch<React.SetStateAction<Pattern[]>>;
   curPatternId: number | null;
@@ -46,6 +49,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   //@ts-ignore
   setCurDesignDstPlateId,
   designSrcPlates,
+  designDstPlateSize,
+  setDesignDstPlateSize,
   patterns,
   setPatterns,
   curPatternId,
@@ -91,6 +96,20 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   const handleMouseLeave = () => {
     setApplyPopup({ event: null, msgArr: [] });
   };
+
+  const handlePlateSizeChange = (value: PlateSize) => {
+    if (value === designDstPlateSize) return
+    const filledWells = Object.values(designDstPlates[0].getWells()).filter(well => well.getTotalVolume() > 0)
+    if (filledWells.length > 0 || designDstPlates.length > 1) {
+      if (!window.confirm("Changing plate size will reset the destination plate. Continue?")) {
+        return
+      }
+    }
+    const newPlate = new Plate({ barcode: 'DST001', plateSize: value })
+    setDesignDstPlateSize(value)
+    setDesignDstPlates([newPlate])
+    setCurDesignDstPlateId(newPlate.id)
+  }
 
   function applyPatternToWells() {
     if (curPatternId && selectedWellIds.length > 0) {
@@ -251,6 +270,22 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
           />
         </Col>
         <Col md={9} className='design-wizard-col' onMouseDown={handleMouseDown}>
+          <span className="d-flex justify-content-end">
+            <FormField
+              id="dst-plate-size"
+              name="dst-plate-size"
+              type="select"
+              label="Destination Plate Size"
+              value={designDstPlateSize}
+              onChange={handlePlateSizeChange}
+              options={[
+                { value: '96', label: '96' },
+                { value: '384', label: '384' },
+                { value: '1536', label: '1536' }]
+              }
+              className="default-label-text w-auto form-field-compact"
+            />
+          </span>
           <PlateViewCanvas
             plate={designDstPlates[0]}
             view='design'
@@ -259,7 +294,15 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             handleLabelClick={handleLabelClick}
             blockBorderMap={blockBorderMap}
           />
-
+          <small className="text-muted">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem' }}>
+              <span><kbd>LeftClick</kbd> to select wells, drag to select groups</span>
+              <span><kbd>LeftClick</kbd> on labels or All Plate square to select groups of wells</span>
+              <span><kbd>LeftClick</kbd> + <kbd>Shift</kbd> to add to current selection</span>
+              <span><kbd>ArrowKey</kbd> to move current selection</span>
+              <span><kbd>Shift</kbd> + <kbd>ArrowKey</kbd> expands well selection</span>
+            </div>
+          </small>
         </Col>
       </Row>
       {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}

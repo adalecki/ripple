@@ -90,6 +90,16 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
           min={0}
           required
         />
+        <FormField
+          id="src-dmso-check"
+          name="dmso"
+          type="switch"
+          label="DMSO-only Wells"
+          value={wellContentsForm.dmsoWells}
+          onChange={(value) => handleFieldChange('dmso', value)}
+          required
+          tooltip="When checked, designates wells as solvent-only for downstream DMSO normalization. All Compound ID and Concentration fields are disabled."
+        />
         <div className="mb-3">
           <label className="form-label">Linked Patterns</label>
           {assignablePatterns.length === 0 ? (
@@ -127,22 +137,13 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
             </div>
           )}
         </div>
-        <FormField
-          id="src-dmso-check"
-          name="dmso"
-          type="switch"
-          label="DMSO-only Wells"
-          value={wellContentsForm.dmsoWells}
-          onChange={(value) => handleFieldChange('dmso', value)}
-          required
-          tooltip="When checked, designates wells as solvent-only for downstream DMSO normalization"
-        />
+
         <Accordion
           activeKey={activeAccordion}
           onSelect={(k) => setActiveAccordion(k as string | null)}
         >
           <Accordion.Item eventKey="basic">
-            <Accordion.Header onClick={() => {(document.activeElement as HTMLElement).blur()}}>Basic</Accordion.Header>
+            <Accordion.Header onClick={() => { (document.activeElement as HTMLElement).blur() }}>Basic</Accordion.Header>
             <Accordion.Body className="px-2">
               <FormField
                 id="src-compound-id"
@@ -171,7 +172,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
           </Accordion.Item>
 
           <Accordion.Item eventKey="advanced">
-            <Accordion.Header onClick={() => {(document.activeElement as HTMLElement).blur()}}>Advanced <InfoTooltip text={<>Select wells on the plate, then press <kbd>Enter</kbd> to apply and advance to the next compound.</>} /></Accordion.Header>
+            <Accordion.Header onClick={() => { (document.activeElement as HTMLElement).blur() }}>Advanced <InfoTooltip text={<>Select wells on the plate, then press <kbd>Enter</kbd> to apply and advance to the next compound.</>} /></Accordion.Header>
             <Accordion.Body className="px-2">
               <div className="mb-2">
                 <label className="form-label">Compound List</label>
@@ -203,11 +204,10 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
                   className="flex-grow-1 text-center small border rounded py-1 px-2"
                   style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 >
-                  <span className="d-flex justify-content-between" style={{fontSize: '0.8rem'}}>
+                  <span className="d-flex justify-content-between" style={{ fontSize: '0.8rem' }}>
                     <span>Next stamp:</span>
                     <span>{currentCompound}</span>
                     <span>({wellContentsForm.currentIdx + 1} of {compoundList.length})</span>
-                    
                   </span>
                 </span>
                 <Button
