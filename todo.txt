@@ -14,9 +14,14 @@
 #x Trim pattern and cpd names from input sheet for trailing white spaces
 # Uploading data files under wrong protocol just silently fails
 #x Remove TransferStep from EchoCalculatorClass, consolidate to TransferStepExport in plateUtils
-# Hide "Backfill" field when "use intermediate plates" is not selected
-# Change default preference to *not* split CSVs and zip
+#x Hide "Backfill" field when "use intermediate plates" is not selected
+#x Change default preference to *not* split CSVs and zip
 #x In TransferList, the delete button is pushed to the side if the transfer block is too long
 #x Add ability to edit transfer volumes
-# Add default plate reformat transfers - compress, decompress, interleave
+#x Add default plate reformat transfers - compress, decompress, interleave
 #x "Treat as identical" option for any number of src wells to any number of dst wells
+#x Need better user feedback that they have to save a pattern before applying. Make a button popup indicating why it's disabled.
+# Option to fill intermediate plates column-wise instead of row-wise?
+# Can I include "0" as a concentration in patterns?
+# Need better way to describe DMSO normalization on intermediate plate, including the expectation of filling whole plate (or not filling whole plate). 
+# In the calculator, detect the likely plate size of src and dst and offer to switch rather than just outright failing

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Col, Row, Tabs, Tab } from 'react-bootstrap';
-import { PlatesContext, PatternsContext, MappedPlatesContext } from '../../contexts/Context.ts';
+import { PlatesContext, PatternsContext } from '../../contexts/Context.ts';
 import { Plate, PlateSize } from '../../classes/PlateClass.ts';
 import { Pattern } from '../../classes/PatternClass.ts';
 import Sidebar from '../../components/Sidebar.tsx';
@@ -18,8 +18,6 @@ const EchoTransfer: React.FC = () => {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [curPlateId, setCurPlateId] = useState<number | null>(null);
   const [selectedPatternId, setSelectedPatternId] = useState<number | null>(null);
-  const [mappedPlates, setMappedPlates] = useState<Plate[]>([]);
-  const [curMappedPlateId, setCurMappedPlateId] = useState<number | null>(null);
 
   useEffect(() => {
     //not doing extra type checking as even if a user somehow got an invalid plate size,
@@ -43,13 +41,7 @@ const EchoTransfer: React.FC = () => {
     }
   };
 
-  if (plates.length == 0) {
-    const newPlates: Plate[] = []
-    for (let i = 0; i < 20; i++) {
-      newPlates.push(new Plate({ id: i, barcode: i.toString(), plateSize: '384', plateRole: 'destination' }))
-    }
-  }
-
+  //has to be here because using sidebar for deletion
   const handleDeletePattern = (patternId: number) => {
     const newPlate = patternPlate.clone()
     const pattern = patterns.find(p => p.id == patternId)
@@ -119,7 +111,6 @@ const EchoTransfer: React.FC = () => {
   return (
     <PlatesContext.Provider value={{ plates, setPlates, curPlateId, setCurPlateId }}>
       <PatternsContext.Provider value={{ patterns, setPatterns, selectedPatternId, setSelectedPatternId }}>
-        <MappedPlatesContext.Provider value={{ mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId }}>
           <Row>
             <Col md="2">{renderSidebar()}</Col>
             <Col md="10" style={{ minHeight: 0 }}>
@@ -149,7 +140,6 @@ const EchoTransfer: React.FC = () => {
               </div>
             </Col>
           </Row>
-        </MappedPlatesContext.Provider>
       </PatternsContext.Provider>
     </PlatesContext.Provider>
   )

@@ -8,6 +8,7 @@ export interface HoveredWellData {
   position: { x: number; y: number };
   transform: string;
   transferList?: WellTransferSummary[];
+  showPatternName?: boolean;
 }
 
 interface WellTooltipProps {
@@ -31,7 +32,7 @@ function renderTransferContent(transferList: WellTransferSummary[]) {
   );
 }
 
-function renderWellContent(well: Well) {
+function renderWellContent(well: Well, showPatternName: boolean) {
   const contents = well.getContents();
   const solvents = well.getSolvents();
 
@@ -50,7 +51,8 @@ function renderWellContent(well: Well) {
         <div className="content-section">
           {contents.map((content, index) => (
             <div key={index} className="content-item">
-              <span>{content.compoundId ? content.compoundId : content.patternName}</span>
+              {content.compoundId && <span>{content.compoundId}</span>}
+              {showPatternName && content.patternName && <span>{content.patternName}</span>}
               <span>{content.concentration.toFixed(5)} µM</span>
             </div>
           ))}
@@ -78,9 +80,8 @@ function renderWellContent(well: Well) {
     </div>
   );
 }
-
 const WellTooltip: React.FC<WellTooltipProps> = ({ hoveredWell }) => {
-  const { well, position, transform, transferList } = hoveredWell;
+  const { well, position, transform, transferList, showPatternName = false } = hoveredWell;
 
   return (
     <div className="well-tooltip" style={{ top: position.y, left: position.x, transform }}>
@@ -98,7 +99,7 @@ const WellTooltip: React.FC<WellTooltipProps> = ({ hoveredWell }) => {
           </span>
         )}
       </div>
-      {transferList ? renderTransferContent(transferList) : renderWellContent(well)}
+      {transferList ? renderTransferContent(transferList) : renderWellContent(well,showPatternName)}
     </div>
   );
 };

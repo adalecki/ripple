@@ -11,6 +11,7 @@ import MapperParser from "./pages/MapperParser/MapperParser";
 
 import './css/router.css'
 import PlateReformat from "./pages/PlateReformat/PlateReformat";
+import PlateDesigner from "./pages/PlateDesigner/PlateDesigner";
 
 const Layout = () => (
   <PreferencesProvider>
@@ -26,6 +27,7 @@ const router = createHashRouter(
     <Route path="/" element={<Layout />}>
       <Route index element={<Home />} />
       <Route path="echotsfr" element={<EchoTransfer />} />
+      <Route path="platedesigner" element={<PlateDesigner />} />
       <Route path="dilutiondesigner" element={<DilutionDesigner />} />
       <Route path="mapperparser" element={<MapperParser />} />
       <Route path="platereformat" element={<PlateReformat />} />
