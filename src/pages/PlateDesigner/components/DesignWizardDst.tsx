@@ -298,7 +298,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem' }}>
               <span><kbd>LeftClick</kbd> to select wells, drag to select groups</span>
               <span><kbd>LeftClick</kbd> on labels or All Plate square to select groups of wells</span>
-              <span><kbd>LeftClick</kbd> + <kbd>Shift</kbd> to add to current selection</span>
+              <span><kbd>LeftClick</kbd> + <kbd>Ctrl</kbd> to add to current selection</span>
               <span><kbd>ArrowKey</kbd> to move current selection</span>
               <span><kbd>Shift</kbd> + <kbd>ArrowKey</kbd> expands well selection</span>
             </div>

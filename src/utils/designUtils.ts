@@ -409,7 +409,7 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pai
 
 export function selectorHelper(e: React.MouseEvent, newSelected: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) {
   let newSelection = [...selectedWells]
-  if (!e.shiftKey) {
+  if (!e.ctrlKey) {
     setSelectedWells(newSelected)
   }
   else {
