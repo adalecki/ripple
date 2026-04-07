@@ -3,7 +3,7 @@ import { Info } from 'lucide-react';
 import '../css/InfoTooltip.css';
 
 export interface InfoTooltipProps {
-  text: string;
+  text: React.ReactNode;
   size?: number;
   className?: string;
 }

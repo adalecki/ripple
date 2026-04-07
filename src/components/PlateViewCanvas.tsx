@@ -228,7 +228,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       well,
       position: { x: tooltipX, y: tooltipY },
       transform: `translate(${x}%, ${y}%)`,
-      transferList: view.includes('reformat') && transferMap ? transferMap.get(wellId) || [] : undefined
+      transferList: view.includes('reformat') && transferMap ? transferMap.get(wellId) || [] : undefined,
+      showPatternName: view == 'design'
     });
   };
 

@@ -12,7 +12,7 @@ import { checkWellsInSelection, generateExcelTemplate, getPatternWells, isBlockO
 
 import '../../../css/PlateComponent.css'
 import '../../../css/DesignWizard.css'
-import ApplyTooltip from './ApplyTooltip';
+import ApplyTooltip from '../../PlateDesigner/components/ApplyTooltip';
 
 interface DesignWizardProps {
   patternPlate: Plate;
@@ -66,8 +66,13 @@ const DesignWizard: React.FC<DesignWizardProps> = ({ patternPlate, setPatternPla
   }, [selectedPatternId, patterns])
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    const msgArr = sensibleWellSelection(selectedWells, patterns.find(p => p.id == selectedPatternId)!, patternPlate)
-    setApplyPopup({ event: e, msgArr: msgArr })
+    const msgArr: string[] = [];
+    if (isEditing) msgArr.push('Save the pattern before applying to plate');
+    const curPattern = patterns.find(p => p.id == selectedPatternId);
+    if (selectedWells.length > 0 && curPattern && curPattern.concentrations.filter(c => c != null).length > 0) {
+      msgArr.push(...sensibleWellSelection(selectedWells, curPattern, patternPlate));
+    }
+    setApplyPopup({ event: msgArr.length > 0 ? e : null, msgArr });
   };
 
   const handleMouseLeave = () => {

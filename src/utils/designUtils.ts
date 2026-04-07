@@ -3,7 +3,15 @@ import { Pattern } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
-export function generateExcelTemplate(patterns: Pattern[]) {
+export function currentItem(items: any[], curItemId: number | null) {
+  let item = null;
+  if (curItemId != null) {
+    item = items.find((item) => item.id == curItemId) || null
+  }
+  return item
+}
+
+export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) {
   const wb: WorkBook = utils.book_new();
 
   const patternsData = patterns.map(pattern => {
@@ -38,10 +46,73 @@ export function generateExcelTemplate(patterns: Pattern[]) {
     }))
   );
   const layoutWs = utils.json_to_sheet(layoutData);
+  utils.sheet_add_aoa(layoutWs, [['Pattern', 'Well Block']], { origin: 'A1' })
   utils.book_append_sheet(wb, layoutWs, "Layout");
 
   const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
+  if (srcPlates && srcPlates.length > 0) {
+    //uuid used as delimiter to avoid weird edge cases
+    //e.g. 'test1' + '10' would be the same as 'test11' + '1' without delims
+    //could use a bar or something else, but uuid avoids all naming conflicts
+    const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02'
+    const compoundRows = [];
+    let dmsoPatternAdded: boolean = false;
+    for (const plate of srcPlates) {
+      const sortedWells = Object.values(plate.getWells())
+        .filter(well => well.getContents().length != 0)
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      const compoundInventory = new Map<string, { concentration: number, compoundId: string, volume: number, patternName: string, wellIds: string[] }>();
+
+      for (const well of sortedWells) {
+        const content = well.getContents()[0];
+        if (!content.compoundId) continue;
+
+        const volume = well.getTotalVolume() / 1000;
+        const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
+
+        if (!compoundInventory.has(key)) {
+          compoundInventory.set(key, {
+            compoundId: content.compoundId,
+            concentration: content.concentration,
+            volume,
+            patternName: content.patternName,
+            wellIds: [],
+          });
+        }
+        compoundInventory.get(key)!.wellIds.push(well.id);
+      }
+
+      for (const { compoundId, concentration, volume, patternName, wellIds } of compoundInventory.values()) {
+        compoundRows.push([plate.barcode, formatWellBlock(wellIds), concentration, compoundId, volume, patternName]);
+      }
+
+      const solventWells = Object.values(plate.getWells())
+        .filter(well => well.isSolventOnlyWell('DMSO'))
+        .sort((a, b) => a.id.localeCompare(b.id))
+      if (solventWells.length > 0) {
+        const solventInventory = new Map<number, string[]>()
+        for (const well of solventWells) {
+          const volume = well.getTotalVolume() / 1000;
+          if (!solventInventory.has(volume)) {
+            solventInventory.set(volume, [])
+          }
+          solventInventory.get(volume)!.push(well.id)
+        }
+        for (const [vol, wellIds] of solventInventory) {
+          compoundRows.push([plate.barcode, formatWellBlock(wellIds), 0, 'DMSO', vol, 'DMSO'])
+        }
+        if (!dmsoPatternAdded) {
+          const patternsWs = wb.Sheets["Patterns"]
+          utils.sheet_add_aoa(patternsWs, [['DMSO', 'Solvent']], { origin: -1 })
+          dmsoPatternAdded = true
+        }
+      }
+    }
+    utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: "A2" })
+  }
+
   utils.book_append_sheet(wb, compoundsWs, "Compounds");
 
   const barcodesHeaders = ["Intermediate Plate Barcodes", "Destination Plate Barcodes"];
@@ -87,6 +158,7 @@ export function isBlockOverlapping(plate: Plate, newBlock: string, existingLocat
 export function sensibleWellSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
   const msgArr: string[] = [];
   if (pattern.type === 'Unused') return msgArr
+  if (selectedWellIds.length % pattern.concentrations.length != 0) return ['The number of wells must be divisible by the number of concentrations']
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
 
   for (const block of blocks) {
@@ -337,7 +409,7 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pai
 
 export function selectorHelper(e: React.MouseEvent, newSelected: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) {
   let newSelection = [...selectedWells]
-  if (!e.shiftKey) {
+  if (!e.ctrlKey) {
     setSelectedWells(newSelected)
   }
   else {
@@ -370,8 +442,8 @@ export function labelDrag(startEl: Element | null, endEl: Element | null, plate:
   if (startEl.parentElement != endEl.parentElement) return newSelected
   const startLabel = startEl.innerText
   const endLabel = endEl.innerText
-  const rowRange = {start: 0, end: 0}
-  const colRange = {start: 0, end: 0}
+  const rowRange = { start: 0, end: 0 }
+  const colRange = { start: 0, end: 0 }
   if (isNaN(parseInt(startLabel))) {
     rowRange.start = lettersToNumber(startLabel)
     rowRange.end = lettersToNumber(endLabel)
@@ -389,4 +461,41 @@ export function labelDrag(startEl: Element | null, endEl: Element | null, plate:
     }
   }
   return newSelected
+}
+
+export function plateMaxConcentration(plate: Plate): number {
+  const wells = Array.from(plate)
+  const concs = wells.flatMap(w => w.getContents().map(c => c.concentration)).filter(c => typeof c === 'number')
+  if (concs.length < 1) return 0
+  return Math.max(...concs)
+}
+
+export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", e: KeyboardEvent): string[] {
+  const newSelectedWellIdsSet: Set<string> = new Set()
+  for (const wellId of selectedWellIds) {
+    const oldWellCoords = getCoordsFromWellId(wellId);
+    const newWellCords = { row: oldWellCoords.row, col: oldWellCoords.col }
+    switch (key) {
+      case "ArrowUp":
+        newWellCords.row -= 1
+        break
+      case "ArrowDown":
+        newWellCords.row += 1
+        break
+      case "ArrowLeft":
+        newWellCords.col -= 1
+        break
+      case "ArrowRight":
+        newWellCords.col += 1
+        break
+    }
+    const newWellId = getWellIdFromCoords(newWellCords.row, newWellCords.col)
+    if (plate.getWell(newWellId)) {
+      newSelectedWellIdsSet.add(newWellId)
+    }
+    if (e.shiftKey && e.shiftKey == true) {
+      newSelectedWellIdsSet.add(wellId)
+    }
+  }
+  return Array.from(newSelectedWellIdsSet)
 }

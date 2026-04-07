@@ -1,7 +1,5 @@
 .tool-card {
   transition: all 0.2s ease-in-out;
-  width: 450px;
-  max-width: 100%;
   display: flex;
 }
 
@@ -25,4 +23,15 @@
 
 .tool-card:hover .tool-icon {
   color: #0445ad !important;
+}
+
+.home-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.home-grid > * {
+  flex: 0 1 calc((100% - 3rem) / 3);
 }
