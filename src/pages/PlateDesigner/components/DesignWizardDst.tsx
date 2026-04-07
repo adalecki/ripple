@@ -38,6 +38,7 @@ interface DesignWizardDstProps {
     isNewPattern: boolean;
     isPickingColor: boolean;
   }>>
+  onDoubleClick: (e: React.MouseEvent<Element, MouseEvent>) => void;
 }
 
 const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
@@ -58,7 +59,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   handleLabelClick = (() => { }),
   handleMouseDown = (() => { }),
   patternState,
-  setPatternState
+  setPatternState,
+  onDoubleClick
 }) => {
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
 
@@ -269,7 +271,13 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             curPatternId={curPatternId}
           />
         </Col>
-        <Col md={9} className='design-wizard-col' onMouseDown={handleMouseDown}>
+        <Col
+          md={9}
+          className='design-wizard-col'
+          style={{ scrollbarGutter: 'stable' }}
+          onMouseDown={handleMouseDown}
+          onDoubleClick={onDoubleClick}
+        >
           <span className="d-flex justify-content-end">
             <FormField
               id="dst-plate-size"

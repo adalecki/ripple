@@ -37,6 +37,7 @@ interface DesignWizardSrcProps {
   handleLabelClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleMouseDown?: (e: React.MouseEvent<Element, MouseEvent>) => void;
   enterCallbackRef: React.RefObject<(() => void) | null>
+  onDoubleClick: (e: React.MouseEvent<Element, MouseEvent>) => void;
 }
 
 const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
@@ -50,7 +51,8 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   selectedWellIds,
   handleLabelClick = (() => { }),
   handleMouseDown = (() => { }),
-  enterCallbackRef
+  enterCallbackRef,
+  onDoubleClick
 }) => {
   const [wellContentsForm, setWellContentsForm] = useState<WellContentsForm>({
     compoundId: '',
@@ -280,31 +282,32 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           className='design-wizard-col'
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}
+          onDoubleClick={onDoubleClick}
         >
           <span className="d-flex justify-content-between">
-          <FormField
-            id="src-plate-barcode"
-            name="barcode"
-            type="text"
-            label="Source Plate Barcode"
-            value={plate.barcode}
-            onChange={handleBarcodeChange}
-            placeholder="e.g. SRC001"
-            className="default-label-text w-auto form-field-compact"
-          />
-          <FormField
-            id="src-plate-size"
-            name="src-plate-size"
-            type="select"
-            label="Source Plate Size"
-            value={designSrcPlateSize}
-            onChange={handlePlateSizeChange}
-            options={[
-              { value: '384', label: '384' },
-              { value: '1536', label: '1536' }]
-            }
-            className="default-label-text w-auto form-field-compact"
-          />
+            <FormField
+              id="src-plate-barcode"
+              name="barcode"
+              type="text"
+              label="Source Plate Barcode"
+              value={plate.barcode}
+              onChange={handleBarcodeChange}
+              placeholder="e.g. SRC001"
+              className="default-label-text w-auto form-field-compact"
+            />
+            <FormField
+              id="src-plate-size"
+              name="src-plate-size"
+              type="select"
+              label="Source Plate Size"
+              value={designSrcPlateSize}
+              onChange={handlePlateSizeChange}
+              options={[
+                { value: '384', label: '384' },
+                { value: '1536', label: '1536' }]
+              }
+              className="default-label-text w-auto form-field-compact"
+            />
           </span>
           <PlateViewCanvas
             plate={plate}

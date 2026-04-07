@@ -30,10 +30,10 @@ const PlateDesigner: React.FC = () => {
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handlePageDblClick);
+    //document.addEventListener('mousedown', handlePageDblClick);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handlePageDblClick);
+      //document.removeEventListener('mousedown', handlePageDblClick);
     };
   }, []);
 
@@ -142,7 +142,7 @@ const PlateDesigner: React.FC = () => {
     }
   }
 
-  const handlePageDblClick = (e: MouseEvent) => {
+  const handlePageDblClick = (e: React.MouseEvent<Element,MouseEvent>) => {
     if (e.detail > 1) {
       e.preventDefault();
       setSelectedWellIds(prev => (prev.length ? [] : prev));
@@ -361,6 +361,7 @@ const PlateDesigner: React.FC = () => {
                   handleMouseDown={handleMouseDown}
                   patternState={patternState}
                   setPatternState={setPatternState}
+                  onDoubleClick={handlePageDblClick}
                 />
               </Tab>
               <Tab eventKey="designSrc" title="Design - Source">
@@ -376,6 +377,7 @@ const PlateDesigner: React.FC = () => {
                   handleLabelClick={handleLabelClick}
                   handleMouseDown={handleMouseDown}
                   enterCallbackRef={enterCallbackRef}
+                  onDoubleClick={handlePageDblClick}
                 />
               </Tab>
             </Tabs>
