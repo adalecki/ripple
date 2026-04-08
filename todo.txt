@@ -21,7 +21,7 @@
 #x Add default plate reformat transfers - compress, decompress, interleave
 #x "Treat as identical" option for any number of src wells to any number of dst wells
 #x Need better user feedback that they have to save a pattern before applying. Make a button popup indicating why it's disabled.
-# Option to fill intermediate plates column-wise instead of row-wise?
+#x Option to fill intermediate plates column-wise instead of row-wise?
 # Can I include "0" as a concentration in patterns?
 # Need better way to describe DMSO normalization on intermediate plate, including the expectation of filling whole plate (or not filling whole plate). 
 # In the calculator, detect the likely plate size of src and dst and offer to switch rather than just outright failing

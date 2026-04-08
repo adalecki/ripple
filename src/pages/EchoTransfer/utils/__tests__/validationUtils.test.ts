@@ -187,7 +187,6 @@ describe('echoInputValidation - Valid Input', () => {
   test('accepts valid complete workbook', () => {
     const wb = createValidWorkbook();
     const result = echoInputValidation(wb, mockFormValues, mockPreferences);
-    console.log(result)
 
     expect(result.errors).toHaveLength(0);
     expect(result.inputData).toBeDefined();
@@ -598,7 +597,8 @@ describe('echoInputValidation - Form Values Validation', () => {
       dmsoNormalization: true,
       evenDepletion: false,
       skipUnusedBlocks: false,
-      updateFromSurveyVolumes: false
+      updateFromSurveyVolumes: false,
+      fillIntColumnwise: false
     });
   });
 });

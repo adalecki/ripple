@@ -78,7 +78,8 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
           dmsoNormalization: Boolean(formValues['DMSO Normalization']),
           evenDepletion: Boolean(formValues['Evenly Deplete Source Wells']),
           updateFromSurveyVolumes: Boolean(formValues['Use Source Survey Volumes']),
-          skipUnusedBlocks: Boolean(formValues['Skip Unused Treatment Blocks'])
+          skipUnusedBlocks: Boolean(formValues['Skip Unused Treatment Blocks']),
+          fillIntColumnwise: Boolean(formValues['Fill Intermediate Plates Column-wise'])
         }
         inputData.CommonData = CommonData
     
