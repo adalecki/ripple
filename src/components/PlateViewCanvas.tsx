@@ -108,7 +108,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       drawSegments(ctx, x + 1, y + 1, size - 1, colors);
     }
 
-    if (well.getSolvents().some(s => s.name === "DMSO") && !well.getIsUnused()) {
+    if (well.getSolvents().some(s => s.name === "DMSO" && s.volume > 0) && !well.getIsUnused()) {
       drawDmso(ctx, x, y);
     }
 

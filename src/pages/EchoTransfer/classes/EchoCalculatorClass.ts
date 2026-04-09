@@ -73,6 +73,7 @@ export class EchoCalculator {
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates, ...this.destinationPlates]) {
       this.findPlateMaxConcentration(plate)
     }
+    this.transferSteps = this.transferSteps.filter(step => step.volume > 0)
 
   }
 

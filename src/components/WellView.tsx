@@ -63,7 +63,7 @@ const WellView = React.forwardRef<HTMLDivElement, WellProps>(
         onClick={(e) => onClickMask(wellId, e)}
         data-wellid={wellId}
       >
-        {(well.getSolvents().some(s => s.name == 'DMSO') && !well.getIsUnused() ? <div className='dmso'></div> : '')}
+        {(well.getSolvents().some(s => s.name == 'DMSO' && s.volume > 0) && !well.getIsUnused() ? <div className='dmso'></div> : '')}
         {renderSegments()}
       </div>
     );

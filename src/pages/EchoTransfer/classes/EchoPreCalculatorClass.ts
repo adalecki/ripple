@@ -308,7 +308,11 @@ export class EchoPreCalculator {
     const concentrationMap: Map<number, ConcentrationObj> = new Map()
     const intermediateConcentrations: Map<number, ConcentrationObj> = new Map() // map of intermed conc and volume used to make it
     let intermediateConcRange = { 'max': calculateMissingValue({ v1: this.maxTransferVolume, c1: Math.max(...availableConcentrations), v2: (this.intermediateBackfillVolume + this.maxTransferVolume) }), 'min': calculateMissingValue({ v1: this.dropletSize, c1: Math.min(...availableConcentrations), v2: (this.intermediateBackfillVolume + this.dropletSize) }) }
-    //const maxConcentrations = 4;
+    
+    //if 0 is added to pattern concentrations, set it manually here
+    if (pattern.concentrations.includes(0)) {
+      concentrationMap.set(0,{sourceConc: availableConcentrations[0], sourceType: 'src', volToTsfr: 0})
+    }
 
     //first try to satisfy using source plate concentrations
     for (const sourceConc of availableConcentrations) {
@@ -574,7 +578,6 @@ export class EchoPreCalculator {
         totalPatternWells += wells.length
       }
     }
-    console.log(totalPatternWells)
     
     const unusedDestinationWells = (this.inputData.CommonData.skipUnusedBlocks ? totalDestinationWells - totalPatternWells * this.destinationPlatesCount : totalDestinationWells - this.destinationWellsCount - unusedWellsCount);
     const additionalDMSOVol = unusedDestinationWells * this.maxDMSOVol
