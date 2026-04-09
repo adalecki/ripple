@@ -180,7 +180,6 @@ it('onSubmit sees files in formData submitted with both files', async () => {
   });
 
   expect(handleSubmit).toHaveBeenCalledTimes(1);
-  console.log(capturedValues)
 
   expect(capturedValues['excelFile']).toBeInstanceOf(File);
   expect(capturedValues['transferFile']).toBeInstanceOf(File);

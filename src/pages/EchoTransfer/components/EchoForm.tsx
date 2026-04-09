@@ -168,7 +168,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
 
 
         {fields.filter(field =>
-          field.name !== 'Backfill (µL)' ||
+          (field.name !== 'Backfill (µL)' && field.name !== 'Fill Intermediate Plates Column-wise') ||
           setTransferFile ||
           formValues['Use Intermediate Plates']
         ).map((field) => (

@@ -59,6 +59,7 @@ export type InputDataType = {
     'evenDepletion': boolean;
     'updateFromSurveyVolumes': boolean;
     'skipUnusedBlocks': boolean;
+    'fillIntColumnwise': boolean;
   }
 }
 

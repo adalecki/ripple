@@ -23,7 +23,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
     };
 
     for (let i = 1; i <= 20; i++) {
-      baseData[`Conc${i}`] = pattern.type === 'Unused' ? null : (pattern.concentrations[i - 1] || null);
+      baseData[`Conc${i}`] = (pattern.type === 'Unused' || i > pattern.concentrations.length) ? null : pattern.concentrations[i - 1];
     }
 
     return baseData;

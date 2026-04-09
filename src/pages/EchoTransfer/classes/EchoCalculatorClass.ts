@@ -1,6 +1,6 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
-import { formatWellBlock, getWellFromBarcodeAndId, mapWellsToConcentrations, TransferStepExport } from '../../../utils/plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellFromBarcodeAndId, mapWellsToConcentrations, TransferStepExport } from '../../../utils/plateUtils';
 import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
 import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
@@ -73,6 +73,7 @@ export class EchoCalculator {
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates, ...this.destinationPlates]) {
       this.findPlateMaxConcentration(plate)
     }
+    this.transferSteps = this.transferSteps.filter(step => step.volume > 0)
 
   }
 
@@ -668,6 +669,13 @@ export class EchoCalculator {
         .sort();
 
       if (availableWells.length >= numberWells) {
+        if (this.inputData.CommonData.fillIntColumnwise) {
+          availableWells.sort((a,b) => {
+          const coordsA = getCoordsFromWellId(a);
+          const coordsB = getCoordsFromWellId(b);
+          return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
+          })
+        }
         const wellBlock = formatWellBlock(availableWells.slice(0, numberWells));
         return { barcode: plate.barcode, wellBlock };
       }

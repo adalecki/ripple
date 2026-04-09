@@ -129,6 +129,12 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         defaultValue: true
       },
       {
+        prefId: 'fillIntColumnwise',
+        name: 'Fill Intermediate Plates Column-wise',
+        type: 'switch',
+        defaultValue: false
+      },
+      {
         prefId: 'dmsoNormalization',
         name: 'DMSO Normalization',
         type: 'switch',
