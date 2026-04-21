@@ -17,6 +17,9 @@ import CheckpointDisplayModal from './CheckpointDisplayModal';
 import EchoForm from './EchoForm';
 import TransferListDownload from '../../../components/TransferListDownload';
 import PlateView from '../../../components/PlateView';
+import DestMapDownload from './DestMapDownload';
+
+import '../../../css/EchoCalc.css'
 
 
 const EchoCalc: React.FC = () => {
@@ -118,6 +121,8 @@ const EchoCalc: React.FC = () => {
     maxConcentration: plate?.metadata.globalMaxConcentration
   }
 
+  const destinationPlates = plates.filter(p => p.plateRole === 'destination')
+
   return (
     <Container fluid className='h-100 pb-2'>
       <CheckpointDisplayModal
@@ -149,9 +154,22 @@ const EchoCalc: React.FC = () => {
               view="echoCalc"
               colorConfig={colorConfig}
             /> : "Please submit a template file to calculate transfer list"}
-          <br />
-          {transferMap.size > 0 && echoPreCalc && <TransferListDownload transferMap={transferMap} splitOutputCSVs={preferences.splitOutputCSVs as boolean} />}
-          <br />
+          <div className="d-flex gap-2 w-100 button-row">
+            {transferMap.size > 0 && echoPreCalc && (
+              <div className="flex-fill">
+                <TransferListDownload
+                  transferMap={transferMap}
+                  splitOutputCSVs={preferences.splitOutputCSVs as boolean}
+                />
+              </div>
+            )}
+
+            {destinationPlates && destinationPlates.length > 0 && (
+              <div className="flex-fill">
+                <DestMapDownload destinationPlates={destinationPlates} />
+              </div>
+            )}
+          </div>
           <Alert variant='danger' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
             The following errors occurred:
             <ul>

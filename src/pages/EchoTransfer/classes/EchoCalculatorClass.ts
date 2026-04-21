@@ -69,7 +69,7 @@ export class EchoCalculator {
     this.destinationPlates = this.prepareDestPlates()
     this.fillIntPlates()
     this.fillDestPlates()
-    if (this.inputData.CommonData.dmsoNormalization) { this.dmsoNormalization() }
+    if (this.inputData.CommonData.dmsoNormalization && this.destinationPlates.length > 0) { this.dmsoNormalization() }
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates, ...this.destinationPlates]) {
       this.findPlateMaxConcentration(plate)
     }
