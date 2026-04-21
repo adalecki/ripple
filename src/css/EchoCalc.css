@@ -1,0 +1,7 @@
+.button-row > * {
+  flex: 1 1 0;
+}
+
+.button-row > * > * {
+  width: 100%;
+}

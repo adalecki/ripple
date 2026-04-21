@@ -104,7 +104,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
 
   return (
     <Button onClick={fetchForExport} variant='success'>
-      Export {settings.splitOutputCSVs ? 'Files' : 'File'}
+      Export Echo Transfer List
     </Button>
   );
 };

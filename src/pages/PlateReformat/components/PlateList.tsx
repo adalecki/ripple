@@ -115,7 +115,7 @@ const PlateList: React.FC<PlateListProps> = ({
   }
 
   const addSourcePlate = () => {
-    const newPlate = new Plate({ plateSize: srcPlateSize });
+    const newPlate = new Plate({ plateSize: srcPlateSize, plateRole: 'source' });
     let inc = srcPlates.length + 1
     while (srcPlates.find((p) => p.barcode == 'src' + inc)) {
       inc += 1
@@ -126,7 +126,7 @@ const PlateList: React.FC<PlateListProps> = ({
   };
 
   const addDestPlate = () => {
-    const newPlate = new Plate({ plateSize: dstPlateSize });
+    const newPlate = new Plate({ plateSize: dstPlateSize, plateRole: 'destination' });
     let inc = dstPlates.length + 1
     while (dstPlates.find((p) => p.barcode == 'dst' + inc)) {
       inc += 1

@@ -92,13 +92,13 @@ export function applyScheme(scheme: ReformatScheme): AppliedSchemeResult {
   const dstPlates: Plate[] = [];
 
   for (let i = 0; i < scheme.srcPlateCount; i++) {
-    const plate = new Plate({ id: i+1, plateSize: scheme.srcPlateSize });
+    const plate = new Plate({ id: i+1, plateSize: scheme.srcPlateSize, plateRole: 'source' });
     plate.barcode = `src${i + 1}`;
     srcPlates.push(plate);
   }
 
   for (let i = 0; i < scheme.dstPlateCount; i++) {
-    const plate = new Plate({ id: i+1+scheme.srcPlateCount, plateSize: scheme.dstPlateSize });
+    const plate = new Plate({ id: i+1+scheme.srcPlateCount, plateSize: scheme.dstPlateSize, plateRole: 'destination' });
     plate.barcode = `dst${i + 1}`;
     dstPlates.push(plate);
   }
