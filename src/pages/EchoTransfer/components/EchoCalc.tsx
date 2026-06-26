@@ -17,7 +17,7 @@ import { usePreferences } from '../../../hooks/usePreferences';
 import CheckpointDisplayModal from './CheckpointDisplayModal';
 import EchoForm from './EchoForm';
 import TransferListDownload from '../../../components/TransferListDownload';
-import PlateView from '../../../components/PlateView';
+import PlateViewCanvas from '../../../components/PlateViewCanvas';
 import DestMapDownload from './DestMapDownload';
 
 import '../../../css/EchoCalc.css'
@@ -164,7 +164,7 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
         </Col>
         <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           {(plate && compoundColorMap) ?
-            <PlateView
+            <PlateViewCanvas
               plate={plate}
               view="echoCalc"
               colorConfig={colorConfig}

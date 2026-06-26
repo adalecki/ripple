@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Row, Col, Alert, Container, Button } from 'react-bootstrap';
 import { read, WorkBook } from 'xlsx';
 import { HslStringType } from '../../../classes/PatternClass';
-import PlateView from '../../../components/PlateView';
 import { ColorConfig } from '../../../utils/wellColors';
 import '../../../css/PlateComponent.css';
 import { echoInputValidation } from '../../EchoTransfer/utils/validationUtils';
@@ -11,6 +10,7 @@ import { MappedPlatesContext } from '../../../contexts/Context';
 import { currentPlate } from '../../../utils/plateUtils';
 import { constructPlatesFromTransfers, generateNewExcelTemplate, parseTransferLog, performTransfers } from '../../EchoTransfer/utils/parseUtils';
 import EchoForm from '../../EchoTransfer/components/EchoForm';
+import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
 const PlateMapper: React.FC = () => {
   const { mappedPlates, setMappedPlates, curMappedPlateId, setCurMappedPlateId } = useContext(MappedPlatesContext);
@@ -146,7 +146,7 @@ const PlateMapper: React.FC = () => {
 
         {mappedPlates.length > 0 && plate && originalFile && (
           <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
-            <PlateView
+            <PlateViewCanvas
               plate={plate}
               view="plateMapper"
               colorConfig={colorConfig}
