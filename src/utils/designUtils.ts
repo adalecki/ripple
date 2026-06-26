@@ -159,7 +159,9 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
   const msgArr: string[] = [];
   if (pattern.type === 'Unused') return msgArr
   if (selectedWellIds.length % pattern.concentrations.length != 0) return ['The number of wells must be divisible by the number of concentrations']
+  if (selectedWellIds.length % (pattern.replicates * pattern.concentrations.length) != 0) return ['The number of wells must be divisible by the number of replicates x concentrations']
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
+  console.log(blocks)
 
   for (const block of blocks) {
     const rects = block.split(";");
@@ -180,11 +182,12 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
 
       switch (pattern.direction[0]) {
         case "LR": case "RL": {
-          if (rectWidth != pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number!`) }
+          console.log(rectWidth,pattern.concentrations)
+          if (rectWidth != pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number`) }
           break
         }
         case "TB": case "BT": {
-          if (rectHeight != pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number!`) }
+          if (rectHeight != pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number`) }
           break
         }
       }

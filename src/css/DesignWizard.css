@@ -23,6 +23,10 @@
   scrollbar-gutter: stable;
 }
 
+.design-wizard-col-left {
+  overflow: hidden;
+}
+
 .design-wizard-button-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -36,6 +40,7 @@
   max-width: 15rem;
   width: 100%;
 }
+
 .design-wizard-button-grid .btn {
   padding: 1.5em 0;
   width: 100%;

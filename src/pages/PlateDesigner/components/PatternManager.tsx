@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Form } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Alert, Button, Form } from 'react-bootstrap';
 import { Pattern } from '../../../classes/PatternClass';
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
@@ -25,12 +25,15 @@ interface PatternManagerProps {
 
 const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState }) => {
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
+  const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
+  const [showAlert, setShowAlert] = useState<string[]>([])
 
-  useEffect(() => {
+  if (curPatternId !== prevPatternId) {
+    setPrevPatternId(curPatternId)
     const selectedPattern = patterns ? patterns.find(p => p.id === curPatternId) : undefined;
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
     setPatternState({ isEditing: (patternState.isNewPattern ? true : false), isNewPattern: false, isPickingColor: false })
-  }, [curPatternId, patterns]);
+  }
 
   const handleEditPattern = () => {
     setPatternState({ ...patternState, isEditing: true })
@@ -73,6 +76,10 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
 
   const handleConcentrationChange = (newConcentrations: (number | null)[]) => {
     if (editingPattern) {
+      if (newConcentrations.length > 20) {
+        setShowAlert(['Only 20'])
+        return
+      }
       setEditingPattern(new Pattern({ ...editingPattern, concentrations: newConcentrations }));
     }
   };
@@ -87,9 +94,9 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
   };
 
   return (
-    <div className="d-flex flex-column">
+    <div className="d-flex flex-column pattern-manager-root">
       {editingPattern ? (
-        <div>
+        <div className="pattern-manager-body">
           <div className="d-flex justify-content-between align-items-center mb-3">
             {patternState.isEditing ? (
               <Button variant="success" size="sm" onClick={handleSavePattern}>
@@ -111,7 +118,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
               </>
             )}
           </div>
-          <Form>
+          <Form className="pattern-form">
             <FormField
               key='pattern-name'
               id='pattern-name'
@@ -140,7 +147,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
               ]}
             />
             {editingPattern.type !== 'Unused' && (
-              <div>
+              <div className="pattern-fields">
                 <FormField
                   key='pattern-replicates'
                   id='pattern-replicates'
@@ -187,6 +194,9 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   </div>
                 )}
                 <Form.Label>Concentrations</Form.Label>
+                <Alert variant='danger' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
+                  A maximum of 20 concentrations is allowed
+                </Alert>
                 <div className="concentration-table-container">
                   <ConcentrationTable
                     tableId="pattern-conc-table"

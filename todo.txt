@@ -28,8 +28,8 @@
 # Need import/export for Plate Reformat schemes
 # Add plate size selection directly to Calculator, rather than being in the settings
 # Destination designer doesn't enforce unique pattern names
-# More than 20 concs possible in pattern design; limit to only 20
-# Migrate Echo Calc to PlateViewCanvas
+#x More than 20 concs possible in pattern design; limit to only 20
+#x Migrate Echo Calc to PlateViewCanvas
 # Randomize plate layouts?
-
+# sensibleWellSelection behavior is confusing, it triggers on calculated blocks not full well selection
 # Before next push - test TsfrCalcultor now that Design is removed!
