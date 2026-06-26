@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Alert, Col, Container, Row } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -21,8 +22,11 @@ import DestMapDownload from './DestMapDownload';
 
 import '../../../css/EchoCalc.css'
 
+interface EchoCalcProps {
+  showExamples: () => void;
+}
 
-const EchoCalc: React.FC = () => {
+const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
   const { plates, setPlates, curPlateId, setCurPlateId } = useContext(PlatesContext);
   const [file, setFile] = useState<File | null>(null)
   const [input, setInput] = useState<{ inputData: InputDataType; errors: string[]; } | null>(null);
@@ -138,7 +142,18 @@ const EchoCalc: React.FC = () => {
       <Row className='h-100' style={{ minHeight: 0 }}>
         <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           <h4>Transfer Calculator</h4>
-          <p>Upload formatted Excel template to calculate transfers</p>
+          Upload formatted Excel template to calculate transfers
+          <small className="text-muted fst-italic mb-3">
+            <Link to="/platedesigner">Design</Link> a template from scratch, or{" "}
+            <button
+              type="button"
+              className="link-button"
+              onClick={showExamples}
+            >
+              download
+            </button>{" "}
+            an example.
+          </small>
           <EchoForm
             onSubmit={handleSubmit}
             excelFile={file}

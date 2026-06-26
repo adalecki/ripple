@@ -26,3 +26,10 @@
 # Need better way to describe DMSO normalization on intermediate plate, including the expectation of filling whole plate (or not filling whole plate). 
 # In the calculator, detect the likely plate size of src and dst and offer to switch rather than just outright failing
 # Need import/export for Plate Reformat schemes
+# Add plate size selection directly to Calculator, rather than being in the settings
+# Destination designer doesn't enforce unique pattern names
+# More than 20 concs possible in pattern design; limit to only 20
+# Migrate Echo Calc to PlateViewCanvas
+# Randomize plate layouts?
+
+# Before next push - test TsfrCalcultor now that Design is removed!

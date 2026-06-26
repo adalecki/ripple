@@ -4,10 +4,6 @@
   padding: 20px;
 }
 
-.echo-instructions {
-  height: 100%;
-}
-
 .echo-instructions .card-title {
   color: #2c3e50;
   font-weight: 600;
@@ -28,7 +24,7 @@
 
 .echo-instructions .template-card {
   list-style-type: none;
-  padding-left: 10;
+  padding-left: 0px;
 }
 
 .echo-instructions .template-card li {
@@ -53,7 +49,6 @@
   box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Scrollbar styling */
 .echo-instructions-wrapper::-webkit-scrollbar {
   width: 8px;
 }
@@ -75,7 +70,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
-  padding: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .example-content h5 {
@@ -87,4 +83,16 @@
   flex-grow: 1;
   font-size: 0.9rem;
   line-height: 1.6;
+}
+
+.example-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.example-header h5 {
+  margin-bottom: 0;
+  font-weight: 600;
 }

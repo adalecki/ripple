@@ -22,7 +22,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   view,
   colorConfig,
   selectedWells = [],
-  handleLabelClick = (() => { }),
+  handleLabelClick,
   blockBorderMap,
   transferMap
 }) => {
@@ -268,7 +268,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     <div className="grid-container" ref={gridContainerRef} data-view={view}>
 
       <div
-        className="all-wells-container"
+        className={handleLabelClick ? "all-wells-container" : ""}
         style={{ height: `${15 / canvasSize.dpr}px` }}
         onClick={handleLabelClick}
       />

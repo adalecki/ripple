@@ -13,6 +13,7 @@ import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
 import '../../../css/DesignWizard.css'
 import { FormField } from '../../../components/FormField';
+import { Link } from 'react-router-dom';
 
 interface DesignWizardDstProps {
   designDstPlates: Plate[];
@@ -263,6 +264,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
               Generate Template
             </Button>
           </div>
+          <small className="text-muted fst-italic mb-3"> Upload the generated template to the <Link to="/echotsfr">Echo Transfer calculator</Link> when finished</small>
           <PatternManager
             patternState={patternState}
             setPatternState={setPatternState}
