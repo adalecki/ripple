@@ -63,6 +63,16 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
       formValues[key] = value;
     }
 
+    const maxTransferVolume = parseFloat(formValues['Max Transfer Volume']);
+    const dropletSize = parseFloat(formValues['Echo Droplet Size']);
+    const effectivePreferences = {
+      ...preferences,
+      maxTransferVolume: isNaN(maxTransferVolume) ? preferences.maxTransferVolume : maxTransferVolume,
+      dropletSize: isNaN(dropletSize) ? preferences.dropletSize : dropletSize,
+      sourcePlateSize: formValues['Source Plate Size'] ?? preferences.sourcePlateSize,
+      destinationPlateSize: formValues['Destination Plate Size'] ?? preferences.destinationPlateSize,
+    };
+
     const ab = await formValues.excelFile.arrayBuffer()
 
     const fileCheckpointName = "File Validation";
@@ -72,13 +82,13 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
     }
 
     let wb = read(ab, { type: 'array' }) as WorkBook;
-    let input = echoInputValidation(wb, formValues, preferences);
+    let input = echoInputValidation(wb, formValues, effectivePreferences);
 
 
     if (input.errors.length === 0) {
       setInput(input);
       mutableCheckpointTracker.updateCheckpoint(fileCheckpointName, "Passed");
-      const preCalc = new EchoPreCalculator(input.inputData, mutableCheckpointTracker, preferences);
+      const preCalc = new EchoPreCalculator(input.inputData, mutableCheckpointTracker, effectivePreferences);
       preCalc.calculateNeeds();
       setEchoPreCalc(preCalc);
       setShowModal(true);

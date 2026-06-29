@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Alert, Col, Row } from 'react-bootstrap';
+import { Form, Button, Alert, Col, Row, Accordion } from 'react-bootstrap';
 import { usePreferences } from '../../../hooks/usePreferences';
-import { PREFERENCES_CONFIG } from '../../../config/preferencesConfig';
+import { PREFERENCES_CONFIG, Setting } from '../../../config/preferencesConfig';
 import { FormField } from '../../../components/FormField';
 import FileUploadCard from '../../../components/FileUploadCard';
 import '../../../css/EchoForm.css';
@@ -42,9 +42,21 @@ const EchoForm: React.FC<EchoFormProps> = ({
     fields = fields.filter(s => s.name != 'Use Source Survey Volumes')
   }
 
+  const transferSettingNames = ['Max Transfer Volume', 'Echo Droplet Size', 'Source Plate Size', 'Destination Plate Size'];
+  const transferFields = setTransferFile
+    ? []
+    : (PREFERENCES_CONFIG.find(p => p.id === 'transfer-settings')?.settings || [])
+      .filter(s => transferSettingNames.includes(s.name));
+
+  const calcFields = fields.filter(field =>
+    (field.name !== 'Backfill (µL)' && field.name !== 'Fill Intermediate Plates Column-wise') ||
+    setTransferFile ||
+    formValues['Use Intermediate Plates']
+  );
+
   useEffect(() => {
     const newValues: { [key: string]: number | boolean | string } = {};
-    fields.forEach(field => {
+    [...fields, ...transferFields].forEach(field => {
       newValues[field.name] = preferences[field.prefId] ?? field.defaultValue;
     });
     setFormValues(newValues);
@@ -101,12 +113,31 @@ const EchoForm: React.FC<EchoFormProps> = ({
     }
   };
 
-  const handleFieldChange = (fieldName: string, value: number | boolean) => {
+  const handleFieldChange = (fieldName: string, value: number | boolean | string) => {
     setFormValues(prev => ({
       ...prev,
       [fieldName]: value
     }));
   };
+
+  const renderField = (field: Setting) => (
+    <FormField
+      key={field.name}
+      id={field.prefId}
+      name={field.name}
+      type={field.type}
+      label={field.name}
+      value={formValues[field.name]}
+      onChange={(value) => handleFieldChange(field.name, value)}
+      required={true}
+      unit={field.unit}
+      step={field.step}
+      max={field.max}
+      min={field.min}
+      options={field.options}
+      tooltip={field.tooltip}
+    />
+  );
 
   const handleClearForm = () => {
     setExcelFile(null);
@@ -118,6 +149,9 @@ const EchoForm: React.FC<EchoFormProps> = ({
   };
 
   const disabled: boolean = (!excelFile || (setTransferFile ? !transferFile : false))
+
+
+
   return (
     <>
       <Form noValidate validated={validated} onSubmit={handleSubmit}>
@@ -164,30 +198,24 @@ const EchoForm: React.FC<EchoFormProps> = ({
           )}
         </Row>
 
-
-
-
-        {fields.filter(field =>
-          (field.name !== 'Backfill (µL)' && field.name !== 'Fill Intermediate Plates Column-wise') ||
-          setTransferFile ||
-          formValues['Use Intermediate Plates']
-        ).map((field) => (
-          <FormField
-            key={field.name}
-            id={field.prefId}
-            name={field.name}
-            type={field.type === 'number' ? 'number' : 'switch'}
-            label={field.name}
-            value={formValues[field.name]}
-            onChange={(value) => handleFieldChange(field.name, value)}
-            required={true}
-            unit={field.unit}
-            step={field.step}
-            max={field.max}
-            min={field.min}
-            tooltip={field.tooltip}
-          />
-        ))}
+        {setTransferFile ? (
+          calcFields.map(renderField)
+        ) : (
+          <Accordion defaultActiveKey="1" className="echo-form-accordion mt-3 mb-2">
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>Transfer Settings</Accordion.Header>
+              <Accordion.Body>
+                {transferFields.map(renderField)}
+              </Accordion.Body>
+            </Accordion.Item>
+            <Accordion.Item eventKey="1">
+              <Accordion.Header>Calculator Values</Accordion.Header>
+              <Accordion.Body>
+                {calcFields.map(renderField)}
+              </Accordion.Body>
+            </Accordion.Item>
+          </Accordion>
+        )}
 
         <br />
         <div className='form-buttons'>

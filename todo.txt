@@ -24,10 +24,9 @@
 #x Option to fill intermediate plates column-wise instead of row-wise?
 #x Can I include "0" as a concentration in patterns?
 # Need better way to describe DMSO normalization on intermediate plate, including the expectation of filling whole plate (or not filling whole plate). 
-# In the calculator, detect the likely plate size of src and dst and offer to switch rather than just outright failing
 # Need import/export for Plate Reformat schemes
-# Add plate size selection directly to Calculator, rather than being in the settings
-# Destination designer doesn't enforce unique pattern names
+#x Add plate size selection directly to Calculator, rather than being in the settings
+#x Destination designer doesn't enforce unique pattern names
 #x More than 20 concs possible in pattern design; limit to only 20
 #x Migrate Echo Calc to PlateViewCanvas
 # Randomize plate layouts?
