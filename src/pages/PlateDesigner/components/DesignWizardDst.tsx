@@ -8,7 +8,7 @@ import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../.
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
 import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
 
-import ApplyTooltip from './ApplyTooltip';
+import ApplyTooltip from '../../../components/ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
 import '../../../css/DesignWizard.css'

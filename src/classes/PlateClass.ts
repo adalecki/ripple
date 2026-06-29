@@ -1,4 +1,4 @@
-import { mapWellsToConcentrations, getWellIdFromCoords, getCoordsFromWellId } from "../utils/plateUtils";
+import { mapWellsToConcentrations, getWellIdFromCoords, getWellIdsFromRange } from "../utils/plateUtils";
 import { Pattern } from "./PatternClass";
 import { Well } from "./WellClass";
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
@@ -116,40 +116,11 @@ export class Plate {
   }
 
   getSomeWells(rawRange: string): Well[] {
-    const getWellsFromRange = (range: string): string[] => {
-      const [startWell, endWell = startWell] = range.split(':');
-
-      const startMatch = startWell.match(/([A-Z]+)(\d+)/);
-      const endMatch = endWell.match(/([A-Z]+)(\d+)/);
-
-      if (!startMatch || !endMatch || !(startMatch[0] == startWell) || !(endMatch[0] == endWell)) {
-        console.warn(`Invalid well format in range: ${range}`);
-        return [] //return empty array, don't kill program
-      }
-
-      const startCoords = getCoordsFromWellId(startWell);
-      const endCoords = getCoordsFromWellId(endWell);
-
-      const wellIDs: string[] = [];
-      const fromRow = Math.min(startCoords.row, endCoords.row);
-      const toRow = Math.max(startCoords.row, endCoords.row);
-      const fromCol = Math.min(startCoords.col, endCoords.col);
-      const toCol = Math.max(startCoords.col, endCoords.col);
-
-      for (let rowNum = fromRow; rowNum <= toRow; rowNum++) {
-        for (let colNum = fromCol; colNum <= toCol; colNum++) {
-          wellIDs.push(getWellIdFromCoords(rowNum, colNum));
-        }
-      }
-      return wellIDs;
-    };
-
-    const blockRanges = rawRange.split(';');
-    const wellIDs: string[] = blockRanges.flatMap(blockRange => getWellsFromRange(blockRange.trim()));
+    const wellIDs = getWellIdsFromRange(rawRange);
     const wells: Well[] = wellIDs.reduce((wells: Well[], wellID) => {
       const well = this.wells[wellID]
-      if (well) {wells.push(well)}
-      else {console.warn(`Well ${wellID} not found`)}
+      if (well) { wells.push(well) }
+      else { console.warn(`Well ${wellID} not found`) }
       return wells
     }, [])
 

@@ -374,6 +374,37 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
   return blocks;
 };
 
+export function getWellIdsFromRange(rawRange: string): string[] {
+  const expandBlock = (range: string): string[] => {
+    const [startWell, endWell = startWell] = range.split(':');
+    const startMatch = startWell.match(/([A-Z]+)(\d+)/);
+    const endMatch = endWell.match(/([A-Z]+)(\d+)/);
+
+    if (!startMatch || !endMatch || startMatch[0] !== startWell || endMatch[0] !== endWell) {
+      console.warn(`Invalid well format in range: ${range}`);
+      return []; //return empty array, don't kill program
+    }
+
+    const startCoords = getCoordsFromWellId(startWell);
+    const endCoords = getCoordsFromWellId(endWell);
+
+    const wellIDs: string[] = [];
+    const fromRow = Math.min(startCoords.row, endCoords.row);
+    const toRow = Math.max(startCoords.row, endCoords.row);
+    const fromCol = Math.min(startCoords.col, endCoords.col);
+    const toCol = Math.max(startCoords.col, endCoords.col);
+
+    for (let rowNum = fromRow; rowNum <= toRow; rowNum++) {
+      for (let colNum = fromCol; colNum <= toCol; colNum++) {
+        wellIDs.push(getWellIdFromCoords(rowNum, colNum));
+      }
+    }
+    return wellIDs;
+  };
+
+  return rawRange.split(';').flatMap(block => expandBlock(block.trim()));
+}
+
 export function getWellFromBarcodeAndId(barcode: string, wellId: string, plates: Plate[], curPlate?: Plate): Well | null {
   if (curPlate && curPlate.barcode === barcode) {
     return curPlate.getWell(wellId)

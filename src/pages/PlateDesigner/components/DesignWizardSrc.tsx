@@ -3,7 +3,7 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import ContentsManager from './ContentsManager';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
-import ApplyTooltip from './ApplyTooltip';
+import ApplyTooltip from '../../../components/ApplyTooltip';
 import { FormField } from '../../../components/FormField';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
