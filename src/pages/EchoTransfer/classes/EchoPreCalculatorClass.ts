@@ -416,7 +416,7 @@ export class EchoPreCalculator {
 
   concentrationPasses(sourceConcentration: number, conc: number, volume: number, dropletVolume: number): boolean {
     const minTransferVolume = (conc * (1 - this.allowableError) / sourceConcentration) * (this.finalAssayVolume + volume);
-    const maxTransferVolume = (conc * (1 + this.allowableError) / sourceConcentration) * (this.finalAssayVolume + volume);
+    const maxTransferVolume = Math.min((conc * (1 + this.allowableError) / sourceConcentration) * (this.finalAssayVolume + volume),this.maxTransferVolume);
     const dmsoPercentage = volume / (this.finalAssayVolume + volume);
     return (
       volume >= dropletVolume &&
