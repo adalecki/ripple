@@ -6,6 +6,7 @@ import { HslStringColorPicker } from 'react-colorful';
 
 import '../../../css/PatternManager.css'
 import { FormField } from '../../../components/FormField';
+import ApplyTooltip from '../../../components/ApplyTooltip';
 
 interface PatternManagerProps {
   patterns: Pattern[];
@@ -26,6 +27,7 @@ interface PatternManagerProps {
 const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState }) => {
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
   const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
+  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
   const [showAlert, setShowAlert] = useState<string[]>([])
 
   if (curPatternId !== prevPatternId) {
@@ -93,15 +95,40 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
     }
   };
 
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const msgArr: string[] = [];
+    if (duplicateName) msgArr.push('Pattern names must be unique');
+    if (editingPattern) {
+      if (!editingPattern.replicates) msgArr.push('Must define replicates')
+      if (!editingPattern.name) msgArr.push('Must enter a pattern name')
+    }
+
+    setApplyPopup({ event: msgArr.length > 0 ? e : null, msgArr });
+  };
+
+  const handleMouseLeave = () => {
+    setApplyPopup({ event: null, msgArr: [] });
+  };
+
+  const duplicateName = (editingPattern ? patterns.filter(p => p.name == editingPattern.name && p.id != editingPattern.id).length > 0 : false)
   return (
     <div className="d-flex flex-column pattern-manager-root">
       {editingPattern ? (
         <div className="pattern-manager-body">
           <div className="d-flex justify-content-between align-items-center mb-3">
             {patternState.isEditing ? (
-              <Button variant="success" size="sm" onClick={handleSavePattern}>
-                Save
-              </Button>
+              <div
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleSavePattern}
+                  disabled={duplicateName || !editingPattern.replicates || !editingPattern.name}>
+                  Save
+                </Button>
+              </div>
             ) : (
               <>
                 <Button
@@ -212,6 +239,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
       ) : (
         <p className="text-muted">Select or add a pattern to edit</p>
       )}
+      {applyPopup.msgArr.length > 0 ? <ApplyTooltip data={applyPopup} /> : ''}
     </div>
   );
 };
