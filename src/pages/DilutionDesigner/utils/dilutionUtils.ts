@@ -17,38 +17,40 @@ function getIntermediateConcs({
   backfillVolume: number;
   volNumber: number;
 }): number[] {
-  if (dropletSize <= 0 || maxTransferVolume <= 0 || volNumber <= 0) {
-        return [];
-  }
-  if (dropletSize >= maxTransferVolume) {
-        return [dropletSize];
-  }
-  const result: number[] = [];
-  result.push(dropletSize);
 
-  let adjustedMaxTransferVolume = Math.floor(maxTransferVolume / dropletSize) * dropletSize;
-  if (adjustedMaxTransferVolume < dropletSize) {
-        return [dropletSize];
+  function volToConc(volume: number): number {
+    return (sourceConc * volume) / (volume + backfillVolume)
   }
-  if (volNumber === 1) {
-    return [dropletSize];
+
+  const result: number[] = [];
+
+  if (dropletSize <= 0 || maxTransferVolume <= 0 || volNumber <= 0) {
+    return [];
   }
-  if (volNumber === 2) {
-      result.push(adjustedMaxTransferVolume);
+  result.push(volToConc(dropletSize));
+  if (dropletSize >= maxTransferVolume) {
     return result;
   }
-  const numInternalVolumes = Math.min(volNumber - 2, Math.floor((adjustedMaxTransferVolume - dropletSize) / dropletSize) -1);
-  if (numInternalVolumes <=0 ) {
-      result.push(adjustedMaxTransferVolume);
-      return result;
+
+  let adjustedMaxTransferVolume = Math.floor(maxTransferVolume / dropletSize) * dropletSize;
+  if (adjustedMaxTransferVolume < dropletSize || volNumber === 1) {
+    return result;
   }
+
+  result.push(volToConc(adjustedMaxTransferVolume));
+
+  const numInternalVolumes = Math.min(volNumber - 2, Math.floor((adjustedMaxTransferVolume - dropletSize) / dropletSize) - 1);
+  if (numInternalVolumes <= 0) {
+    return result;
+  }
+
   const increment = (adjustedMaxTransferVolume - dropletSize) / (numInternalVolumes + 1);
-    for (let i = 1; i <= numInternalVolumes; i++) {
-       const nextValue = dropletSize + (Math.round(increment * i/dropletSize)*dropletSize);
-            result.push(nextValue);
-    }
-  result.push(adjustedMaxTransferVolume);
-  return result.map(volume => (sourceConc * volume) / (volume + backfillVolume));
+  for (let i = 1; i <= numInternalVolumes; i++) {
+    const nextValue = dropletSize + (Math.round(increment * i / dropletSize) * dropletSize);
+    result.push(volToConc(nextValue));
+  }
+
+  return result;
 }
 
 function getAllPossibleConcs({

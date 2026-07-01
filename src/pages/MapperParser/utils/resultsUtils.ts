@@ -124,6 +124,7 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
 
     }
   }
+  console.log(sPData)
 
   return {
     curveData: curves.sort((a, b) => a.treatmentId.localeCompare(b.treatmentId)),

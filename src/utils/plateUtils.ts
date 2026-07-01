@@ -68,7 +68,7 @@ export function getCoordsFromWellId(wellId: string): { row: number, col: number 
 export function getWellIndex(wellId: string, plate: Plate): number | null {
   if (plate.getWell(wellId) == null) return null;
   const coords = getCoordsFromWellId(wellId)
-  return (plate.rows * plate.columns + coords.col)
+  return (coords.row * plate.columns + coords.col)
 }
 
 export function currentPlate(plates: Plate[], curPlateId: PlatesContextType['curPlateId']) {

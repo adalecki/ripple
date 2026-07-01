@@ -56,12 +56,12 @@ export function constructPlatesFromTransfers(inputData: InputDataType, transfers
   for (const bc of actualBarcodes.intermediate1) {
     const plate = new Plate({
       barcode: bc,
-      plateSize: preferences.destinationPlateSize as PlateSize,
+      plateSize: '384',
       plateRole: 'intermediate1'
     })
     for (const well of plate) {
       if (well) {
-        well.addSolvent({ name: 'DMSO', volume: inputData.CommonData.intermediateBackfillVolume as number });
+        well.addSolvent({ name: 'DMSO', volume: inputData.CommonData.intermediateBackfillVolume * 1000 as number });
       }
     }
     newPlates['intermediate'].push(plate)
@@ -69,12 +69,12 @@ export function constructPlatesFromTransfers(inputData: InputDataType, transfers
   for (const bc of actualBarcodes.intermediate2) {
     const plate = new Plate({
       barcode: bc,
-      plateSize: preferences.destinationPlateSize as PlateSize,
+      plateSize: '384',
       plateRole: 'intermediate2'
     })
     for (const well of plate) {
       if (well) {
-        well.addSolvent({ name: 'DMSO', volume: inputData.CommonData.intermediateBackfillVolume as number });
+        well.addSolvent({ name: 'DMSO', volume: inputData.CommonData.intermediateBackfillVolume * 1000 as number });
       }
     }
     newPlates['intermediate'].push(plate)
