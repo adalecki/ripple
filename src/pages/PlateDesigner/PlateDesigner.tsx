@@ -8,6 +8,7 @@ import { labelDrag, moveWellSelection, selectorHelper } from '../../utils/design
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils.ts';
 import DesignWizardSrc from './components/DesignWizardSrc.tsx';
 import Sidebar from '../../components/Sidebar.tsx';
+import Instructions from './components/Instructions.tsx';
 
 const PlateDesigner: React.FC = () => {
   const { preferences } = usePreferences()
@@ -78,7 +79,13 @@ const PlateDesigner: React.FC = () => {
       );
     }
     return (
-      <div />
+      <Sidebar
+        items={[]}
+        selectedItemId={null}
+        setSelectedItemId={() => { }}
+        filterOptions={[]}
+        title=""
+      />
     );
   };
 
@@ -142,7 +149,7 @@ const PlateDesigner: React.FC = () => {
     }
   }
 
-  const handlePageDblClick = (e: React.MouseEvent<Element,MouseEvent>) => {
+  const handlePageDblClick = (e: React.MouseEvent<Element, MouseEvent>) => {
     if (e.detail > 1) {
       e.preventDefault();
       setSelectedWellIds(prev => (prev.length ? [] : prev));
@@ -344,6 +351,9 @@ const PlateDesigner: React.FC = () => {
               onSelect={handleSelect}
               mountOnEnter
             >
+              <Tab eventKey="instructions" title="Instructions">
+                <Instructions />
+              </Tab>
               <Tab eventKey="designDst" title="Design - Destination">
                 <DesignWizardDst
                   designDstPlates={designDstPlates}

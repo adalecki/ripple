@@ -43,3 +43,9 @@
   color: #198754;
   font-weight: 500;
 }
+
+.edit-button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
+}

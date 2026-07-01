@@ -190,6 +190,12 @@ function PlateReformat() {
     saveSchemes(updated);
   };
 
+  const handleImportSchemes = (importedSchemes: ReformatScheme[]) => {
+    const updated = [...schemes, ...importedSchemes];
+    setSchemes(updated);
+    saveSchemes(updated);
+  };
+
   const handleAddTransfer = (transferBlock: TransferBlock) => {
     const newTsfrIdx = tsfrIdx + 1
     if (!transferBlock.color) { transferBlock.color = generateSingleColor(0.75638, newTsfrIdx) }
@@ -282,6 +288,7 @@ function PlateReformat() {
         onSaveScheme={handleSaveScheme}
         onDeleteScheme={handleDeleteScheme}
         onLoadScheme={handleLoadScheme}
+        onImportSchemes={handleImportSchemes}
         canSave={canSave}
         onLoadDefaults={handleLoadDefaults}
       />

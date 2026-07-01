@@ -1,39 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Col, Row, Tabs, Tab } from 'react-bootstrap';
-import { PlatesContext, PatternsContext } from '../../contexts/Context.ts';
-import { Plate, PlateSize } from '../../classes/PlateClass.ts';
-import { Pattern } from '../../classes/PatternClass.ts';
+import { PlatesContext } from '../../contexts/Context.ts';
+import { Plate } from '../../classes/PlateClass.ts';
 import Sidebar from '../../components/Sidebar.tsx';
 import EchoCalc from './components/EchoCalc.tsx';
-import DesignWizard from './components/DesignWizard.tsx';
-import EchoInstructions from './components/EchoInstructions.tsx';
 import About from './components/About.tsx';
-import { usePreferences } from '../../hooks/usePreferences';
 
 const EchoTransfer: React.FC = () => {
-  const { preferences } = usePreferences()
-  const [tabKey, setTabKey] = useState<string>('instructions');
+  const [tabKey, setTabKey] = useState<string>('calculator');
   const [plates, setPlates] = useState<Plate[]>([]);
-  const [patternPlate, setPatternPlate] = useState<Plate>(new Plate({ plateSize: preferences.destinationPlateSize as PlateSize }));
-  const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [curPlateId, setCurPlateId] = useState<number | null>(null);
-  const [selectedPatternId, setSelectedPatternId] = useState<number | null>(null);
-
-  useEffect(() => {
-    //not doing extra type checking as even if a user somehow got an invalid plate size,
-    //it falls back to a 384 automatically
-    const oldPlateSize = patternPlate.rows * patternPlate.columns
-    if (oldPlateSize.toString() != preferences.destinationPlateSize.toString()) {
-      const newPatternArr: Pattern[] = []
-      for (const pattern of patterns) {
-        const newPattern = pattern.clone()
-        newPattern.locations = [];
-        newPatternArr.push(newPattern)
-      }
-      setPatternPlate(new Plate({ plateSize: preferences.destinationPlateSize as PlateSize }));
-      setPatterns(newPatternArr)
-    }
-  }, [preferences.destinationPlateSize]);
 
   const handleSelect = (k: string | null) => {
     if (k !== null) {
@@ -41,25 +17,8 @@ const EchoTransfer: React.FC = () => {
     }
   };
 
-  //has to be here because using sidebar for deletion
-  const handleDeletePattern = (patternId: number) => {
-    const newPlate = patternPlate.clone()
-    const pattern = patterns.find(p => p.id == patternId)
-    if (pattern) {
-      for (const loc of pattern.locations) {
-        newPlate.removePattern(loc, pattern.name)
-      }
-    }
-
-    setPatterns(patterns.filter(p => p.id !== patternId));
-    if (selectedPatternId === patternId) {
-      setSelectedPatternId(null);
-    }
-    setPatternPlate(newPlate)
-  };
-
   const renderSidebar = () => {
-    if (tabKey === 'echo') {
+    if (tabKey === 'calculator') {
       return (
         <Sidebar
           items={plates.map(plate => ({
@@ -76,31 +35,12 @@ const EchoTransfer: React.FC = () => {
           title="Plates"
         />
       );
-    } else if (tabKey === 'design') {
-      return (
-        <Sidebar
-          items={patterns.map(pattern => ({
-            id: pattern.id,
-            name: pattern.name,
-            type: pattern.type,
-            details: {
-              rep: pattern.replicates,
-              con: pattern.concentrations.length,
-            },
-          }))}
-          selectedItemId={selectedPatternId}
-          setSelectedItemId={setSelectedPatternId}
-          filterOptions={['Control', 'Treatment']}
-          title="Patterns"
-          onDeleteItem={handleDeletePattern}
-        />
-      );
     }
     return (
       <Sidebar
         items={[]}
         selectedItemId={null}
-        setSelectedItemId={setSelectedPatternId}
+        setSelectedItemId={() => { }}
         filterOptions={[]}
         title=""
       />
@@ -110,37 +50,26 @@ const EchoTransfer: React.FC = () => {
 
   return (
     <PlatesContext.Provider value={{ plates, setPlates, curPlateId, setCurPlateId }}>
-      <PatternsContext.Provider value={{ patterns, setPatterns, selectedPatternId, setSelectedPatternId }}>
-          <Row>
-            <Col md="2">{renderSidebar()}</Col>
-            <Col md="10" style={{ minHeight: 0 }}>
-              <div className="page-tabs">
-                <Tabs
-                  id="echo-tab-select"
-                  activeKey={tabKey}
-                  onSelect={handleSelect}
-                  mountOnEnter
-                >
-                  <Tab eventKey="instructions" title="Instructions">
-                    <EchoInstructions />
-                  </Tab>
-                  <Tab eventKey="design" title="Design">
-                    <DesignWizard
-                      patternPlate={patternPlate}
-                      setPatternPlate={setPatternPlate}
-                    />
-                  </Tab>
-                  <Tab eventKey="echo" title="Calculator">
-                    <EchoCalc />
-                  </Tab>
-                  <Tab eventKey="about" title="About">
-                    <About />
-                  </Tab>
-                </Tabs>
-              </div>
-            </Col>
-          </Row>
-      </PatternsContext.Provider>
+      <Row>
+        <Col md="2">{renderSidebar()}</Col>
+        <Col md="10" style={{ minHeight: 0 }}>
+          <div className="page-tabs">
+            <Tabs
+              id="echo-tab-select"
+              activeKey={tabKey}
+              onSelect={handleSelect}
+              mountOnEnter
+            >
+              <Tab eventKey="calculator" title="Calculator">
+                <EchoCalc showExamples={() => {setTabKey('about')}}/>
+              </Tab>
+              <Tab eventKey="about" title="About">
+                <About />
+              </Tab>
+            </Tabs>
+          </div>
+        </Col>
+      </Row>
     </PlatesContext.Provider>
   )
 }

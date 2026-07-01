@@ -3,7 +3,7 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import ContentsManager from './ContentsManager';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
-import ApplyTooltip from './ApplyTooltip';
+import ApplyTooltip from '../../../components/ApplyTooltip';
 import { FormField } from '../../../components/FormField';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
@@ -12,6 +12,7 @@ import { currentItem, generateExcelTemplate, plateMaxConcentration } from '../..
 import { formatWellBlock, mapWellsToConcentrations } from '../../../utils/plateUtils';
 
 import '../../../css/DesignWizard.css'
+import { Link } from 'react-router-dom';
 
 export interface WellContentsForm {
   compoundId: string;
@@ -264,6 +265,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
               Generate Template
             </Button>
           </div>
+          <small className="text-muted fst-italic mb-3"> Upload the generated template to the <Link to="/echotsfr">Echo Transfer calculator</Link> when finished</small>
 
           <ContentsManager
             selectedWellIds={selectedWellIds}

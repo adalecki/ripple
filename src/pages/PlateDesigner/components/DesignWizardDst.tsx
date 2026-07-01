@@ -8,11 +8,12 @@ import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../.
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
 import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
 
-import ApplyTooltip from './ApplyTooltip';
+import ApplyTooltip from '../../../components/ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
 import '../../../css/DesignWizard.css'
 import { FormField } from '../../../components/FormField';
+import { Link } from 'react-router-dom';
 
 interface DesignWizardDstProps {
   designDstPlates: Plate[];
@@ -220,7 +221,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   return (
     <Container fluid className='noselect design-wizard-container'>
       <Row className='design-wizard-row'>
-        <Col md={3} className='design-wizard-col'>
+        <Col md={3} className='design-wizard-col design-wizard-col-left'>
           <div className='design-wizard-button-grid'>
             <div
               onMouseEnter={handleMouseEnter}
@@ -263,6 +264,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
               Generate Template
             </Button>
           </div>
+          <small className="text-muted fst-italic mb-3"> Upload the generated template to the <Link to="/echotsfr">Echo Transfer calculator</Link> when finished</small>
           <PatternManager
             patternState={patternState}
             setPatternState={setPatternState}

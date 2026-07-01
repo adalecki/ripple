@@ -1,7 +1,30 @@
+.pattern-manager-root {
+  min-height: 0;
+}
+
+.pattern-manager-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pattern-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pattern-fields {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .concentration-table-container {
   border: 1px solid #dee2e6;
   border-radius: 0.25rem;
   padding: 0.625rem;
+  overflow-y: auto;
 }
 
 .concentration-table-container .key {

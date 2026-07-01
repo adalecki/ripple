@@ -5,3 +5,21 @@
 .button-row > * > * {
   width: 100%;
 }
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--bs-link-color);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-button:hover {
+  color: var(--bs-link-hover-color);
+}
+
+.link-button:focus-visible {
+  outline: auto;
+}

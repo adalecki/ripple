@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Alert, Col, Container, Row } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { read, WorkBook } from 'xlsx';
 
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -16,13 +17,16 @@ import { usePreferences } from '../../../hooks/usePreferences';
 import CheckpointDisplayModal from './CheckpointDisplayModal';
 import EchoForm from './EchoForm';
 import TransferListDownload from '../../../components/TransferListDownload';
-import PlateView from '../../../components/PlateView';
+import PlateViewCanvas from '../../../components/PlateViewCanvas';
 import DestMapDownload from './DestMapDownload';
 
 import '../../../css/EchoCalc.css'
 
+interface EchoCalcProps {
+  showExamples: () => void;
+}
 
-const EchoCalc: React.FC = () => {
+const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
   const { plates, setPlates, curPlateId, setCurPlateId } = useContext(PlatesContext);
   const [file, setFile] = useState<File | null>(null)
   const [input, setInput] = useState<{ inputData: InputDataType; errors: string[]; } | null>(null);
@@ -59,6 +63,16 @@ const EchoCalc: React.FC = () => {
       formValues[key] = value;
     }
 
+    const maxTransferVolume = parseFloat(formValues['Max Transfer Volume']);
+    const dropletSize = parseFloat(formValues['Echo Droplet Size']);
+    const effectivePreferences = {
+      ...preferences,
+      maxTransferVolume: isNaN(maxTransferVolume) ? preferences.maxTransferVolume : maxTransferVolume,
+      dropletSize: isNaN(dropletSize) ? preferences.dropletSize : dropletSize,
+      sourcePlateSize: formValues['Source Plate Size'] ?? preferences.sourcePlateSize,
+      destinationPlateSize: formValues['Destination Plate Size'] ?? preferences.destinationPlateSize,
+    };
+
     const ab = await formValues.excelFile.arrayBuffer()
 
     const fileCheckpointName = "File Validation";
@@ -68,13 +82,13 @@ const EchoCalc: React.FC = () => {
     }
 
     let wb = read(ab, { type: 'array' }) as WorkBook;
-    let input = echoInputValidation(wb, formValues, preferences);
+    let input = echoInputValidation(wb, formValues, effectivePreferences);
 
 
     if (input.errors.length === 0) {
       setInput(input);
       mutableCheckpointTracker.updateCheckpoint(fileCheckpointName, "Passed");
-      const preCalc = new EchoPreCalculator(input.inputData, mutableCheckpointTracker, preferences);
+      const preCalc = new EchoPreCalculator(input.inputData, mutableCheckpointTracker, effectivePreferences);
       preCalc.calculateNeeds();
       setEchoPreCalc(preCalc);
       setShowModal(true);
@@ -138,7 +152,18 @@ const EchoCalc: React.FC = () => {
       <Row className='h-100' style={{ minHeight: 0 }}>
         <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           <h4>Transfer Calculator</h4>
-          <p>Upload formatted Excel template to calculate transfers</p>
+          Upload formatted Excel template to calculate transfers
+          <small className="text-muted fst-italic mb-3">
+            <Link to="/platedesigner">Design</Link> a template from scratch, or{" "}
+            <button
+              type="button"
+              className="link-button"
+              onClick={showExamples}
+            >
+              download
+            </button>{" "}
+            an example.
+          </small>
           <EchoForm
             onSubmit={handleSubmit}
             excelFile={file}
@@ -149,7 +174,7 @@ const EchoCalc: React.FC = () => {
         </Col>
         <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           {(plate && compoundColorMap) ?
-            <PlateView
+            <PlateViewCanvas
               plate={plate}
               view="echoCalc"
               colorConfig={colorConfig}

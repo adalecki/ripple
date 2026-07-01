@@ -1,13 +1,14 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { Modal, Button, Form, Alert, Badge, Container, Col, Row } from 'react-bootstrap';
+import React, { useState, useRef } from 'react';
+import { Modal, Button, Alert, Badge, Container, Col, Row } from 'react-bootstrap';
 import { ControlDefinition, ControlType, CONTROL_TYPES } from '../../../types/mapperTypes';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
-import PlateView from '../../../components/PlateView';
+import PlateViewCanvas from '../../../components/PlateViewCanvas';
+import { FormField } from '../../../components/FormField';
 import { ColorConfig } from '../../../utils/wellColors';
 import { HslStringType } from '../../../classes/PatternClass';
-import { formatWellBlock, getCoordsFromWellId, numberToLetters } from '../../../utils/plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../../utils/plateUtils';
+import { labelDrag, selectorHelper } from '../../../utils/designUtils';
 import '../../../css/InteractiveControlMapper.css';
-import { checkWellsInSelection } from '../../../utils/designUtils';
 
 interface InteractiveControlMapperProps {
   show: boolean;
@@ -23,6 +24,19 @@ const CONTROL_COLORS: Record<ControlType, HslStringType> = {
   'Blank': 'hsl(60, 70%, 50%)'
 } as const;
 
+function buildPlateFromControls(controls: ControlDefinition[], plateSize: PlateSize): Plate {
+  const plate = new Plate({ plateSize: plateSize.toString() as PlateSize });
+  controls.forEach(control => {
+    if (!control.wells) return;
+    try {
+      plate.getSomeWells(control.wells).forEach(well => well.applyPattern(control.type, 1));
+    } catch {
+      console.warn(`Invalid well range for ${control.type}: ${control.wells}`);
+    }
+  });
+  return plate;
+}
+
 const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
   show,
   onHide,
@@ -30,73 +44,53 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
   plateSize,
   onConfirm
 }) => {
-  const [tempPlate, setTempPlate] = useState(() => new Plate({ plateSize: plateSize.toString() as PlateSize }));
   const [selectedWells, setSelectedWells] = useState<string[]>([]);
   const [selectedControlType, setSelectedControlType] = useState<ControlType>('MaxCtrl');
   const [definedControls, setDefinedControls] = useState<ControlDefinition[]>([...currentControls]);
   const [error, setError] = useState<string | null>(null);
 
-
   const selectionRef = useRef<HTMLDivElement | null>(null);
-  const dragState = useRef({ dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
+  const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
 
-  useEffect(() => {
-    document.addEventListener('mousedown', handlePageDblClick, { passive: true });
-    return () => {
-      document.removeEventListener('mousedown', handlePageDblClick);
-    };
-  }, []);
+  const tempPlate = buildPlateFromControls(definedControls, plateSize);
 
-  const handlePageDblClick = useCallback((e: any) => {
-    if (e.detail > 1) {
-      setSelectedWells(prev => (prev.length ? [] : prev));
-    }
-  }, [])
+  const colorMap = new Map<string, HslStringType>();
+  definedControls.forEach(control => colorMap.set(control.type, CONTROL_COLORS[control.type]));
+  const colorConfig: ColorConfig = { scheme: 'pattern', colorMap };
 
-  const colorMap = useMemo(() => {
-    const map = new Map<string, HslStringType>();
-    definedControls.forEach(control => {
-      map.set(control.type, CONTROL_COLORS[control.type]);
-    });
-    return map;
-  }, [definedControls]);
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragState.current.mouseDown = true;
+    dragState.current.dragging = false;
+    dragState.current.startX = e.clientX;
+    dragState.current.startY = e.clientY;
+    dragState.current.endX = e.clientX;
+    dragState.current.endY = e.clientY;
 
-  const colorConfig: ColorConfig = {
-    scheme: 'pattern',
-    colorMap: colorMap
-  };
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-
-    dragState.current.dragging = true;
-    dragState.current.startX = start.x;
-    dragState.current.startY = start.y
-    dragState.current.endX = start.x
-    dragState.current.endY = start.y
     const el = selectionRef.current;
     if (el) {
-      el.style.display = 'block';
-      el.style.left = `${start.x}px`;
-      el.style.top = `${start.y}px`;
+      el.style.left = `${e.clientX}px`;
+      el.style.top = `${e.clientY}px`;
       el.style.width = '0px';
       el.style.height = '0px';
       el.className = 'selection-rectangle';
     }
-  }, []);
+  };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragState.current.dragging) return
-    const end = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-    dragState.current.endX = end.x
-    dragState.current.endY = end.y
-    const left = Math.min(dragState.current.startX, dragState.current.endX)
-    const top = Math.min(dragState.current.startY, dragState.current.endY)
-    const width = Math.abs(dragState.current.startX - dragState.current.endX)
-    const height = Math.abs(dragState.current.startY - dragState.current.endY)
+    if (!dragState.current.mouseDown) return;
+    dragState.current.dragging = true;
+    dragState.current.endX = e.clientX;
+    dragState.current.endY = e.clientY;
+
+    const left = Math.min(dragState.current.startX, dragState.current.endX);
+    const top = Math.min(dragState.current.startY, dragState.current.endY);
+    const width = Math.abs(dragState.current.startX - dragState.current.endX);
+    const height = Math.abs(dragState.current.startY - dragState.current.endY);
+
     const el = selectionRef.current;
     if (el) {
+      el.style.display = 'block';
       el.style.left = `${left}px`;
       el.style.top = `${top}px`;
       el.style.width = `${width}px`;
@@ -105,89 +99,88 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (!dragState.current.dragging) return
-    dragState.current.dragging = false
+    if (!dragState.current.mouseDown) return;
+    dragState.current.mouseDown = false;
+    dragState.current.dragging = false;
+
     const el = selectionRef.current;
     if (el) el.style.display = 'none';
 
-    const startWell = document.elementFromPoint(dragState.current.startX, dragState.current.startY)
-    if (startWell && startWell.closest("[data-view]")) {
-      const parentPlate = startWell.closest("[data-view]")
-      if (!parentPlate) return
-      const wells = parentPlate.querySelectorAll('[data-wellid]')
-      let wellArr = checkWellsInSelection({ x: dragState.current.startX, y: dragState.current.startY }, { x: dragState.current.endX, y: dragState.current.endY }, wells);
-      selectorHelper(e, wellArr, selectedWells, setSelectedWells)
-    }
-  };
+    const parent = (e.target as HTMLElement).closest('[data-view]');
+    if (!parent) return;
 
-  const selectorHelper = useCallback((e: React.MouseEvent, wellArr: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) => {
-    let newSelection = [...selectedWells]
-    if (!e.shiftKey) {
-      setSelectedWells(wellArr)
+    const region = {
+      x1: Math.min(dragState.current.startX, dragState.current.endX),
+      y1: Math.min(dragState.current.startY, dragState.current.endY),
+      x2: Math.max(dragState.current.startX, dragState.current.endX),
+      y2: Math.max(dragState.current.startY, dragState.current.endY)
+    };
+
+    const startEl = document.elementFromPoint(region.x1, region.y1);
+    const endEl = document.elementFromPoint(region.x2, region.y2);
+    const labelWells = labelDrag(startEl, endEl, tempPlate);
+    if (labelWells.length > 0) {
+      selectorHelper(e, labelWells, selectedWells, setSelectedWells);
+      return;
     }
-    else {
-      for (let wellId of wellArr) {
-        let idx = newSelection.indexOf(wellId)
-        if (idx > -1) {
-          newSelection.splice(idx, 1)
-        }
-        else {
-          newSelection.push(wellId)
+
+    const canvas = parent.getElementsByTagName('canvas')[0];
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cellWidth = rect.width / tempPlate.columns;
+    const cellHeight = rect.height / tempPlate.rows;
+
+    const selLeft = region.x1 - rect.left;
+    const selTop = region.y1 - rect.top;
+    const selRight = region.x2 - rect.left;
+    const selBottom = region.y2 - rect.top;
+
+    const newSelected: string[] = [];
+    for (let r = 0; r < tempPlate.rows; r++) {
+      for (let c = 0; c < tempPlate.columns; c++) {
+        const wx1 = c * cellWidth;
+        const wy1 = r * cellHeight;
+        const wx2 = wx1 + cellWidth;
+        const wy2 = wy1 + cellHeight;
+
+        if (wx2 >= selLeft && wx1 <= selRight && wy2 >= selTop && wy1 <= selBottom) {
+          newSelected.push(getWellIdFromCoords(r, c));
         }
       }
-      setSelectedWells(newSelection)
     }
-  }, [])
+    selectorHelper(e, newSelected, selectedWells, setSelectedWells);
+  };
 
   const handleLabelClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const newSelection = new Set<string>();
     const target = e.target as HTMLDivElement;
     const targetLabel = target.innerText;
-    const parentPlate = target.closest("[data-view]")
-    if (!parentPlate) return
-    const wells = parentPlate.querySelectorAll('[data-wellid]')
-    wells.forEach(wellElement => {
-      if (!wellElement) return
-      const wellId = wellElement.getAttribute('data-wellid')
-      if (!wellId) return
-      if (target.className.includes('all-wells-container')) {
-        newSelection.add(wellId)
-      }
-      else {
-        const wellCoords = getCoordsFromWellId(wellId)
-        const shouldSelect = isNaN(parseInt(targetLabel))
-          ? numberToLetters(wellCoords.row) === targetLabel
-          : (wellCoords.col + 1).toString() === targetLabel;
+    const newSelected: string[] = [];
 
-        if (shouldSelect) {
-          newSelection.add(wellId);
+    if (target.className.includes('all-wells-container')) {
+      for (let r = 0; r < tempPlate.rows; r++) {
+        for (let c = 0; c < tempPlate.columns; c++) {
+          newSelected.push(getWellIdFromCoords(r, c));
         }
       }
-    })
-    if (target.className.includes('all-wells-container') && Array.from(newSelection).length == selectedWells.length) {
-      newSelection.clear()
+      if (newSelected.length === selectedWells.length) newSelected.length = 0;
+      setSelectedWells(newSelected);
+      return;
     }
-    selectorHelper(e, Array.from(newSelection), selectedWells, setSelectedWells)
-  }
 
-  function rebuildPlateFromControls(controls: ControlDefinition[]) {
-    const newPlate = new Plate({ plateSize: plateSize.toString() as PlateSize });
-
-    controls.forEach(control => {
-      if (control.wells) {
-        try {
-          const wells = newPlate.getSomeWells(control.wells);
-          wells.forEach(well => {
-            well.applyPattern(control.type, 1);
-          });
-        } catch (error) {
-          console.warn(`Invalid well range for ${control.type}: ${control.wells}`);
-        }
+    for (let r = 0; r < tempPlate.rows; r++) {
+      for (let c = 0; c < tempPlate.columns; c++) {
+        const wellId = getWellIdFromCoords(r, c);
+        const coords = getCoordsFromWellId(wellId);
+        const shouldSelect = isNaN(parseInt(targetLabel))
+          ? numberToLetters(coords.row) === targetLabel
+          : (coords.col + 1).toString() === targetLabel;
+        if (shouldSelect) newSelected.push(wellId);
       }
-    });
-
-    setTempPlate(newPlate);
+    }
+    selectorHelper(e, newSelected, selectedWells, setSelectedWells);
   };
+
+  const handleClearSelection = () => setSelectedWells(prev => (prev.length ? [] : prev));
 
   const assignSelectionToControl = () => {
     if (selectedWells.length === 0) {
@@ -198,19 +191,17 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     const existingControlIndex = definedControls.findIndex(c => c.type === selectedControlType);
 
     if (existingControlIndex >= 0) {
-      const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id)
-      const wellBlock = formatWellBlock([...selectedWells, ...oldWellIds])
+      const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id);
       const updatedControls = [...definedControls];
       updatedControls[existingControlIndex] = {
         ...updatedControls[existingControlIndex],
-        wells: wellBlock
+        wells: formatWellBlock([...selectedWells, ...oldWellIds])
       };
       setDefinedControls(updatedControls);
     } else {
-      const wellBlock = formatWellBlock(selectedWells);
       setDefinedControls(prev => [...prev, {
         type: selectedControlType,
-        wells: wellBlock
+        wells: formatWellBlock(selectedWells)
       }]);
     }
 
@@ -225,22 +216,20 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     }
 
     const existingControlIndex = definedControls.findIndex(c => c.type === selectedControlType);
-    if (existingControlIndex >= 0) {
-      const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id);
-      const remainingWellIds = oldWellIds.filter(i => !selectedWells.includes(i));
-      const wellBlock = formatWellBlock(remainingWellIds);
+    if (existingControlIndex < 0) return;
 
-      const updatedControls = [...definedControls];
-      updatedControls[existingControlIndex] = {
-        ...updatedControls[existingControlIndex],
-        wells: wellBlock
-      };
+    const oldWellIds = tempPlate.getSomeWells(definedControls[existingControlIndex].wells).map(well => well.id);
+    const remainingWellIds = oldWellIds.filter(id => !selectedWells.includes(id));
 
-      setDefinedControls(updatedControls);
-      rebuildPlateFromControls(updatedControls);
-      setSelectedWells([]);
-      setError(null);
-    }
+    const updatedControls = [...definedControls];
+    updatedControls[existingControlIndex] = {
+      ...updatedControls[existingControlIndex],
+      wells: formatWellBlock(remainingWellIds)
+    };
+
+    setDefinedControls(updatedControls);
+    setSelectedWells([]);
+    setError(null);
   };
 
   const removeControl = (controlType: ControlType) => {
@@ -258,114 +247,101 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
     setError(null);
   };
 
-  useEffect(() => {
-    const newPlate = new Plate({ plateSize: plateSize.toString() as PlateSize });
-    definedControls.forEach(control => {
-      if (control.wells) {
-        try {
-          const wells = newPlate.getSomeWells(control.wells);
-          wells.forEach(well => {
-            well.applyPattern(control.type, 1);
-          });
-        } catch (error) {
-          console.warn(`Invalid well range for ${control.type}: ${control.wells}`);
-        }
-      }
-    });
-
-    setTempPlate(newPlate);
-  }, [definedControls, plateSize]);
-
   return (
     <Modal show={show} onHide={onHide} size="xl" className="interactive-control-mapper-modal">
       <Modal.Header closeButton>
         <Modal.Title>Define Control Wells</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Container fluid className='noselect'>
+        <Container fluid className="noselect">
           {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
-          <div
+          <Row
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
           >
-            <Row>
-              <Col md="2">
-                <div>
+            <Col md={3} className="d-flex flex-column gap-3">
+              <FormField
+                id="control-type"
+                name="control-type"
+                type="select"
+                label="Control Type"
+                value={selectedControlType}
+                onChange={(value) => setSelectedControlType(value as ControlType)}
+                options={CONTROL_TYPES.map(type => ({ value: type, label: type }))}
+              />
 
-                  <Form.Group className="mb-3">
-                    <Form.Label>Control Type</Form.Label>
-                    <Form.Select
-                      value={selectedControlType}
-                      onChange={(e) => setSelectedControlType(e.target.value as ControlType)}
-                    >
-                      {CONTROL_TYPES.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
+              <div className="d-grid gap-2">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={assignSelectionToControl}
+                  disabled={selectedWells.length === 0}
+                >
+                  Assign Selection ({selectedWells.length} wells)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={removeControlsFromSelection}
+                  disabled={selectedWells.length === 0}
+                >
+                  Remove from Selection
+                </Button>
+              </div>
 
-                  <div className="d-grid gap-2">
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={assignSelectionToControl}
-                      disabled={selectedWells.length === 0}
-                    >
-                      Assign Selection ({selectedWells.length} wells)
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline-secondary"
-                      onClick={removeControlsFromSelection}
-                      disabled={selectedWells.length === 0}
-                    >
-                      Remove Controls from Selection
-                    </Button>
-                  </div>
-
-                  {definedControls.length === 0 ? (
-                    <p className="text-muted small">No controls defined</p>
-                  ) : (
-                    <div className="d-flex flex-column gap-2">
-                      {definedControls.map(control => (
-                        <div key={control.type} className="d-flex align-items-center justify-content-between">
-                          <div>
-                            <Badge
-                              style={{ backgroundColor: CONTROL_COLORS[control.type] }}
-                              className="text-white"
-                            >
-                              {control.type}
-                            </Badge>
-                            <div className="small text-muted mt-1">
-                              {control.wells || 'No wells'}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline-danger"
-                            onClick={() => removeControl(control.type)}
-                          >
-                            x
-                          </Button>
+              {definedControls.length === 0 ? (
+                <p className="text-muted small mb-0">No controls defined</p>
+              ) : (
+                <div className="d-flex flex-column gap-2">
+                  {definedControls.map(control => (
+                    <div key={control.type} className="d-flex align-items-center justify-content-between">
+                      <div>
+                        <Badge style={{ backgroundColor: CONTROL_COLORS[control.type] }} className="text-white">
+                          {control.type}
+                        </Badge>
+                        <div className="small text-muted mt-1">
+                          {control.wells || 'No wells'}
                         </div>
-                      ))}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline-danger"
+                        onClick={() => removeControl(control.type)}
+                      >
+                        &times;
+                      </Button>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </Col>
-              <Col md="8">
-                <PlateView
+              )}
+            </Col>
+            <Col md={9} onMouseDown={handleMouseDown} onDoubleClick={handleClearSelection}>
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: `calc(58vh * ${tempPlate.columns} / ${tempPlate.rows})`,
+                  margin: '0 auto'
+                }}
+              >
+                <PlateViewCanvas
                   plate={tempPlate}
                   view="controlMapping"
                   colorConfig={colorConfig}
                   selectedWells={selectedWells}
-                  handleMouseDown={handleMouseDown}
                   handleLabelClick={handleLabelClick}
                 />
-              </Col>
-            </Row>
-          </div>
+              </div>
+              <small className="text-muted">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
+                  <span><kbd>LeftClick</kbd> to select wells, drag to select groups</span>
+                  <span><kbd>LeftClick</kbd> on labels to select rows or columns</span>
+                  <span><kbd>LeftClick</kbd> + <kbd>Ctrl</kbd> to add to current selection</span>
+                  <span><kbd>DoubleClick</kbd> to clear the selection</span>
+                </div>
+              </small>
+            </Col>
+          </Row>
         </Container>
         <div ref={selectionRef} style={{ position: 'fixed', pointerEvents: 'none', display: 'none' }} />
       </Modal.Body>
@@ -374,7 +350,7 @@ const InteractiveControlMapper: React.FC<InteractiveControlMapperProps> = ({
         <Button variant="outline-secondary" onClick={handleReset}>
           Reset to Original
         </Button>
-        <Button variant="secondary" onClick={() => { handleReset(); onHide() }}>
+        <Button variant="secondary" onClick={() => { handleReset(); onHide(); }}>
           Cancel
         </Button>
         <Button variant="primary" onClick={handleConfirm}>

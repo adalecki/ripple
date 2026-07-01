@@ -6,10 +6,10 @@ import { Protocol } from '../../../types/mapperTypes';
 import { parseDataFile, applyParsedDataToPlates, ParsedData, hasResponseData, getPlatesWithResponseData } from '../utils/parserUtils';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import { currentPlate } from '../../../utils/plateUtils';
-import PlateView from '../../../components/PlateView';
 import { ColorConfig } from '../../../utils/wellColors';
 import '../../../css/DataParser.css';
 import FileUploadCard from '../../../components/FileUploadCard';
+import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
 interface FileUploadStatus {
   file: File;
@@ -406,7 +406,7 @@ const DataParser: React.FC = () => {
         </Col>
         <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
           {plate ? (
-            <PlateView
+            <PlateViewCanvas
               plate={plate}
               view="response"
               colorConfig={colorConfig}

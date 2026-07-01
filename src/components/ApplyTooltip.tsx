@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../css/ApplyTooltip.css'
+import '../css/ApplyTooltip.css'
 
 interface TooltipData {
   event: React.MouseEvent | null;

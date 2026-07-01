@@ -1,4 +1,6 @@
-import { Protocol } from '../../../types/mapperTypes';
+import { PlateSize, Plate } from '../../../classes/PlateClass';
+import { ControlDefinition, ControlType, Protocol } from '../../../types/mapperTypes';
+import { getWellIdsFromRange } from '../../../utils/plateUtils';
 
 const STORAGE_KEY = 'ripple-protocols';
 
@@ -152,4 +154,17 @@ export function deleteProtocol(protocols: Protocol[], protocolId: number): Proto
 export function getCurrentProtocol(protocols: Protocol[], selectedId: number | null): Protocol | null {
   if (!selectedId) return null;
   return protocols.find(p => p.id === selectedId) || null;
+}
+
+export function getOutOfRangeControls(controls: ControlDefinition[], plateSize: PlateSize): ControlType[] {
+  const plate = new Plate({ plateSize });
+  const offenders: ControlType[] = [];
+  for (const control of controls) {
+    if (!control.wells) continue;
+    const wellIds = getWellIdsFromRange(control.wells);
+    if (wellIds.length === 0 || wellIds.some(id => plate.getWell(id) == null)) {
+      offenders.push(control.type);
+    }
+  }
+  return offenders;
 }
