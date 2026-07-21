@@ -3,6 +3,7 @@ import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { InputDataType } from './echoUtils';
 import { PreferencesState } from '../../../hooks/usePreferences';
 import { getCoordsFromWellId } from '../../../utils/plateUtils';
+import { isCombinationType, getCombinationFold } from '../../../classes/PatternClass';
 
 function arraysMatch(arr1: any[], arr2: any[]) {
   if (arr1.length !== arr2.length) return false
@@ -108,26 +109,49 @@ function stringConversion(inputData: InputDataType) {
   return inputData
 }
 
-function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<string, { replicates: number, concentrations: number[] }> {
-  const availablePatternNames: Map<string, { replicates: number, concentrations: number[] }> = new Map
+function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<string, { replicates: number, concentrations: number[], isMatrix: boolean }> {
+  const availablePatternNames: Map<string, { replicates: number, concentrations: number[], isMatrix: boolean }> = new Map
   for (let idx in inputData['Patterns']) {
     const row = inputData['Patterns'][idx] as { [key: string]: any }
     const patternName = inputData['Patterns'][idx]['Pattern']
       if (!availablePatternNames.has(patternName)) {
-        availablePatternNames.set(patternName, { replicates: 0, concentrations: [] })
+        availablePatternNames.set(patternName, { replicates: 0, concentrations: [], isMatrix: false })
       }
       else {
         errors.push(`${patternName} on line ${parseInt(idx) + 2} is already present earlier`)
       }
-    if (!['Control','Treatment','Solvent','Combination','Unused'].includes(row.Type)) {
-      errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be Control, Treatment, Solvent, Combination, or Unused)`)
+    const isCombination = isCombinationType(row.Type)
+    if (row.Type === 'Combination') {
+      errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (bare "Combination" is no longer supported; specify a fold, e.g. "Combination-2")`)
+    }
+    else if (!['Control','Treatment','Solvent','Unused'].includes(row.Type) && !isCombination) {
+      errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be Control, Treatment, Solvent, Unused, or Combination-N)`)
     }
     const pattern = availablePatternNames.get(patternName)!
     if (row.Type != 'Solvent' && row.Type != 'Unused') {
-      if (row.Type == 'Combination') {
+      if (isCombination) {
+        const fold = getCombinationFold(row.Type)
+        if (!(Number.isInteger(fold) && fold >= 2)) {
+          errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (fold must be an integer of 2 or greater)`)
+        }
         const directions = row.Direction.split("-")
-        if (directions.length < 2) {
-          errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (only ${directions.length} included, need at least two)`)
+        if (directions.length > 1 && fold !== 2) {
+          errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (a dash-separated Direction is only allowed for Combination-2)`)
+        }
+        else if (directions.length > 2) {
+          errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (Combination-2 supports at most two dash-separated directions)`)
+        }
+        else if (directions.length === 2 && fold === 2) {
+          const [dirA, dirB] = directions
+          const horizontal = ['LR', 'RL']
+          const vertical = ['TB', 'BT']
+          const isPerpendicular = (horizontal.includes(dirA) && vertical.includes(dirB)) || (vertical.includes(dirA) && horizontal.includes(dirB))
+          if (!isPerpendicular) {
+            errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (Combination-2 matrix directions must be perpendicular, e.g. LR-TB, not ${row.Direction})`)
+          }
+          else {
+            pattern.isMatrix = true
+          }
         }
         for (const dir of directions) {
           if (!['LR','RL','TB','BT'].includes(dir)) {
@@ -143,7 +167,7 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
       if (!(parseInt(row.Replicates.toString()) == row.Replicates)) {
         errors.push(`${row.Replicates} on line ${parseInt(idx) + 2} of Patterns tab is not a valid integer`)
       }
-      
+
       else { pattern.replicates = row.Replicates }
       for (let i = 1; i <= 20; i++) {
         const concKey = `Conc${i}`;
@@ -165,7 +189,7 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
   return availablePatternNames
 }
 
-function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availablePatternNames: Map<string, { replicates: number, concentrations: number[] }>, errors: string[]) {
+function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availablePatternNames: Map<string, { replicates: number, concentrations: number[], isMatrix: boolean }>, errors: string[]) {
   for (let idx in inputData['Layout']) {
     try {
       const pattern = availablePatternNames.get(inputData['Layout'][idx]['Pattern'])
@@ -187,8 +211,12 @@ function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availab
         if (safeCornerWells) {
           const wells = testPlate.getSomeWells(inputData['Layout'][idx]['Well Block'])
           if (!isUnusedPattern) {
-            if (!(wells.length == (pattern!.concentrations!.length * pattern!.replicates!))) {
-              errors.push(`Well block size in line ${parseInt(idx) + 2} of Layout tab does not match with number of concentrations and replicates on Patterns tab`)
+            const numConcs = pattern!.concentrations!.length
+            const replicates = pattern!.replicates!
+            const expectedWells = pattern!.isMatrix ? (numConcs * numConcs * replicates) : (numConcs * replicates)
+            if (!(wells.length == expectedWells)) {
+              const formula = pattern!.isMatrix ? `${numConcs} concentrations² x ${replicates} replicates` : `${numConcs} concentrations x ${replicates} replicates`
+              errors.push(`Well block size in line ${parseInt(idx) + 2} of Layout tab does not match with number of concentrations and replicates on Patterns tab (expected ${expectedWells} wells: ${formula})`)
             }
           }
         }
@@ -202,7 +230,7 @@ function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availab
   }
 }
 
-function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, availablePatternNames: Map<string, { replicates: number, concentrations: number[] }>, errors: string[]): string[] {
+function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, availablePatternNames: Map<string, { replicates: number, concentrations: number[], isMatrix: boolean }>, errors: string[]): string[] {
   const srcBarcodes: string[] = []
   const usedWellIdsMap: Map<string, string[]> = new Map();
   for (let idx in inputData['Compounds']) {

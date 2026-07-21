@@ -67,7 +67,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
       } else if (fieldName === 'type' && editingPattern.type === 'Unused') {
         setEditingPattern(new Pattern({
           ...editingPattern,
-          [fieldName]: value as "Treatment" | "Control" | "Combination" | "Solvent" | "Unused",
+          [fieldName]: value as "Treatment" | "Control" | "Solvent" | "Unused",
           concentrations: [null]
         }));
       } else {

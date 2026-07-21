@@ -1,5 +1,5 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
-import { Pattern } from '../classes/PatternClass';
+import { Pattern, isCombinationType } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
 import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
@@ -18,7 +18,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
     const baseData: any = {
       Pattern: pattern.name,
       Type: pattern.type,
-      Direction: pattern.type === 'Unused' ? '' : pattern.direction[0],
+      Direction: pattern.type === 'Unused' ? '' : (isCombinationType(pattern.type) ? pattern.direction.join('-') : pattern.direction[0]),
       Replicates: pattern.type === 'Unused' ? '' : pattern.replicates,
     };
 

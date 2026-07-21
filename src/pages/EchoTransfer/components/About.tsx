@@ -25,7 +25,7 @@ const exampleData = [
   },
   {
     name: 'Combinations',
-    description: 'Shows the Combination pattern type, which will test each member compound against each other compound in the pattern in perpendicular curves. Also has DMSO solvent wells to avoid intermediate plate creation.',
+    description: 'Shows the Combination-2 pattern type in its perpendicular-matrix form, testing each member compound against every other member compound in perpendicular dose-response curves. Also has DMSO solvent wells to avoid intermediate plate creation.',
     filename: 'RippleTemplate_Combination.xlsx'
   }
 ];

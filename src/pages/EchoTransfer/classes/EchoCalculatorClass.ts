@@ -4,7 +4,7 @@ import { formatWellBlock, getCoordsFromWellId, getWellFromBarcodeAndId, mapWells
 import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
 import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
-import { DilutionPattern } from '../../../classes/PatternClass';
+import { DilutionPattern, isCombinationType } from '../../../classes/PatternClass';
 
 export interface TransferInfo {
   transferType: 'compound' | 'solvent';
@@ -393,7 +393,7 @@ export class EchoCalculator {
 
       //combinations
       for (const [patternName, dilutionPattern] of this.echoPreCalc.dilutionPatterns) {
-        if (dilutionPattern.type == 'Combination') {
+        if (isCombinationType(dilutionPattern.type)) {
           const comboCompounds = compoundIdsWithPattern(this.echoPreCalc.srcCompoundInventory, patternName);
 
           const combinations = getCombinationsOfSizeR(comboCompounds, dilutionPattern.fold);
@@ -498,7 +498,8 @@ export class EchoCalculator {
     const transferMap = this.echoPreCalc.calculateTransferConcentrations(dilutionPattern, compoundGroup);
     const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode)
     if (!destPlate) return
-    const direction = dilutionPattern.direction[dirIdx]
+    // non-matrix combinations carry a single direction shared by every compound in the tuple
+    const direction = dilutionPattern.direction[dirIdx] ?? dilutionPattern.direction[0]
     const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, direction)
     for (const concIdx in dilutionPattern.concentrations) {
       const conc = dilutionPattern.concentrations[concIdx]

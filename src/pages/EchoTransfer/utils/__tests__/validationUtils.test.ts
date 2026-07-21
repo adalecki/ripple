@@ -259,7 +259,7 @@ describe('echoInputValidation - Patterns Tab Validation', () => {
     );
 
     const result = echoInputValidation(wb, mockFormValues, mockPreferences);
-    expect(result.errors.some(e => e.includes('is not valid (must be Control, Treatment, Solvent, Combination, or Unused)'))).toBe(true);
+    expect(result.errors.some(e => e.includes('is not valid (must be Control, Treatment, Solvent, Unused, or Combination-N)'))).toBe(true);
   });
 
   test('detects invalid direction', () => {
@@ -307,7 +307,7 @@ describe('echoInputValidation - Patterns Tab Validation', () => {
   test('validates combination pattern directions', () => {
     const wb = createValidWorkbook();
     const combinationPattern = [
-      { Pattern: 'Combo1', Type: 'Combination', Direction: 'LR-TB', Replicates: 4, Conc1: 100, Conc2: 50, Conc3: 25, Conc4: 12.5 }
+      { Pattern: 'Combo1', Type: 'Combination-2', Direction: 'LR-TB', Replicates: 1, Conc1: 100, Conc2: 50, Conc3: 25, Conc4: 12.5 }
     ];
     const combinationLayout = [
       { Pattern: 'Combo1', 'Well Block': 'A01:D04' },
@@ -348,10 +348,38 @@ describe('echoInputValidation - Patterns Tab Validation', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test('detects insufficient combination pattern directions', () => {
+  test('detects bare "Combination" type as invalid', () => {
+    const wb = createValidWorkbook();
+    const bareComboPattern = [
+      { Pattern: 'Combo1', Type: 'Combination', Direction: 'LR', Replicates: 1, Conc1: 100 }
+    ];
+    wb.Sheets.Patterns = createMockWorksheet(
+      validHeaders.Patterns,
+      bareComboPattern
+    );
+
+    const result = echoInputValidation(wb, mockFormValues, mockPreferences);
+    expect(result.errors.some(e => e.includes('bare "Combination" is no longer supported'))).toBe(true);
+  });
+
+  test('allows a single-direction Combination-3 pattern (collinear, non-matrix)', () => {
+    const wb = createValidWorkbook();
+    const comboPattern = [
+      { Pattern: 'Combo1', Type: 'Combination-3', Direction: 'LR', Replicates: 1, Conc1: 100, Conc2: 50 }
+    ];
+    wb.Sheets.Patterns = createMockWorksheet(
+      validHeaders.Patterns,
+      comboPattern
+    );
+
+    const result = echoInputValidation(wb, mockFormValues, mockPreferences);
+    expect(result.errors.some(e => e.includes('Combo1') || e.includes('Combination-3'))).toBe(false);
+  });
+
+  test('detects a dash-separated Direction on a non-Combination-2 fold', () => {
     const wb = createValidWorkbook();
     const badComboPattern = [
-      { Pattern: 'Combo1', Type: 'Combination', Direction: 'LR', Replicates: 1, Conc1: 100 }
+      { Pattern: 'Combo1', Type: 'Combination-3', Direction: 'LR-TB', Replicates: 1, Conc1: 100 }
     ];
     wb.Sheets.Patterns = createMockWorksheet(
       validHeaders.Patterns,
@@ -359,7 +387,21 @@ describe('echoInputValidation - Patterns Tab Validation', () => {
     );
 
     const result = echoInputValidation(wb, mockFormValues, mockPreferences);
-    expect(result.errors.some(e => e.includes('need at least two'))).toBe(true);
+    expect(result.errors.some(e => e.includes('only allowed for Combination-2'))).toBe(true);
+  });
+
+  test('detects non-perpendicular directions on a Combination-2 matrix', () => {
+    const wb = createValidWorkbook();
+    const badComboPattern = [
+      { Pattern: 'Combo1', Type: 'Combination-2', Direction: 'LR-RL', Replicates: 1, Conc1: 100 }
+    ];
+    wb.Sheets.Patterns = createMockWorksheet(
+      validHeaders.Patterns,
+      badComboPattern
+    );
+
+    const result = echoInputValidation(wb, mockFormValues, mockPreferences);
+    expect(result.errors.some(e => e.includes('must be perpendicular'))).toBe(true);
   });
 });
 

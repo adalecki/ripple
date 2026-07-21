@@ -2,14 +2,23 @@ import convert from 'color-convert';
 
 export type HslStringType = `hsl(${number},${number}%,${number}%)`
 
+export type CombinationType = `Combination-${number}`;
+
+export function isCombinationType(type: string): boolean {
+  return /^Combination-\d+$/.test(type);
+}
+
+export function getCombinationFold(type: CombinationType): number {
+  return parseInt(type.substring('Combination-'.length), 10);
+}
+
 export interface DilutionPattern {
   patternName: string;
-  type: 'Control' | 'Treatment' | 'Combination' | 'Solvent' | 'Unused';
+  type: 'Control' | 'Treatment' | 'Solvent' | 'Unused' | CombinationType;
   concentrations: number[];
   replicates: number;
   //direction: 'LR' | 'RL' | 'TB' | 'BT';
   direction: ('LR' | 'RL' | 'TB' | 'BT')[]
-  secondaryDirection?: 'LR' | 'RL' | 'TB' | 'BT';
   fold: number;
 }
 
@@ -22,7 +31,6 @@ export class Pattern {
   concentrations: (number | null)[];
   color: HslStringType;
   locations: string[];
-  secondaryDirection?: DilutionPattern['secondaryDirection'];
   fold?: number;
   constructor(data: {
     id?: number;
@@ -33,7 +41,6 @@ export class Pattern {
     concentrations: (number | null)[];
     color?: HslStringType;
     locations: string[];
-    secondaryDirection?: DilutionPattern['secondaryDirection'];
     fold?: number;
   }) {
     this.id = data.id || Date.now()
@@ -44,7 +51,6 @@ export class Pattern {
     this.concentrations = data.type === 'Unused' ? [] : data.concentrations;
     this.color = data.color || this.generateRandomColor();
     this.locations = data.locations || []
-    this.secondaryDirection = data.secondaryDirection;
     this.fold = data.fold || 1;
   }
 
