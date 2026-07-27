@@ -3,7 +3,7 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import PatternManager from './PatternManager';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
-import { Pattern } from '../../../classes/PatternClass';
+import { Pattern, isCombinationType } from '../../../classes/PatternClass';
 import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
 import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
@@ -65,7 +65,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
 }) => {
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
 
-  const selectedPattern = currentItem(patterns, curPatternId)
+  const selectedPattern = currentItem(patterns, curPatternId) as Pattern
   const colorConfig = buildColorConfig(patterns);
 
   function buildColorConfig(patterns: Pattern[]): ColorConfig {
@@ -112,6 +112,11 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
     setDesignDstPlateSize(value)
     setDesignDstPlates([newPlate])
     setCurDesignDstPlateId(newPlate.id)
+    setPatterns(patterns.map(p => {
+      const newPattern = p.clone()
+      newPattern.locations = []
+      return newPattern
+    }))
   }
 
   function applyPatternToWells() {
@@ -233,6 +238,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
                   !selectedPattern ||
                   selectedWellIds.length === 0 ||
                   (selectedPattern.type !== 'Unused' && !Number.isInteger(selectedWellIds.length / (selectedPattern.replicates * selectedPattern.concentrations.length))) ||
+                  (isCombinationType(selectedPattern.type) && selectedPattern.direction.length === 2 && sensibleWellSelection(selectedWellIds, selectedPattern, designDstPlates[0]).length > 0) ||
                   patternState.isEditing
                 }
                 size='sm'

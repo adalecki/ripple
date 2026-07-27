@@ -302,7 +302,6 @@ export function mapWellsToMatrixConcentrations(
   colGroups.forEach((wellIds, i) => wellIds.forEach(id => colConcByWell.set(id, concentrations[i])));
   const rowConcByWell = new Map<string, number>();
   rowGroups.forEach((wellIds, j) => wellIds.forEach(id => rowConcByWell.set(id, concentrations[j])));
-  console.log(colGroups,colConcByWell,rowGroups,rowConcByWell)
   const wells = plate.getSomeWells(wellBlock);
   return wells.map(well => ({
     wellId: well.id,

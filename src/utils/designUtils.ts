@@ -161,8 +161,8 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
   if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
     const numConcs = pattern.concentrations.length;
     const requiredTotal = numConcs * numConcs * pattern.replicates;
-    if (selectedWellIds.length !== requiredTotal) {
-      return [`Matrix pattern requires exactly ${requiredTotal} wells (${numConcs}² × ${pattern.replicates} replicates)`]
+    if (selectedWellIds.length % requiredTotal != 0) {
+      return [`Matrix pattern requires a multiple of ${requiredTotal} wells (${numConcs}² x ${pattern.replicates} replicates)`]
     }
     try {
       splitIntoBlocks(selectedWellIds, pattern, plate);

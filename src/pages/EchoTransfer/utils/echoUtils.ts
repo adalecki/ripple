@@ -248,7 +248,7 @@ export function calculateFinalAchievableConcentration({
 
   const finalDilutionFactor = finTransferVolume / (finTransferVolume + assayVolume);
 
-  //C₀ × (T ÷ (T + B))ⁿ × (T ÷ (T + A))
+  //C₀ x (T ÷ (T + B))ⁿ x (T ÷ (T + A))
   const finalConcentration = stockConcentration *
     Math.pow(intermediateDilutionFactor, intermediateSteps) *
     finalDilutionFactor;

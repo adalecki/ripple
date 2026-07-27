@@ -147,7 +147,7 @@ const TransferList: React.FC<TransferListProps> = ({
                     onClick={() => onDeleteTransfer(index)}
                     style={{ padding: '0.15rem 0.4rem', lineHeight: 1 }}
                   >
-                    ×
+                    x
                   </Button>
                 </div>
               </ListGroup.Item>
