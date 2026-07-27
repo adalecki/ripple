@@ -158,10 +158,22 @@ export function isBlockOverlapping(plate: Plate, newBlock: string, existingLocat
 export function sensibleWellSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
   const msgArr: string[] = [];
   if (pattern.type === 'Unused') return msgArr
+  if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
+    const numConcs = pattern.concentrations.length;
+    const requiredTotal = numConcs * numConcs * pattern.replicates;
+    if (selectedWellIds.length !== requiredTotal) {
+      return [`Matrix pattern requires exactly ${requiredTotal} wells (${numConcs}² × ${pattern.replicates} replicates)`]
+    }
+    try {
+      splitIntoBlocks(selectedWellIds, pattern, plate);
+    } catch (e) {
+      return [(e as Error).message]
+    }
+    return msgArr
+  }
   if (selectedWellIds.length % pattern.concentrations.length != 0) return ['The number of wells must be divisible by the number of concentrations']
   if (selectedWellIds.length % (pattern.replicates * pattern.concentrations.length) != 0) return ['The number of wells must be divisible by the number of replicates x concentrations']
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
-  console.log(blocks)
 
   for (const block of blocks) {
     const rects = block.split(";");
@@ -182,7 +194,6 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
 
       switch (pattern.direction[0]) {
         case "LR": case "RL": {
-          console.log(rectWidth,pattern.concentrations)
           if (rectWidth != pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number`) }
           break
         }

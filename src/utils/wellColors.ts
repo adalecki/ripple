@@ -1,6 +1,6 @@
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
-import { HslStringType, Pattern } from "../classes/PatternClass";
+import { HslStringType, Pattern, isCombinationType } from "../classes/PatternClass";
 import * as d3 from 'd3'
 
 export interface HslType {
@@ -51,7 +51,7 @@ export function generatePatternColors(patterns: Pattern[]) {
   return colorMap;
 }
 
-export function wellColors(plate: Plate, config: ColorConfig): { wellId: string; colors: HslStringType[] }[] {
+export function wellColors(plate: Plate, config: ColorConfig): { wellId: string; colors: HslStringType[]; dividers?: boolean }[] {
   if (config.scheme === 'rawResponse') {
     return wellColorsResponse(plate, false);
   }
@@ -64,6 +64,7 @@ export function wellColors(plate: Plate, config: ColorConfig): { wellId: string;
     if (!well) continue;
 
     let colors: HslStringType[] = []; //default white for empty wells
+    let dividers = false;
 
     switch (config.scheme) {
       case 'compound':
@@ -71,6 +72,7 @@ export function wellColors(plate: Plate, config: ColorConfig): { wellId: string;
         break;
       case 'pattern':
         colors = getPatternColor(well, config);
+        dividers = well.getContents().some(content => !content.compoundId && isCombinationType(plate.patterns[content.patternName]?.type ?? ''));
         break;
       case 'custom':
         colors = config.colorMap.get(well.id) ? [config.colorMap.get(well.id)!] : []
@@ -78,7 +80,8 @@ export function wellColors(plate: Plate, config: ColorConfig): { wellId: string;
 
     wellColors.push({
       wellId: well.id,
-      colors: colors
+      colors: colors,
+      dividers: dividers
     });
   }
 

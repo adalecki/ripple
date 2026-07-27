@@ -76,7 +76,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
     setCanvasSize({ width: canvas.width, height: canvas.height, dpr: dpr, wellSize: wellSize, gap: gap });
 
-    for (const { wellId, colors } of wellColorArr) {
+    for (const { wellId, colors, dividers } of wellColorArr) {
       const { row, col } = getCoordsFromWellId(wellId);
       const x = (wellSize + gap) * col
       const y = (wellSize + gap) * row
@@ -85,7 +85,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       const isSelected = selectedWells.includes(wellId);
       const borders = blockBorderMap?.get(wellId);
 
-      drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders)
+      drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders, dividers)
     }
   };
 
@@ -97,7 +97,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     colors: string[],
     well: Well,
     isSelected: boolean,
-    borders?: { top: boolean; right: boolean; bottom: boolean; left: boolean }
+    borders?: { top: boolean; right: boolean; bottom: boolean; left: boolean },
+    dividers?: boolean
   ) {
 
     ctx.strokeStyle = "#000";
@@ -105,7 +106,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx.strokeRect(x + 0.5, y + 0.5, size, size)
 
     if (colors.length > 0) {
-      drawSegments(ctx, x + 1, y + 1, size - 1, colors);
+      drawSegments(ctx, x + 1, y + 1, size - 1, colors, dividers);
     }
 
     if (well.getSolvents().some(s => s.name === "DMSO" && s.volume > 0) && !well.getIsUnused()) {
@@ -136,7 +137,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     x: number,
     y: number,
     size: number,
-    colors: string[]
+    colors: string[],
+    dividers?: boolean
   ) {
     const cx = x + size / 2;
     const cy = y + size / 2;
@@ -154,6 +156,11 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       ctx.closePath();
       ctx.fillStyle = colors[i];
       ctx.fill();
+      if (dividers && colors.length > 1) {
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
     ctx.restore()
   };

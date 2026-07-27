@@ -1,5 +1,5 @@
-import { mapWellsToConcentrations, getWellIdFromCoords, getWellIdsFromRange } from "../utils/plateUtils";
-import { Pattern } from "./PatternClass";
+import { mapWellsToConcentrations, mapWellsToMatrixConcentrations, getWellIdFromCoords, getWellIdsFromRange } from "../utils/plateUtils";
+import { Pattern, isCombinationType, getCombinationFold, CombinationType } from "./PatternClass";
 import { Well } from "./WellClass";
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
 export type PlateSize = '12' | '24' | '48' | '96' | '384' | '1536';
@@ -127,11 +127,28 @@ export class Plate {
     return wells
   }
 
-  applyPattern(wellBlock: string, pattern: Pattern): void {
+  applyPattern(wellBlock: string, pattern: Pattern) {
     if (pattern.type === 'Unused') {
       const wells = this.getSomeWells(wellBlock);
       for (const well of wells) {
         well.markAsUnused();
+      }
+    } else if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
+      const concentrations = pattern.concentrations.filter(c => c != null)
+      const matrixConcs = mapWellsToMatrixConcentrations(this, wellBlock, concentrations, pattern.direction)
+      for (const { wellId, concentrations: pair } of matrixConcs) {
+        const well = this.getWell(wellId)
+        if (well) { well.applyPatternContents(pattern.name, pair) }
+      }
+    } else if (isCombinationType(pattern.type)) {
+      const fold = pattern.fold ?? getCombinationFold(pattern.type as CombinationType)
+      const concentrations = pattern.concentrations.filter(c => c != null)
+      const concentrationArr = mapWellsToConcentrations(this, wellBlock, concentrations, pattern.direction[0])
+      for (const concIdx in concentrations) {
+        for (const wellId of concentrationArr[concIdx]) {
+          const well = this.getWell(wellId)
+          if (well) { well.applyPatternContents(pattern.name, Array(fold).fill(concentrations[concIdx])) }
+        }
       }
     } else {
       const concentrations = pattern.concentrations.filter(c => c != null)

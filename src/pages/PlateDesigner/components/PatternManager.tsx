@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
-import { Pattern } from '../../../classes/PatternClass';
+import { Pattern, isCombinationType, getCombinationFold, CombinationType } from '../../../classes/PatternClass';
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
 
@@ -24,6 +24,23 @@ interface PatternManagerProps {
   }>>
 }
 
+const DIRECTION_OPTIONS = [
+  { label: "LR", value: "LR" },
+  { label: "RL", value: "RL" },
+  { label: "TB", value: "TB" },
+  { label: "BT", value: "BT" }
+];
+
+function defaultPerpendicular(dir: string): 'LR' | 'RL' | 'TB' | 'BT' {
+  return (dir === 'LR' || dir === 'RL') ? 'TB' : 'LR';
+}
+
+function isPerpendicularDirections(a: string, b: string): boolean {
+  const horizontal = ['LR', 'RL'];
+  const vertical = ['TB', 'BT'];
+  return (horizontal.includes(a) && vertical.includes(b)) || (vertical.includes(a) && horizontal.includes(b));
+}
+
 const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState }) => {
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
   const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
@@ -34,7 +51,6 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
     setPrevPatternId(curPatternId)
     const selectedPattern = patterns ? patterns.find(p => p.id === curPatternId) : undefined;
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
-    setPatternState({ isEditing: (patternState.isNewPattern ? true : false), isNewPattern: false, isPickingColor: false })
   }
 
   const handleEditPattern = () => {
@@ -59,10 +75,18 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
       if (fieldName === 'type' && value === 'Unused') {
         setEditingPattern(new Pattern({
           ...editingPattern,
-          [fieldName]: value,
+          type: 'Unused',
           concentrations: [],
           replicates: 1,
           direction: ['LR']
+        }));
+      } else if (fieldName === 'type' && value === 'Combination') {
+        setEditingPattern(new Pattern({
+          ...editingPattern,
+          type: 'Combination-2',
+          fold: 2,
+          direction: [editingPattern.direction[0] || 'LR'],
+          concentrations: editingPattern.type === 'Unused' ? [null] : editingPattern.concentrations
         }));
       } else if (fieldName === 'type' && editingPattern.type === 'Unused') {
         setEditingPattern(new Pattern({
@@ -70,9 +94,37 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
           [fieldName]: value as "Treatment" | "Control" | "Solvent" | "Unused",
           concentrations: [null]
         }));
+      } else if (fieldName === 'type' && isCombinationType(editingPattern.type)) {
+        setEditingPattern(new Pattern({
+          ...editingPattern,
+          [fieldName]: value as "Treatment" | "Control" | "Solvent" | "Unused",
+          direction: [editingPattern.direction[0]]
+        }));
       } else {
         setEditingPattern(new Pattern({ ...editingPattern, [fieldName]: value }));
       }
+    }
+  };
+
+  const handleFoldChange = (value: number) => {
+    if (editingPattern) {
+      const fold = Math.max(2, Math.round(value) || 2);
+      const direction = fold === 2 ? editingPattern.direction : [editingPattern.direction[0]];
+      setEditingPattern(new Pattern({
+        ...editingPattern,
+        type: `Combination-${fold}` as CombinationType,
+        fold,
+        direction
+      }));
+    }
+  };
+
+  const handleMatrixToggle = (checked: boolean) => {
+    if (editingPattern) {
+      setEditingPattern(new Pattern({
+        ...editingPattern,
+        direction: checked ? [editingPattern.direction[0], defaultPerpendicular(editingPattern.direction[0])] : [editingPattern.direction[0]]
+      }));
     }
   };
 
@@ -101,6 +153,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
     if (editingPattern) {
       if (!editingPattern.replicates) msgArr.push('Must define replicates')
       if (!editingPattern.name) msgArr.push('Must enter a pattern name')
+      if (matrixDirectionsInvalid) msgArr.push('Matrix directions must be perpendicular (one LR/RL, one TB/BT)')
     }
 
     setApplyPopup({ event: msgArr.length > 0 ? e : null, msgArr });
@@ -111,6 +164,8 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
   };
 
   const duplicateName = (editingPattern ? patterns.filter(p => p.name == editingPattern.name && p.id != editingPattern.id).length > 0 : false)
+  const isMatrixPattern = editingPattern ? (isCombinationType(editingPattern.type) && editingPattern.direction.length === 2) : false;
+  const matrixDirectionsInvalid = isMatrixPattern && editingPattern ? !isPerpendicularDirections(editingPattern.direction[0], editingPattern.direction[1]) : false;
   return (
     <div className="d-flex flex-column pattern-manager-root">
       {editingPattern ? (
@@ -125,7 +180,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   variant="success"
                   size="sm"
                   onClick={handleSavePattern}
-                  disabled={duplicateName || !editingPattern.replicates || !editingPattern.name}>
+                  disabled={duplicateName || !editingPattern.replicates || !editingPattern.name || matrixDirectionsInvalid}>
                   Save
                 </Button>
               </div>
@@ -163,13 +218,14 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
               name='type'
               type='select'
               label='Type'
-              value={editingPattern.type}
+              value={isCombinationType(editingPattern.type) ? 'Combination' : editingPattern.type}
               onChange={(value) => handleFieldChange("type", value)}
               required={true}
               disabled={!patternState.isEditing}
               options={[
                 { label: "Control", value: "Control" },
                 { label: "Treatment", value: "Treatment" },
+                { label: "Combination", value: "Combination" },
                 { label: "Unused", value: "Unused" }
               ]}
             />
@@ -186,24 +242,78 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   required={true}
                   disabled={!patternState.isEditing}
                   step={1}
+                  tooltip={isMatrixPattern ? "Number of numConcs x numConcs squares tiled across the applied selection" : undefined}
                 />
-                <FormField
-                  key='pattern-direction'
-                  id='pattern-direction'
-                  name='direction'
-                  type='select'
-                  label='Direction'
-                  value={editingPattern.direction[0]}
-                  onChange={(value) => handleFieldChange("direction", [value])}
-                  required={true}
-                  disabled={!patternState.isEditing}
-                  options={[
-                    { label: "LR", value: "LR" },
-                    { label: "RL", value: "RL" },
-                    { label: "TB", value: "TB" },
-                    { label: "BT", value: "BT" }
-                  ]}
-                />
+                {isCombinationType(editingPattern.type) && (
+                  <FormField
+                    key='pattern-fold'
+                    id='pattern-fold'
+                    name='fold'
+                    type='number'
+                    label='Fold'
+                    value={getCombinationFold(editingPattern.type as CombinationType)}
+                    onChange={(value) => handleFoldChange(value)}
+                    required={true}
+                    disabled={!patternState.isEditing}
+                    step={1}
+                    min={2}
+                    tooltip="Number of compounds combined per well"
+                  />
+                )}
+                {isCombinationType(editingPattern.type) && getCombinationFold(editingPattern.type as CombinationType) === 2 && (
+                  <FormField
+                    key='pattern-matrix'
+                    id='pattern-matrix'
+                    name='matrix'
+                    type='switch'
+                    label='Matrix layout (checkerboard)'
+                    value={editingPattern.direction.length === 2}
+                    onChange={(checked) => handleMatrixToggle(checked)}
+                    disabled={!patternState.isEditing}
+                    tooltip="Lay out as a perpendicular 2D matrix instead of a single shared dilution series"
+                  />
+                )}
+                {isMatrixPattern ? (
+                  <>
+                    <FormField
+                      key='pattern-direction-1'
+                      id='pattern-direction-1'
+                      name='direction1'
+                      type='select'
+                      label='Direction (Axis 1)'
+                      value={editingPattern.direction[0]}
+                      onChange={(value) => handleFieldChange("direction", [value, editingPattern.direction[1]])}
+                      required={true}
+                      disabled={!patternState.isEditing}
+                      options={DIRECTION_OPTIONS}
+                    />
+                    <FormField
+                      key='pattern-direction-2'
+                      id='pattern-direction-2'
+                      name='direction2'
+                      type='select'
+                      label='Direction (Axis 2)'
+                      value={editingPattern.direction[1]}
+                      onChange={(value) => handleFieldChange("direction", [editingPattern.direction[0], value])}
+                      required={true}
+                      disabled={!patternState.isEditing}
+                      options={DIRECTION_OPTIONS}
+                    />
+                  </>
+                ) : (
+                  <FormField
+                    key='pattern-direction'
+                    id='pattern-direction'
+                    name='direction'
+                    type='select'
+                    label='Direction'
+                    value={editingPattern.direction[0]}
+                    onChange={(value) => handleFieldChange("direction", [value])}
+                    required={true}
+                    disabled={!patternState.isEditing}
+                    options={DIRECTION_OPTIONS}
+                  />
+                )}
                 <div className='form-field'>
                   <div className='form-label'>Color</div>
                   <div

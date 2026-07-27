@@ -164,6 +164,17 @@ export class Well {
     }
   }
 
+  applyPatternContents(patternName: string, concentrations: number[]): void {
+    if (this.isUnused) {
+      console.warn(`Attempting to apply pattern to unused well ${this.id}`);
+      return;
+    }
+    this.contents = this.contents.filter(c => c.patternName !== patternName);
+    for (const concentration of concentrations) {
+      this.contents.push({ concentration, patternName });
+    }
+  }
+
   removePattern(patternName: string): void {
     this.contents = this.contents.filter( c => !(c.patternName == patternName))
   }
