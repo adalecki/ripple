@@ -1,7 +1,9 @@
-import { HslStringType, Pattern } from "../classes/PatternClass";
+import { HslStringType, isCombinationType, Pattern } from "../classes/PatternClass";
 import { Plate } from "../classes/PlateClass";
 import { Well } from "../classes/WellClass";
 import type { PlatesContextType } from "../contexts/Context";
+
+export type Direction = 'LR' | 'RL' | 'TB' | 'BT';
 
 export interface TransferStepExport {
   sourceBarcode: string;
@@ -284,6 +286,29 @@ export function mapWellsToConcentrations(
   return result;
 }
 
+export function mapWellsToMatrixConcentrations(
+  plate: Plate,
+  wellBlock: string,
+  concentrations: number[],
+  directions: Direction[]
+): { wellId: string; concentrations: [number, number] }[] {
+  const horizontal = directions.find(d => d === 'LR' || d === 'RL') as Direction;
+  const vertical = directions.find(d => d === 'TB' || d === 'BT') as Direction;
+
+  const colGroups = mapWellsToConcentrations(plate, wellBlock, concentrations, horizontal);
+  const rowGroups = mapWellsToConcentrations(plate, wellBlock, concentrations, vertical);
+
+  const colConcByWell = new Map<string, number>();
+  colGroups.forEach((wellIds, i) => wellIds.forEach(id => colConcByWell.set(id, concentrations[i])));
+  const rowConcByWell = new Map<string, number>();
+  rowGroups.forEach((wellIds, j) => wellIds.forEach(id => rowConcByWell.set(id, concentrations[j])));
+  const wells = plate.getSomeWells(wellBlock);
+  return wells.map(well => ({
+    wellId: well.id,
+    concentrations: directions.map(d => d === horizontal ? colConcByWell.get(well.id)! : rowConcByWell.get(well.id)!) as [number, number]
+  }));
+}
+
 export function calculateBlockBorders(plate: Plate): Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }> {
   const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
 
@@ -341,6 +366,18 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     return [formatWellBlock(wells)];
   }
   const concentrations = pattern.concentrations.filter(c => c != null)
+
+  if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
+    const patternReplicates = wells.length / ((concentrations.length * concentrations.length) * pattern.replicates)
+    const blocks: string[] = []
+    for (let i = 0; i < patternReplicates; i++) {
+      const startIndex = i * ((concentrations.length * concentrations.length) * pattern.replicates);
+      const endIndex = startIndex + ((concentrations.length * concentrations.length) * pattern.replicates);
+      blocks.push(formatWellBlock(wells.slice(startIndex,endIndex)))
+    }
+    return blocks;
+  }
+
   const wellsPerConcentration = wells.length / concentrations.length;
 
   if (wellsPerConcentration % 1 !== 0) {

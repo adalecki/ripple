@@ -554,7 +554,7 @@ describe('splitIntoBlocks', () => {
       locations: []
     });
 
-    // 8 wells total: 2 concentrations × 2 replicates = 4 wells per block
+    // 8 wells total: 2 concentrations x 2 replicates = 4 wells per block
     const wells = ['A01', 'A02', 'A03', 'A04', 'B01', 'B02', 'B03', 'B04'];
     const blocks = splitIntoBlocks(wells, pattern, plate);
     
@@ -610,7 +610,7 @@ describe('splitIntoBlocks', () => {
       locations: []
     });
 
-    // 18 wells: 3 conc × 3 rep = 9 wells per block, 2 blocks total
+    // 18 wells: 3 conc x 3 rep = 9 wells per block, 2 blocks total
     const wells = [];
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 3; col++) {
@@ -638,7 +638,7 @@ describe('splitIntoBlocks', () => {
       locations: []
     });
 
-    // 4 wells: 2 valid conc × 2 rep = 4 wells per block
+    // 4 wells: 2 valid conc x 2 rep = 4 wells per block
     const wells = ['A01', 'A02', 'B01', 'B02'];
     const blocks = splitIntoBlocks(wells, pattern, plate);
     

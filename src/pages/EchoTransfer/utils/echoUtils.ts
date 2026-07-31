@@ -1,6 +1,6 @@
 import { EchoCalculator, TransferInfo } from '../classes/EchoCalculatorClass';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
-import { DilutionPattern } from '../../../classes/PatternClass';
+import { DilutionPattern, isCombinationType, getCombinationFold } from '../../../classes/PatternClass';
 import { CompoundInventory } from '../classes/EchoPreCalculatorClass';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { TransferStepExport } from '../../../utils/plateUtils';
@@ -127,8 +127,7 @@ export function analyzeDilutionPatterns(patternRows: any[]) {
       concentrations,
       replicates: parseInt(row.Replicates),
       direction: ['Solvent', 'Unused'].includes(row.Type) ? [] : row.Direction.split('-'),
-      secondaryDirection: row.Type === 'Combination' ? row.Direction.split('-')[1] as 'LR' | 'RL' | 'TB' | 'BT' : undefined,
-      fold: row.Type === 'Combination' ? parseInt(row.Direction.split('-').length) : 1
+      fold: isCombinationType(row.Type) ? getCombinationFold(row.Type) : 1
     };
 
     dilutionPatterns.set(pattern.patternName, pattern);
@@ -249,7 +248,7 @@ export function calculateFinalAchievableConcentration({
 
   const finalDilutionFactor = finTransferVolume / (finTransferVolume + assayVolume);
 
-  //C₀ × (T ÷ (T + B))ⁿ × (T ÷ (T + A))
+  //C₀ x (T ÷ (T + B))ⁿ x (T ÷ (T + A))
   const finalConcentration = stockConcentration *
     Math.pow(intermediateDilutionFactor, intermediateSteps) *
     finalDilutionFactor;

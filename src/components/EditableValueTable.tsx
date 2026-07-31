@@ -178,7 +178,7 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
                     disabled={disabled}
                     type="button"
                   >
-                    ×
+                    x
                   </button>
                 </td>
               )}

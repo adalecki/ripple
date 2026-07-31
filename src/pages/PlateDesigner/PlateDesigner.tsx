@@ -20,9 +20,15 @@ const PlateDesigner: React.FC = () => {
   const [curDesignSrcPlateId, setCurDesignSrcPlateId] = useState<number | null>(designSrcPlates[0] ? designSrcPlates[0].id || null : null)
   const [curDesignDstPlateId, setCurDesignDstPlateId] = useState<number | null>(designDstPlates[0] ? designDstPlates[0].id || null : null)
   const [curPatternId, setCurPatternId] = useState<number | null>(null)
+  const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([])
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false })
+
+  if (curPatternId !== prevPatternId) {
+    setPrevPatternId(curPatternId)
+    setPatternState({ isEditing: (patternState.isNewPattern ? true : false), isNewPattern: false, isPickingColor: false })
+  }
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });

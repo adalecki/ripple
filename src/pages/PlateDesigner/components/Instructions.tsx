@@ -35,6 +35,7 @@ const Instructions: React.FC = () => {
                   <li><strong>Treatment:</strong> Each treatment compound is stamped once to an available slot for its pattern, creating new destination plates until all compounds are accounted for. May leave empty blocks on some destination plates if not all blocks are needed.</li>
                   <li><strong>Control:</strong> Present equally on all destination plates. Always fills its slots. If multiple compounds are assigned to one control pattern, the tool rotates between them when assigning.</li>
                   <li><strong>Unused:</strong> Marks wells that should remain empty and receive no transfers, including DMSO normalization. Useful for empty borders or specific unused-well patterns.</li>
+                  <li><strong>Combination-N:</strong> Combines member compounds N at a time (N is the fold), covering every N-way combination of compounds sharing the pattern. For Combination-2 only, giving Direction as two perpendicular directions (<i>e.g.,</i> "LR-TB") lays the pair out as a perpendicular matrix, with each compound walking its own axis. Any other case (Combination-2 with a single direction, or Combination-3 and higher) is collinear, with every member compound sharing one dilution direction.</li>
                 </ul>
               </Card.Body>
             </Card>

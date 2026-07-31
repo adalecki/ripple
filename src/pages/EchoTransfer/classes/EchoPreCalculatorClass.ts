@@ -1,7 +1,7 @@
 import { analyzeDilutionPatterns, calculateMissingValue, roundToInc, InputDataType, compoundIdsWithPattern, numberCombinations, buildSrcCompoundInventory } from '../utils/echoUtils';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
-import { DilutionPattern } from '../../../classes/PatternClass';
+import { DilutionPattern, isCombinationType } from '../../../classes/PatternClass';
 import { PreferencesState } from '../../../hooks/usePreferences';
 
 export interface CompoundLocation {
@@ -234,7 +234,7 @@ export class EchoPreCalculator {
       let platesNeeded = Math.ceil(count / slots);
       //extra handling specifically for combination patterns
       const pattern = this.dilutionPatterns.get(patternName)
-      if (pattern && pattern.type == 'Combination') {
+      if (pattern && isCombinationType(pattern.type)) {
         const combinationCount = numberCombinations(count,pattern.fold) //nCr notation
         platesNeeded = Math.ceil(combinationCount / slots)
       }
@@ -254,7 +254,7 @@ export class EchoPreCalculator {
 
     const transferConcentrations = this.calculateTransferConcentrations(pattern, compoundGroup);
     let comboModifier = 1;
-    if (pattern.type == 'Combination') {
+    if (isCombinationType(pattern.type)) {
       this.srcCompoundInventory.entries()
       let n = Array.from(this.srcCompoundInventory).filter(([_, patternMap]) => patternMap.has(pattern.patternName)).length;
       let r = pattern.fold; //if combination, should be at least two
@@ -543,7 +543,7 @@ export class EchoPreCalculator {
             //maxVolOfPattern = Math.max(maxDMSO, maxVolOfPattern)
         }
         
-        if (pattern.type == 'Combination') { maxVolOfPattern = maxVolOfPattern * pattern.fold }
+        if (isCombinationType(pattern.type)) { maxVolOfPattern = maxVolOfPattern * pattern.fold }
         const wells = testPlate.getSomeWells(layoutBlock['Well Block']);
         for (const well of wells) {
           well.bulkFill(maxVolOfPattern)
