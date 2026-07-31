@@ -266,7 +266,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                     id='pattern-matrix'
                     name='matrix'
                     type='switch'
-                    label='Matrix layout (checkerboard)'
+                    label='Matrix layout'
                     value={editingPattern.direction.length === 2}
                     onChange={(checked) => handleMatrixToggle(checked)}
                     disabled={!patternState.isEditing}
