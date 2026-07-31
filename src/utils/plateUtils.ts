@@ -368,26 +368,12 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
   const concentrations = pattern.concentrations.filter(c => c != null)
 
   if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
-    const numConcs = concentrations.length;
-    const coordsList = wells.map(id => getCoordsFromWellId(id));
-    const uniqueRows = [...new Set(coordsList.map(c => c.row))].sort((a, b) => a - b);
-    const uniqueCols = [...new Set(coordsList.map(c => c.col))].sort((a, b) => a - b);
-
-    if (uniqueRows.length % numConcs !== 0 || uniqueCols.length % numConcs !== 0) {
-      throw new Error(`A matrix pattern selection must have both dimensions be a multiple of the concentration count (${numConcs}).`);
-    }
-
-    const tilesY = uniqueRows.length / numConcs;
-    const tilesX = uniqueCols.length / numConcs;
-    const blocks: string[] = [];
-    for (let ty = 0; ty < tilesY; ty++) {
-      for (let tx = 0; tx < tilesX; tx++) {
-        const rowStart = uniqueRows[ty * numConcs];
-        const rowEnd = uniqueRows[ty * numConcs + numConcs - 1];
-        const colStart = uniqueCols[tx * numConcs];
-        const colEnd = uniqueCols[tx * numConcs + numConcs - 1];
-        blocks.push(`${getWellIdFromCoords(rowStart, colStart)}:${getWellIdFromCoords(rowEnd, colEnd)}`);
-      }
+    const patternReplicates = wells.length / ((concentrations.length * concentrations.length) * pattern.replicates)
+    const blocks: string[] = []
+    for (let i = 0; i < patternReplicates; i++) {
+      const startIndex = i * ((concentrations.length * concentrations.length) * pattern.replicates);
+      const endIndex = startIndex + ((concentrations.length * concentrations.length) * pattern.replicates);
+      blocks.push(formatWellBlock(wells.slice(startIndex,endIndex)))
     }
     return blocks;
   }

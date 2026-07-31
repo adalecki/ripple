@@ -144,10 +144,14 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
           setPatterns(patterns.map(p => p.id === newPattern.id ? newPattern : p));
           return;
         }
-        const patternSize = newPattern.replicates * newPattern.concentrations.length;
+        const isMatrix = isCombinationType(newPattern.type) && newPattern.direction.length === 2;
+        const patternSize = isMatrix
+          ? newPattern.replicates * newPattern.concentrations.length * newPattern.concentrations.length
+          : newPattern.replicates * newPattern.concentrations.length;
         //shouldn't be possible, but as a fallback
         if (selectedWellIds.length % patternSize !== 0) {
-          alert(`The number of selected wells must be a multiple of ${patternSize} (replicates * concentrations).`);
+          const formula = isMatrix ? 'replicates * concentrations^2' : 'replicates * concentrations';
+          alert(`The number of selected wells must be a multiple of ${patternSize} (${formula}).`);
           return;
         }
         const blocks = splitIntoBlocks(selectedWellIds, newPattern, designDstPlates[0]);
