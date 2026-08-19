@@ -365,6 +365,14 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
   if (pattern.type === 'Unused') {
     return [formatWellBlock(wells)];
   }
+
+  if (pattern.type == 'Recipe') {
+    const blocks: string[] = [];
+    for (let i = 0; i + pattern.replicates <= wells.length; i += pattern.replicates) {
+      blocks.push(formatWellBlock(wells.slice(i, i + pattern.replicates)));
+    }
+    return blocks;
+  }
   const concentrations = pattern.concentrations.filter(c => c != null)
 
   if (isCombinationType(pattern.type) && pattern.direction.length === 2) {

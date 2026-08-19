@@ -40,7 +40,8 @@ export interface FittedPoint {
 
 export interface ShortContents {
   compoundId: string;
-  concentration: number;
+  concentration: number | null;
+  volume: number;
 }
 
 export interface SinglePoint {
@@ -69,7 +70,7 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
     if (controlMap.has(well.id)) {
       const controlType = controlMap.get(well.id)! as SinglePoint['controlType']
       const contents = well.getContents().filter(content => content.compoundId != undefined);
-      const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration }))
+      const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration, volume: c.volume }))
       sPData.push({
         controlType: controlType,
         contents: shortContents,
@@ -87,8 +88,9 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
       }
       const contents = well.getContents()
       //for potential DRs only can worry about first concentration
+      const dosedContent = contents.find(c => c.concentration !== null)!
       treatmentGroups.get(treatmentKey)!.push({
-        concentration: contents[0].concentration,
+        concentration: dosedContent.concentration!,
         responseValue,
         wellId: well.id
       })
@@ -113,7 +115,7 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
       for (const point of points) {
         const well = plate.getWell(point.wellId)!
         const contents = well.getContents().filter(content => content.compoundId != undefined);
-        const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration }))
+        const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration, volume: c.volume }))
         sPData.push({
           controlType: 'None',
           contents: shortContents,
@@ -174,7 +176,7 @@ export function yAxisDomainsMultiPlate(
 
 export function getTreatmentKey(well: Well): string {
   const compoundIds = well.getContents()
-    .filter(content => !isNaN(content.concentration) && content.compoundId !== null && content.compoundId !== undefined)
+    .filter(content => content.concentration !== null && !isNaN(content.concentration) && content.compoundId !== null && content.compoundId !== undefined)
     .map(content => content.compoundId as string)
     .sort();
 
@@ -257,7 +259,7 @@ export function hasCompounds(plate: Plate): boolean {
   for (const well of plate) {
     if (!well) continue
     const contents = well.getContents();
-    if (contents.some(content => content.compoundId && content.concentration > 0)) {
+    if (contents.some(content => content.compoundId && (content.concentration === null ? content.volume > 0 : content.concentration > 0))) {
       return true;
     }
   }

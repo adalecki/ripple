@@ -1,6 +1,7 @@
-interface WellContent {
+export interface WellContent {
   compoundId?: string;
-  concentration: number;
+  concentration: number | null;
+  volume: number;
   patternName: string;
 }
 
@@ -52,15 +53,16 @@ export class Well {
     this.isUnused = false;
   }
 
-  addContent(newContent: WellContent, volumeToAdd: number, solventInfo: { name: string, fraction: number }): void {
+  addContent(newContent: WellContent, solventInfo: { name: string, fraction: number }): void {
     if (this.isUnused) {
       console.warn(`Attempting to add content to unused well ${this.id}`);
       return;
     }
-    const newTotalVolume = this.totalVolume + volumeToAdd;
-    const solventVolume = volumeToAdd * solventInfo.fraction;
+    const newTotalVolume = this.totalVolume + newContent.volume;
+    const solventVolume = newContent.volume * solventInfo.fraction;
+
     this.contents = this.contents.map(content => {
-      if (content.compoundId !== newContent.compoundId) {
+      if (content.compoundId !== newContent.compoundId && content.concentration !== null) {
         return {
           ...content,
           concentration: (content.concentration * this.totalVolume) / newTotalVolume
@@ -73,16 +75,19 @@ export class Well {
     if (existingContentIndex !== -1) {
       const existingContent = this.contents[existingContentIndex];
       const updatedConcentration =
-        ((existingContent.concentration * this.totalVolume) + (newContent.concentration * volumeToAdd)) / newTotalVolume;
+        (existingContent.concentration === null || newContent.concentration === null)
+          ? null
+          : ((existingContent.concentration * this.totalVolume) + (newContent.concentration * newContent.volume)) / newTotalVolume;
       this.contents[existingContentIndex] = {
         ...existingContent,
         concentration: updatedConcentration,
+        volume: existingContent.volume + newContent.volume,
         patternName: newContent.patternName
       };
     } else {
       this.contents.push({
         ...newContent,
-        concentration: (newContent.concentration * volumeToAdd) / newTotalVolume
+        concentration: newContent.concentration === null ? null : (newContent.concentration * newContent.volume) / newTotalVolume
       });
     }
     this.updateSolvent({name: solventInfo.name, volume: solventVolume})
@@ -100,11 +105,20 @@ export class Well {
   }
   
   //crude update of overall volume, used for echo survey
-  //only for updating solvents and totalVolume, doesn't touch contents
+  //only for updating solvents, content volumes and totalVolume, doesn't touch concentrations
   updateVolume(volume: number): void {
+    if (this.totalVolume === 0) {
+      this.totalVolume = volume;
+      return;
+    }
     const solventCorrectionFactor = volume/this.getTotalVolume()
     for (const solvent of this.getSolvents()) {
       solvent.volume = (solvent.volume * solventCorrectionFactor)
+    }
+    for (const content of this.contents) {
+      if (content.compoundId) {
+        content.volume = content.volume * solventCorrectionFactor
+      }
     }
     this.totalVolume = volume;
   }
@@ -117,7 +131,7 @@ export class Well {
     const newTotalVolume = this.totalVolume + newSolvent.volume;
     this.contents = this.contents.map(content => ({
       ...content,
-      concentration: (content.concentration * this.totalVolume) / newTotalVolume
+      concentration: content.concentration === null ? null : (content.concentration * this.totalVolume) / newTotalVolume
     }));
     this.updateSolvent(newSolvent)
     this.totalVolume = newTotalVolume;
@@ -140,6 +154,11 @@ export class Well {
       ...solvent,
       volume: solvent.volume * (1 - removalFraction)
     })).filter(solvent => solvent.volume > 0);
+    this.contents = this.contents.map(content => (
+      content.compoundId
+        ? { ...content, volume: content.volume * (1 - removalFraction) }
+        : content
+    ));
     this.totalVolume -= volumeToRemove;
   }
 
@@ -153,14 +172,14 @@ export class Well {
     return [...new Set(this.contents.map(content => content.patternName))]
   }
 
-  applyPattern(patternName: string, concentration: number): void {
+  applyPattern(patternName: string, concentration: number | null): void {
     if (this.isUnused) {
       console.warn(`Attempting to apply pattern to unused well ${this.id}`);
       return;
     }
     const content = this.contents.find(c => c.patternName == patternName)
     if (!content) {
-      this.contents.push({concentration: concentration, patternName: patternName})
+      this.contents.push({concentration: concentration, volume: 0, patternName: patternName})
     }
   }
 
@@ -171,7 +190,18 @@ export class Well {
     }
     this.contents = this.contents.filter(c => c.patternName !== patternName);
     for (const concentration of concentrations) {
-      this.contents.push({ concentration, patternName });
+      this.contents.push({ concentration, volume: 0, patternName });
+    }
+  }
+
+  applyPatternVolumes(patternName: string, volumes: number[]): void {
+    if (this.isUnused) {
+      console.warn(`Attempting to apply pattern to unused well ${this.id}`);
+      return;
+    }
+    this.contents = this.contents.filter(c => c.patternName !== patternName);
+    for (const volume of volumes) {
+      this.contents.push({ concentration: null, volume, patternName });
     }
   }
 
@@ -181,8 +211,7 @@ export class Well {
 
   getConcentrationFromCompound(compoundName: string): number {
     const content = this.contents.find(c => c.compoundId === compoundName);
-    return content ? content?.concentration : 0
-
+    return content?.concentration ?? 0
   }
 
   getSolventVolume(solventName: string): number {
@@ -243,7 +272,11 @@ export class Well {
     return new Well({
       id: json.id,
       parentBarcode: json.parentBarcode,
-      contents: json.contents,
+      contents: (json.contents ?? []).map((c: any) => ({
+        ...c,
+        concentration: c.concentration ?? null,
+        volume: c.volume ?? 0
+      })),
       solvents: json.solvents,
       totalVolume: json.totalVolume,
       isUnused: json.isUnused,

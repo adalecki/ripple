@@ -12,6 +12,7 @@ import MapperParser from "./pages/MapperParser/MapperParser";
 import './css/router.css'
 import PlateReformat from "./pages/PlateReformat/PlateReformat";
 import PlateDesigner from "./pages/PlateDesigner/PlateDesigner";
+import Combinator from "./pages/Combinator/Combinator";
 
 const Layout = () => (
   <PreferencesProvider>
@@ -31,6 +32,7 @@ const router = createHashRouter(
       <Route path="dilutiondesigner" element={<DilutionDesigner />} />
       <Route path="mapperparser" element={<MapperParser />} />
       <Route path="platereformat" element={<PlateReformat />} />
+      <Route path="combinator" element={<Combinator />} />
       <Route path="*" element={<NoPage />} />
     </Route>
   )

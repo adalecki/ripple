@@ -53,7 +53,7 @@ function renderWellContent(well: Well, showPatternName: boolean) {
             <div key={index} className="content-item">
               {content.compoundId && <span>{content.compoundId}</span>}
               {showPatternName && content.patternName && <span>{content.patternName}</span>}
-              <span>{content.concentration.toFixed(5)} µM</span>
+              <span>{content.concentration !== null ? `${content.concentration.toFixed(5)} µM` : `${content.volume.toFixed(1)} nL`}</span>
             </div>
           ))}
         </div>

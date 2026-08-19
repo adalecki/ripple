@@ -26,6 +26,7 @@ function Navigation() {
                 <LinkContainer to="echotsfr"><NavDropdown.Item>Echo Calculator</NavDropdown.Item></LinkContainer>
                 <LinkContainer to="platereformat"><NavDropdown.Item>Plate Reformat</NavDropdown.Item></LinkContainer>
                 <LinkContainer to="mapperparser"><NavDropdown.Item>Mapper/Parser</NavDropdown.Item></LinkContainer>
+                <LinkContainer to="combinator"><NavDropdown.Item>Combinator</NavDropdown.Item></LinkContainer>
               </NavDropdown>
             </Nav>
             <Nav>

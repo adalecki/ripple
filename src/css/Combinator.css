@@ -1,0 +1,50 @@
+.combinations-table-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.combinations-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.25rem;
+}
+
+.combinations-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--bs-body-bg);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.combinations-table td {
+  vertical-align: middle;
+}
+
+.combinations-table .slot-volume {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--bs-secondary-color);
+}
+
+.substitution-content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.25rem;
+  max-height: 6rem;
+  overflow-y: auto;
+}
+
+.substitution-content-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  margin-bottom: 0;
+}

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import { Calculator, ChartColumnIncreasing, MapIcon, LayoutTemplate, Palette } from 'lucide-react';
+import { Calculator, ChartColumnIncreasing, MapIcon, LayoutTemplate, Palette, Merge } from 'lucide-react';
 import '../css/Home.css'
 
 const Home = () => {
@@ -45,7 +45,7 @@ const Home = () => {
                 <Calculator size={48} className="mb-3 tool-icon text-muted" />
                 <Card.Title className="mb-3">Echo Transfer Calculator</Card.Title>
                 <Card.Text className="text-muted">
-                  Calculate and liquid transfers for your Echo acoustic liquid handler using a template source file.
+                  Calculate liquid transfers by declaring desired concentrations, not volumes, using a template source file.
                 </Card.Text>
               </Card.Body>
             </Card>
@@ -56,8 +56,7 @@ const Home = () => {
                 <LayoutTemplate size={48} className="mb-3 tool-icon text-muted" />
                 <Card.Title className="mb-3">Plate Reformat</Card.Title>
                 <Card.Text className="text-muted">
-                  Bulk transfer between plates.
-                  Include plate barcodes to generate automation-ready transfer lists.
+                  Bulk transfer between plates. Include plate barcodes to generate automation-ready transfer lists.
                 </Card.Text>
               </Card.Body>
             </Card>
@@ -70,6 +69,19 @@ const Home = () => {
                 <Card.Text className="text-muted">
                   Map plates from Echo transfer logs, showing only what actually transfered.
                   Then, upload raw data files to parse and analyze your results.
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Link>
+          <Link to="/combinator" className="tool-link">
+            <Card className="h-100 shadow-sm tool-card">
+              <Card.Body className="d-flex flex-column align-items-center text-center p-4">
+                <Merge size={48} className="mb-3 tool-icon text-muted" />
+                <Card.Title className="mb-3">Combinator</Card.Title>
+                <Card.Text className="text-muted">
+                  Build plates from explicit combinations of components, dispensed by volume
+                  rather than by concentration. Declare a recipe, assign inventory to its slots,
+                  and export the transfer list.
                 </Card.Text>
               </Card.Body>
             </Card>

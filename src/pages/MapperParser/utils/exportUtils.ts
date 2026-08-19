@@ -56,7 +56,7 @@ function generateDestinationPlatesCSV(
       for (let i = 0; i < maxContents; i++) {
         if (i < contents.length) {
           row.push(contents[i].compoundId || '');
-          row.push(contents[i].concentration.toFixed(6));
+          row.push(contents[i].concentration?.toFixed(6) ?? '');
         } else {
           row.push('');
           row.push('');

@@ -1,5 +1,6 @@
 import { PlateSize, Plate } from '../../../classes/PlateClass';
 import { ControlDefinition, ControlType, Protocol } from '../../../types/mapperTypes';
+import { generateId } from '../../../utils/designUtils';
 import { getWellIdsFromRange } from '../../../utils/plateUtils';
 
 const STORAGE_KEY = 'ripple-protocols';
@@ -102,11 +103,12 @@ export function saveProtocols(protocols: Protocol[]): void {
 }
 
 export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
-  const existingIds = existingProtocols.map(p => p.id)
-  let newId = Date.now()
-  while (existingIds.includes(newId)) {
-    newId += 1
-  }
+  //const existingIds = existingProtocols.map(p => p.id)
+  //let newId = Date.now()
+  //while (existingIds.includes(newId)) {
+  //  newId += 1
+  //}
+  const newId = generateId(existingProtocols)
   return {
     id: newId,
     name: `New Protocol ${existingProtocols.length + 1}`,

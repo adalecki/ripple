@@ -480,9 +480,9 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
               {
                 compoundId: compoundId,
                 concentration: location.concentration,
+                volume: location.volume,
                 patternName: patternNameCombined
               },
-              location.volume,
               { name: 'DMSO', fraction: 1 }
             );
           }
@@ -531,16 +531,16 @@ export function executeAndRecordTransfer(transferStep: TransferStepExport, trans
         const wellContents = srcWell.getContents() //for cases when there are multiple contents in one source well
         if (wellContents.length > 0) {
           for (const content of wellContents) { //perform one 'transfer' for each content, at volume/n_contents
-            const newConc = content.concentration * wellContents.length
+            const newConc = content.concentration === null ? null : content.concentration * wellContents.length
             const newVol = transferStep.volume / wellContents.length
 
             destWell.addContent(
               {
                 compoundId: content.compoundId,
                 concentration: newConc,
+                volume: newVol,
                 patternName: content.patternName
               },
-              newVol,
               { name: 'DMSO', fraction: 1 }
             );
             srcWell.removeVolume(newVol);
