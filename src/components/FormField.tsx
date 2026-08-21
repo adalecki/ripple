@@ -128,7 +128,6 @@ export const FormField: React.FC<FormFieldProps> =
 
         case 'switch':
           return (
-            <div className="switch-container">
               <div className="form-check form-switch">
                 <input
                   type="checkbox"
@@ -144,7 +143,6 @@ export const FormField: React.FC<FormFieldProps> =
                 </label>
                 {tooltip && <InfoTooltip text={tooltip} />}
               </div>
-            </div>
           );
 
         default:

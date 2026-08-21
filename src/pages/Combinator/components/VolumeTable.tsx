@@ -23,6 +23,7 @@ const VolumeTable: React.FC<VolumeTableProps> = ({
   }));
 
   const handleValuesChange = (newValues: TableValue[]) => {
+    console.log(newValues)
     onChange(newValues.map(v => v.value));
   };
 

@@ -11,13 +11,11 @@ import { TransferStepExport } from '../../../utils/plateUtils';
 import { Combination } from '../types/combinatorTypes';
 import {
   InputDataType,
-  TransferStep,
   buildInputData,
   exportCombinatorWorkbook,
   inventoryContents,
   recipeSlotCount
 } from '../utils/combinatorUtils';
-import { ValidationPreferences } from '../utils/validationUtils';
 import FileResultsCard from './FileResultsCard';
 
 interface CombinatorBuildProps {
@@ -29,9 +27,9 @@ interface CombinatorBuildProps {
   dstPlateSize: PlateSize;
   dropletSize: number;
   errors: string[];
-  transferSteps: TransferStep[];
-  onBuild: (inputData: InputDataType, validationPreferences: ValidationPreferences) => void;
-  onImportFile: (files: File[], validationPreferences: ValidationPreferences) => void;
+  transferSteps: TransferStepExport[];
+  onBuild: (inputData: InputDataType, srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number) => void;
+  onImportFile: (files: File[], srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number) => void;
   onClear: () => void;
   showInstructions: () => void;
 }
@@ -53,12 +51,6 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
 }) => {
   const inputData = buildInputData(recipes, srcPlates, combinations);
 
-  const validationPreferences: ValidationPreferences = {
-    dropletSize,
-    sourcePlateSize: srcPlateSize,
-    destinationPlateSize: dstPlateSize
-  };
-
   function getBuildDisabledReasons(): string[] {
     const reasons: string[] = [];
     if (!recipes.some(r => r.locations.length > 0)) reasons.push('No recipe has been applied to the plate');
@@ -67,10 +59,6 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
     if (combinations.length === 0) reasons.push('No combinations have been added');
     return reasons;
   }
-
-  const handleExportWorkbook = () => {
-    exportCombinatorWorkbook(inputData);
-  };
 
   const colorMap = inputData
     ? generateEntityColors([...new Set(inputData.SourceLayout.map(row => row.Content))], 0.5)
@@ -95,7 +83,7 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
           </small>
 
           <FileUploadCard
-            onFilesSelected={files => onImportFile(files, validationPreferences)}
+            onFilesSelected={files => onImportFile(files, srcPlateSize, dstPlateSize, dropletSize)}
             multiple={false}
             acceptedTypes=".xlsx"
             title="Import Workbook"
@@ -107,8 +95,7 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
             errors={errors}
             transferSteps={transferSteps}
             buildDisabledReasons={getBuildDisabledReasons()}
-            onBuild={() => inputData && onBuild(inputData, validationPreferences)}
-            onExportWorkbook={handleExportWorkbook}
+            onBuild={() => inputData && onBuild(inputData, srcPlateSize, dstPlateSize, dropletSize)}
             onClear={onClear}
           />
         </Col>
@@ -122,7 +109,7 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
                 <TransferListDownload transferMap={transferMap} splitOutputCSVs={false} />
               </div>
               <div className="flex-fill">
-                <Button variant="success" className="w-100" onClick={handleExportWorkbook}>
+                <Button variant="success" className="w-100" onClick={() => exportCombinatorWorkbook(inputData)}>
                   Export Workbook
                 </Button>
               </div>

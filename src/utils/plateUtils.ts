@@ -7,6 +7,7 @@ export type Direction = 'LR' | 'RL' | 'TB' | 'BT';
 
 export interface TransferStepExport {
   sourceBarcode: string;
+  sourcePlateType?: string;
   sourceWellId: string;
   destinationBarcode: string;
   destinationWellId: string;

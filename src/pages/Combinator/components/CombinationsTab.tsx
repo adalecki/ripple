@@ -4,8 +4,8 @@ import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 import { Plate } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import ApplyTooltip from '../../../components/ApplyTooltip';
-import { Combination, nextCombinationId } from '../types/combinatorTypes';
-import { inventoryContents, recipeSlotCount } from '../utils/combinatorUtils';
+import { Combination } from '../types/combinatorTypes';
+import { inventoryContents, nextCombinationId, recipeSlotCount } from '../utils/combinatorUtils';
 import CombinationsTable from './CombinationsTable';
 
 import '../../../css/Combinator.css';
@@ -80,7 +80,7 @@ const CombinationsTab: React.FC<CombinationsTabProps> = ({
     <Container fluid className="h-100 pb-2 d-flex flex-column" style={{ minHeight: 0 }}>
       <Row className="flex-shrink-0">
         <Col md={12}>
-          <Card className="page-card mb-2">
+          <Card className="page-card">
             <Card.Header>Substitution Generator</Card.Header>
             <Card.Body>
               <Row className="g-2 align-items-start">

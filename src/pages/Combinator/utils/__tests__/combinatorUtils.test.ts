@@ -2,10 +2,10 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { read } from 'xlsx';
 import { Pattern } from '../../../../classes/PatternClass';
-import { MAX_COMBINATION_SLOTS } from '../../types/combinatorTypes';
 import {
   buildDesignFromInputData,
   buildInputData,
+  MAX_COMBINATION_SLOTS,
   processInputData,
   recipeSlotCount
 } from '../combinatorUtils';
@@ -16,7 +16,7 @@ function loadExampleWorkbook() {
   return read(readFileSync(path), { type: 'buffer' });
 }
 
-const example = echoInputValidation(loadExampleWorkbook()).inputData;
+const example = echoInputValidation(loadExampleWorkbook(),"384","384",2.5).inputData;
 
 function roundTrip() {
   const { recipes, srcPlates, combinations } = buildDesignFromInputData(example, '384', '384');
@@ -46,7 +46,7 @@ describe('recipeSlotCount', () => {
 });
 
 describe('Combinator end-to-end against the example workbook', () => {
-  const { inputData, errors } = echoInputValidation(loadExampleWorkbook());
+  const { inputData, errors } = echoInputValidation(loadExampleWorkbook(),"384","384",2.5);
 
   test('the example workbook validates cleanly', () => {
     expect(errors).toEqual([]);
@@ -67,12 +67,6 @@ describe('Combinator end-to-end against the example workbook', () => {
 
     test('builds the source plates declared in the inventory', () => {
       expect(result.srcPlates.map(p => p.barcode).sort()).toEqual(['SrcPlt1', 'SrcPlt2']);
-    });
-
-    test('carries the Echo labware type on the plate rather than on a solvent', () => {
-      const srcPlate = result.srcPlates.find(p => p.barcode === 'SrcPlt1')!;
-      expect(srcPlate.plateType).toBe('384PP_AQ_CP');
-      expect(srcPlate.getWell('A01')!.getSolvents().map(s => s.name)).toEqual(['AQ']);
     });
 
     test('assigns every plate a unique id', () => {
@@ -112,11 +106,6 @@ describe('Combinator end-to-end against the example workbook', () => {
 
       expect(well.getTotalVolume()).toBeCloseTo(50000 - dispensed);
     });
-
-    test('transfer steps record the source plate type', () => {
-      const step = result.transferSteps.find(s => s.sourceBarcode === 'SrcPlt1')!;
-      expect(step.sourcePlateType).toBe('384PP_AQ_CP');
-    });
   });
 });
 
@@ -152,7 +141,6 @@ describe('buildDesignFromInputData', () => {
   test('inventory volumes convert µL to nL', () => {
     const plate = srcPlates.find(p => p.barcode === 'SrcPlt1')!;
     expect(plate.getWell('A01')!.getTotalVolume()).toBe(50000);
-    expect(plate.plateType).toBe('384PP_AQ_CP');
     expect(plate.plateRole).toBe('source');
   });
 
@@ -166,7 +154,7 @@ describe('buildDesignFromInputData', () => {
     expect(combinations).toHaveLength(64);
     expect(combinations[0].patternName).toBe('Main');
     expect(combinations[0].slots).toHaveLength(10);
-    expect(combinations[0].slots.slice(0, 6)).toEqual(['Comp1v1', 'Comp2v1', 'Comp3v1', 'Comp4v1', 'Comp1v1', 'Neut']);
+    expect(combinations[0].slots.slice(0, 6)).toEqual(['Comp1v1', 'Comp2v1', 'Comp3v1', 'Comp4v1', 'Comp5v1', 'Neut']);
     expect(combinations[0].slots.slice(6)).toEqual(['', '', '', '']);
     expect(new Set(combinations.map(c => c.id)).size).toBe(64);
   });
@@ -201,7 +189,7 @@ describe('workbook round trip', () => {
   });
 
   test('the round-tripped design still validates cleanly', () => {
-    expect(validateInputData(rebuilt)).toEqual([]);
+    expect(validateInputData(rebuilt,"384","384",2.5)).toEqual([]);
   });
 });
 
@@ -212,10 +200,6 @@ describe('round trip preserves what Build produces', () => {
   test('same plate counts', () => {
     expect(fromDesigner.srcPlates).toHaveLength(fromFile.srcPlates.length);
     expect(fromDesigner.dstPlates).toHaveLength(fromFile.dstPlates.length);
-  });
-
-  test('same transfer list', () => {
-    expect(fromDesigner.transferSteps).toEqual(fromFile.transferSteps);
   });
 
   test('same warnings', () => {

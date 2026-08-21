@@ -80,8 +80,7 @@ const Home = () => {
                 <Card.Title className="mb-3">Combinator</Card.Title>
                 <Card.Text className="text-muted">
                   Build plates from explicit combinations of components, dispensed by volume
-                  rather than by concentration. Declare a recipe, assign inventory to its slots,
-                  and export the transfer list.
+                  rather than by concentration.
                 </Card.Text>
               </Card.Body>
             </Card>

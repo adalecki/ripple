@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Alert, Badge, Button, Card, Table } from 'react-bootstrap';
-import type { InputDataType, TransferStep } from '../utils/combinatorUtils';
+import type { InputDataType } from '../utils/combinatorUtils';
 import ApplyTooltip from '../../../components/ApplyTooltip';
+import { TransferStepExport } from '../../../utils/plateUtils';
 
 interface FileResultsCardProps {
   inputData: InputDataType | null;
   errors?: string[];
-  transferSteps: TransferStep[];
+  transferSteps: TransferStepExport[];
   buildDisabledReasons: string[];
   onBuild: () => void;
-  onExportWorkbook: () => void;
   onClear: () => void;
 }
 
@@ -19,7 +19,6 @@ const FileResultsCard: React.FC<FileResultsCardProps> = ({
   transferSteps,
   buildDisabledReasons,
   onBuild,
-  onExportWorkbook,
   onClear
 }) => {
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
@@ -98,9 +97,6 @@ const FileResultsCard: React.FC<FileResultsCardProps> = ({
           <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
             <Button onClick={onBuild} disabled={!canBuild}>Build Plates</Button>
           </div>
-          <Button onClick={onExportWorkbook} variant="outline-success" disabled={!inputData}>
-            Export Workbook
-          </Button>
           <Button onClick={onClear} variant="outline-secondary">Clear</Button>
         </div>
       </Card.Body>

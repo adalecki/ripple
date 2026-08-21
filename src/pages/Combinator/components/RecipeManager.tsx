@@ -6,9 +6,9 @@ import { HslStringType, Pattern } from '../../../classes/PatternClass';
 import { FormField } from '../../../components/FormField';
 import ApplyTooltip from '../../../components/ApplyTooltip';
 import { currentItem } from '../../../utils/designUtils';
-import { MAX_COMBINATION_SLOTS } from '../types/combinatorTypes';
 import { isDropletMultiple } from '../utils/validationUtils';
 import VolumeTable from './VolumeTable';
+import { MAX_COMBINATION_SLOTS } from '../utils/combinatorUtils';
 
 interface RecipeManagerProps {
   recipes: Pattern[];

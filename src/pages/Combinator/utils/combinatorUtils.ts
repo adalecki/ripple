@@ -1,8 +1,8 @@
 import { utils, writeFile } from 'xlsx';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
-import { formatWellBlock, getWellFromBarcodeAndId, getWellIdsFromRange } from '../../../utils/plateUtils';
-import { Combination, MAX_COMBINATION_SLOTS, emptySlots, nextCombinationId } from '../types/combinatorTypes';
+import { formatWellBlock, getWellFromBarcodeAndId, getWellIdsFromRange, TransferStepExport } from '../../../utils/plateUtils';
+import { Combination } from '../types/combinatorTypes';
 
 export type InputDataType = {
   'Patterns': {
@@ -42,31 +42,46 @@ export type InputDataType = {
   }[]
 }
 
+export const MAX_COMBINATION_SLOTS = 10;
+
 export const COMBINATOR_HEADERS: { [key: string]: string[] } = {
   Patterns: ['Name', 'Replicates', 'Well Block', ...Array.from({ length: MAX_COMBINATION_SLOTS }, (_, i) => `CompVol${i + 1}`)],
   SourceLayout: ['Source Barcode', 'Well ID', 'Content', 'Volume (µL)', 'Plate Type'],
   Combinations: ['Pattern', ...Array.from({ length: MAX_COMBINATION_SLOTS }, (_, i) => `Comp${i + 1}`)]
 }
 
-export interface TransferStep {
-  sourceBarcode: string;
-  sourcePlateType: string;
-  sourceWellId: string;
-  destinationBarcode: string;
-  destinationWellId: string;
-  volume: number;
-}
+export const PLATE_TYPE_OPTIONS = [
+  { value: '384PP_DMSO2', label: '384PP_DMSO2' },
+  { value: '384PP_AQ_GP3', label: '384PP_AQ_GP3' },
+  { value: '384PP_AQ_SP2', label: '384PP_AQ_SP2' },
+  { value: '384PP_AQ_CP', label: '384PP_AQ_CP' },
+  { value: '384LDV_DMSO', label: '384LDV_DMSO' },
+  { value: '384LDV_AQ_B2', label: '384LDV_AQ_B2' },
+  { value: '384LDV_AQ_P2', label: '384LDV_AQ_P2' },
+  { value: '1536LDV_DMSO', label: '1536LDV_DMSO' }
+];
 
 export interface ProcessResult {
   dstPlates: Plate[];
   srcPlates: Plate[];
-  transferSteps: TransferStep[];
+  transferSteps: TransferStepExport[];
   warnings: string[];
 }
 
 interface SourceWellLocation {
   barcode: string;
   wellId: string;
+}
+
+let combinationIdCounter = 0;
+
+export function nextCombinationId(): number {
+  combinationIdCounter += 1;
+  return combinationIdCounter;
+}
+
+export function emptySlots(): string[] {
+  return Array(MAX_COMBINATION_SLOTS).fill('');
 }
 
 export function recipeSlotCount(recipe: Pattern): number {
@@ -102,29 +117,30 @@ export function buildInputData(recipes: Pattern[], srcPlates: Plate[], combinati
   for (const plate of srcPlates) {
     //uuid delimiter so 'test1' + '10' can't collide with 'test11' + '1'
     const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02'
-    const inventory = new Map<string, { content: string; volume: number; wellIds: string[] }>();
+    const inventory = new Map<string, { content: string; volume: number; plateType: string; wellIds: string[] }>();
     const wells = Object.values(plate.getWells())
       .filter(well => well.getContents().length > 0)
       .sort((a, b) => a.id.localeCompare(b.id));
 
     for (const well of wells) {
       const content = well.getContents()[0];
+      const solventName = well.getSolvents().length > 0 ? well.getSolvents()[0].name : '';
       if (!content.compoundId) continue;
       const volume = well.getTotalVolume() / 1000;
-      const key = `${content.compoundId}${delimiter}${volume}`;
+      const key = `${content.compoundId}${delimiter}${volume}${delimiter}${solventName}`;
       if (!inventory.has(key)) {
-        inventory.set(key, { content: content.compoundId, volume, wellIds: [] });
+        inventory.set(key, { content: content.compoundId, volume, plateType: solventName, wellIds: [] });
       }
       inventory.get(key)!.wellIds.push(well.id);
     }
 
-    for (const { content, volume, wellIds } of inventory.values()) {
+    for (const { content, volume, plateType, wellIds } of inventory.values()) {
       SourceLayout.push({
         'Source Barcode': plate.barcode,
         'Well ID': formatWellBlock(wellIds),
         Content: content,
         'Volume (µL)': volume,
-        'Plate Type': plate.plateType ?? ''
+        'Plate Type': plateType
       });
     }
   }
@@ -183,12 +199,11 @@ export function buildDesignFromInputData(
         id: srcPlates.length + 1,
         barcode: row['Source Barcode'],
         plateSize: srcPlateSize,
-        plateRole: 'source',
-        plateType: row['Plate Type']
+        plateRole: 'source'
       });
       srcPlates.push(plate);
     }
-    const solventName = plate.plateType?.includes('AQ') ? 'AQ' : 'DMSO';
+    const solventName = row['Plate Type'];
     for (const well of plate.getSomeWells(row['Well ID'])) {
       well.addContent({ 
           compoundId: row.Content, 
@@ -233,7 +248,7 @@ export function exportCombinatorWorkbook(inputData: InputDataType | null, filena
 
 export function processInputData(inputData: InputDataType, plateSize: PlateSize): ProcessResult {
   const warnings: string[] = [];
-  const transferSteps: TransferStep[] = [];
+  const transferSteps: TransferStepExport[] = [];
 
   const srcPlates: Plate[] = [];
   const dstPlates: Plate[] = [];
@@ -245,7 +260,7 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
     const barcode = row['Source Barcode'];
     let srcPlate = srcPlates.find(p => p.barcode === barcode);
     if (!srcPlate) {
-      srcPlate = new Plate({ id: srcPlates.length + 1, barcode, plateSize, plateRole: 'source', plateType: row['Plate Type'] });
+      srcPlate = new Plate({ id: srcPlates.length + 1, barcode, plateSize, plateRole: 'source'});
       srcPlates.push(srcPlate);
     }
 
@@ -256,7 +271,7 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
     }
     const srcWellLocs = srcPlateInventory.get(row['Content'])!
 
-    const solventName = srcPlate.plateType?.includes('AQ') ? 'AQ' : 'DMSO';
+    const solventName = row['Plate Type'];
     for (const well of wells) {
       const srcWell = srcPlate.getWell(well.id);
       if (!srcWell) continue
@@ -340,24 +355,23 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
         }
         const srcWell = getWellFromBarcodeAndId(srcLoc.barcode, srcLoc.wellId, srcPlates)
         if (!srcWell) continue
-        const srcPlate = srcPlates.find(p => p.barcode === srcLoc.barcode)
-
         if (srcWell.getTotalVolume() < volume) {
           warnings.push(`Transfer of ${volume} nL of "${contentName}" from ${srcLoc.barcode} ${srcLoc.wellId} failed`);
           continue;
         }
+        const solventName = srcWell.getSolvents()[0].name ?? 'ERROR'
         dstWell.addContent({ 
           compoundId: contentName, 
           concentration: null, 
           volume: volume,
           patternName: patternName 
         },
-          { name: 'AQ', fraction: 1 }
+          { name: solventName, fraction: 1 }
         );
         srcWell.removeVolume(volume);
         transferSteps.push({
           sourceBarcode: srcLoc.barcode,
-          sourcePlateType: srcPlate?.plateType ?? '',
+          sourcePlateType: solventName,
           sourceWellId: srcLoc.wellId,
           destinationBarcode: dstPlate.barcode,
           destinationWellId: dstWell.id,

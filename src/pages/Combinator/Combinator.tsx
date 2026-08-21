@@ -6,18 +6,17 @@ import { Plate, PlateSize } from '../../classes/PlateClass';
 import { Pattern } from '../../classes/PatternClass';
 import Sidebar from '../../components/Sidebar';
 import { usePreferences } from '../../hooks/usePreferences';
-import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils';
+import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, TransferStepExport } from '../../utils/plateUtils';
 import { labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils';
 
 import { Combination } from './types/combinatorTypes';
 import {
   InputDataType,
-  TransferStep,
   buildDesignFromInputData,
   processInputData,
   recipeSlotCount
 } from './utils/combinatorUtils';
-import { ValidationPreferences, echoInputValidation, validateInputData } from './utils/validationUtils';
+import { echoInputValidation, validateInputData } from './utils/validationUtils';
 import CombinatorBuild from './components/CombinatorBuild';
 import CombinationsTab from './components/CombinationsTab';
 import InventoryWizard from './components/InventoryWizard';
@@ -37,14 +36,14 @@ function Combinator() {
   const [recipeState, setRecipeState] = useState({ isEditing: false, isNewRecipe: false, isPickingColor: false });
   const [previewPlate, setPreviewPlate] = useState<Plate>(() => new Plate({ barcode: 'PREVIEW', plateSize: dstPlateSize }));
 
-  const [srcPlates, setSrcPlates] = useState<Plate[]>(() => [new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source', plateType: '384PP_DMSO2' })]);
+  const [srcPlates, setSrcPlates] = useState<Plate[]>(() => [new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source' })]);
   const [curSrcPlateId, setCurSrcPlateId] = useState<number | null>(srcPlates[0] ? srcPlates[0].id : null);
 
   const [combinations, setCombinations] = useState<Combination[]>([]);
 
   const [builtPlates, setBuiltPlates] = useState<Plate[]>([]);
   const [curBuiltPlateId, setCurBuiltPlateId] = useState<number | null>(null);
-  const [transferSteps, setTransferSteps] = useState<TransferStep[]>([]);
+  const [transferSteps, setTransferSteps] = useState<TransferStepExport[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([]);
@@ -273,7 +272,6 @@ function Combinator() {
       barcode: `SRC${iter.toString().padStart(3, '0')}`,
       plateSize: srcPlateSize,
       plateRole: 'source',
-      plateType: '384PP_DMSO2'
     });
     setSrcPlates([...srcPlates, newPlate]);
     setCurSrcPlateId(newPlate.id);
@@ -282,7 +280,7 @@ function Combinator() {
   const handleDeletePlate = (plateId: number) => {
     const remaining = srcPlates.filter(p => p.id !== plateId);
     if (remaining.length === 0) {
-      const newPlate = new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source', plateType: '384PP_DMSO2' });
+      const newPlate = new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source' });
       setSrcPlates([newPlate]);
       setCurSrcPlateId(newPlate.id);
       return;
@@ -291,8 +289,8 @@ function Combinator() {
     if (curSrcPlateId === plateId) setCurSrcPlateId(null);
   };
 
-  const handleBuild = (inputData: InputDataType, validationPreferences: ValidationPreferences) => {
-    const validationErrors = validateInputData(inputData, validationPreferences);
+  const handleBuild = (inputData: InputDataType, srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number) => {
+    const validationErrors = validateInputData(inputData, srcPlateSize, dstPlateSize, dropletSize);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       setBuiltPlates([]);
@@ -307,14 +305,15 @@ function Combinator() {
     setErrors(result.warnings);
   };
 
-  const handleImportFile = async (files: File[], validationPreferences: ValidationPreferences) => {
+  const handleImportFile = async (files: File[], srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number) => {
     const arrayBuffer = await files[0].arrayBuffer();
     const workbook = read(arrayBuffer, { type: 'array' });
-    const { inputData, errors: importErrors } = echoInputValidation(workbook, validationPreferences);
+    const { inputData, errors: importErrors } = echoInputValidation(workbook, srcPlateSize, dstPlateSize, dropletSize);
     setErrors(importErrors);
     if (importErrors.length > 0) return;
 
     const design = buildDesignFromInputData(inputData, dstPlateSize, srcPlateSize);
+    console.log(design)
     setRecipes(design.recipes);
     setPreviewPlate(design.previewPlate);
     setSrcPlates(design.srcPlates);
@@ -329,6 +328,10 @@ function Combinator() {
 
   const handleClear = () => {
     setBuiltPlates([]);
+    setRecipes([]);
+    setSrcPlates([new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source'})]);
+    setCombinations([]);
+    setPreviewPlate(new Plate({ barcode: 'PREVIEW', plateSize: dstPlateSize }))
     setCurBuiltPlateId(null);
     setTransferSteps([]);
     setErrors([]);

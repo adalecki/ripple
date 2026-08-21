@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormField } from '../../../components/FormField';
 import InfoTooltip from '../../../components/InfoTooltip';
 import { InventoryForm } from './InventoryWizard';
+import { PLATE_TYPE_OPTIONS } from '../utils/combinatorUtils';
 
 interface InventoryManagerProps {
   form: InventoryForm;
@@ -46,6 +47,17 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({
         min={0}
         required
       />
+      <FormField
+        id="plate-type"
+        name="plate-type"
+        type="select"
+        label="Plate Type"
+        value={form.plateType}
+        options={PLATE_TYPE_OPTIONS}
+        onChange={value => handleFieldChange('plateType', value)}
+        required
+        tooltip='The fluid class but listed as "Plate Type" in Echo software; can be set well-by-well.'
+      />
 
       <Accordion activeKey={activeAccordion} onSelect={k => setActiveAccordion(k as string | null)}>
         <Accordion.Item eventKey="basic">
@@ -66,7 +78,7 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({
         <Accordion.Item eventKey="advanced">
           <Accordion.Header onClick={e => (e.currentTarget as HTMLElement).blur()}>
             Advanced
-            <InfoTooltip text={<>Select wells on the plate, then press <kbd>Enter</kbd> to apply and advance to the next content.</>} />
+            <InfoTooltip text={<>Select wells on the plate, then press <kbd>Enter</kbd> to apply and advance to the next content. Can use arrow keys to navigate to different wells.</>} />
           </Accordion.Header>
           <Accordion.Body>
             <Form.Label>Content List</Form.Label>

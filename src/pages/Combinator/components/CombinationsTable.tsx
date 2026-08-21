@@ -3,8 +3,8 @@ import { Button, Table } from 'react-bootstrap';
 import { Copy, X } from 'lucide-react';
 
 import { Pattern } from '../../../classes/PatternClass';
-import { Combination, emptySlots, nextCombinationId } from '../types/combinatorTypes';
-import { recipeSlotCount } from '../utils/combinatorUtils';
+import { Combination } from '../types/combinatorTypes';
+import { emptySlots, nextCombinationId, recipeSlotCount } from '../utils/combinatorUtils';
 
 interface CombinationRowProps {
   combination: Combination;
@@ -144,6 +144,11 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
 
   return (
     <div className="combinations-table-panel">
+      <div className="p-1 flex-shrink-0">
+        <Button size="sm" variant="outline-primary" onClick={handleAddCombination}>
+          Add Combination
+        </Button>
+      </div>
       <div className="combinations-table-scroll">
         <Table size="sm" bordered hover className="combinations-table mb-0">
           <thead>
@@ -177,11 +182,6 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
         {combinations.length === 0 && (
           <p className="text-muted p-2 mb-0">No combinations yet. Add one below, or generate a substitution set.</p>
         )}
-      </div>
-      <div className="pt-2 flex-shrink-0">
-        <Button size="sm" variant="outline-primary" onClick={handleAddCombination}>
-          Add Combination
-        </Button>
       </div>
     </div>
   );

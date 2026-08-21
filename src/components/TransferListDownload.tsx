@@ -4,13 +4,15 @@ import { getCoordsFromWellId, TransferStepExport } from '../utils/plateUtils';
 
 const TransferListDownload = (settings: { transferMap: Map<number, TransferStepExport[]>, splitOutputCSVs: boolean }) => {
 
-  function rowColExport(step: TransferStepExport) {
+  function rowColExport(step: TransferStepExport, injectPlateType: boolean) {
     const sourceCoords = getCoordsFromWellId(step.sourceWellId)
     const destCoords = getCoordsFromWellId(step.destinationWellId)
+
     return {
       'Source Plate Barcode': step.sourceBarcode,
       'Source Row': (sourceCoords.row + 1),
       'Source Column': (sourceCoords.col + 1),
+      ...(injectPlateType && { 'Source Plate Type': step.sourcePlateType }),
       'Destination Plate Barcode': step.destinationBarcode,
       'Destination Row': (destCoords.row + 1),
       'Destination Column': (destCoords.col + 1),
@@ -46,7 +48,8 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
         }
 
         if (steps.length > 0) {
-          const rows = steps.map(step => rowColExport(step));
+          const hasPlateType = steps.some(s => s.sourcePlateType != undefined)
+          const rows = steps.map(step => rowColExport(step, hasPlateType));
           const csvContent = generateCSV(rows);
 
           let suffix = '';
@@ -87,7 +90,8 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
         allSteps = allSteps.concat(steps);
       }
 
-      const rows = allSteps.map(step => rowColExport(step));
+      const hasPlateType = allSteps.some(s => s.sourcePlateType != undefined)
+      const rows = allSteps.map(step => rowColExport(step, hasPlateType));
       const csvContent = generateCSV(rows);
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

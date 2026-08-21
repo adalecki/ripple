@@ -15,20 +15,10 @@ import '../../../css/DesignWizard.css';
 export interface InventoryForm {
   content: string;
   volume: number | '';
+  plateType: string;
   contentListText: string;
   currentIdx: number;
 }
-
-const PLATE_TYPE_OPTIONS = [
-  { value: '384PP_DMSO2', label: '384PP_DMSO2' },
-  { value: '384PP_AQ_GP3', label: '384PP_AQ_GP3' },
-  { value: '384PP_AQ_SP2', label: '384PP_AQ_SP2' },
-  { value: '384PP_AQ_CP', label: '384PP_AQ_CP' },
-  { value: '384LDV_DMSO', label: '384LDV_DMSO' },
-  { value: '384LDV_AQ_B2', label: '384LDV_AQ_B2' },
-  { value: '384LDV_AQ_P2', label: '384LDV_AQ_P2' },
-  { value: '1536LDV_DMSO', label: '1536LDV_DMSO' }
-];
 
 interface InventoryWizardProps {
   srcPlates: Plate[];
@@ -57,7 +47,7 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
   onDoubleClick,
   enterCallbackRef
 }) => {
-  const [form, setForm] = useState<InventoryForm>({ content: '', volume: '', contentListText: '', currentIdx: 0 });
+  const [form, setForm] = useState<InventoryForm>({ content: '', volume: '', plateType: '384PP_DMSO2', contentListText: '', currentIdx: 0 });
   const [activeAccordion, setActiveAccordion] = useState<string | null>('basic');
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
@@ -86,7 +76,7 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
     if (!plate || !canApply) return;
     const content = activeAccordion === 'advanced' ? currentContent! : form.content;
     const newPlate = plate.clone();
-    const solventName = newPlate.plateType?.includes('AQ') ? 'AQ' : 'DMSO';
+    //const solventName = newPlate.plateType?.includes('AQ') ? 'AQ' : 'DMSO';
     for (const wellId of selectedWellIds) {
       const well = newPlate.getWell(wellId);
       if (!well) continue;
@@ -97,7 +87,7 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
         volume: form.volume as number * 1000,
         patternName: content 
       },
-        { name: solventName, fraction: 1 }
+        { name: form.plateType, fraction: 1 }
       );
     }
     setSrcPlates(srcPlates.map(p => (p.id === newPlate.id ? newPlate : p)));
@@ -130,13 +120,6 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
     if (!plate) return;
     const newPlate = plate.clone();
     newPlate.barcode = value;
-    setSrcPlates(srcPlates.map(p => (p.id === newPlate.id ? newPlate : p)));
-  };
-
-  const handlePlateTypeChange = (value: string) => {
-    if (!plate) return;
-    const newPlate = plate.clone();
-    newPlate.plateType = value;
     setSrcPlates(srcPlates.map(p => (p.id === newPlate.id ? newPlate : p)));
   };
 
@@ -207,16 +190,6 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
               label="Barcode"
               value={plate.barcode}
               onChange={handleBarcodeChange}
-              className="default-label-text w-auto form-field-compact"
-            />
-            <FormField
-              id="inventory-plate-type"
-              name="inventory-plate-type"
-              type="select"
-              label="Plate Type"
-              value={plate.plateType ?? PLATE_TYPE_OPTIONS[0].value}
-              onChange={handlePlateTypeChange}
-              options={PLATE_TYPE_OPTIONS}
               className="default-label-text w-auto form-field-compact"
             />
             <FormField

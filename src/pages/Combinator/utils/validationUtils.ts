@@ -1,8 +1,7 @@
 import { utils, type WorkBook, type WorkSheet } from "xlsx";
 import { Plate, PlateSize } from "../../../classes/PlateClass";
 import { getCoordsFromWellId } from "../../../utils/plateUtils";
-import { MAX_COMBINATION_SLOTS } from "../types/combinatorTypes";
-import { COMBINATOR_HEADERS, InputDataType } from "./combinatorUtils";
+import { COMBINATOR_HEADERS, InputDataType, MAX_COMBINATION_SLOTS } from "./combinatorUtils";
 
 
 function arraysMatch(arr1: any[], arr2: any[]) {
@@ -24,28 +23,22 @@ export function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
   return (arraysMatch(headers, validHeaders))
 }
 
-export interface ValidationPreferences {
-  dropletSize?: number;
-  sourcePlateSize?: PlateSize;
-  destinationPlateSize?: PlateSize;
-}
-
 export function isDropletMultiple(volume: number, dropletSize: number): boolean {
   const steps = volume / dropletSize;
   return Math.abs(steps - Math.round(steps)) < 1e-9;
 }
 
-export function validateInputData(inputData: InputDataType, preferences: ValidationPreferences = {}): string[] {
+export function validateInputData(inputData: InputDataType, srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number): string[] {
   const errors: string[] = []
-  const dstTestPlate = new Plate({ plateSize: preferences.destinationPlateSize ?? '384' })
-  const srcTestPlate = new Plate({ plateSize: preferences.sourcePlateSize ?? '384' })
-  const availablePatternNames = patternsTabValidation(inputData, dstTestPlate, errors, preferences.dropletSize)
+  const dstTestPlate = new Plate({ plateSize: dstPlateSize })
+  const srcTestPlate = new Plate({ plateSize: srcPlateSize })
+  const availablePatternNames = patternsTabValidation(inputData, dstTestPlate, errors, dropletSize)
   const contents = sourceLayoutTabValidation(inputData, srcTestPlate, errors)
   combinationsTabValidation(inputData, availablePatternNames, contents, errors)
   return errors
 }
 
-export function echoInputValidation(wb: WorkBook, preferences: ValidationPreferences = {}): {inputData: InputDataType, errors: string[]} {
+export function echoInputValidation(wb: WorkBook, srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number): {inputData: InputDataType, errors: string[]} {
   let errors: string[] = []
   let inputData: InputDataType = {
     Patterns: [],
@@ -73,7 +66,7 @@ export function echoInputValidation(wb: WorkBook, preferences: ValidationPrefere
   if (errors.length == 0) {
     inputData = stringConversion(inputData)
   }
-  errors.push(...validateInputData(inputData, preferences))
+  errors.push(...validateInputData(inputData, srcPlateSize, dstPlateSize, dropletSize))
   return { inputData, errors }
 }
 
@@ -111,8 +104,6 @@ function patternsTabValidation(inputData: InputDataType, testPlate: Plate, error
     if (!row['Replicates'] || Number.isNaN(parseInt(row['Replicates'].toString()))) {
       errors.push(`${row['Replicates']} on line ${parseInt(idx) + 2} of Patterns tab is not a valid integer`)
     }
-    //getSomeWells silently drops wells that fall off the plate, so a block authored on a larger plate
-    //would lose wells without complaint unless the corners are checked first
     try {
       const cornerWellIds = row['Well Block'].split(';').flatMap((block: string) => block.split(':'))
       const fitsOnPlate = cornerWellIds.every((cornerWellId: string) => {
@@ -130,12 +121,22 @@ function patternsTabValidation(inputData: InputDataType, testPlate: Plate, error
     }
     for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
       const header = `CompVol${i}`;
-      if (row[header] && Number.isNaN(parseFloat(row[header].toString()))) {
-        errors.push(`${row[header]} on line ${parseInt(idx) + 2} of Patterns tab is not a valid number`)
+      const vol = row[header]
+      const isNum = typeof vol === "number"
+      if (vol) {
+        if (!isNum) {
+          errors.push(`${vol} on line ${parseInt(idx) + 2} of Patterns tab is not a valid number`)
+        }
+        else if(dropletSize && !isDropletMultiple(row[header], dropletSize)) {
+           errors.push(`${header} of ${patternName} (${row[header]} nL) is not a multiple of the ${dropletSize} nL droplet size`)
+        }
       }
-      else if (dropletSize && typeof row[header] === 'number' && !isDropletMultiple(row[header], dropletSize)) {
+      /*if (vol && !isNum) {
+        errors.push(`${vol} on line ${parseInt(idx) + 2} of Patterns tab is not a valid number`)
+      }
+      else if (dropletSize && vol && isNum && !isDropletMultiple(row[header], dropletSize)) {
         errors.push(`${header} of ${patternName} (${row[header]} nL) is not a multiple of the ${dropletSize} nL droplet size`)
-      }
+      }*/
     }
   }
   return availablePatternNames
