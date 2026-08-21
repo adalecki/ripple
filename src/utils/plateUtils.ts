@@ -34,6 +34,34 @@ export interface TransferBlock {
   color?: HslStringType
 }
 
+export function rowColExport(step: TransferStepExport, injectPlateType: boolean) {
+  const sourceCoords = getCoordsFromWellId(step.sourceWellId)
+  const destCoords = getCoordsFromWellId(step.destinationWellId)
+
+  return {
+    'Source Plate Barcode': step.sourceBarcode,
+    'Source Row': (sourceCoords.row + 1),
+    'Source Column': (sourceCoords.col + 1),
+    ...(injectPlateType && { 'Source Plate Type': step.sourcePlateType }),
+    'Destination Plate Barcode': step.destinationBarcode,
+    'Destination Row': (destCoords.row + 1),
+    'Destination Column': (destCoords.col + 1),
+    'Transfer Volume': step.volume
+  };
+}
+
+export function generateTransferListCSV(rows: ReturnType<typeof rowColExport>[]): string {
+  const headers = Object.keys(rows[0]);
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row =>
+      headers.map(header => row[header as keyof typeof row]).join(',')
+    )
+  ].join('\n');
+
+  return csvContent;
+}
+
 export function numberToLetters(num: number): string {
   let result = '';
   while (num >= 0) {
@@ -101,17 +129,17 @@ export function formatWellBlock(wellIds: string[]): string {
   const wells = [...new Set(wellIds)].sort((a, b) => {
     const coordsA = getCoordsFromWellId(a);
     const coordsB = getCoordsFromWellId(b);
-    maxRow = Math.max(maxRow,coordsA.row,coordsB.row)
-    maxCol = Math.max(maxCol,coordsA.col,coordsB.col)
+    maxRow = Math.max(maxRow, coordsA.row, coordsB.row)
+    maxCol = Math.max(maxCol, coordsA.col, coordsB.col)
     return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsA.row - coordsB.row;
   });
 
   const wellSet = new Set(wells);
-  
+
   const firstCoords = getCoordsFromWellId(wells[0]);
   const lastCoords = getCoordsFromWellId(wells[wells.length - 1]);
   const expectedCount = (lastCoords.row - firstCoords.row + 1) * (lastCoords.col - firstCoords.col + 1);
-  
+
   if (expectedCount === wells.length) {
     let isComplete = true;
     for (let row = firstCoords.row; row <= lastCoords.row && isComplete; row++) {
@@ -122,7 +150,7 @@ export function formatWellBlock(wellIds: string[]): string {
         }
       }
     }
-    
+
     if (isComplete) {
       return `${wells[0]}:${wells[wells.length - 1]}`;
     }
@@ -133,7 +161,7 @@ export function formatWellBlock(wellIds: string[]): string {
 
   while (usedWells.size < wells.length) {
     const startWell = wells.find(well => !usedWells.has(well))!;
-    const rect = findBestRectangle(startWell, wellSet, usedWells, {row:maxRow,col:maxCol});
+    const rect = findBestRectangle(startWell, wellSet, usedWells, { row: maxRow, col: maxCol });
     blocks.push(rect.block);
     rect.wellIds.forEach(well => usedWells.add(well));
   }
@@ -146,7 +174,7 @@ interface Rectangle {
   wellIds: string[];
 }
 
-function findBestRectangle(startWell: string, allWells: Set<string>, usedWells: Set<string>, maxCoords: {row: number, col: number}): Rectangle {
+function findBestRectangle(startWell: string, allWells: Set<string>, usedWells: Set<string>, maxCoords: { row: number, col: number }): Rectangle {
   const startCoords = getCoordsFromWellId(startWell);
   let bestRect: Rectangle = {
     block: startWell,
@@ -158,17 +186,17 @@ function findBestRectangle(startWell: string, allWells: Set<string>, usedWells: 
       const endRow = startCoords.row + rowDist;
       const endCol = startCoords.col + colDist;
       const endWell = getWellIdFromCoords(endRow, endCol);
-      
+
       if (!allWells.has(endWell) || usedWells.has(endWell)) continue;
-      
+
       let validRectangle = true;
       const rectangleWells: string[] = [];
-      
+
       for (let row = startCoords.row; row <= endRow; row++) {
         for (let col = startCoords.col; col <= endCol; col++) {
           const wellId = getWellIdFromCoords(row, col);
           rectangleWells.push(wellId);
-          
+
           if (!allWells.has(wellId) || usedWells.has(wellId)) {
             validRectangle = false;
             break;
@@ -204,11 +232,11 @@ export function mapWellsToConcentrations(
   const coordsList = wells.map(w => getCoordsFromWellId(w.id));
   const uniqueRows = [...new Set(coordsList.map(c => c.row))].sort((a, b) => a - b);
   const uniqueCols = [...new Set(coordsList.map(c => c.col))].sort((a, b) => a - b);
-  
+
   const blockArray: string[][] = Array(uniqueRows.length)
     .fill(null)
     .map(() => Array(uniqueCols.length).fill(null));
-  
+
   for (const well of wells) {
     const coords = getCoordsFromWellId(well.id);
     const rowIdx = uniqueRows.indexOf(coords.row);
@@ -217,7 +245,7 @@ export function mapWellsToConcentrations(
   }
 
   const wellSequence: string[] = [];
-  
+
   switch (direction) {
     case 'TB': {
       for (let colIdx = 0; colIdx < uniqueCols.length; colIdx++) {
@@ -267,10 +295,10 @@ export function mapWellsToConcentrations(
     result[concentrationIndex].push(wellSequence[i]);
   }
   for (const concIdx in result) {
-    result[concIdx].sort((a,b) => {
+    result[concIdx].sort((a, b) => {
       const coordsA = getCoordsFromWellId(a);
       const coordsB = getCoordsFromWellId(b);
-  
+
       switch (direction) {
         case 'LR':
           return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
@@ -382,7 +410,7 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     for (let i = 0; i < patternReplicates; i++) {
       const startIndex = i * ((concentrations.length * concentrations.length) * pattern.replicates);
       const endIndex = startIndex + ((concentrations.length * concentrations.length) * pattern.replicates);
-      blocks.push(formatWellBlock(wells.slice(startIndex,endIndex)))
+      blocks.push(formatWellBlock(wells.slice(startIndex, endIndex)))
     }
     return blocks;
   }
@@ -476,22 +504,22 @@ export function buildWellTransferMap(
   plateBarcodeCache: Map<number, string>
 ): WellTransferMap {
   const map: WellTransferMap = new Map();
-  
+
   for (const block of transferBlocks) {
     const targetBarcode = type === 'source' ? plateBarcodeCache.get(block.sourcePlateId) : plateBarcodeCache.get(block.destinationPlateId);
     if (targetBarcode !== plate.barcode) continue;
-    
+
     for (const step of block.transferSteps) {
       const wellId = type === 'source' ? step.sourceWellId : step.destinationWellId;
       const counterpartBarcode = type === 'source' ? plateBarcodeCache.get(step.destinationPlateId) : plateBarcodeCache.get(step.sourcePlateId);
       const counterpartWellId = type === 'source' ? step.destinationWellId : step.sourceWellId;
       if (!counterpartBarcode) continue;
-      
+
       const existing = map.get(wellId) ?? [];
       existing.push({ counterpartBarcode, counterpartWellId, volume: step.volume });
       map.set(wellId, existing);
     }
   }
-  
+
   return map;
 }

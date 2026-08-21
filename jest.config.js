@@ -17,7 +17,7 @@ export default {
       },
     ],
   },
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
+  testRegex: '(\\.|/)(test|spec)\\.[jt]sx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['@testing-library/jest-dom','<rootDir>/jest.setup.js']
 };

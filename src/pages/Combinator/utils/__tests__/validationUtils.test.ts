@@ -30,7 +30,6 @@ describe('isDropletMultiple', () => {
 
 describe('validateInputData on the example workbook', () => {
   test('passes with no preferences', () => {
-    console.log(cloneExample().Patterns)
     expect(validateInputData(cloneExample(),"384","384",2.5)).toEqual([]);
   });
 

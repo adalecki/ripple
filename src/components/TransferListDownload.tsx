@@ -1,36 +1,8 @@
 import { Button } from 'react-bootstrap';
 import JSZip from 'jszip';
-import { getCoordsFromWellId, TransferStepExport } from '../utils/plateUtils';
+import { generateTransferListCSV, rowColExport, TransferStepExport } from '../utils/plateUtils';
 
 const TransferListDownload = (settings: { transferMap: Map<number, TransferStepExport[]>, splitOutputCSVs: boolean }) => {
-
-  function rowColExport(step: TransferStepExport, injectPlateType: boolean) {
-    const sourceCoords = getCoordsFromWellId(step.sourceWellId)
-    const destCoords = getCoordsFromWellId(step.destinationWellId)
-
-    return {
-      'Source Plate Barcode': step.sourceBarcode,
-      'Source Row': (sourceCoords.row + 1),
-      'Source Column': (sourceCoords.col + 1),
-      ...(injectPlateType && { 'Source Plate Type': step.sourcePlateType }),
-      'Destination Plate Barcode': step.destinationBarcode,
-      'Destination Row': (destCoords.row + 1),
-      'Destination Column': (destCoords.col + 1),
-      'Transfer Volume': step.volume
-    };
-  }
-
-  function generateCSV(rows: ReturnType<typeof rowColExport>[]): string {
-    const headers = Object.keys(rows[0]);
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row =>
-        headers.map(header => row[header as keyof typeof row]).join(',')
-      )
-    ].join('\n');
-
-    return csvContent;
-  }
 
   async function fetchForExport() {
     if (settings.splitOutputCSVs) {
@@ -50,7 +22,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
         if (steps.length > 0) {
           const hasPlateType = steps.some(s => s.sourcePlateType != undefined)
           const rows = steps.map(step => rowColExport(step, hasPlateType));
-          const csvContent = generateCSV(rows);
+          const csvContent = generateTransferListCSV(rows);
 
           let suffix = '';
           switch (set[0]) {
@@ -92,7 +64,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
 
       const hasPlateType = allSteps.some(s => s.sourcePlateType != undefined)
       const rows = allSteps.map(step => rowColExport(step, hasPlateType));
-      const csvContent = generateCSV(rows);
+      const csvContent = generateTransferListCSV(rows);
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
