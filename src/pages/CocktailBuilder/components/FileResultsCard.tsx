@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Badge, Button, Card, Table } from 'react-bootstrap';
-import type { InputDataType } from '../utils/combinatorUtils';
+import type { InputDataType } from '../utils/cocktailUtils';
 import ApplyTooltip from '../../../components/ApplyTooltip';
 import { TransferStepExport } from '../../../utils/plateUtils';
 
@@ -31,8 +31,8 @@ const FileResultsCard: React.FC<FileResultsCardProps> = ({
   const uniqueContents = inputData
     ? [...new Set(inputData.SourceLayout.map(r => r.Content).filter(Boolean))]
     : [];
-  const distinctPatterns = inputData
-    ? [...new Set(inputData.Combinations.map(c => c.Pattern))].length
+  const distinctRecipes = inputData
+    ? [...new Set(inputData.Cocktails.map(c => c.Recipe))].length
     : 0;
 
   const hasErrors = !!errors && errors.length > 0;
@@ -64,8 +64,8 @@ const FileResultsCard: React.FC<FileResultsCardProps> = ({
             <tbody>
               <tr>
                 <td className="text-muted">Recipes</td>
-                <td><Badge bg="secondary">{inputData.Patterns.length}</Badge></td>
-                <td className="text-muted small">{inputData.Patterns.map(p => p.Name).join(', ')}</td>
+                <td><Badge bg="secondary">{inputData.Recipes.length}</Badge></td>
+                <td className="text-muted small">{inputData.Recipes.map(p => p.Name).join(', ')}</td>
               </tr>
               <tr>
                 <td className="text-muted">Inventory</td>
@@ -76,10 +76,10 @@ const FileResultsCard: React.FC<FileResultsCardProps> = ({
                 </td>
               </tr>
               <tr>
-                <td className="text-muted">Combinations</td>
-                <td><Badge bg="secondary">{inputData.Combinations.length}</Badge></td>
+                <td className="text-muted">Cocktails</td>
+                <td><Badge bg="secondary">{inputData.Cocktails.length}</Badge></td>
                 <td className="text-muted small">
-                  {distinctPatterns} distinct recipe{distinctPatterns !== 1 ? 's' : ''} used
+                  {distinctRecipes} distinct recipe{distinctRecipes !== 1 ? 's' : ''} used
                 </td>
               </tr>
               {transferSteps.length > 0 && (

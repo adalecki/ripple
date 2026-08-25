@@ -2,10 +2,10 @@ import { utils, writeFile } from 'xlsx';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { formatWellBlock, getWellFromBarcodeAndId, getWellIdsFromRange, TransferStepExport } from '../../../utils/plateUtils';
-import { Combination } from '../types/combinatorTypes';
+import { Cocktail } from '../types/cocktailTypes';
 
 export type InputDataType = {
-  'Patterns': {
+  'Recipes': {
     'Name': string;
     'Replicates': number;
     'Well Block': string;
@@ -27,8 +27,8 @@ export type InputDataType = {
     'Volume (µL)': number;
     'Plate Type': string;
   }[],
-  'Combinations': {
-    'Pattern': string;
+  'Cocktails': {
+    'Recipe': string;
     'Comp1': string;
     'Comp2'?: string;
     'Comp3'?: string;
@@ -42,12 +42,12 @@ export type InputDataType = {
   }[]
 }
 
-export const MAX_COMBINATION_SLOTS = 10;
+export const MAX_RECIPE_SLOTS = 10;
 
-export const COMBINATOR_HEADERS: { [key: string]: string[] } = {
-  Patterns: ['Name', 'Replicates', 'Well Block', ...Array.from({ length: MAX_COMBINATION_SLOTS }, (_, i) => `CompVol${i + 1}`)],
+export const COCKTAIL_HEADERS: { [key: string]: string[] } = {
+  Recipes: ['Name', 'Replicates', 'Well Block', ...Array.from({ length: MAX_RECIPE_SLOTS }, (_, i) => `CompVol${i + 1}`)],
   SourceLayout: ['Source Barcode', 'Well ID', 'Content', 'Volume (µL)', 'Plate Type'],
-  Combinations: ['Pattern', ...Array.from({ length: MAX_COMBINATION_SLOTS }, (_, i) => `Comp${i + 1}`)]
+  Cocktails: ['Recipe', ...Array.from({ length: MAX_RECIPE_SLOTS }, (_, i) => `Comp${i + 1}`)]
 }
 
 export const PLATE_TYPE_OPTIONS = [
@@ -73,15 +73,15 @@ interface SourceWellLocation {
   wellId: string;
 }
 
-let combinationIdCounter = 0;
+let cocktailIdCounter = 0;
 
-export function nextCombinationId(): number {
-  combinationIdCounter += 1;
-  return combinationIdCounter;
+export function nextCocktailId(): number {
+  cocktailIdCounter += 1;
+  return cocktailIdCounter;
 }
 
 export function emptySlots(): string[] {
-  return Array(MAX_COMBINATION_SLOTS).fill('');
+  return Array(MAX_RECIPE_SLOTS).fill('');
 }
 
 export function recipeSlotCount(recipe: Pattern): number {
@@ -100,17 +100,17 @@ export function inventoryContents(srcPlates: Plate[]): string[] {
   return [...contents];
 }
 
-export function buildInputData(recipes: Pattern[], srcPlates: Plate[], combinations: Combination[]): InputDataType | null {
-  const Patterns: InputDataType['Patterns'] = recipes.filter(recipe => recipe.locations.length > 0).map(recipe => {
+export function buildInputData(recipes: Pattern[], srcPlates: Plate[], cocktails: Cocktail[]): InputDataType | null {
+  const Recipes: InputDataType['Recipes'] = recipes.filter(recipe => recipe.locations.length > 0).map(recipe => {
     const row: { [key: string]: string | number } = {
       Name: recipe.name,
       Replicates: recipe.replicates,
       'Well Block': formatWellBlock(recipe.locations.flatMap(location => getWellIdsFromRange(location)))
     };
     recipe.volumes.forEach((volume, index) => {
-      if (volume != null && index < MAX_COMBINATION_SLOTS) row[`CompVol${index + 1}`] = volume;
+      if (volume != null && index < MAX_RECIPE_SLOTS) row[`CompVol${index + 1}`] = volume;
     });
-    return row as InputDataType['Patterns'][number];
+    return row as InputDataType['Recipes'][number];
   });
 
   const SourceLayout: InputDataType['SourceLayout'] = [];
@@ -145,28 +145,28 @@ export function buildInputData(recipes: Pattern[], srcPlates: Plate[], combinati
     }
   }
 
-  const Combinations: InputDataType['Combinations'] = combinations.map(combination => {
-    const row: { [key: string]: string } = { Pattern: combination.patternName };
-    combination.slots.forEach((slot, index) => {
-      if (slot && index < MAX_COMBINATION_SLOTS) row[`Comp${index + 1}`] = slot;
+  const Cocktails: InputDataType['Cocktails'] = cocktails.map(cocktail => {
+    const row: { [key: string]: string } = { Recipe: cocktail.recipeName };
+    cocktail.slots.forEach((slot, index) => {
+      if (slot && index < MAX_RECIPE_SLOTS) row[`Comp${index + 1}`] = slot;
     });
-    return row as InputDataType['Combinations'][number];
+    return row as InputDataType['Cocktails'][number];
   });
-  if (Patterns.length == 0 && SourceLayout.length == 0 && Combinations.length == 0) return null
-  return { Patterns, SourceLayout, Combinations };
+  if (Recipes.length == 0 && SourceLayout.length == 0 && Cocktails.length == 0) return null
+  return { Recipes, SourceLayout, Cocktails };
 }
 
 export function buildDesignFromInputData(
   inputData: InputDataType,
   dstPlateSize: PlateSize,
   srcPlateSize: PlateSize
-): { recipes: Pattern[]; previewPlate: Plate; srcPlates: Plate[]; combinations: Combination[] } {
+): { recipes: Pattern[]; previewPlate: Plate; srcPlates: Plate[]; cocktails: Cocktail[] } {
   const previewPlate = new Plate({ barcode: 'PREVIEW', plateSize: dstPlateSize });
 
-  const recipes = inputData.Patterns.map(patternRow => {
+  const recipes = inputData.Recipes.map(patternRow => {
     const row = patternRow as { [key: string]: any };
     const volumes: (number | null)[] = [];
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       const volume = row[`CompVol${i}`];
       volumes.push(typeof volume === 'number' ? volume : null);
     }
@@ -216,25 +216,25 @@ export function buildDesignFromInputData(
     }
   }
 
-  const combinations: Combination[] = inputData.Combinations.map(combinationRow => {
-    const row = combinationRow as { [key: string]: any };
+  const cocktails: Cocktail[] = inputData.Cocktails.map(cocktailRow => {
+    const row = cocktailRow as { [key: string]: any };
     const slots = emptySlots();
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       slots[i - 1] = row[`Comp${i}`] ?? '';
     }
-    return { id: nextCombinationId(), patternName: combinationRow.Pattern, slots };
+    return { id: nextCocktailId(), recipeName: cocktailRow.Recipe, slots };
   });
 
-  return { recipes, previewPlate, srcPlates, combinations };
+  return { recipes, previewPlate, srcPlates, cocktails };
 }
 
-export function exportCombinatorWorkbook(inputData: InputDataType | null, filename?: string): void {
+export function exportCocktailWorkbook(inputData: InputDataType | null, filename?: string): void {
   if (!inputData) return;
 
   const workbook = utils.book_new();
 
-  for (const sheetName of ['Patterns', 'SourceLayout', 'Combinations'] as const) {
-    const headers = COMBINATOR_HEADERS[sheetName];
+  for (const sheetName of ['Recipes', 'SourceLayout', 'Cocktails'] as const) {
+    const headers = COCKTAIL_HEADERS[sheetName];
     const sheet = utils.aoa_to_sheet([headers]);
     const rows = (inputData[sheetName] as { [key: string]: any }[])
       .map(row => headers.map(header => row[header] ?? null));
@@ -243,7 +243,7 @@ export function exportCombinatorWorkbook(inputData: InputDataType | null, filena
   }
 
   const date = new Date().toISOString().split('T')[0];
-  writeFile(workbook, filename ?? `Combinator_Design_${date}.xlsx`);
+  writeFile(workbook, filename ?? `Cocktail_Design_${date}.xlsx`);
 }
 
 export function processInputData(inputData: InputDataType, plateSize: PlateSize): ProcessResult {
@@ -288,9 +288,9 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
   }
 
   const recipeVolumes = new Map<string, (number | undefined)[]>();
-  for (const row of inputData.Patterns) {
+  for (const row of inputData.Recipes) {
     const compVols: (number | undefined)[] = [];
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       const key = `CompVol${i}` as keyof typeof row;
       const val = row[key];
       compVols.push(typeof val === 'number' ? val : undefined);
@@ -305,39 +305,39 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
     dstPlates.push(plate);
   }
 
-  for (const combo of inputData.Combinations) {
-    const patternName = combo['Pattern'];
-    const compVols = recipeVolumes.get(patternName);
+  for (const combo of inputData.Cocktails) {
+    const recipeName = combo['Recipe'];
+    const compVols = recipeVolumes.get(recipeName);
 
     if (!compVols) {
-      warnings.push(`Combination references unknown pattern "${patternName}" — skipped`);
+      warnings.push(`Cocktail references unknown recipe "${recipeName}" - skipped`);
       continue;
     }
 
     const compoundEntries: { contentName: string; volume: number }[] = [];
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       const compKey = `Comp${i}` as keyof typeof combo;
       const compName = combo[compKey];
       if (!compName) continue;
 
       const vol = compVols[i - 1];
       if (vol === undefined) {
-        warnings.push(`Pattern "${patternName}" has no CompVol${i} for Comp${i} ("${compName}") — skipped`);
+        warnings.push(`Recipe "${recipeName}" has no CompVol${i} for Comp${i} ("${compName}") - skipped`);
         continue;
       }
       if (!srcPlateInventory.has(compName)) {
-        warnings.push(`Compound "${compName}" in combination not found in SourceLayout — skipped`);
+        warnings.push(`Compound "${compName}" in cocktail not found in SourceLayout - skipped`);
         continue;
       }
       compoundEntries.push({ contentName: compName, volume: vol });
     }
 
     if (compoundEntries.length === 0) {
-      warnings.push(`Combination for pattern "${patternName}" has no resolvable compounds — skipped`);
+      warnings.push(`Cocktail for recipe "${recipeName}" has no resolvable compounds - skipped`);
       continue;
     }
 
-    const dstBlock = findNextAvailableBlock(dstPlates, inputData.Patterns, patternName)
+    const dstBlock = findNextAvailableBlock(dstPlates, inputData.Recipes, recipeName)
 
     if (dstBlock.barcode == '') continue
     const dstPlate = dstPlates.find(p => p.barcode == dstBlock.barcode)
@@ -364,7 +364,7 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
           compoundId: contentName, 
           concentration: null, 
           volume: volume,
-          patternName: patternName 
+          patternName: recipeName
         },
           { name: solventName, fraction: 1 }
         );
@@ -399,22 +399,22 @@ function findSourceLocation(locations: SourceWellLocation[], plates: Plate[], vo
 
 function calculateDestinationPlates(inputData: InputDataType, testPlate: Plate): number {
   let maxDestPlatesNeeded = 0;
-  for (const row of inputData['Patterns']) {
+  for (const row of inputData['Recipes']) {
     const wells = testPlate.getSomeWells(row['Well Block'])
     if (!wells || wells.length < 1) return maxDestPlatesNeeded
     const slotsPerPlate = Math.floor(wells.length / row['Replicates'])
-    const slotsNeeded = inputData['Combinations'].filter(combo => combo['Pattern'] == row['Name']).length
+    const slotsNeeded = inputData['Cocktails'].filter(combo => combo['Recipe'] == row['Name']).length
     maxDestPlatesNeeded = Math.max(maxDestPlatesNeeded, Math.ceil(slotsNeeded / slotsPerPlate))
   }
 
   return maxDestPlatesNeeded
 }
 
-function findNextAvailableBlock(plates: Plate[], patterns: InputDataType['Patterns'], patternName: string): { barcode: string, wellBlock: string } {
+function findNextAvailableBlock(plates: Plate[], recipeRows: InputDataType['Recipes'], recipeName: string): { barcode: string, wellBlock: string } {
   const possibleLocs: { barcode: string, blocks: string[] }[] = []
   for (const plate of plates) {
     const availableBlocks: string[] = [];
-    const possibleLocations = patterns.filter((row) => row.Name === patternName);
+    const possibleLocations = recipeRows.filter((row) => row.Name === recipeName);
 
     for (const patternRow of possibleLocations) {
       const replicates = patternRow['Replicates']

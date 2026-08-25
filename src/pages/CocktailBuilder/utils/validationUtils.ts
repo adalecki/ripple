@@ -1,7 +1,7 @@
 import { utils, type WorkBook, type WorkSheet } from "xlsx";
 import { Plate, PlateSize } from "../../../classes/PlateClass";
 import { getCoordsFromWellId } from "../../../utils/plateUtils";
-import { COMBINATOR_HEADERS, InputDataType, MAX_COMBINATION_SLOTS } from "./combinatorUtils";
+import { COCKTAIL_HEADERS, InputDataType, MAX_RECIPE_SLOTS } from "./cocktailUtils";
 
 
 function arraysMatch(arr1: any[], arr2: any[]) {
@@ -32,36 +32,36 @@ export function validateInputData(inputData: InputDataType, srcPlateSize: PlateS
   const errors: string[] = []
   const dstTestPlate = new Plate({ plateSize: dstPlateSize })
   const srcTestPlate = new Plate({ plateSize: srcPlateSize })
-  const availablePatternNames = patternsTabValidation(inputData, dstTestPlate, errors, dropletSize)
+  const availableRecipeNames = recipesTabValidation(inputData, dstTestPlate, errors, dropletSize)
   const contents = sourceLayoutTabValidation(inputData, srcTestPlate, errors)
-  combinationsTabValidation(inputData, availablePatternNames, contents, errors)
+  cocktailsTabValidation(inputData, availableRecipeNames, contents, errors)
   return errors
 }
 
 export function echoInputValidation(wb: WorkBook, srcPlateSize: PlateSize, dstPlateSize: PlateSize, dropletSize: number): {inputData: InputDataType, errors: string[]} {
   let errors: string[] = []
   let inputData: InputDataType = {
-    Patterns: [],
+    Recipes: [],
     SourceLayout: [],
-    Combinations: []
+    Cocktails: []
   }
-  if (fileHeaders(wb.Sheets['Patterns'], COMBINATOR_HEADERS['Patterns'])) {
-    inputData['Patterns'] = utils.sheet_to_json(wb.Sheets['Patterns'])
+  if (fileHeaders(wb.Sheets['Recipes'], COCKTAIL_HEADERS['Recipes'])) {
+    inputData['Recipes'] = utils.sheet_to_json(wb.Sheets['Recipes'])
   }
   else {
-    errors.push('Error in Patterns headers')
+    errors.push('Error in Recipes headers')
   }
-  if (fileHeaders(wb.Sheets['SourceLayout'], COMBINATOR_HEADERS['SourceLayout'])) {
+  if (fileHeaders(wb.Sheets['SourceLayout'], COCKTAIL_HEADERS['SourceLayout'])) {
     inputData['SourceLayout'] = utils.sheet_to_json(wb.Sheets['SourceLayout'])
   }
   else {
     errors.push('Error in SourceLayout headers')
   }
-  if (fileHeaders(wb.Sheets['Combinations'], COMBINATOR_HEADERS['Combinations'])) {
-    inputData['Combinations'] = utils.sheet_to_json(wb.Sheets['Combinations'])
+  if (fileHeaders(wb.Sheets['Cocktails'], COCKTAIL_HEADERS['Cocktails'])) {
+    inputData['Cocktails'] = utils.sheet_to_json(wb.Sheets['Cocktails'])
   }
   else {
-    errors.push('Error in Combinations headers')
+    errors.push('Error in Cocktails headers')
   }
   if (errors.length == 0) {
     inputData = stringConversion(inputData)
@@ -71,38 +71,38 @@ export function echoInputValidation(wb: WorkBook, srcPlateSize: PlateSize, dstPl
 }
 
 function stringConversion(inputData: InputDataType) {
-  for (let lineIdx in inputData.Patterns) {
-    inputData.Patterns[lineIdx]['Name'] = (inputData.Patterns[lineIdx]['Name']?.toString().trim() || '');
+  for (let lineIdx in inputData.Recipes) {
+    inputData.Recipes[lineIdx]['Name'] = (inputData.Recipes[lineIdx]['Name']?.toString().trim() || '');
   }
   for (let lineIdx in inputData.SourceLayout) {
     inputData.SourceLayout[lineIdx]['Source Barcode'] = (inputData.SourceLayout[lineIdx]['Source Barcode']?.toString().trim() || '');
     inputData.SourceLayout[lineIdx]['Content'] = (inputData.SourceLayout[lineIdx]['Content']?.toString().trim() || '');
     inputData.SourceLayout[lineIdx]['Plate Type'] = (inputData.SourceLayout[lineIdx]['Plate Type']?.toString().trim() || '');
   }
-  for (let lineIdx in inputData.Combinations) {
-    inputData.Combinations[lineIdx]['Pattern'] = (inputData.Combinations[lineIdx]['Pattern']?.toString().trim() || '');
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+  for (let lineIdx in inputData.Cocktails) {
+    inputData.Cocktails[lineIdx]['Recipe'] = (inputData.Cocktails[lineIdx]['Recipe']?.toString().trim() || '');
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       const header = `Comp${i}`;
-      const row = inputData.Combinations[lineIdx] as Record<string, string | undefined>;
+      const row = inputData.Cocktails[lineIdx] as Record<string, string | undefined>;
       if (row[header]) { row[header] = row[header]!.toString().trim() || ''; }
     }
   }
   return inputData
 }
 
-function patternsTabValidation(inputData: InputDataType, testPlate: Plate, errors: string[], dropletSize?: number): string[] {
-  const availablePatternNames: string[] = []
-  for (let idx in inputData['Patterns']) {
-    const row = inputData['Patterns'][idx] as { [key: string]: any }
-    const patternName = inputData['Patterns'][idx]['Name']
-    if (!availablePatternNames.includes(patternName)) {
-      availablePatternNames.push(patternName)
+function recipesTabValidation(inputData: InputDataType, testPlate: Plate, errors: string[], dropletSize?: number): string[] {
+  const availableRecipeNames: string[] = []
+  for (let idx in inputData['Recipes']) {
+    const row = inputData['Recipes'][idx] as { [key: string]: any }
+    const recipeName = inputData['Recipes'][idx]['Name']
+    if (!availableRecipeNames.includes(recipeName)) {
+      availableRecipeNames.push(recipeName)
     }
     else {
-      errors.push(`${patternName} on line ${parseInt(idx) + 2} is already present earlier`)
+      errors.push(`${recipeName} on line ${parseInt(idx) + 2} is already present earlier`)
     }
     if (!row['Replicates'] || Number.isNaN(parseInt(row['Replicates'].toString()))) {
-      errors.push(`${row['Replicates']} on line ${parseInt(idx) + 2} of Patterns tab is not a valid integer`)
+      errors.push(`${row['Replicates']} on line ${parseInt(idx) + 2} of Recipes tab is not a valid integer`)
     }
     try {
       const cornerWellIds = row['Well Block'].split(';').flatMap((block: string) => block.split(':'))
@@ -111,35 +111,35 @@ function patternsTabValidation(inputData: InputDataType, testPlate: Plate, error
         return coords.row < testPlate.rows && coords.col < testPlate.columns
       })
       if (!fitsOnPlate) {
-        errors.push(`Well block on line ${parseInt(idx) + 2} of Patterns tab does not fit on a plate of size ${testPlate.rows * testPlate.columns}`)
+        errors.push(`Well block on line ${parseInt(idx) + 2} of Recipes tab does not fit on a plate of size ${testPlate.rows * testPlate.columns}`)
       }
       else if (testPlate.getSomeWells(row['Well Block']).length < 1) {
-        errors.push(`Well block on line ${parseInt(idx) + 2} of Patterns tab is not valid`)
+        errors.push(`Well block on line ${parseInt(idx) + 2} of Recipes tab is not valid`)
       }
     } catch (err) {
-      errors.push(`Well block on line ${parseInt(idx) + 2} of Patterns tab is not valid`)
+      errors.push(`Well block on line ${parseInt(idx) + 2} of Recipes tab is not valid`)
     }
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       const header = `CompVol${i}`;
       const vol = row[header]
       const isNum = typeof vol === "number"
       if (vol) {
         if (!isNum) {
-          errors.push(`${vol} on line ${parseInt(idx) + 2} of Patterns tab is not a valid number`)
+          errors.push(`${vol} on line ${parseInt(idx) + 2} of Recipes tab is not a valid number`)
         }
         else if(dropletSize && !isDropletMultiple(row[header], dropletSize)) {
-           errors.push(`${header} of ${patternName} (${row[header]} nL) is not a multiple of the ${dropletSize} nL droplet size`)
+           errors.push(`${header} of ${recipeName} (${row[header]} nL) is not a multiple of the ${dropletSize} nL droplet size`)
         }
       }
       /*if (vol && !isNum) {
-        errors.push(`${vol} on line ${parseInt(idx) + 2} of Patterns tab is not a valid number`)
+        errors.push(`${vol} on line ${parseInt(idx) + 2} of Recipes tab is not a valid number`)
       }
       else if (dropletSize && vol && isNum && !isDropletMultiple(row[header], dropletSize)) {
-        errors.push(`${header} of ${patternName} (${row[header]} nL) is not a multiple of the ${dropletSize} nL droplet size`)
+        errors.push(`${header} of ${recipeName} (${row[header]} nL) is not a multiple of the ${dropletSize} nL droplet size`)
       }*/
     }
   }
-  return availablePatternNames
+  return availableRecipeNames
 }
 
 function sourceLayoutTabValidation(inputData: InputDataType, testPlate: Plate, errors: string[]): string[] {
@@ -202,18 +202,18 @@ function sourceLayoutTabValidation(inputData: InputDataType, testPlate: Plate, e
   return contents
 }
 
-function combinationsTabValidation(inputData: InputDataType, availablePatternNames: string[], contents: string[], errors: string[]) {
-  for (let idx in inputData['Combinations']) {
-    const row = inputData['Combinations'][idx] as { [key: string]: any }
-    const patternName = inputData['Combinations'][idx]['Pattern']
-    if (!availablePatternNames.includes(patternName)) {
-      errors.push(`${patternName} on line ${parseInt(idx) + 2} of Combinations is not present on the Patterns tab`)
+function cocktailsTabValidation(inputData: InputDataType, availableRecipeNames: string[], contents: string[], errors: string[]) {
+  for (let idx in inputData['Cocktails']) {
+    const row = inputData['Cocktails'][idx] as { [key: string]: any }
+    const recipeName = inputData['Cocktails'][idx]['Recipe']
+    if (!availableRecipeNames.includes(recipeName)) {
+      errors.push(`${recipeName} on line ${parseInt(idx) + 2} of Cocktails is not present on the Recipes tab`)
     }
 
-    for (let i = 1; i <= MAX_COMBINATION_SLOTS; i++) {
+    for (let i = 1; i <= MAX_RECIPE_SLOTS; i++) {
       const header = `Comp${i}`;
       if (row[header] && !contents.includes(row[header])) {
-        errors.push(`${row[header]} on line ${parseInt(idx) + 2} of Combinations tab is not present on SourceLayout`)
+        errors.push(`${row[header]} on line ${parseInt(idx) + 2} of Cocktails tab is not present on SourceLayout`)
       }
     }
   }

@@ -9,7 +9,7 @@ import ApplyTooltip from '../../../components/ApplyTooltip';
 import { calculateBlockBorders, formatWellBlock } from '../../../utils/plateUtils';
 import { currentItem, isBlockOverlapping, sensibleRecipeSelection } from '../../../utils/designUtils';
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
-import { recipeSlotCount } from '../utils/combinatorUtils';
+import { recipeSlotCount } from '../utils/cocktailUtils';
 import RecipeManager from './RecipeManager';
 
 import '../../../css/DesignWizard.css';
@@ -171,8 +171,8 @@ const RecipeWizard: React.FC<RecipeWizardProps> = ({
         >
           <span className="d-flex justify-content-end">
             <FormField
-              id="combinator-dst-plate-size"
-              name="combinator-dst-plate-size"
+              id="cocktail-dst-plate-size"
+              name="cocktail-dst-plate-size"
               type="select"
               label="Destination Plate Size"
               value={dstPlateSize}

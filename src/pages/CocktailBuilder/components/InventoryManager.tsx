@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormField } from '../../../components/FormField';
 import InfoTooltip from '../../../components/InfoTooltip';
 import { InventoryForm } from './InventoryWizard';
-import { PLATE_TYPE_OPTIONS } from '../utils/combinatorUtils';
+import { PLATE_TYPE_OPTIONS } from '../utils/cocktailUtils';
 
 interface InventoryManagerProps {
   form: InventoryForm;

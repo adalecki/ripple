@@ -19,3 +19,10 @@ if (typeof File !== 'undefined') {
     }
   });
 }
+
+// jsdom omits TextEncoder/TextDecoder; react-router-dom needs them at import time
+if (typeof TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}

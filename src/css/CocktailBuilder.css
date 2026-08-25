@@ -1,11 +1,11 @@
-.combinations-table-panel {
+.cocktails-table-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
 }
 
-.combinations-table-scroll {
+.cocktails-table-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -14,7 +14,7 @@
   border-radius: 0.25rem;
 }
 
-.combinations-table thead th {
+.cocktails-table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -23,11 +23,11 @@
   white-space: nowrap;
 }
 
-.combinations-table td {
+.cocktails-table td {
   vertical-align: middle;
 }
 
-.combinations-table .slot-volume {
+.cocktails-table .slot-volume {
   display: block;
   font-size: 0.7rem;
   color: var(--bs-secondary-color);

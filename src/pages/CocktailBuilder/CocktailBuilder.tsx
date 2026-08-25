@@ -9,21 +9,21 @@ import { usePreferences } from '../../hooks/usePreferences';
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, TransferStepExport } from '../../utils/plateUtils';
 import { labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils';
 
-import { Combination } from './types/combinatorTypes';
+import { Cocktail } from './types/cocktailTypes';
 import {
   InputDataType,
   buildDesignFromInputData,
   processInputData,
   recipeSlotCount
-} from './utils/combinatorUtils';
+} from './utils/cocktailUtils';
 import { echoInputValidation, validateInputData } from './utils/validationUtils';
-import CombinatorBuild from './components/CombinatorBuild';
-import CombinationsTab from './components/CombinationsTab';
+import CocktailBuild from './components/CocktailBuild';
+import CocktailsTab from './components/CocktailsTab';
 import InventoryWizard from './components/InventoryWizard';
 import RecipeWizard from './components/RecipeWizard';
 import Instructions from './components/Instructions';
 
-function Combinator() {
+function CocktailBuilder() {
   const { preferences } = usePreferences();
   const [tabKey, setTabKey] = useState<string>('recipes');
 
@@ -39,7 +39,7 @@ function Combinator() {
   const [srcPlates, setSrcPlates] = useState<Plate[]>(() => [new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source' })]);
   const [curSrcPlateId, setCurSrcPlateId] = useState<number | null>(srcPlates[0] ? srcPlates[0].id : null);
 
-  const [combinations, setCombinations] = useState<Combination[]>([]);
+  const [cocktails, setCocktails] = useState<Cocktail[]>([]);
 
   const [builtPlates, setBuiltPlates] = useState<Plate[]>([]);
   const [curBuiltPlateId, setCurBuiltPlateId] = useState<number | null>(null);
@@ -259,7 +259,7 @@ function Combinator() {
       const newPlate = previewPlate.clone();
       for (const location of recipe.locations) newPlate.removePattern(location, recipe.name);
       setPreviewPlate(newPlate);
-      setCombinations(combinations.filter(c => c.patternName !== recipe.name));
+      setCocktails(cocktails.filter(c => c.recipeName !== recipe.name));
     }
     setRecipes(recipes.filter(r => r.id !== recipeId));
     if (curRecipeId === recipeId) setCurRecipeId(null);
@@ -317,7 +317,7 @@ function Combinator() {
     setRecipes(design.recipes);
     setPreviewPlate(design.previewPlate);
     setSrcPlates(design.srcPlates);
-    setCombinations(design.combinations);
+    setCocktails(design.cocktails);
     setCurRecipeId(design.recipes[0]?.id ?? null);
     setCurSrcPlateId(design.srcPlates[0]?.id ?? null);
     setRecipeState({ isEditing: false, isNewRecipe: false, isPickingColor: false });
@@ -330,7 +330,7 @@ function Combinator() {
     setBuiltPlates([]);
     setRecipes([]);
     setSrcPlates([new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source'})]);
-    setCombinations([]);
+    setCocktails([]);
     setPreviewPlate(new Plate({ barcode: 'PREVIEW', plateSize: dstPlateSize }))
     setCurBuiltPlateId(null);
     setTransferSteps([]);
@@ -350,7 +350,7 @@ function Combinator() {
               details: {
                 rep: recipe.replicates,
                 comp: recipeSlotCount(recipe),
-                combos: combinations.filter(c => c.patternName === recipe.name).length
+                cocktails: cocktails.filter(c => c.recipeName === recipe.name).length
               }
             }))}
             selectedItemId={curRecipeId}
@@ -410,7 +410,7 @@ function Combinator() {
           onMouseLeave={handleMouseUp}
         >
           <div className="page-tabs">
-            <Tabs id="combinator-tab-select" activeKey={tabKey} onSelect={handleSelect} mountOnEnter>
+            <Tabs id="cocktail-tab-select" activeKey={tabKey} onSelect={handleSelect} mountOnEnter>
               <Tab eventKey="instructions" title="Instructions">
                 <Instructions />
               </Tab>
@@ -447,20 +447,20 @@ function Combinator() {
                   enterCallbackRef={enterCallbackRef}
                 />
               </Tab>
-              <Tab eventKey="combinations" title="Combinations">
-                <CombinationsTab
-                  combinations={combinations}
-                  setCombinations={setCombinations}
+              <Tab eventKey="cocktails" title="Cocktails">
+                <CocktailsTab
+                  cocktails={cocktails}
+                  setCocktails={setCocktails}
                   recipes={recipes}
                   srcPlates={srcPlates}
                 />
               </Tab>
               <Tab eventKey="build" title="Build">
-                <CombinatorBuild
+                <CocktailBuild
                   plate={currentPlate(builtPlates, curBuiltPlateId)}
                   recipes={recipes}
                   srcPlates={srcPlates}
-                  combinations={combinations}
+                  cocktails={cocktails}
                   srcPlateSize={srcPlateSize}
                   dstPlateSize={dstPlateSize}
                   dropletSize={preferences.dropletSize as number}
@@ -481,4 +481,4 @@ function Combinator() {
   );
 }
 
-export default Combinator;
+export default CocktailBuilder;

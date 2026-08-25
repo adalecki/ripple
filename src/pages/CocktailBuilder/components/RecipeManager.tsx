@@ -8,7 +8,7 @@ import ApplyTooltip from '../../../components/ApplyTooltip';
 import { currentItem } from '../../../utils/designUtils';
 import { isDropletMultiple } from '../utils/validationUtils';
 import VolumeTable from './VolumeTable';
-import { MAX_COMBINATION_SLOTS } from '../utils/combinatorUtils';
+import { MAX_RECIPE_SLOTS } from '../utils/cocktailUtils';
 
 interface RecipeManagerProps {
   recipes: Pattern[];
@@ -46,7 +46,7 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
   }
 
   const duplicateName = editingRecipe ? recipes.some(r => r.name === editingRecipe.name && r.id !== editingRecipe.id) : false;
-  const atSlotCap = editingRecipe ? editingRecipe.volumes.length >= MAX_COMBINATION_SLOTS : false;
+  const atSlotCap = editingRecipe ? editingRecipe.volumes.length >= MAX_RECIPE_SLOTS : false;
   const offDroplet = editingRecipe
     ? editingRecipe.volumes.some(v => typeof v === 'number' && !isDropletMultiple(v, dropletSize))
     : false;
@@ -155,7 +155,7 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
               min={1}
               required
               disabled={!recipeState.isEditing}
-              tooltip="How many destination wells each combination occupies"
+              tooltip="How many destination wells each cocktail occupies"
             />
 
             <div className="form-field">
@@ -174,7 +174,7 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
 
             <Form.Label>Component Volumes</Form.Label>
             <Alert variant="danger" show={atSlotCap} transition={false} className="py-1 px-2 small">
-              A maximum of {MAX_COMBINATION_SLOTS} components is allowed
+              A maximum of {MAX_RECIPE_SLOTS} components is allowed
             </Alert>
             <div className="concentration-table-container">
               <VolumeTable

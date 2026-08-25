@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Combinator from '../Combinator';
+import { MemoryRouter } from 'react-router-dom';
+import CocktailBuilder from '../CocktailBuilder';
 import { PreferencesProvider } from '../../../hooks/usePreferences';
 
 // PlateViewCanvas draws to a real canvas, which jsdom does not implement
@@ -14,32 +15,34 @@ beforeAll(() => {
   })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 });
 
-function renderCombinator() {
+function renderCocktail() {
   return render(
-    <PreferencesProvider>
-      <Combinator />
-    </PreferencesProvider>
+    <MemoryRouter>
+      <PreferencesProvider>
+        <CocktailBuilder />
+      </PreferencesProvider>
+    </MemoryRouter>
   );
 }
 
-describe('Combinator designer smoke test', () => {
+describe('CocktailBuilder designer smoke test', () => {
   test('renders the Recipes tab with a seeded recipe', () => {
-    renderCombinator();
+    renderCocktail();
     expect(screen.getByRole('tab', { name: 'Recipes' })).toBeInTheDocument();
     expect(screen.getByText('Recipe 1')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Apply to Wells' })).toBeInTheDocument();
   });
 
   test('every tab renders without crashing', () => {
-    renderCombinator();
-    for (const name of ['Inventory', 'Combinations', 'Build', 'Instructions', 'Recipes']) {
+    renderCocktail();
+    for (const name of ['Inventory', 'Cocktails', 'Build', 'Instructions', 'Recipes']) {
       fireEvent.click(screen.getByRole('tab', { name }));
       expect(screen.getByRole('tab', { name, selected: true })).toBeInTheDocument();
     }
   });
 
   test('Apply is blocked until a region is selected, and says why', () => {
-    renderCombinator();
+    renderCocktail();
     const apply = screen.getByRole('button', { name: 'Apply to Wells' });
     expect(apply).toBeDisabled();
     fireEvent.mouseEnter(apply.parentElement!);
@@ -47,7 +50,7 @@ describe('Combinator designer smoke test', () => {
   });
 
   test('Build is blocked on an empty design and lists the reasons', () => {
-    renderCombinator();
+    renderCocktail();
     fireEvent.click(screen.getByRole('tab', { name: 'Build' }));
     // nothing authored yet, so the summary card is hidden entirely
     expect(screen.queryByText('Design Summary')).not.toBeInTheDocument();
@@ -59,7 +62,7 @@ describe('Combinator designer smoke test', () => {
   }
 
   test('the inventory form accepts a content and volume', () => {
-    renderCombinator();
+    renderCocktail();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Inventory' }));
     const pane = activePane();
@@ -74,24 +77,24 @@ describe('Combinator designer smoke test', () => {
   });
 
   test('the substitution generator is present and gated', () => {
-    renderCombinator();
-    fireEvent.click(screen.getByRole('tab', { name: 'Combinations' }));
+    renderCocktail();
+    fireEvent.click(screen.getByRole('tab', { name: 'Cocktails' }));
     const pane = activePane();
 
     expect(pane.getByText('Substitution Generator')).toBeInTheDocument();
     const generate = pane.getByRole('button', { name: /Generate/ });
     expect(generate).toBeDisabled();
     fireEvent.mouseEnter(generate.parentElement!);
-    expect(screen.getByText('Pick a base combination')).toBeInTheDocument();
+    expect(screen.getByText('Pick a base cocktail')).toBeInTheDocument();
   });
 
-  test('a combination row can be added', () => {
-    renderCombinator();
-    fireEvent.click(screen.getByRole('tab', { name: 'Combinations' }));
+  test('a cocktail row can be added', () => {
+    renderCocktail();
+    fireEvent.click(screen.getByRole('tab', { name: 'Cocktails' }));
 
-    fireEvent.click(activePane().getByRole('button', { name: 'Add Combination' }));
+    fireEvent.click(activePane().getByRole('button', { name: 'Add Cocktail' }));
     const table = activePane().getByRole('table');
-    // header row plus the one combination we just added
+    // header row plus the one cocktail we just added
     expect(within(table).getAllByRole('row')).toHaveLength(2);
     expect(within(table).getByRole('option', { name: 'Recipe 1' })).toBeInTheDocument();
   });

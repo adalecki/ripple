@@ -33,7 +33,6 @@ export function compareToGolden(fileName: string): string[] {
 
   const actual = normalize(result.csv);
   const expected = normalize(readFileSync(expectedPath, 'utf8'));
-  console.log(fileName,actual[3],expected[3])
 
   if (actual.length !== expected.length) {
     messages.push(`Line count ${actual.length}, expected ${expected.length}`);

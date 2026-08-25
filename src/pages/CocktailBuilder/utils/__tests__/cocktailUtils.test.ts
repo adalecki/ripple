@@ -5,22 +5,22 @@ import { Pattern } from '../../../../classes/PatternClass';
 import {
   buildDesignFromInputData,
   buildInputData,
-  MAX_COMBINATION_SLOTS,
+  MAX_RECIPE_SLOTS,
   processInputData,
   recipeSlotCount
-} from '../combinatorUtils';
+} from '../cocktailUtils';
 import { echoInputValidation, validateInputData } from '../validationUtils';
 
 function loadExampleWorkbook() {
-  const path = join(__dirname, '../../../../../public/data/RippleTemplate_Combinator.xlsx');
+  const path = join(__dirname, '../../../../../public/data/RippleTemplate_Cocktail.xlsx');
   return read(readFileSync(path), { type: 'buffer' });
 }
 
 const example = echoInputValidation(loadExampleWorkbook(),"384","384",2.5).inputData;
 
 function roundTrip() {
-  const { recipes, srcPlates, combinations } = buildDesignFromInputData(example, '384', '384');
-  return buildInputData(recipes, srcPlates, combinations)!;
+  const { recipes, srcPlates, cocktails } = buildDesignFromInputData(example, '384', '384');
+  return buildInputData(recipes, srcPlates, cocktails)!;
 }
 
 describe('recipeSlotCount', () => {
@@ -45,17 +45,17 @@ describe('recipeSlotCount', () => {
   });
 });
 
-describe('Combinator end-to-end against the example workbook', () => {
+describe('CocktailBuilder end-to-end against the example workbook', () => {
   const { inputData, errors } = echoInputValidation(loadExampleWorkbook(),"384","384",2.5);
 
   test('the example workbook validates cleanly', () => {
     expect(errors).toEqual([]);
   });
 
-  test('parses the expected recipes, inventory and combinations', () => {
-    expect(inputData.Patterns).toHaveLength(2);
+  test('parses the expected recipes, inventory and cocktails', () => {
+    expect(inputData.Recipes).toHaveLength(2);
     expect(inputData.SourceLayout).toHaveLength(19);
-    expect(inputData.Combinations).toHaveLength(64);
+    expect(inputData.Cocktails).toHaveLength(64);
   });
 
   describe('processed result', () => {
@@ -75,7 +75,7 @@ describe('Combinator end-to-end against the example workbook', () => {
     });
 
     test('emits one transfer per component per replicate well', () => {
-      // 64 combinations x 6 components x 2 replicates
+      // 64 cocktails x 6 components x 2 replicates
       expect(result.transferSteps).toHaveLength(64 * 6 * 2);
     });
 
@@ -110,9 +110,9 @@ describe('Combinator end-to-end against the example workbook', () => {
 });
 
 describe('buildDesignFromInputData', () => {
-  const { recipes, previewPlate, srcPlates, combinations } = buildDesignFromInputData(example, '384', '384');
+  const { recipes, previewPlate, srcPlates, cocktails } = buildDesignFromInputData(example, '384', '384');
 
-  test('builds one Recipe pattern per Patterns row', () => {
+  test('builds one Recipe pattern per Recipes row', () => {
     expect(recipes).toHaveLength(2);
     expect(recipes.map(r => r.name)).toEqual(['Main', 'Main2']);
     expect(recipes.every(r => r.type === 'Recipe')).toBe(true);
@@ -126,7 +126,7 @@ describe('buildDesignFromInputData', () => {
 
   test('unused trailing slots are not padded up to the cap', () => {
     expect(recipes.every(r => r.volumes.length === recipeSlotCount(r))).toBe(true);
-    expect(recipes.every(r => r.volumes.length < MAX_COMBINATION_SLOTS)).toBe(true);
+    expect(recipes.every(r => r.volumes.length < MAX_RECIPE_SLOTS)).toBe(true);
   });
 
   test('recipes are stamped onto the preview plate', () => {
@@ -150,13 +150,13 @@ describe('buildDesignFromInputData', () => {
     expect(content.concentration).toBeNull();
   });
 
-  test('combinations get stable ids and padded slots', () => {
-    expect(combinations).toHaveLength(64);
-    expect(combinations[0].patternName).toBe('Main');
-    expect(combinations[0].slots).toHaveLength(10);
-    expect(combinations[0].slots.slice(0, 6)).toEqual(['Comp1v1', 'Comp2v1', 'Comp3v1', 'Comp4v1', 'Comp5v1', 'Neut']);
-    expect(combinations[0].slots.slice(6)).toEqual(['', '', '', '']);
-    expect(new Set(combinations.map(c => c.id)).size).toBe(64);
+  test('cocktails get stable ids and padded slots', () => {
+    expect(cocktails).toHaveLength(64);
+    expect(cocktails[0].recipeName).toBe('Main');
+    expect(cocktails[0].slots).toHaveLength(10);
+    expect(cocktails[0].slots.slice(0, 6)).toEqual(['Comp1v1', 'Comp2v1', 'Comp3v1', 'Comp4v1', 'Comp5v1', 'Neut']);
+    expect(cocktails[0].slots.slice(6)).toEqual(['', '', '', '']);
+    expect(new Set(cocktails.map(c => c.id)).size).toBe(64);
   });
 
   test('a block that overflows a smaller destination is clipped, not crashed', () => {
@@ -170,8 +170,8 @@ describe('buildDesignFromInputData', () => {
 describe('workbook round trip', () => {
   const rebuilt = roundTrip();
 
-  test('Patterns survive unchanged', () => {
-    expect(rebuilt.Patterns).toEqual(example.Patterns);
+  test('Recipes survive unchanged', () => {
+    expect(rebuilt.Recipes).toEqual(example.Recipes);
   });
 
   test('SourceLayout survives unchanged, including collapsed well ranges', () => {
@@ -180,8 +180,8 @@ describe('workbook round trip', () => {
     expect(rebuilt.SourceLayout.find(r => r.Content === 'Neut')!['Well ID']).toBe('F01:F24');
   });
 
-  test('Combinations survive unchanged', () => {
-    expect(rebuilt.Combinations).toEqual(example.Combinations);
+  test('Cocktails survive unchanged', () => {
+    expect(rebuilt.Cocktails).toEqual(example.Cocktails);
   });
 
   test('the whole InputDataType is deep-equal', () => {

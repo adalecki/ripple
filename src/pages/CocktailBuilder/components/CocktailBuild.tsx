@@ -8,21 +8,21 @@ import PlateViewCanvas from '../../../components/PlateViewCanvas';
 import TransferListDownload from '../../../components/TransferListDownload';
 import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
 import { TransferStepExport } from '../../../utils/plateUtils';
-import { Combination } from '../types/combinatorTypes';
+import { Cocktail } from '../types/cocktailTypes';
 import {
   InputDataType,
   buildInputData,
-  exportCombinatorWorkbook,
+  exportCocktailWorkbook,
   inventoryContents,
   recipeSlotCount
-} from '../utils/combinatorUtils';
+} from '../utils/cocktailUtils';
 import FileResultsCard from './FileResultsCard';
 
-interface CombinatorBuildProps {
+interface CocktailBuildProps {
   plate: Plate | null;
   recipes: Pattern[];
   srcPlates: Plate[];
-  combinations: Combination[];
+  cocktails: Cocktail[];
   srcPlateSize: PlateSize;
   dstPlateSize: PlateSize;
   dropletSize: number;
@@ -34,11 +34,11 @@ interface CombinatorBuildProps {
   showInstructions: () => void;
 }
 
-const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
+const CocktailBuild: React.FC<CocktailBuildProps> = ({
   plate,
   recipes,
   srcPlates,
-  combinations,
+  cocktails,
   srcPlateSize,
   dstPlateSize,
   dropletSize,
@@ -49,14 +49,14 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
   onClear,
   showInstructions
 }) => {
-  const inputData = buildInputData(recipes, srcPlates, combinations);
+  const inputData = buildInputData(recipes, srcPlates, cocktails);
 
   function getBuildDisabledReasons(): string[] {
     const reasons: string[] = [];
     if (!recipes.some(r => r.locations.length > 0)) reasons.push('No recipe has been applied to the plate');
     if (!recipes.some(r => recipeSlotCount(r) > 0)) reasons.push('No recipe has component volumes');
     if (inventoryContents(srcPlates).length === 0) reasons.push('No inventory has been declared');
-    if (combinations.length === 0) reasons.push('No combinations have been added');
+    if (cocktails.length === 0) reasons.push('No cocktails have been added');
     return reasons;
   }
 
@@ -76,7 +76,7 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
           <h4>Build</h4>
           Generate plates and a transfer list from the current design
           <small className="text-muted fst-italic mb-3">
-            Author recipes, inventory and combinations on the other tabs, or import an existing
+            Author recipes, inventory and cocktails on the other tabs, or import an existing
             workbook below. See the{' '}
             <button type="button" className="link-button" onClick={showInstructions}>instructions</button>
             {' '}for the file format.
@@ -101,7 +101,7 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
         </Col>
         <Col md={8} className="d-flex flex-column h-100 overflow-auto" style={{ scrollbarGutter: 'stable' }}>
           {plate
-            ? <PlateViewCanvas plate={plate} view="combinator" colorConfig={colorConfig} />
+            ? <PlateViewCanvas plate={plate} view="cocktail" colorConfig={colorConfig} />
             : 'Build the design to view the resulting plates'}
           {transferMap.size > 0 && (
             <div className="d-flex gap-2 w-100 button-row mt-2">
@@ -109,7 +109,7 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
                 <TransferListDownload transferMap={transferMap} splitOutputCSVs={false} />
               </div>
               <div className="flex-fill">
-                <Button variant="success" className="w-100" onClick={() => exportCombinatorWorkbook(inputData)}>
+                <Button variant="success" className="w-100" onClick={() => exportCocktailWorkbook(inputData)}>
                   Export Workbook
                 </Button>
               </div>
@@ -121,4 +121,4 @@ const CombinatorBuild: React.FC<CombinatorBuildProps> = ({
   );
 };
 
-export default CombinatorBuild;
+export default CocktailBuild;

@@ -3,24 +3,24 @@ import { Button, Table } from 'react-bootstrap';
 import { Copy, X } from 'lucide-react';
 
 import { Pattern } from '../../../classes/PatternClass';
-import { Combination } from '../types/combinatorTypes';
-import { emptySlots, nextCombinationId, recipeSlotCount } from '../utils/combinatorUtils';
+import { Cocktail } from '../types/cocktailTypes';
+import { emptySlots, nextCocktailId, recipeSlotCount } from '../utils/cocktailUtils';
 
-interface CombinationRowProps {
-  combination: Combination;
+interface CocktailRowProps {
+  cocktail: Cocktail;
   rowNumber: number;
   activeSlots: number;
   slotIndices: number[];
   recipeOptions: React.ReactNode;
   contentOptions: React.ReactNode;
-  onRecipeChange: (id: number, patternName: string) => void;
+  onRecipeChange: (id: number, recipeName: string) => void;
   onSlotChange: (id: number, slotIndex: number, value: string) => void;
   onDuplicate: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
-const CombinationRow: React.FC<CombinationRowProps> = ({
-  combination,
+const CocktailRow: React.FC<CocktailRowProps> = ({
+  cocktail,
   rowNumber,
   activeSlots,
   slotIndices,
@@ -36,8 +36,8 @@ const CombinationRow: React.FC<CombinationRowProps> = ({
     <td>
       <select
         className="form-select form-select-sm"
-        value={combination.patternName}
-        onChange={e => onRecipeChange(combination.id, e.target.value)}
+        value={cocktail.recipeName}
+        onChange={e => onRecipeChange(cocktail.id, e.target.value)}
       >
         {recipeOptions}
       </select>
@@ -50,9 +50,9 @@ const CombinationRow: React.FC<CombinationRowProps> = ({
             <>
               <select
                 className="form-select form-select-sm"
-                id={combination.id + slotIndex.toString()}
-                value={combination.slots[slotIndex] ?? ''}
-                onChange={e => onSlotChange(combination.id, slotIndex, e.target.value)}
+                id={cocktail.id + slotIndex.toString()}
+                value={cocktail.slots[slotIndex] ?? ''}
+                onChange={e => onSlotChange(cocktail.id, slotIndex, e.target.value)}
               >
                 {contentOptions}
               </select>
@@ -63,14 +63,14 @@ const CombinationRow: React.FC<CombinationRowProps> = ({
     })}
     <td>
       <div className="d-flex gap-1">
-        <button type="button" className="item-list-btn" title="Duplicate" onClick={() => onDuplicate(combination.id)}>
+        <button type="button" className="item-list-btn" title="Duplicate" onClick={() => onDuplicate(cocktail.id)}>
           <Copy size={14} />
         </button>
         <button
           type="button"
           className="item-list-btn item-list-btn-delete"
           title="Delete"
-          onClick={() => onDelete(combination.id)}
+          onClick={() => onDelete(cocktail.id)}
         >
           <X size={14} />
         </button>
@@ -79,15 +79,15 @@ const CombinationRow: React.FC<CombinationRowProps> = ({
   </tr>
 );
 
-interface CombinationsTableProps {
-  combinations: Combination[];
-  onChange: React.Dispatch<React.SetStateAction<Combination[]>>;
+interface CocktailsTableProps {
+  cocktails: Cocktail[];
+  onChange: React.Dispatch<React.SetStateAction<Cocktail[]>>;
   recipes: Pattern[];
   inventoryContents: string[];
 }
 
-const CombinationsTable: React.FC<CombinationsTableProps> = ({
-  combinations,
+const CocktailsTable: React.FC<CocktailsTableProps> = ({
+  cocktails,
   onChange,
   recipes,
   inventoryContents
@@ -98,12 +98,12 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
 
   const recipeOptions = recipes.map(recipe => <option key={recipe.id} value={recipe.name}>{recipe.name}</option>);
   const contentOptions = [
-    <option key="" value="">—</option>,
+    <option key="" value="">-</option>,
     ...inventoryContents.map(content => <option key={content} value={content}>{content}</option>)
   ];
 
-  const handleRecipeChange = (id: number, patternName: string) => {
-    onChange(prev => prev.map(c => (c.id === id ? { ...c, patternName } : c)));
+  const handleRecipeChange = (id: number, recipeName: string) => {
+    onChange(prev => prev.map(c => (c.id === id ? { ...c, recipeName } : c)));
   };
 
   const handleSlotChange = (id: number, slotIndex: number, value: string) => {
@@ -119,7 +119,7 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
     onChange(prev => {
       const index = prev.findIndex(c => c.id === id);
       if (index === -1) return prev;
-      const copy: Combination = { ...prev[index], id: nextCombinationId(), slots: [...prev[index].slots] };
+      const copy: Cocktail = { ...prev[index], id: nextCocktailId(), slots: [...prev[index].slots] };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
       return next;
@@ -130,27 +130,27 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
     onChange(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleAddCombination = () => {
+  const handleAddCocktail = () => {
     onChange(prev => [...prev, {
-      id: nextCombinationId(),
-      patternName: recipes[0].name,
+      id: nextCocktailId(),
+      recipeName: recipes[0].name,
       slots: emptySlots()
     }]);
   };
 
   if (recipes.length === 0) {
-    return <p className="text-muted">Define a recipe before adding combinations.</p>;
+    return <p className="text-muted">Define a recipe before adding cocktails.</p>;
   }
 
   return (
-    <div className="combinations-table-panel">
+    <div className="cocktails-table-panel">
       <div className="p-1 flex-shrink-0">
-        <Button size="sm" variant="outline-primary" onClick={handleAddCombination}>
-          Add Combination
+        <Button size="sm" variant="outline-primary" onClick={handleAddCocktail}>
+          Add Cocktail
         </Button>
       </div>
-      <div className="combinations-table-scroll">
-        <Table size="sm" bordered hover className="combinations-table mb-0">
+      <div className="cocktails-table-scroll">
+        <Table size="sm" bordered hover className="cocktails-table mb-0">
           <thead>
             <tr>
               <th style={{ width: '3rem' }}>#</th>
@@ -162,12 +162,12 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {combinations.map((combination, rowIndex) => (
-              <CombinationRow
-                key={combination.id}
-                combination={combination}
+            {cocktails.map((cocktail, rowIndex) => (
+              <CocktailRow
+                key={cocktail.id}
+                cocktail={cocktail}
                 rowNumber={rowIndex + 1}
-                activeSlots={slotCountsByName.get(combination.patternName) ?? 0}
+                activeSlots={slotCountsByName.get(cocktail.recipeName) ?? 0}
                 slotIndices={slotIndices}
                 recipeOptions={recipeOptions}
                 contentOptions={contentOptions}
@@ -179,12 +179,12 @@ const CombinationsTable: React.FC<CombinationsTableProps> = ({
             ))}
           </tbody>
         </Table>
-        {combinations.length === 0 && (
-          <p className="text-muted p-2 mb-0">No combinations yet. Add one below, or generate a substitution set.</p>
+        {cocktails.length === 0 && (
+          <p className="text-muted p-2 mb-0">No cocktails yet. Add one below, or generate a substitution set.</p>
         )}
       </div>
     </div>
   );
 };
 
-export default CombinationsTable;
+export default CocktailsTable;

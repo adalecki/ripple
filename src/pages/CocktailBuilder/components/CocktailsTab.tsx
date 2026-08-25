@@ -4,22 +4,22 @@ import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 import { Plate } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import ApplyTooltip from '../../../components/ApplyTooltip';
-import { Combination } from '../types/combinatorTypes';
-import { inventoryContents, nextCombinationId, recipeSlotCount } from '../utils/combinatorUtils';
-import CombinationsTable from './CombinationsTable';
+import { Cocktail } from '../types/cocktailTypes';
+import { inventoryContents, nextCocktailId, recipeSlotCount } from '../utils/cocktailUtils';
+import CocktailsTable from './CocktailsTable';
 
-import '../../../css/Combinator.css';
+import '../../../css/CocktailBuilder.css';
 
-interface CombinationsTabProps {
-  combinations: Combination[];
-  setCombinations: React.Dispatch<React.SetStateAction<Combination[]>>;
+interface CocktailsTabProps {
+  cocktails: Cocktail[];
+  setCocktails: React.Dispatch<React.SetStateAction<Cocktail[]>>;
   recipes: Pattern[];
   srcPlates: Plate[];
 }
 
-const CombinationsTab: React.FC<CombinationsTabProps> = ({
-  combinations,
-  setCombinations,
+const CocktailsTab: React.FC<CocktailsTabProps> = ({
+  cocktails,
+  setCocktails,
   recipes,
   srcPlates
 }) => {
@@ -30,14 +30,14 @@ const CombinationsTab: React.FC<CombinationsTabProps> = ({
 
   const contents = inventoryContents(srcPlates);
 
-  const base = combinations.find(c => c.id === baseId) ?? null;
-  const baseRecipe = base ? recipes.find(r => r.name === base.patternName) ?? null : null;
+  const base = cocktails.find(c => c.id === baseId) ?? null;
+  const baseRecipe = base ? recipes.find(r => r.name === base.recipeName) ?? null : null;
   const slotCount = baseRecipe ? recipeSlotCount(baseRecipe) : 0;
 
   function getGenerateDisabledReasons(): string[] {
     const reasons: string[] = [];
-    if (!base) reasons.push('Pick a base combination');
-    if (!baseRecipe) reasons.push('The base combination references an unknown recipe');
+    if (!base) reasons.push('Pick a base cocktail');
+    if (!baseRecipe) reasons.push('The base cocktail references an unknown recipe');
     else if (slotIndex >= slotCount) reasons.push(`That recipe only has ${slotCount} slot${slotCount === 1 ? '' : 's'}`);
     if (selectedContents.length === 0) reasons.push('Select at least one content to substitute in');
     return reasons;
@@ -48,17 +48,17 @@ const CombinationsTab: React.FC<CombinationsTabProps> = ({
 
   const handleGenerate = () => {
     if (!base || !canGenerate) return;
-    const existing = new Set(combinations.map(c => `${c.patternName}|${c.slots.join('|')}`));
-    const added: Combination[] = [];
+    const existing = new Set(cocktails.map(c => `${c.recipeName}|${c.slots.join('|')}`));
+    const added: Cocktail[] = [];
     for (const content of selectedContents) {
       const slots = [...base.slots];
       slots[slotIndex] = content;
-      const key = `${base.patternName}|${slots.join('|')}`;
+      const key = `${base.recipeName}|${slots.join('|')}`;
       if (existing.has(key)) continue;
       existing.add(key);
-      added.push({ id: nextCombinationId(), patternName: base.patternName, slots });
+      added.push({ id: nextCocktailId(), recipeName: base.recipeName, slots });
     }
-    setCombinations([...combinations, ...added]);
+    setCocktails([...cocktails, ...added]);
     setSelectedContents([]);
   };
 
@@ -85,16 +85,16 @@ const CombinationsTab: React.FC<CombinationsTabProps> = ({
             <Card.Body>
               <Row className="g-2 align-items-start">
                 <Col md={3}>
-                  <Form.Label className="small mb-1">Base combination</Form.Label>
+                  <Form.Label className="small mb-1">Base cocktail</Form.Label>
                   <select
                     className="form-select form-select-sm"
                     value={baseId ?? ''}
                     onChange={e => { setBaseId(e.target.value ? Number(e.target.value) : null); setSlotIndex(0); }}
                   >
-                    <option value="">—</option>
-                    {combinations.map((c, i) => (
+                    <option value="">-</option>
+                    {cocktails.map((c, i) => (
                       <option key={c.id} value={c.id}>
-                        {i + 1}. {c.patternName}: {c.slots.filter(Boolean).join(', ') || '(empty)'}
+                        {i + 1}. {c.recipeName}: {c.slots.filter(Boolean).join(', ') || '(empty)'}
                       </option>
                     ))}
                   </select>
@@ -144,9 +144,9 @@ const CombinationsTab: React.FC<CombinationsTabProps> = ({
       </Row>
       <Row className="flex-grow-1" style={{ minHeight: 0 }}>
         <Col md={12} className="h-100 d-flex flex-column" style={{ minHeight: 0 }}>
-          <CombinationsTable
-            combinations={combinations}
-            onChange={setCombinations}
+          <CocktailsTable
+            cocktails={cocktails}
+            onChange={setCocktails}
             recipes={recipes}
             inventoryContents={contents}
           />
@@ -157,4 +157,4 @@ const CombinationsTab: React.FC<CombinationsTabProps> = ({
   );
 };
 
-export default CombinationsTab;
+export default CocktailsTab;

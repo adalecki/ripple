@@ -2,10 +2,10 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { read } from 'xlsx';
 import { echoInputValidation, validateInputData, isDropletMultiple } from '../validationUtils';
-import { InputDataType, COMBINATOR_HEADERS } from '../combinatorUtils';
+import { InputDataType, COCKTAIL_HEADERS } from '../cocktailUtils';
 
 function loadExampleWorkbook() {
-  const path = join(__dirname, '../../../../../public/data/RippleTemplate_Combinator.xlsx');
+  const path = join(__dirname, '../../../../../public/data/RippleTemplate_Cocktail.xlsx');
   return read(readFileSync(path), { type: 'buffer' });
 }
 
@@ -49,25 +49,25 @@ describe('validateInputData on the example workbook', () => {
 describe('validateInputData catches design errors', () => {
   test('duplicate recipe name', () => {
     const data = cloneExample();
-    data.Patterns.push({ ...data.Patterns[0] });
+    data.Recipes.push({ ...data.Recipes[0] });
     expect(validateInputData(data,"384","384",2.5).some(e => e.includes('already present'))).toBe(true);
   });
 
   test('well block that does not fit the destination plate', () => {
     const data = cloneExample();
-    data.Patterns[0]['Well Block'] = 'A01:Z99';
+    data.Recipes[0]['Well Block'] = 'A01:Z99';
     expect(validateInputData(data,"384","384",2.5).some(e => e.includes('does not fit on a plate'))).toBe(true);
   });
 
-  test('combination referencing an unknown recipe', () => {
+  test('cocktail referencing an unknown recipe', () => {
     const data = cloneExample();
-    data.Combinations[0].Pattern = 'NoSuchRecipe';
-    expect(validateInputData(data,"384","384",2.5).some(e => e.includes('is not present on the Patterns tab'))).toBe(true);
+    data.Cocktails[0].Recipe = 'NoSuchRecipe';
+    expect(validateInputData(data,"384","384",2.5).some(e => e.includes('is not present on the Recipes tab'))).toBe(true);
   });
 
-  test('combination referencing content absent from inventory', () => {
+  test('cocktail referencing content absent from inventory', () => {
     const data = cloneExample();
-    data.Combinations[0].Comp1 = 'NotAnInventoryItem';
+    data.Cocktails[0].Comp1 = 'NotAnInventoryItem';
     expect(validateInputData(data,"384","384",2.5).some(e => e.includes('is not present on SourceLayout'))).toBe(true);
   });
 
@@ -79,12 +79,12 @@ describe('validateInputData catches design errors', () => {
   });
 });
 
-describe('COMBINATOR_HEADERS', () => {
+describe('COCKTAIL_HEADERS', () => {
   test('matches the sheet shape the validator enforces', () => {
-    expect(COMBINATOR_HEADERS.Patterns).toHaveLength(13);
-    expect(COMBINATOR_HEADERS.Patterns.slice(0, 3)).toEqual(['Name', 'Replicates', 'Well Block']);
-    expect(COMBINATOR_HEADERS.SourceLayout).toHaveLength(5);
-    expect(COMBINATOR_HEADERS.Combinations).toHaveLength(11);
-    expect(COMBINATOR_HEADERS.Combinations[10]).toBe('Comp10');
+    expect(COCKTAIL_HEADERS.Recipes).toHaveLength(13);
+    expect(COCKTAIL_HEADERS.Recipes.slice(0, 3)).toEqual(['Name', 'Replicates', 'Well Block']);
+    expect(COCKTAIL_HEADERS.SourceLayout).toHaveLength(5);
+    expect(COCKTAIL_HEADERS.Cocktails).toHaveLength(11);
+    expect(COCKTAIL_HEADERS.Cocktails[10]).toBe('Comp10');
   });
 });

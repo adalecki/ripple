@@ -7,7 +7,7 @@ import PlateViewCanvas from '../../../components/PlateViewCanvas';
 import ApplyTooltip from '../../../components/ApplyTooltip';
 import { currentItem } from '../../../utils/designUtils';
 import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
-import { inventoryContents } from '../utils/combinatorUtils';
+import { inventoryContents } from '../utils/cocktailUtils';
 import InventoryManager from './InventoryManager';
 
 import '../../../css/DesignWizard.css';
@@ -193,8 +193,8 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
               className="default-label-text w-auto form-field-compact"
             />
             <FormField
-              id="combinator-src-plate-size"
-              name="combinator-src-plate-size"
+              id="cocktail-src-plate-size"
+              name="cocktail-src-plate-size"
               type="select"
               label="Source Plate Size"
               value={srcPlateSize}
