@@ -145,9 +145,9 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
         well.addContent({
           compoundId: wellContentsForm.compoundId || undefined,
           concentration: wellContentsForm.concentration as number,
+          volume: wellContentsForm.volume as number * 1000, //uL to nL
           patternName
         },
-          wellContentsForm.volume as number * 1000, //uL to nL
           { name: 'DMSO', fraction: 1 }
         )
       }
@@ -163,9 +163,9 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           well.addContent({
             compoundId: currentCompound || undefined,
             concentration,
+            volume: wellContentsForm.volume as number * 1000,
             patternName
           },
-            wellContentsForm.volume as number * 1000,
             { name: 'DMSO', fraction: 1 }
           );
         }

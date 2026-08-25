@@ -384,9 +384,8 @@ export class EchoPreCalculator {
   buildIntermediateConc(
     conc: number,
     stockConcentration: number): { actualIntermediateConc: number, actualIntermediateConcVol: number } {
-    //const lowestConc = Math.min(...remainingConcentrations);
-
-    let maxVolToDest = roundToInc({ val: (this.finalAssayVolume * this.maxDMSOFraction), dir: 'down', inc: this.dropletSize }) // round down to avoid accidentally going over DMSO limit
+    const maxOf = Math.min((this.finalAssayVolume * this.maxDMSOFraction),this.maxTransferVolume)
+    let maxVolToDest = roundToInc({ val: maxOf, dir: 'down', inc: this.dropletSize }) // round down to avoid accidentally going over DMSO limit
     let idealIntermediateConc = calculateMissingValue({ v1: maxVolToDest, c2: conc, v2: (this.finalAssayVolume + maxVolToDest) });
     let idealIntermediateConcVol = (this.intermediateBackfillVolume * idealIntermediateConc) / (stockConcentration - idealIntermediateConc)
     let actualIntermediateConcVol = roundToInc({ val: idealIntermediateConcVol, dir: 'up', inc: this.dropletSize }) // round up to make sure this conc is high enough to satisfy dest within DMSO limit

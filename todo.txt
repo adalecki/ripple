@@ -32,3 +32,14 @@
 # Randomize plate layouts?
 # sensibleWellSelection behavior is confusing, it triggers on calculated blocks not full well selection
 # Before next push - test TsfrCalcultor now that Design is removed!
+# pull activePlate concept from Combinator into PlateDesigner
+# update dead vol logic in precalc and calc to work with new plate class deadvol
+# add dead vol of 1uL for 1536 plates
+#x remove "export workbook" button in Design Summary of Combinator
+#x "add combination" button needs to be more visable in the Combinations tab
+# plate type isn't moving into actual transfer lists, very crude
+#x "Combinations" vs "Combinator" is confusing
+#x "Clear" on design summary doesn't clear the actual design summary
+# changing src plate size on combinator resets inventory but nothing else; also deletes all src plates, not just the selected one
+# redo nextCombinationId
+# combinator block borders not respecting replicates

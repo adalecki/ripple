@@ -1,5 +1,5 @@
 import { Plate } from "../classes/PlateClass";
-import { Well } from "../classes/WellClass";
+import { Well, WellContent } from "../classes/WellClass";
 import { HslStringType, Pattern, isCombinationType } from "../classes/PatternClass";
 import * as d3 from 'd3'
 
@@ -100,7 +100,7 @@ function getCompoundColor(well: Well, config: ColorConfig): HslStringType[] {
     colors = contents.map(content => {
       const baseColor = config.colorMap.get(content.compoundId!) || 'hsl(0,0%,80%)';
       let nums = baseColor.match(regex)
-      let lightness = wellLightness(well, content.concentration, config.maxConcentration || 0)
+      let lightness = wellLightness(well, content, config.maxConcentration || 0)
       return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` as HslStringType : 'hsl(0,0%,100%)' as HslStringType)
     });
   }
@@ -121,19 +121,26 @@ function getPatternColor(well: Well, config: ColorConfig): HslStringType[] {
   const colors = contents.map(content => {
     const baseColor = config.colorMap.get(content.patternName) || 'hsl(0,0%,80%)';
     let nums = baseColor.match(regex)
-    let lightness = wellLightness(well, content.concentration, config.maxConcentration || 0)
+    let lightness = wellLightness(well, content, config.maxConcentration || 0)
     return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` as HslStringType : 'hsl(0,0%,100%)' as HslStringType)
   });
   return colors
 }
 
-function wellLightness(well: Well, concentration: number, maxValue: number) {
+function wellLightness(well: Well, content: WellContent, maxValue: number) {
   let start = 40
   let end = 95
   let lightness = end
+  if (content.concentration === null) {
+    const plannedVolume = well.getContents().reduce(
+      (sum, c) => (c.concentration === null ? sum + c.volume : sum), 0)
+    const denominator = well.getTotalVolume() > 0 ? well.getTotalVolume() : plannedVolume
+    const ratio = denominator > 0 ? content.volume / denominator : 0
+    return end - (Math.floor(ratio * (end - start)))
+  }
   if (maxValue === 0) { maxValue = 1 }
   if (well.getContents()) {
-    lightness = end - (Math.floor(concentration / maxValue * (end - start)))
+    lightness = end - (Math.floor(content.concentration / maxValue * (end - start)))
   }
 
   return lightness

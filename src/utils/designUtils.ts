@@ -11,6 +11,14 @@ export function currentItem(items: any[], curItemId: number | null) {
   return item
 }
 
+export function generateId(items: {id: number; [key: string]: any}[]): number {
+  let newId = Date.now();
+  while (items.find(i => i.id == newId)) {
+    newId += 1
+  }
+  return newId
+}
+
 export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) {
   const wb: WorkBook = utils.book_new();
 
@@ -67,7 +75,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
 
       for (const well of sortedWells) {
         const content = well.getContents()[0];
-        if (!content.compoundId) continue;
+        if (!content.compoundId || content.concentration === null) continue;
 
         const volume = well.getTotalVolume() / 1000;
         const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
@@ -154,6 +162,23 @@ export function isBlockOverlapping(plate: Plate, newBlock: string, existingLocat
   }
   return false;
 };
+
+export function sensibleRecipeSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
+  if (selectedWellIds.length === 0) return ['No wells selected'];
+  if (pattern.replicates < 1) return ['Replicates must be at least 1'];
+  if (selectedWellIds.length % pattern.replicates !== 0) {
+    return [`The number of wells must be a multiple of ${pattern.replicates} replicate${pattern.replicates > 1 ? 's' : ''}`];
+  }
+
+  const msgArr: string[] = [];
+  for (const block of splitIntoBlocks(selectedWellIds, pattern, plate)) {
+    //a semicolon means those replicate wells couldn't be expressed as one rectangle
+    if (block.includes(';')) {
+      msgArr.push(`Replicate block ${block} is not contiguous`);
+    }
+  }
+  return msgArr;
+}
 
 export function sensibleWellSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
   const msgArr: string[] = [];

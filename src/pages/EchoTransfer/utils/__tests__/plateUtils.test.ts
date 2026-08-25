@@ -132,9 +132,12 @@ describe('clonePlate', () => {
     const original = new Plate({ id: 1, barcode: 'P1', plateSize: '96' });
     const well = original.getWell('A01');
     if (well) {
-      well.addContent(
-        { compoundId: 'C1', concentration: 100, patternName: 'P1' },
-        1000,
+      well.addContent({ 
+        compoundId: 'C1', 
+        concentration: 100, 
+        volume: 1000,
+        patternName: 'P1' 
+      },
         { name: 'DMSO', fraction: 1 }
       );
     }

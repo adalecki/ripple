@@ -225,7 +225,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
               options={[
                 { label: "Control", value: "Control" },
                 { label: "Treatment", value: "Treatment" },
-                { label: "Combination", value: "Combination" },
+                { label: "Combination (all N-way)", value: "Combination" },
                 { label: "Unused", value: "Unused" }
               ]}
             />
