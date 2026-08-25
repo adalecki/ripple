@@ -46,7 +46,6 @@ const Home = () => {
                 <Card.Title className="mb-3">Echo Transfer Calculator</Card.Title>
                 <Card.Text className="text-muted">
                   Calculate liquid transfers by declaring desired concentrations, not volumes, using a template source file.
-                  For plates built from fixed volumes of ready-made stocks, see the Cocktail Builder.
                 </Card.Text>
               </Card.Body>
             </Card>
@@ -80,8 +79,8 @@ const Home = () => {
                 <Merge size={48} className="mb-3 tool-icon text-muted" />
                 <Card.Title className="mb-3">Cocktail Builder</Card.Title>
                 <Card.Text className="text-muted">
-                  Build plates from hand-listed cocktails, dispensed at fixed volumes rather than
-                  by concentration. No dilution series, no intermediate plates.
+                  Build plates from hand-listed cocktails of components, dispensed at fixed volumes rather than
+                  by concentration. 
                 </Card.Text>
               </Card.Body>
             </Card>
