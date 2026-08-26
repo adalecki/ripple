@@ -135,7 +135,7 @@ export function performTransfers(newPlates: { "source": Plate[], "intermediate":
     for (const well of allPlates[i]) {
       if (!well) continue;
       for (const content of well.getContents()) {
-        if (content.compoundId) { maxConcentration = Math.max(maxConcentration, content.concentration) }
+        if (content.compoundId && content.concentration !== null) { maxConcentration = Math.max(maxConcentration, content.concentration) }
       }
     }
     allPlates[i].metadata.globalMaxConcentration = maxConcentration

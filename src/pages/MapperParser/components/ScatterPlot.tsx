@@ -56,7 +56,7 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
       lines.push('  None');
     } else {
       point.contents.forEach(content => {
-        lines.push(`  ${content.compoundId}: ${content.concentration.toFixed(3)} µM`);
+        lines.push(`  ${content.compoundId}: ${content.concentration !== null ? `${content.concentration.toFixed(3)} µM` : `${content.volume.toFixed(1)} nL`}`);
       });
     }
 

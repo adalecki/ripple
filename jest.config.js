@@ -3,7 +3,8 @@ export default {
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy' // Mock CSS imports
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    "d3": "<rootDir>/node_modules/d3/dist/d3.min.js"
   },
   transform: {
     '^.+\\.tsx?$': [
@@ -16,7 +17,7 @@ export default {
       },
     ],
   },
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
+  testRegex: '(\\.|/)(test|spec)\\.[jt]sx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['@testing-library/jest-dom','<rootDir>/jest.setup.js']
 };

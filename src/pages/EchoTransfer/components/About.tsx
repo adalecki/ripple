@@ -24,8 +24,8 @@ const exampleData = [
     filename: 'RippleTemplate_ConcentrationWarning.xlsx'
   },
   {
-    name: 'Combinations',
-    description: 'Shows the Combination-2 pattern type in its perpendicular-matrix form, testing each member compound against every other member compound in perpendicular dose-response curves. Also has DMSO solvent wells to avoid intermediate plate creation.',
+    name: 'Combination Patterns',
+    description: 'Auto-enumerates every 2-way combination of the tagged compounds, shown here in the Combination-2 perpendicular-matrix form: each member compound is tested against every other in perpendicular dose-response curves. Also has DMSO solvent wells to avoid intermediate plate creation.',
     filename: 'RippleTemplate_Combination.xlsx'
   }
 ];

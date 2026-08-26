@@ -13,6 +13,8 @@ export class Plate {
   wells: { [key: string]: Well };
   plateRole: PlateRole;
   patterns: { [key: string]: Pattern };
+  plateType?: string;
+  deadVolume?: number;
 
   constructor(config: {
     id?: number;
@@ -20,6 +22,8 @@ export class Plate {
     metadata?: any;
     plateSize?: PlateSize;
     plateRole?: PlateRole;
+    plateType?: string;
+    deadVolume?: number;
   }) {
     this.id = config.id || Date.now();
     this.barcode = config.barcode || '';
@@ -30,6 +34,14 @@ export class Plate {
     this.wells = this.initializeWells();
     this.plateRole = config.plateRole || 'destination';
     this.patterns = {};
+    this.plateType = config.plateType;
+    this.deadVolume = config.deadVolume;
+  }
+
+  getDeadVolume(): number {
+    if (this.deadVolume != null) return this.deadVolume;
+    const maxWellVolume = Math.max(0, ...Array.from(this).map(well => well.getTotalVolume()));
+    return maxWellVolume > 15000 ? 15000 : 2500;
   }
 
   *[Symbol.iterator](): IterableIterator<Well> {
@@ -65,7 +77,7 @@ export class Plate {
     return clonedPlate;
   }
 
-  getPlateDimensions(plateSize: PlateSize) {
+  getPlateDimensions(plateSize: PlateSize): {rows: number, cols: number} {
     const dimensions = {
       '12': { rows: 3, cols: 4 },
       '24': { rows: 4, cols: 6 },
@@ -132,6 +144,11 @@ export class Plate {
       const wells = this.getSomeWells(wellBlock);
       for (const well of wells) {
         well.markAsUnused();
+      }
+    } else if (pattern.type == 'Recipe') {
+      const volumes = pattern.volumes.filter(v => v != null)
+      for (const well of this.getSomeWells(wellBlock)) {
+        well.applyPatternVolumes(pattern.name, volumes)
       }
     } else if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
       const concentrations = pattern.concentrations.filter(c => c != null)

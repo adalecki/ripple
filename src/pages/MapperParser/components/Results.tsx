@@ -88,7 +88,8 @@ const Results: React.FC = () => {
           controlType: 'None' as const,
           contents: [{
             compoundId: curve.treatmentId,
-            concentration: point.concentration
+            concentration: point.concentration,
+            volume: 0
           }],
           responseValue: point.responseValue,
           wellId: point.wellId

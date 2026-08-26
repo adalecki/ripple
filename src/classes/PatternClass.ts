@@ -14,10 +14,10 @@ export function getCombinationFold(type: CombinationType): number {
 
 export interface DilutionPattern {
   patternName: string;
-  type: 'Control' | 'Treatment' | 'Solvent' | 'Unused' | CombinationType;
+  type: 'Control' | 'Treatment' | 'Solvent' | 'Unused' | CombinationType | 'Recipe';
   concentrations: number[];
+  volumes?: number[];
   replicates: number;
-  //direction: 'LR' | 'RL' | 'TB' | 'BT';
   direction: ('LR' | 'RL' | 'TB' | 'BT')[]
   fold: number;
 }
@@ -29,6 +29,7 @@ export class Pattern {
   replicates: number;
   direction: DilutionPattern['direction'];
   concentrations: (number | null)[];
+  volumes: (number | null)[];
   color: HslStringType;
   locations: string[];
   fold?: number;
@@ -39,6 +40,7 @@ export class Pattern {
     replicates: number;
     direction: DilutionPattern['direction']
     concentrations: (number | null)[];
+    volumes?: (number | null)[];
     color?: HslStringType;
     locations: string[];
     fold?: number;
@@ -48,7 +50,8 @@ export class Pattern {
     this.type = data.type;
     this.replicates = data.replicates;
     this.direction = data.direction;
-    this.concentrations = data.type === 'Unused' ? [] : data.concentrations;
+    this.concentrations = (data.type === 'Unused' || data.type === 'Recipe') ? [] : data.concentrations;
+    this.volumes = data.type === 'Recipe' ? (data.volumes ?? []) : [];
     this.color = data.color || this.generateRandomColor();
     this.locations = data.locations || []
     this.fold = data.fold || 1;
@@ -76,8 +79,10 @@ export class Pattern {
       replicates: this.replicates,
       direction: this.direction,
       concentrations: this.concentrations,
+      volumes: this.volumes,
       color: this.color,
-      locations: this.locations
+      locations: this.locations,
+      fold: this.fold
     };
   }
 

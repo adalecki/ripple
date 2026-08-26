@@ -6,13 +6,14 @@ Live instance: https://adalecki.github.io/ripple/
 
 ## What it does
 
-The app is split into five independent tools:
+The app is split into six independent tools:
 
 - **Dilution Designer** - Visualize which destination concentrations are actually achievable given Echo transfer constraints (droplet size, max transfer volume, source stock concentrations, well volume).
 - **Plate Designer** - Build destination and source plate layouts using reusable concentration/replicate patterns, then export a template workbook that feeds the calculator.
 - **Echo Transfer Calculator** - The core engine. Takes a layout workbook (see below) and produces the transfer list. Handles multi-step dilutions, automatic intermediate-plate generation, DMSO backfill/normalization, dead-volume accounting, and source-survey-volume input.
 - **Plate Reformat** - Bulk well-to-well transfers between plates (compress, decompress, interleave, or custom schemes). With plate barcodes it emits automation-ready transfer lists.
 - **Plate Mapper / Data Parser** - Reconstruct destination plate maps from Echo transfer logs (showing only wells that actually received transfer), then upload raw readout files, parse them against named protocols, fit dose-response curves, and view results.
+- **Cocktail Builder** - Build destination plates from a hand-listed set of cocktails, dispensed at fixed volumes rather than by concentration. No dilution series and no intermediate plates; use it when you already know exactly what goes into each well.
 
 Concentrations are handled in µM, volumes in µL, and transfers are quantized to the Echo droplet resolution. The calculator inserts intermediate plates automatically when a target concentration cannot be reached in a single transfer within the DMSO and droplet constraints.
 

@@ -15,7 +15,7 @@ interface PreferencesContextValue {
 
 export const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
-function getDefaultPreferences(): PreferencesState {
+export function getDefaultPreferences(): PreferencesState {
   const defaults: { [key: string]: PreferenceValue } = {};
   PREFERENCES_CONFIG.forEach(category => {
     category.settings.forEach(setting => {
