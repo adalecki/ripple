@@ -43,3 +43,4 @@
 # changing src plate size on combinator resets inventory but nothing else; also deletes all src plates, not just the selected one
 # redo nextCombinationId
 # combinator block borders not respecting replicates
+#x cocktailbuilder edit button doesn't match plate designer style

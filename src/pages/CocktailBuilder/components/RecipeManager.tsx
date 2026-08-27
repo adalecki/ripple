@@ -108,8 +108,9 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
             {recipeState.isEditing ? (
               <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 <Button
+                  variant="success"
                   size="sm"
-                  onClick={(e) => { handleSaveRecipe(); e.currentTarget.blur() }}
+                  onClick={handleSaveRecipe}
                   disabled={saveDisabledReasons.length > 0}
                 >
                   Save
@@ -118,9 +119,9 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
             ) : (
               <>
                 <Button
+                  variant="primary"
                   size="sm"
-                  variant="outline-primary"
-                  onClick={(e) => { handleEditRecipe(); e.currentTarget.blur() }}
+                  onClick={handleEditRecipe}
                   disabled={editingRecipe.locations.length > 0}
                 >
                   Edit
