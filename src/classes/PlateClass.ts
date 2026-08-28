@@ -38,12 +38,6 @@ export class Plate {
     this.deadVolume = config.deadVolume;
   }
 
-  getDeadVolume(): number {
-    if (this.deadVolume != null) return this.deadVolume;
-    const maxWellVolume = Math.max(0, ...Array.from(this).map(well => well.getTotalVolume()));
-    return maxWellVolume > 15000 ? 15000 : 2500;
-  }
-
   *[Symbol.iterator](): IterableIterator<Well> {
     for (const wellId of Object.keys(this.wells)) {
       const well = this.wells[wellId];
@@ -98,6 +92,17 @@ export class Plate {
       }
     }
     return wells;
+  }
+
+  getDeadVolume(): number {
+    if (this.deadVolume != null) return this.deadVolume;
+    if (this.rows === 32) return 1000; //1uL dead volume for 1536 well plates
+    const maxWellVolume = Math.max(0, ...Array.from(this).map(well => well.getTotalVolume()));
+    return maxWellVolume > 15000 ? 15000 : 2500;
+  }
+
+  setDeadVolume(volume: number): void {
+    this.deadVolume = volume
   }
 
   bulkFillWells(wellIds: string[], volume: number, solventName: string = 'DMSO'): void {
