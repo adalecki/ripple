@@ -110,7 +110,7 @@ export class EchoPreCalculator {
     }
     try {
       this.srcCompoundInventory = buildSrcCompoundInventory(this.inputData, this.srcPltSize)
-      this.sourcePlates = prepareSrcPlates(this.srcCompoundInventory, this.srcPltSize, this.dilutionPatterns, this.inputData)
+      this.sourcePlates = prepareSrcPlates(this.srcCompoundInventory, this.srcPltSize, this.dilutionPatterns, this.inputData, this.sourcePlates)
       this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Pending")
       const missingPatterns: string[] = []
       for (const [patternName, pattern] of this.dilutionPatterns) {

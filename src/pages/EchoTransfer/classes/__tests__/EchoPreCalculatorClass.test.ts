@@ -2,7 +2,7 @@ import { EchoPreCalculator } from '../EchoPreCalculatorClass';
 import { CheckpointTracker } from '../CheckpointTrackerClass';
 import { buildSrcCompoundInventory, calculateTransferConcentrations, checkSourceVolumes, InputDataType, prepareSrcPlates } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
-import { PlateSize } from '../../../../classes/PlateClass';
+import { Plate, PlateSize } from '../../../../classes/PlateClass';
 import { DilutionPattern } from '../../../../classes/PatternClass';
 import { CompoundGroup, ConcentrationObj } from '../../types/echoTypes';
 
@@ -45,27 +45,39 @@ function createMockInputData(compounds?: InputDataType['Compounds'], patterns?: 
   }
 };
 
+function buildSourcePlates(preCalc: EchoPreCalculator): Plate[] {
+  preCalc.srcCompoundInventory = buildSrcCompoundInventory(preCalc.inputData, preCalc.srcPltSize);
+  preCalc.sourcePlates = prepareSrcPlates(preCalc.srcCompoundInventory, preCalc.srcPltSize, preCalc.dilutionPatterns, preCalc.inputData);
+  return preCalc.sourcePlates;
+}
+
+function deadVolumeOf(preCalc: EchoPreCalculator, barcode: string): number | undefined {
+  return preCalc.sourcePlates.find(p => p.barcode === barcode)?.getDeadVolume();
+}
+
 describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
   describe('Initial Dead Volume Calculation', () => {
-    it('should set dead volume to 2500 nL if all compound volumes are <= 15 µL for a plate', () => {
+    it('should derive a dead volume of 2500 nL if all compound volumes are <= 15 µL for a plate', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
         { 'Source Barcode': 'P1', 'Well ID': 'B1', 'Volume (µL)': 15, 'Concentration (µM)': 100, 'Compound ID': 'C2', 'Pattern': 'Pattern1' },
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
     });
 
-    it('should set dead volume to 15000 nL if any compound volume is > 15 µL for a plate', () => {
+    it('should derive a dead volume of 15000 nL if any compound volume is > 15 µL for a plate', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
         { 'Source Barcode': 'P1', 'Well ID': 'B1', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C2', 'Pattern': 'Pattern1' }, // > 15 µL
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(15000);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(15000);
     });
 
-    it('should correctly set dead volumes for multiple plates with different conditions', () => {
+    it('should derive dead volumes independently for each plate', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' }, // P1 <= 15 µL
         { 'Source Barcode': 'P2', 'Well ID': 'A1', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C3', 'Pattern': 'Pattern2' }, // P2 > 15 µL
@@ -73,37 +85,62 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         { 'Source Barcode': 'P3', 'Well ID': 'C1', 'Volume (µL)': 15, 'Concentration (µM)': 100, 'Compound ID': 'C4', 'Pattern': 'Pattern3' }, // P3 <= 15 µL
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
-      expect(preCalc.plateDeadVolumes.get('P2')).toBe(15000);
-      expect(preCalc.plateDeadVolumes.get('P3')).toBe(2500);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
+      expect(deadVolumeOf(preCalc, 'P2')).toBe(15000);
+      expect(deadVolumeOf(preCalc, 'P3')).toBe(2500);
     });
 
-    it('should handle a source plate with no compounds (empty plateDeadVolumes for it)', () => {
+    it('should create no source plates when there are no compounds', () => {
       const mockInput: InputDataType = createMockInputData([]); // No compounds
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.size).toBe(0);
+      buildSourcePlates(preCalc);
+      expect(preCalc.sourcePlates).toHaveLength(0);
 
       const mockInputWithOtherPlate: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
       ]);
       const preCalc2 = new EchoPreCalculator(mockInputWithOtherPlate, new CheckpointTracker(), mockPreferences);
-      expect(preCalc2.plateDeadVolumes.get('P1')).toBe(2500);
-      expect(preCalc2.plateDeadVolumes.has('P2')).toBe(false);
+      buildSourcePlates(preCalc2);
+      expect(deadVolumeOf(preCalc2, 'P1')).toBe(2500);
+      expect(deadVolumeOf(preCalc2, 'P2')).toBeUndefined();
     });
 
-    it('should default to 2500nL if compound volume is exactly 15µL', () => {
+    it('should derive 2500nL if compound volume is exactly 15µL', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 15, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
+    });
+
+    it('should derive 1000nL for 1536 well source plates regardless of well volume', () => {
+      const mockInput: InputDataType = createMockInputData([
+        { 'Source Barcode': 'P1', 'Well ID': 'A01', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
+      ]);
+      const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), { ...mockPreferences, sourcePlateSize: '1536' });
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(1000);
+    });
+
+    it('should prefer an explicitly set dead volume over the derived one', () => {
+      const mockInput: InputDataType = createMockInputData([
+        { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
+      ]);
+      const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(15000);
+
+      preCalc.sourcePlates.find(p => p.barcode === 'P1')!.setDeadVolume(5000);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(5000);
     });
   });
 
   describe('checkSourceVolumes with Per-Plate Dead Volumes', () => {
     const setupPreCalcForVolumeChecks = (
       compounds: InputDataType['Compounds'],
-      initialPlateDeadVolumes?: Map<string, number>,
+      deadVolumeOverrides?: Map<string, number>,
       patterns?: InputDataType['Patterns']
     ): EchoPreCalculator => {
       const mockInput = createMockInputData(compounds);
@@ -126,10 +163,6 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
 
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
 
-      if (initialPlateDeadVolumes) {
-        preCalc.plateDeadVolumes = new Map(initialPlateDeadVolumes);
-      }
-
       preCalc.srcCompoundInventory = buildSrcCompoundInventory(mockInput, preCalc.srcPltSize)
 
       preCalc.dilutionPatterns = new Map();
@@ -149,6 +182,12 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         });
       });
       preCalc.sourcePlates = prepareSrcPlates(preCalc.srcCompoundInventory, preCalc.srcPltSize, preCalc.dilutionPatterns, preCalc.inputData)
+
+      if (deadVolumeOverrides) {
+        deadVolumeOverrides.forEach((deadVolume, barcode) => {
+          preCalc.sourcePlates.find(p => p.barcode === barcode)?.setDeadVolume(deadVolume);
+        });
+      }
 
       preCalc.totalVolumes = new Map();
       compounds.forEach(c => {
@@ -176,8 +215,6 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
       const preCalc = setupPreCalcForVolumeChecks(compounds, new Map([['P1', 2500]]));
       const checkpointName = 'volumeCheck'
       const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
-      //preCalc.checkSourceVolumes('volumeCheck');
-      //const checkpoint = preCalc.checkpointTracker.getCheckpoint('volumeCheck');
       if (messages.length === 0) {
         preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
       } else {
@@ -207,11 +244,11 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
       expect(checkpoint?.message[0]).toContain('Insufficient source volume of C1 for TestPattern at 10µM');
     });
 
-    it('should find dead volume even if plate barcode is unexpectedly missing from plateDeadVolumes', () => {
+    it('should fall back to the plate derived dead volume when none is explicitly set', () => {
       const compounds: InputDataType['Compounds'] = [
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 5, 'Concentration (µM)': 10, 'Compound ID': 'C1', 'Pattern': 'TestPattern' },
       ];
-      const preCalc = setupPreCalcForVolumeChecks(compounds, new Map());
+      const preCalc = setupPreCalcForVolumeChecks(compounds);
 
       const checkpointName = 'volumeCheck'
       const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
@@ -226,7 +263,7 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
       const compoundsInsufficient: InputDataType['Compounds'] = [
         { 'Source Barcode': 'P2', 'Well ID': 'A1', 'Volume (µL)': 0.5, 'Concentration (µM)': 10, 'Compound ID': 'C2', 'Pattern': 'TestPattern' },
       ];
-      const preCalcInsufficient = setupPreCalcForVolumeChecks(compoundsInsufficient, new Map());
+      const preCalcInsufficient = setupPreCalcForVolumeChecks(compoundsInsufficient);
       preCalcInsufficient.totalVolumes.get('C2')?.get('TestPattern')?.set(10, 500);
 
       const checkpointName2 = 'volumeCheckInsufficient'
@@ -247,10 +284,12 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         { 'Source Barcode': 'P2', 'Well ID': 'B1', 'Volume (µL)': 16, 'Concentration (µM)': 10, 'Compound ID': 'C2', 'Pattern': 'TestPattern2' },
         { 'Source Barcode': 'P3', 'Well ID': 'C1', 'Volume (µL)': 2, 'Concentration (µM)': 10, 'Compound ID': 'C3', 'Pattern': 'TestPattern3' },
       ];
-      const preCalc = setupPreCalcForVolumeChecks(
-        compounds,
-        new Map([['P1', 2500], ['P2', 15000], ['P3', 2500]]) // P3 dead vol = 2500
-      );
+      //P1 and P3 derive 2500, P2 derives 15000, leaving only P3 short of its 1000nL requirement
+      const preCalc = setupPreCalcForVolumeChecks(compounds);
+
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
+      expect(deadVolumeOf(preCalc, 'P2')).toBe(15000);
+      expect(deadVolumeOf(preCalc, 'P3')).toBe(2500);
 
       const checkpointName = 'volumeCheckMulti'
       const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
@@ -267,15 +306,17 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
   });
 
   describe('updateDeadVolume Method', () => {
-    it('should update plateDeadVolumes for the specified barcode', () => {
+    it('should set the dead volume on the matching source plate and keep it across recalculation', () => {
       const mockInput = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'P1' },
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
+      preCalc.calculateNeeds();
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
 
+      //calculateNeeds rebuilds sourcePlates, so this also covers prepareSrcPlates carrying the value onto the new plate
       preCalc.updateDeadVolume('P1', 5000);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(5000);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(5000);
     });
 
     it('should re-run calculateNeeds (implicitly checking source volumes again)', () => {
@@ -321,22 +362,23 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
       preCalc.updateDeadVolume('P1', 4000);
 
       expect(preCalc.calculateNeeds).toHaveBeenCalled();
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(4000);
       const updatedCheckpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName);
       expect(updatedCheckpoint?.status).toBe('Warning');
       preCalc.calculateNeeds = originalCalculateNeeds;
       expect(updatedCheckpoint?.message[0]).toContain('Insufficient source volume of C1');
     });
 
-    it('should handle updating dead volume for a plate not initially present (should not error, effectively adds it)', () => {
+    it('should not error when no source plate matches the barcode', () => {
       const mockInput = createMockInputData([]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.has('P_NEW')).toBe(false);
+      expect(preCalc.sourcePlates).toHaveLength(0);
 
       const mockCalculateNeeds = jest.fn();
       preCalc.calculateNeeds = mockCalculateNeeds;
 
-      preCalc.updateDeadVolume('P_NEW', 7000);
-      expect(preCalc.plateDeadVolumes.get('P_NEW')).toBe(7000);
+      expect(() => preCalc.updateDeadVolume('P_NEW', 7000)).not.toThrow();
+      expect(preCalc.sourcePlates).toHaveLength(0);
       expect(mockCalculateNeeds).toHaveBeenCalled();
     });
   });

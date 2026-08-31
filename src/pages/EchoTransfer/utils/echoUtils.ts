@@ -453,7 +453,7 @@ export function getCombinationsOfSizeR<T>(elements: T[], r: number): T[][] {
   return combinations;
 }
 
-export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateSize: PlateSize, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType): Plate[] {
+export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateSize: PlateSize, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType, existingSrcPlates?: Plate[]): Plate[] {
   const srcPlates: Plate[] = [];
   for (const [compoundId, patternMap] of srcCompoundInventory) {
     const patternNames: string[] = []
@@ -464,7 +464,14 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
         const srcBarcode = location.barcode;
         let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
         if (!srcPlate) {
-          srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source' });
+          let deadVolume: number | undefined = undefined;
+          if (existingSrcPlates && existingSrcPlates.length > 0) {
+            let existingPlate = existingSrcPlates.find(p => p.barcode == srcBarcode)
+            if (existingPlate) {
+              deadVolume = existingPlate.deadVolume
+            }
+          }
+          srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source', deadVolume: deadVolume });
           srcPlates.push(srcPlate)
         }
         const well = srcPlate.getWell(location.wellId);
