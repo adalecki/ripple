@@ -1,12 +1,12 @@
 import { WorkBook, read, utils, writeFile } from "xlsx";
 import { PreferencesState } from "../../../hooks/usePreferences";
 import { TransferInfo } from "../classes/EchoCalculatorClass";
-import { CompoundInventory } from "../classes/EchoPreCalculatorClass";
 import { HslStringType } from "../../../classes/PatternClass";
 import { Plate, PlateSize } from "../../../classes/PlateClass";
 import { buildSrcCompoundInventory, analyzeDilutionPatterns, prepareSrcPlates, InputDataType, executeAndRecordTransfer } from "./echoUtils";
 import { generateEntityColors } from "../../../utils/wellColors";
 import { formatWellBlock, TransferStepExport } from "../../../utils/plateUtils";
+import { CompoundInventory } from "../types/echoTypes";
 
 export function constructPlatesFromTransfers(inputData: InputDataType, transfers: TransferStepExport[], preferences: PreferencesState, surveyedVolumes: Map<string, Map<string, number>>): { newPlates: { "source": Plate[], "intermediate": Plate[], "destination": Plate[] }, compoundMap: CompoundInventory } {
   const newPlates: { 'source': Plate[], 'intermediate': Plate[], 'destination': Plate[] } = {

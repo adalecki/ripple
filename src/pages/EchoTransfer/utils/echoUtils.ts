@@ -1,9 +1,9 @@
 import { EchoCalculator, TransferInfo } from '../classes/EchoCalculatorClass';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { DilutionPattern, isCombinationType, getCombinationFold } from '../../../classes/PatternClass';
-import { CompoundInventory } from '../classes/EchoPreCalculatorClass';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { TransferStepExport } from '../../../utils/plateUtils';
+import { CommonSettings, CompoundGroup, CompoundInventory, ConcentrationCache, ConcentrationObj, TransferVolumeResult } from '../types/echoTypes';
 
 export type InputDataType = {
   'Layout': {
@@ -490,26 +490,21 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
       }
     }
   }
-  
-  if (inputData) {
-    const testPlate = new Plate({ plateSize: plateSize });
-    for (const compound of inputData.Compounds) {
-      const isDMSOWithEmptyPattern = compound['Compound ID'] === 'DMSO' && (!compound['Pattern'] || compound['Pattern'].trim() === '');
-      
-      if (isDMSOWithEmptyPattern) {
-        const srcBarcode = compound['Source Barcode'];
-        let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
-        if (!srcPlate) {
-          srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source' });
-          srcPlates.push(srcPlate);
-        }
-        
-        const wells = testPlate.getSomeWells(compound['Well ID']);
-        for (const well of wells) {
-          const plateWell = srcPlate.getWell(well.id);
-          if (plateWell && plateWell.getContents().length === 0) {
-            plateWell.addSolvent({ name: 'DMSO', volume: compound['Volume (µL)'] * 1000 });
-          }
+
+  for (const compound of inputData.Compounds) {
+    const isDMSOWithEmptyPattern = compound['Compound ID'] === 'DMSO' && (!compound['Pattern'] || compound['Pattern'].trim() === '');
+
+    if (isDMSOWithEmptyPattern) {
+      const srcBarcode = compound['Source Barcode'];
+      let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
+      if (!srcPlate) {
+        srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source' });
+        srcPlates.push(srcPlate);
+      }
+
+      for (const well of srcPlate.getSomeWells(compound['Well ID'])) {
+        if (well.getContents().length === 0) {
+          well.addSolvent({ name: 'DMSO', volume: compound['Volume (µL)'] * 1000 });
         }
       }
     }
@@ -564,13 +559,13 @@ export function buildSrcCompoundInventory(inputData: InputDataType, plateSize: P
 
   for (const compound of inputData.Compounds) {
     const compoundId = compound['Compound ID'];
-    
+
     const isDMSOWithEmptyPattern = compoundId === 'DMSO' && (!compound['Pattern'] || compound['Pattern'].trim() === '');
-    
+
     if (isDMSOWithEmptyPattern) {
       continue;
     }
-    
+
     const patternNames = compound['Pattern'].split(';').map(g => g.trim());
 
     if (!srcCompoundInventory.has(compoundId)) {
@@ -599,3 +594,446 @@ export function buildSrcCompoundInventory(inputData: InputDataType, plateSize: P
   }
   return srcCompoundInventory;
 }
+
+export function calculateDMSOSources(compounds: InputDataType['Compounds'], srcPlates: Plate[], srcCompoundInventory: CompoundInventory, dilutionPatterns: Map<string, DilutionPattern>) {
+  let dmsoWellCount = 0;
+  let totalDMSOVolume = 0;
+  const dmsoWellsByPlate = new Map<string, number>();
+
+  for (const compound of compounds) {
+    const isDMSOWithEmptyPattern = compound['Compound ID'] === 'DMSO' &&
+      (!compound['Pattern'] || compound['Pattern'].trim() === '');
+
+    if (isDMSOWithEmptyPattern) {
+      const volumeNL = compound['Volume (µL)'] * 1000;
+      const barcode = compound['Source Barcode'];
+      const plate = srcPlates.find(p => p.barcode === barcode)
+      if (!plate) continue
+      const wells = plate.getSomeWells(compound['Well ID'])
+      const deadVolume = plate.getDeadVolume()
+
+      dmsoWellCount += wells.length;
+      totalDMSOVolume += wells.length * Math.max(0, volumeNL - deadVolume);
+
+      dmsoWellsByPlate.set(barcode, (dmsoWellsByPlate.get(barcode) || 0) + wells.length);
+    }
+  }
+
+  for (const [_, patternMap] of srcCompoundInventory) {
+    for (const [patternName, compoundGroup] of patternMap) {
+      const pattern = dilutionPatterns.get(patternName);
+      if (pattern && pattern.type === 'Solvent') {
+        dmsoWellCount += compoundGroup.locations.length;
+        for (const loc of compoundGroup.locations) {
+          const plate = srcPlates.find(p => p.barcode === loc.barcode)
+          if (!plate) continue
+          const deadVolume = plate.getDeadVolume()
+          totalDMSOVolume += Math.max(0, loc.volume - deadVolume);
+        }
+      }
+    }
+  }
+  return { dmsoWellCount, totalDMSOVolume }
+}
+
+export function calculateDestinationPlates(srcCompoundInventory: CompoundInventory, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType): number {
+  const patternCounts = new Map<string, number>();
+  const patternSlots = new Map<string, number>();
+
+  //count compounds per pattern
+  for (const [_, compoundPatterns] of srcCompoundInventory) {
+    for (const [patternName, _] of compoundPatterns) {
+      const pattern = dilutionPatterns.get(patternName);
+      if (pattern && pattern.type !== 'Unused') {
+        patternCounts.set(patternName, (patternCounts.get(patternName) || 0) + 1)
+      }
+    }
+  }
+
+  //count slots per pattern
+  inputData.Layout.forEach((layout: any) => {
+    const pattern = dilutionPatterns.get(layout.Pattern);
+    if (pattern && pattern.type !== 'Unused') {
+      patternSlots.set(layout.Pattern, (patternSlots.get(layout.Pattern) || 0) + 1);
+    }
+  });
+
+  //calculate plates needed for each pattern
+  let maxPlates = 0;
+  for (const [patternName, count] of patternCounts) {
+    const slots = patternSlots.get(patternName) || 1;
+    let platesNeeded = Math.ceil(count / slots);
+    //extra handling specifically for combination patterns
+    const pattern = dilutionPatterns.get(patternName)
+    if (pattern && isCombinationType(pattern.type)) {
+      const combinationCount = numberCombinations(count, pattern.fold) //nCr notation
+      platesNeeded = Math.ceil(combinationCount / slots)
+    }
+    maxPlates = Math.max(maxPlates, platesNeeded);
+  }
+  maxPlates = maxPlates * inputData.CommonData.destReplicates
+  return maxPlates;
+}
+
+export function maxDMSOVolume(srcCompoundInventory: CompoundInventory, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType, commonSettings: CommonSettings): number {
+  const transferConcentrations = new Map<string, {
+    intermediateConcentrations: Map<number, ConcentrationObj>,
+    destinationConcentrations: Map<number, ConcentrationObj>
+  }>();
+
+  for (const [compoundId, patternMap] of srcCompoundInventory) {
+    for (const [patternName, compoundGroup] of patternMap) {
+      const pattern = dilutionPatterns.get(patternName);
+      if (pattern && pattern.type !== 'Unused') {
+        const concentrations = calculateTransferConcentrations(inputData, transferConcentrations, pattern, compoundGroup, commonSettings);
+        transferConcentrations.set(compoundId, concentrations);
+      }
+    }
+  }
+  const testPlate = new Plate({ plateSize: commonSettings.dstPltSize });
+
+  for (const layoutBlock of inputData.Layout) {
+    const pattern = dilutionPatterns.get(layoutBlock.Pattern);
+    if (!pattern || pattern.type === 'Unused') continue;
+    const compoundsUsingPattern = compoundIdsWithPattern(srcCompoundInventory, pattern.patternName)
+    let maxVolOfPattern = 0;
+    for (const compoundId of compoundsUsingPattern) {
+      const transferInfo = transferConcentrations.get(compoundId)
+      if (!transferInfo) continue
+      for (const conc of pattern.concentrations) {
+        const patternDestConc = transferInfo.destinationConcentrations.get(conc)
+        if (patternDestConc) { maxVolOfPattern = Math.max(patternDestConc.volToTsfr, maxVolOfPattern) }
+      }
+    }
+
+    if (isCombinationType(pattern.type)) { maxVolOfPattern = maxVolOfPattern * pattern.fold }
+    const wells = testPlate.getSomeWells(layoutBlock['Well Block']);
+    for (const well of wells) {
+      well.bulkFill(maxVolOfPattern)
+    }
+  }
+  const maxVols: number[] = []
+  for (const well of testPlate) {
+    if (!well || well.getIsUnused()) continue
+    maxVols.push(well.getTotalVolume())
+  }
+  return Math.max(...maxVols, 0);
+}
+
+//not pure due to cache being passed in and potentially set, but that's on purpose
+export function calculateTransferConcentrations(
+  inputData: InputDataType,
+  concentrationCache: ConcentrationCache,
+  pattern: DilutionPattern,
+  compoundGroup: CompoundGroup,
+  commonSettings: CommonSettings
+): { intermediateConcentrations: Map<number, ConcentrationObj>, destinationConcentrations: Map<number, ConcentrationObj> } {
+  const availableConcentrations = Array.from(new Set(compoundGroup.locations.map(loc => loc.concentration))).sort((a, b) => b - a);
+  const cacheKey = `${pattern.concentrations.join(',')}_${availableConcentrations.join(',')}`;
+
+  if (concentrationCache.has(cacheKey)) {
+    return concentrationCache.get(cacheKey)!;
+  }
+  const concentrationMap: Map<number, ConcentrationObj> = new Map()
+  const intermediateConcentrations: Map<number, ConcentrationObj> = new Map() // map of intermed conc and volume used to make it
+  let intermediateConcRange = { 'max': calculateMissingValue({ v1: commonSettings.maxTransferVolume, c1: Math.max(...availableConcentrations), v2: (commonSettings.intermediateBackfillVolume + commonSettings.maxTransferVolume) }), 'min': calculateMissingValue({ v1: commonSettings.dropletSize, c1: Math.min(...availableConcentrations), v2: (commonSettings.intermediateBackfillVolume + commonSettings.dropletSize) }) }
+
+  //if 0 is added to pattern concentrations, set it manually here
+  if (pattern.concentrations.includes(0)) {
+    concentrationMap.set(0, { sourceConc: availableConcentrations[0], sourceType: 'src', volToTsfr: 0 })
+  }
+
+  //first try to satisfy using source plate concentrations
+  for (const sourceConc of availableConcentrations) {
+    const directTransferMap = concentrationsFilter(pattern.concentrations, sourceConc, 'src', commonSettings)
+    for (const [conc, obj] of directTransferMap) {
+      if (!concentrationMap.has(conc)) { concentrationMap.set(conc, obj) }
+    }
+  }
+  //first intermediate plate concs
+  //iterate through each remaining conc and try to find a good intermediate conc
+  //if it passes criteria, find other remaining concs that would also work with it
+  //set all satisfied concs in concentrationMap, and set int conc in intermediateConcentrations
+  if (inputData.CommonData.createIntConcs) {
+    let remainingConcentrations = pattern.concentrations.filter(conc => !concentrationMap.has(conc)).sort((a, b) => b - a);
+    for (const conc of remainingConcentrations) {
+      if (!concentrationMap.has(conc)) {
+        for (const srcConc of availableConcentrations) {
+          let intermediateConcRange = { 'max': calculateMissingValue({ v1: commonSettings.maxTransferVolume, c1: srcConc, v2: (commonSettings.intermediateBackfillVolume + commonSettings.maxTransferVolume) }), 'min': calculateMissingValue({ v1: commonSettings.dropletSize, c1: srcConc, v2: (commonSettings.intermediateBackfillVolume + commonSettings.dropletSize) }) }
+          const { actualIntermediateConc, actualIntermediateConcVol } = buildIntermediateConc(conc, srcConc, commonSettings)
+          if (actualIntermediateConc >= intermediateConcRange.min && actualIntermediateConc <= intermediateConcRange.max) {
+            const intermediateTransferMap = concentrationsFilter(remainingConcentrations.filter(conc => !concentrationMap.has(conc)).sort((a, b) => b - a), actualIntermediateConc, 'int1', commonSettings)
+            for (const [conc, obj] of intermediateTransferMap) {
+              if (!concentrationMap.has(conc)) { concentrationMap.set(conc, obj) }
+            }
+            if (!intermediateConcentrations.has(actualIntermediateConc) && intermediateTransferMap.size > 0) { intermediateConcentrations.set(actualIntermediateConc, { sourceConc: srcConc, sourceType: 'src', volToTsfr: actualIntermediateConcVol }) }
+            break
+          }
+        }
+      }
+    }
+    //first pass was for int1 level, second pass is for int2 level
+    //this time use existing int1 concentrations and iterate through, finding the lowest error result
+    //use that to build a "true" int concentration and do the same as above - pass into concentrationsFilter and set in concentrationMap
+    remainingConcentrations = pattern.concentrations.filter(conc => !concentrationMap.has(conc)).sort((a, b) => b - a);
+    if (remainingConcentrations.length > 0) {
+      for (const conc of remainingConcentrations) {
+        if (!concentrationMap.has(conc)) {
+          let intConcErrors: { srcConc: number, int2Conc: number, volToTsfr: number, error: number }[] = []
+          // find the intermediate concentration closest to the ideal
+          for (const [intConc, _] of [...intermediateConcentrations].filter(([_, v]) => v.sourceType == 'src')) {
+            for (let area of ['hi', 'mid', 'lo']) {
+              let errorObj = calculateC4(conc, intConc, area, commonSettings)
+              if (errorObj.volToTsfr < commonSettings.maxTransferVolume && errorObj.volToTsfr >= commonSettings.dropletSize) { // max src to int or int to int transfer volume of this.maxTransferVolume
+                intConcErrors.push(errorObj)
+              }
+            }
+          }
+          let bestIntConc = intConcErrors.find((item) => item.error == Math.min(...intConcErrors.map(i => i.error)))
+          //a failsafe; need an "else" condition in case nothing worked
+          if (bestIntConc) {
+            intermediateConcRange = { 'max': calculateMissingValue({ v1: commonSettings.maxTransferVolume, c1: bestIntConc.srcConc, v2: (commonSettings.intermediateBackfillVolume + commonSettings.maxTransferVolume) }), 'min': calculateMissingValue({ v1: commonSettings.dropletSize, c1: bestIntConc.srcConc, v2: (commonSettings.intermediateBackfillVolume + commonSettings.dropletSize) }) }
+            const { actualIntermediateConc, actualIntermediateConcVol } = buildIntermediateConc(conc, bestIntConc.srcConc, commonSettings)
+            if (actualIntermediateConc >= intermediateConcRange.min && actualIntermediateConc <= intermediateConcRange.max) {
+              const intermediateTransferMap = concentrationsFilter(remainingConcentrations.filter(conc => !concentrationMap.has(conc)).sort((a, b) => b - a), actualIntermediateConc, 'int2', commonSettings)
+              for (const [conc, obj] of intermediateTransferMap) {
+                if (!concentrationMap.has(conc)) { concentrationMap.set(conc, obj) }
+              }
+              if (!intermediateConcentrations.has(actualIntermediateConc) && intermediateTransferMap.size > 0) { intermediateConcentrations.set(actualIntermediateConc, { sourceConc: bestIntConc.srcConc, sourceType: 'int1', volToTsfr: actualIntermediateConcVol }) }
+            }
+          }
+        }
+      }
+    }
+  }
+  concentrationCache.set(cacheKey, { intermediateConcentrations: intermediateConcentrations, destinationConcentrations: concentrationMap });
+  return { intermediateConcentrations: intermediateConcentrations, destinationConcentrations: concentrationMap };
+}
+
+export function concentrationsFilter(concentrations: number[], sourceConcentration: number, sourceType: string, commonSettings: CommonSettings) {
+  const transferMap: Map<number, ConcentrationObj> = new Map()
+  for (const conc of concentrations) {
+    // to deal with rounding issues; checks both directions to hopefully overcome DMSO % and error % mismatches
+    const transferVolume = roundToInc({ val: (commonSettings.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'both', inc: commonSettings.dropletSize })
+    const transferVolumeHi = roundToInc({ val: (commonSettings.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'up', inc: commonSettings.dropletSize })
+    const transferVolumeLo = roundToInc({ val: (commonSettings.finalAssayVolume * conc) / (sourceConcentration - conc), dir: 'down', inc: commonSettings.dropletSize })
+    const transferVolumeMax = roundToInc({ val: (commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction) / (1 - commonSettings.maxDMSOFraction), dir: 'down', inc: commonSettings.dropletSize })
+    for (let vol of [transferVolume, transferVolumeHi, transferVolumeLo, transferVolumeMax, commonSettings.dropletSize]) { // max and droplet included as last ditch attempts
+      if (concentrationPasses(sourceConcentration, conc, vol, commonSettings.dropletSize, commonSettings.allowableError, commonSettings.finalAssayVolume, commonSettings.maxTransferVolume, commonSettings.maxDMSOFraction)) {
+        transferMap.set(conc, { sourceConc: sourceConcentration, sourceType: sourceType, volToTsfr: vol })
+        break
+      }
+    }
+  }
+  return transferMap
+}
+
+export function concentrationPasses(sourceConcentration: number, conc: number, volume: number, dropletSize: number, allowableError: number, finalAssayVolume: number, echoMaxTransferVolume: number, maxDMSOFraction: number): boolean {
+  const minTransferVolume = (conc * (1 - allowableError) / sourceConcentration) * (finalAssayVolume + volume);
+  const maxTransferVolume = Math.min((conc * (1 + allowableError) / sourceConcentration) * (finalAssayVolume + volume), echoMaxTransferVolume);
+  const dmsoPercentage = volume / (finalAssayVolume + volume);
+  return (
+    volume >= dropletSize &&
+    volume <= maxTransferVolume &&
+    volume >= minTransferVolume &&
+    dmsoPercentage <= maxDMSOFraction
+  )
+}
+
+export function buildIntermediateConc(
+  conc: number,
+  stockConcentration: number,
+  commonSettings: CommonSettings
+): { actualIntermediateConc: number, actualIntermediateConcVol: number } {
+  const maxOf = Math.min((commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction), commonSettings.maxTransferVolume)
+  let maxVolToDest = roundToInc({ val: maxOf, dir: 'down', inc: commonSettings.dropletSize }) // round down to avoid accidentally going over DMSO limit
+  let idealIntermediateConc = calculateMissingValue({ v1: maxVolToDest, c2: conc, v2: (commonSettings.finalAssayVolume + maxVolToDest) });
+  let idealIntermediateConcVol = (commonSettings.intermediateBackfillVolume * idealIntermediateConc) / (stockConcentration - idealIntermediateConc)
+  let actualIntermediateConcVol = roundToInc({ val: idealIntermediateConcVol, dir: 'up', inc: commonSettings.dropletSize }) // round up to make sure this conc is high enough to satisfy dest within DMSO limit
+  if (actualIntermediateConcVol > commonSettings.maxTransferVolume) { actualIntermediateConcVol = commonSettings.maxTransferVolume } // put a limit of this.maxTransferVolume transfer from stock to make intermediates, and try with this instead of highest possible
+  let actualIntermediateConc = calculateMissingValue({ c1: stockConcentration, v1: actualIntermediateConcVol, v2: (commonSettings.intermediateBackfillVolume + actualIntermediateConcVol) })
+
+  return { actualIntermediateConc, actualIntermediateConcVol }
+}
+
+export function calculateC4(
+  targetConc: number,
+  conc: number,
+  area: string,
+  commonSettings: CommonSettings
+): { srcConc: number, int2Conc: number, volToTsfr: number, error: number } {
+  // based on c1v1 = c2v2, where
+  // c2 = int plate 1 conc1
+  // v3 = vol of int plate1 conc1 to int plate 2
+  // c4 = int plate 2 conc1
+  // v4 = vol of int plate2 conc1
+  // v5 = vol of int plate2 conc1 to dest plate
+  // c6 = desired final assay conc in dest plate
+  // v6 = total final assay vol in dest plate
+  // c2v3 = c4v4
+  // v3 = (c4v4)/c2
+  // c4v5 = c6v6
+  // c4 = (c6v6)/v5
+  // v3 = (backfill * c4)/(c2 - c4)
+  let c4: number
+  switch (area) {
+    case 'hi':
+      c4 = (targetConc * (commonSettings.finalAssayVolume * (1 + commonSettings.maxDMSOFraction))) / (commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction)
+      break
+    case 'mid':
+      let midVol = ((commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction) + commonSettings.dropletSize) / 2
+      c4 = (targetConc * (commonSettings.finalAssayVolume + midVol) / midVol)
+      break
+    case 'lo':
+      c4 = (targetConc * (commonSettings.finalAssayVolume + commonSettings.dropletSize)) / (commonSettings.dropletSize)
+      break
+    default:
+      c4 = (targetConc * (commonSettings.finalAssayVolume * (1 + commonSettings.maxDMSOFraction))) / (commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction)
+  }
+  let v3 = (commonSettings.intermediateBackfillVolume * c4) / (conc - c4)
+  let actualV3 = roundToInc({ val: v3, inc: commonSettings.dropletSize })
+  let error = Math.abs(v3 - actualV3) / v3
+  let actualInt2Conc = calculateMissingValue({ c1: conc, v1: actualV3, v2: (actualV3 + commonSettings.intermediateBackfillVolume) })
+  return { srcConc: conc, int2Conc: actualInt2Conc, volToTsfr: actualV3, error: error }
+}
+
+export function calculateTransferVolumes(
+  pattern: DilutionPattern,
+  compoundGroup: CompoundGroup,
+  inputData: InputDataType,
+  concentrationCache: ConcentrationCache,
+  commonSettings: CommonSettings,
+  srcCompoundInventory: CompoundInventory,
+  destinationPlatesCount: number,
+  maxDMSOVol: number
+): TransferVolumeResult {
+  const totalVolumes = new Map<number, number>();
+  let destinationWellsCount = 0;
+  let totalDMSOBackfillVol = 0;
+
+  const transferConcentrations = calculateTransferConcentrations(inputData, concentrationCache, pattern, compoundGroup, commonSettings);
+  let comboModifier = 1;
+  if (isCombinationType(pattern.type)) {
+    srcCompoundInventory.entries()
+    let n = Array.from(srcCompoundInventory).filter(([_, patternMap]) => patternMap.has(pattern.patternName)).length;
+    let r = pattern.fold; //if combination, should be at least two
+    comboModifier = numberCombinations(n - 1, r - 1) //nCr; each entity will be used (n-1)C(r-1) times
+  }
+  const specificSlots = pattern.type == 'Control'
+    ? calculateControlSlots(inputData, destinationPlatesCount, pattern.patternName)
+    : inputData.CommonData.destReplicates * comboModifier;
+
+  for (const [_, concInfo] of transferConcentrations.destinationConcentrations) {
+    const newDestWells = pattern.replicates * specificSlots; //we consider replicates in specificSlots; do we need it again here?
+    const currentVolume = totalVolumes.get(concInfo.sourceConc) || 0;
+    const newVolume = currentVolume + (concInfo.volToTsfr * newDestWells);
+    totalVolumes.set(concInfo.sourceConc, newVolume);
+    totalDMSOBackfillVol += ((maxDMSOVol - concInfo.volToTsfr) * newDestWells);
+    destinationWellsCount += newDestWells;
+  }
+
+  for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
+    let intermediatePlateDeadVolume = 15000;
+    if (commonSettings.intermediateBackfillVolume <= 15000) {
+      intermediatePlateDeadVolume = 2500;
+    }
+    const intWellsNeeded = Math.ceil(
+      (totalVolumes.get(intConc) || 0) /
+      ((commonSettings.intermediateBackfillVolume + concInfo.volToTsfr) - intermediatePlateDeadVolume)
+    );
+    const currentVolume = totalVolumes.get(concInfo.sourceConc) || 0;
+    const newVolume = currentVolume + (concInfo.volToTsfr * intWellsNeeded);
+    totalVolumes.set(concInfo.sourceConc, newVolume);
+  }
+
+  return { totalVolumes, destinationWellsCount, totalDMSOBackfillVol };
+}
+
+export function calculateControlSlots(inputData: InputDataType, destinationPlatesCount: number, patternName: string): number {
+  const totalSlots = inputData.Layout.filter((row) => row.Pattern == patternName).length * destinationPlatesCount;
+  const uniqueCompounds = new Set(inputData.Compounds.filter((row) => (row.Pattern && row.Pattern.includes(patternName))).map(row => row['Compound ID']));
+  return totalSlots / uniqueCompounds.size;
+}
+
+export function calculateFinalDMSONeeded(inputData: InputDataType, commonSettings: CommonSettings, destinationPlatesCount: number, destinationWellsCount: number, dilutionPatterns: Map<string, DilutionPattern>, maxDMSOVol: number): number {
+  const totalDestinationWells = destinationPlatesCount * parseInt(commonSettings.dstPltSize)
+  const testPlate = new Plate({ plateSize: commonSettings.dstPltSize });
+  let unusedWellsCount = 0;
+  for (const layout of inputData.Layout) {
+    const pattern = dilutionPatterns.get(layout.Pattern);
+    if (pattern && pattern.type === 'Unused') {
+
+      const wells = testPlate.getSomeWells(layout['Well Block']);
+      unusedWellsCount += wells.length * destinationPlatesCount;
+    }
+  }
+  let totalPatternWells = 0
+  if (inputData.CommonData.skipUnusedBlocks) {
+    for (const layout of inputData.Layout) {
+      const wells = testPlate.getSomeWells(layout['Well Block'])
+      totalPatternWells += wells.length
+    }
+  }
+
+  const unusedDestinationWells = (inputData.CommonData.skipUnusedBlocks ? totalDestinationWells - totalPatternWells * destinationPlatesCount : totalDestinationWells - destinationWellsCount - unusedWellsCount);
+  const additionalDMSOVol = unusedDestinationWells * maxDMSOVol
+  return additionalDMSOVol
+}
+
+export function checkSourceVolumes(srcCompoundInventory: CompoundInventory, srcPlates: Plate[], dilutionPatterns: Map<string, DilutionPattern>, totalVolumes: Map<string, Map<string, Map<number, number>>>): string[] {
+  const volumeCommitments = new Map<string, Map<number, number>>();
+  const checkpointMessages: string[] = [];
+
+  for (const [compoundId, patternMap] of srcCompoundInventory) {
+    if (!volumeCommitments.has(compoundId)) {
+      volumeCommitments.set(compoundId, new Map());
+    }
+    for (const [patternName, compoundGroup] of patternMap) {
+      const pattern = dilutionPatterns.get(patternName)
+      if (pattern && pattern.type != 'Solvent') {
+        const volumeMap = totalVolumes.get(compoundId)?.get(patternName);
+        if (!volumeMap) {
+          checkpointMessages.push(`Couldn't find volume requirements for combination ${patternName}-${compoundId}`);
+          continue;
+        }
+
+        for (const [concentration, requiredVol] of volumeMap) {
+
+          const compoundCommitments = volumeCommitments.get(compoundId)!;
+          const availableVolLocs = compoundGroup.locations.filter(location => location.concentration === concentration)
+          if (availableVolLocs.length < 1) { break } // don't try to check intermediate concentrations
+          const plateBarcode = availableVolLocs.length > 0 ? availableVolLocs[0].barcode : undefined; //bug - assumes one deadvol for all locations, doesn't consider individually per plate
+          const plate = srcPlates.find(p => p.barcode === plateBarcode)
+          if (!plate) continue
+          const deadVolume = plate.getDeadVolume()
+          const availableVolume = availableVolLocs.reduce((total, location) => total + (location.volume - deadVolume), 0);
+          const committedVolume = compoundCommitments?.get(concentration) || 0;
+          const uncommittedVolume = Math.max(0, availableVolume - committedVolume);
+
+          if (uncommittedVolume < requiredVol) {
+            const message = generateErrorMessage(compoundId, patternName, concentration, requiredVol, uncommittedVolume, availableVolume);
+            checkpointMessages.push(message);
+          } else {
+            compoundCommitments.set(concentration, (compoundCommitments.get(concentration) || 0) + requiredVol);
+          }
+        }
+      }
+    }
+  }
+  return checkpointMessages
+}
+
+export function generateErrorMessage(
+    compoundId: string,
+    patternName: string,
+    concentration: number,
+    requiredVol: number,
+    uncommittedVolume: number,
+    availableVolume: number
+  ): string {
+    if (uncommittedVolume === availableVolume) {
+      return `Insufficient source volume of ${compoundId} for ${patternName} at ${concentration}µM; ${requiredVol}nL required but only ${availableVolume}nL available`;
+    } else {
+      return `Insufficient uncommitted volume of ${compoundId} for ${patternName} at ${concentration}µM; ${requiredVol}nL required, ${availableVolume}nL total available, but only ${uncommittedVolume}nL uncommitted`;
+    }
+  }

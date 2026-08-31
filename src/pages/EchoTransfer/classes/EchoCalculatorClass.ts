@@ -1,10 +1,11 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
 import { formatWellBlock, getCoordsFromWellId, getWellFromBarcodeAndId, mapWellsToConcentrations, TransferStepExport } from '../../../utils/plateUtils';
-import { compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
-import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from './EchoPreCalculatorClass';
+import { calculateTransferConcentrations, compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType, prepareSrcPlates } from '../utils/echoUtils';
+import { EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
 import { DilutionPattern, isCombinationType } from '../../../classes/PatternClass';
+import { CompoundGroup, ConcentrationObj } from '../types/echoTypes';
 
 export interface TransferInfo {
   transferType: 'compound' | 'solvent';
@@ -93,7 +94,7 @@ export class EchoCalculator {
         const pattern = this.echoPreCalc.dilutionPatterns.get(patternName);
         if (!pattern) continue;
 
-        const transferConcentrations = this.echoPreCalc.calculateTransferConcentrations(pattern, compoundGroup);
+        const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings())
 
         for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
           const concInnerMap = volumeMap.get(intConc);
@@ -172,7 +173,7 @@ export class EchoCalculator {
         const pattern = this.echoPreCalc.dilutionPatterns.get(patternName);
         if (!pattern) continue;
 
-        const transferConcentrations = this.echoPreCalc.calculateTransferConcentrations(pattern, compoundGroup);
+        const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings())
         const volumeMap = this.echoPreCalc.totalVolumes.get(compoundId)?.get(patternName);
         if (!volumeMap) continue;
 
@@ -309,7 +310,7 @@ export class EchoCalculator {
       const pattern = this.echoPreCalc.dilutionPatterns.get(patternName);
       if (!pattern) continue;
 
-      const transferConcentrations = this.echoPreCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings())
       const concInfo = transferConcentrations.intermediateConcentrations.get(targetConc);
       if (concInfo) {
         return concInfo
@@ -495,7 +496,7 @@ export class EchoCalculator {
   }
 
   transferCompound(destPlates: Plate[], destLocation: { barcode: string, wellBlock: string }, compoundId: string, dilutionPattern: DilutionPattern, compoundGroup: CompoundGroup, dirIdx: number = 0) {
-    const transferMap = this.echoPreCalc.calculateTransferConcentrations(dilutionPattern, compoundGroup);
+    const transferMap = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, dilutionPattern, compoundGroup, this.echoPreCalc.getCommonSettings())
     const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode)
     if (!destPlate) return
     // non-matrix combinations carry a single direction shared by every compound in the tuple
