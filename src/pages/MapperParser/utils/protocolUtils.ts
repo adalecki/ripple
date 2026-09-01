@@ -2,8 +2,9 @@ import { PlateSize, Plate } from '../../../classes/PlateClass';
 import { ControlDefinition, ControlType, Protocol } from '../../../types/mapperTypes';
 import { generateId } from '../../../utils/designUtils';
 import { getWellIdsFromRange } from '../../../utils/plateUtils';
+import { STORAGE_KEYS } from '../../../utils/storageUtils';
 
-const STORAGE_KEY = 'ripple-protocols';
+const STORAGE_KEY = STORAGE_KEYS.protocols;
 
 export const defaultProtocols: Protocol[] = [
   {

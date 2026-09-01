@@ -3,8 +3,9 @@ import { TransferBlock, TransferStepInternal } from '../../../utils/plateUtils';
 import { calculateTransferBorders, getTileScheme, tileTransfers } from '../../../utils/designUtils';
 import { HslStringType } from '../../../classes/PatternClass';
 import { generateSingleColor } from '../../../utils/wellColors';
+import { STORAGE_KEYS } from '../../../utils/storageUtils';
 
-const STORAGE_KEY = 'ripple-reformat-schemes';
+const STORAGE_KEY = STORAGE_KEYS.schemes;
 
 export interface SavedTransferBlock {
   sourcePlateIndex: number;

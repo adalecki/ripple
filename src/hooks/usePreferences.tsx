@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { PREFERENCES_CONFIG } from '../config/preferencesConfig';
+import { STORAGE_KEYS } from '../utils/storageUtils';
 
 type PreferenceValue = number | boolean | string;
 
@@ -26,7 +27,7 @@ export function getDefaultPreferences(): PreferencesState {
 }
 
 function loadStoredPreferences(): PreferencesState {
-  const stored = localStorage.getItem('echo-preferences');
+  const stored = localStorage.getItem(STORAGE_KEYS.preferences);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -44,14 +45,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
   const updatePreferences = (newPreferences: PreferencesState) => {
     setPreferences(newPreferences);
-    localStorage.setItem('echo-preferences', JSON.stringify(newPreferences));
+    localStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(newPreferences));
   };
 
   const resetPreferences = () => {
-    localStorage.removeItem('echo-preferences');
+    localStorage.removeItem(STORAGE_KEYS.preferences);
     const defaults = getDefaultPreferences();
     setPreferences(defaults);
-    localStorage.setItem('echo-preferences', JSON.stringify(defaults));
+    localStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(defaults));
   };
 
   return (
