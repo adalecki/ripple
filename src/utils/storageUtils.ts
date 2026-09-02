@@ -1,11 +1,13 @@
-export const APP_VERSION = '1.0.0';
+import { CHANGELOG } from "../config/changelog";
+
+export const APP_VERSION = CHANGELOG[0].version;
 
 export const STORAGE_KEYS = {
   meta: 'ripple:meta',
   preferences: 'ripple:preferences',
   protocols: 'ripple:protocols',
   schemes: 'ripple:schemes'
-} as const;
+}
 
 export interface RippleMeta {
   version: string;
@@ -19,22 +21,18 @@ const LEGACY_KEY_MAP: [legacy: string, current: string][] = [
 ];
 
 export function getMeta(): RippleMeta | null {
-  const stored = localStorage.getItem(STORAGE_KEYS.meta);
-  if (!stored) return null;
   try {
+    const stored = localStorage.getItem(STORAGE_KEYS.meta);
+    if (!stored) return null;
     return JSON.parse(stored) as RippleMeta;
   } catch (e) {
-    console.error('Failed to parse stored metadata:', e);
+    console.error('Failed to read stored metadata:', e);
     return null;
   }
 }
 
-function writeMeta(): void {
-  const existing = getMeta();
-  const meta: RippleMeta = {
-    version: APP_VERSION,
-    lastSeen: existing ? existing.lastSeen : APP_VERSION
-  };
+function writeMeta(lastSeen: string): void {
+  const meta: RippleMeta = { version: APP_VERSION, lastSeen };
   localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(meta));
 }
 
@@ -48,8 +46,22 @@ export function migrateStorage(): void {
       }
       //localStorage.removeItem(legacyKey); //not yet removing legacy keys, no need to and prevents rollback; remove them down the line
     }
-    writeMeta();
+    writeMeta(getMeta()?.lastSeen ?? APP_VERSION);
   } catch (e) {
     console.error('Storage migration failed:', e);
+  }
+}
+
+export function hasUnseenChanges(): boolean {
+  const meta = getMeta();
+  if (!meta) return false;
+  return CHANGELOG.findIndex(entry => entry.version === meta.lastSeen) !== 0;
+}
+
+export function markChangelogSeen(): void {
+  try {
+    writeMeta(APP_VERSION);
+  } catch (e) {
+    console.error('Failed to record changelog as seen:', e);
   }
 }

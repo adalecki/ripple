@@ -3,6 +3,7 @@ import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useState } from 'react';
 import { PreferencesButton, PreferencesModal } from "./PreferencesModal";
+import { ChangelogButton } from "../pages/Changelog";
 import Logo from "./Logo";
 
 function Navigation() {
@@ -28,6 +29,7 @@ function Navigation() {
                 <LinkContainer to="mapperparser"><NavDropdown.Item>Mapper/Parser</NavDropdown.Item></LinkContainer>
                 <LinkContainer to="cocktailbuilder"><NavDropdown.Item>Cocktail Builder</NavDropdown.Item></LinkContainer>
               </NavDropdown>
+              <ChangelogButton />
             </Nav>
             <Nav>
               <PreferencesButton onClick={() => setShowPreferences(true)} />
