@@ -23,7 +23,7 @@
     "color-convert": "^2.0.1",
     "d3": "^7.9.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.2",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.554.0",
     "ml-levenberg-marquardt": "^5.0.0",
