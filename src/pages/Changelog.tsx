@@ -1,12 +1,20 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Container, Row, Col, Card } from 'react-bootstrap';
-import { CHANGELOG } from '../config/changelog';
+import { Container, Row, Col, Card, Badge } from 'react-bootstrap';
+import { ChangeEntry, CHANGELOG } from '../config/changelog';
 import { hasUnseenChanges, markChangelogSeen } from '../utils/storageUtils';
 
 import '../css/Changelog.css';
 
 const CHANGELOG_PATH = '/changelog';
+
+function badgeVariant(entry: ChangeEntry): string {
+  switch (entry.type) {
+    case 'UI': return 'success'
+    case 'Backend': return 'secondary';
+  }
+}
+
 
 export const ChangelogButton: React.FC = () => {
   const location = useLocation();
@@ -39,9 +47,12 @@ const Changelog: React.FC = () => {
                 </Card.Header>
                 <Card.Body>
                   <ul className="mb-0">
-                    {entry.changes.map((change, idx) => (
+                    {[...entry.changes].sort((a,b) => b.type.localeCompare(a.type)).map((change, idx) => (
                       <li key={idx} className="changelog-item">
-                        <span>{change}</span>
+                        <Badge bg={badgeVariant(change)} className="changelog-tag">
+                          {change.type}
+                        </Badge>
+                        <span>{change.text}</span>
                       </li>
                     ))}
                   </ul>

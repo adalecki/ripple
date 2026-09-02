@@ -22,10 +22,14 @@
 }
 
 .changelog-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
   padding: 0.25rem 0;
 }
 
+
 .changelog-tag {
   flex-shrink: 0;
-  min-width: 4.5rem;
+  min-width: 4.0rem;
 }
