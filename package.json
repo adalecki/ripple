@@ -12,6 +12,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "jest",
+    "comp-test": "jest src/__tests__/comprehensive.test.ts",
     "test:watch": "jest --watch"
   },
   "dependencies": {
@@ -22,7 +23,7 @@
     "color-convert": "^2.0.1",
     "d3": "^7.9.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.2",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.554.0",
     "ml-levenberg-marquardt": "^5.0.0",
@@ -46,6 +47,7 @@
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "baseline-browser-mapping": "^2.11.20",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.14",

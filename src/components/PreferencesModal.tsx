@@ -4,7 +4,8 @@ import { Settings } from 'lucide-react';
 import { PREFERENCES_CONFIG } from '../config/preferencesConfig';
 import { usePreferences } from '../hooks/usePreferences';
 import { FormField } from './FormField';
-import type { PreferencesState } from '../hooks/usePreferences';
+import StringListField from './StringListField';
+import type { PreferencesState, PreferenceValue } from '../hooks/usePreferences';
 
 import '../css/PreferencesModal.css'
 
@@ -26,7 +27,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
     }
   }, [show, preferences]);
 
-  const handleSettingChange = (id: string, value: number) => {
+  const handleSettingChange = (id: string, value: PreferenceValue) => {
     setTempPreferences(prev => ({
       ...prev,
       [id]: value
@@ -44,9 +45,9 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
   };
 
   const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset all preferences to their default values?')) {
-      resetPreferences();
-      onHide();
+    if (window.confirm('Are you sure you want to reset these preferences to their default values?')) {
+      resetPreferences(selectedCategory);
+      //onHide();
     }
   };
   return (
@@ -82,20 +83,31 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
           </div>
           <div className="preferences-content">
             {PREFERENCES_CONFIG.find(c => c.id === selectedCategory)?.settings.map(setting => (
-              <FormField
-                key={setting.prefId}
-                id={setting.prefId}
-                name={setting.name}
-                type={setting.type}
-                label={setting.name}
-                value={tempPreferences[setting.prefId]}
-                onChange={(value) => handleSettingChange(setting.prefId, value)}
-                options={setting.options}
-                unit={setting.unit}
-                step={setting.step}
-                tooltip={setting.tooltip}
-                className="preferences-field"
-              />
+              setting.type === 'list' ? (
+                <StringListField
+                  key={setting.prefId}
+                  id={setting.prefId}
+                  label={setting.name}
+                  value={tempPreferences[setting.prefId] as string[]}
+                  onChange={(value) => handleSettingChange(setting.prefId, value)}
+                  tooltip={setting.tooltip}
+                />
+              ) : (
+                <FormField
+                  key={setting.prefId}
+                  id={setting.prefId}
+                  name={setting.name}
+                  type={setting.type}
+                  label={setting.name}
+                  value={tempPreferences[setting.prefId]}
+                  onChange={(value) => handleSettingChange(setting.prefId, value)}
+                  options={setting.options}
+                  unit={setting.unit}
+                  step={setting.step}
+                  tooltip={setting.tooltip}
+                  className="preferences-field"
+                />
+              )
             ))}
           </div>
         </div>

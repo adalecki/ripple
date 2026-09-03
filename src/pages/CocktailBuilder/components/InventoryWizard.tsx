@@ -11,6 +11,7 @@ import { inventoryContents } from '../utils/cocktailUtils';
 import InventoryManager from './InventoryManager';
 
 import '../../../css/DesignWizard.css';
+import { usePreferencesValue } from '../../../hooks/usePreferences';
 
 export interface InventoryForm {
   content: string;
@@ -47,7 +48,8 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
   onDoubleClick,
   enterCallbackRef
 }) => {
-  const [form, setForm] = useState<InventoryForm>({ content: '', volume: '', plateType: '384PP_DMSO2', contentListText: '', currentIdx: 0 });
+  const plateTypes = usePreferencesValue('plateTypes') as string[];
+  const [form, setForm] = useState<InventoryForm>({ content: '', volume: '', plateType: plateTypes[0] ?? '', contentListText: '', currentIdx: 0 });
   const [activeAccordion, setActiveAccordion] = useState<string | null>('basic');
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
@@ -136,7 +138,7 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
     const filled = srcPlates.some(p => Object.values(p.getWells()).some(w => w.getContents().length > 0));
     if (filled && !window.confirm('Changing source plate size will reset the inventory plates. Continue?')) return;
     setSrcPlateSize(value);
-    const newPlate = new Plate({ barcode: 'SRC001', plateSize: value, plateRole: 'source', plateType: '384PP_DMSO2' });
+    const newPlate = new Plate({ barcode: 'SRC001', plateSize: value, plateRole: 'source', plateType: plateTypes[0] ?? '' });
     setSrcPlates([newPlate]);
     setCurSrcPlateId(newPlate.id);
   };

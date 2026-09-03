@@ -1,9 +1,10 @@
-import { CompoundGroup, ConcentrationObj, EchoPreCalculator } from '../EchoPreCalculatorClass';
+import { EchoPreCalculator } from '../EchoPreCalculatorClass';
 import { CheckpointTracker } from '../CheckpointTrackerClass';
-import { buildSrcCompoundInventory, InputDataType } from '../../utils/echoUtils';
+import { buildSrcCompoundInventory, calculateTransferConcentrations, checkSourceVolumes, InputDataType, prepareSrcPlates } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
-import { PlateSize } from '../../../../classes/PlateClass';
+import { Plate, PlateSize } from '../../../../classes/PlateClass';
 import { DilutionPattern } from '../../../../classes/PatternClass';
+import { CompoundGroup, ConcentrationObj } from '../../types/echoTypes';
 
 const mockPreferences: PreferencesState = {
   maxTransferVolume: 500,
@@ -44,27 +45,39 @@ function createMockInputData(compounds?: InputDataType['Compounds'], patterns?: 
   }
 };
 
+function buildSourcePlates(preCalc: EchoPreCalculator): Plate[] {
+  preCalc.srcCompoundInventory = buildSrcCompoundInventory(preCalc.inputData, preCalc.srcPltSize);
+  preCalc.sourcePlates = prepareSrcPlates(preCalc.srcCompoundInventory, preCalc.srcPltSize, preCalc.dilutionPatterns, preCalc.inputData);
+  return preCalc.sourcePlates;
+}
+
+function deadVolumeOf(preCalc: EchoPreCalculator, barcode: string): number | undefined {
+  return preCalc.sourcePlates.find(p => p.barcode === barcode)?.getDeadVolume();
+}
+
 describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
   describe('Initial Dead Volume Calculation', () => {
-    it('should set dead volume to 2500 nL if all compound volumes are <= 15 µL for a plate', () => {
+    it('should derive a dead volume of 2500 nL if all compound volumes are <= 15 µL for a plate', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
         { 'Source Barcode': 'P1', 'Well ID': 'B1', 'Volume (µL)': 15, 'Concentration (µM)': 100, 'Compound ID': 'C2', 'Pattern': 'Pattern1' },
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
     });
 
-    it('should set dead volume to 15000 nL if any compound volume is > 15 µL for a plate', () => {
+    it('should derive a dead volume of 15000 nL if any compound volume is > 15 µL for a plate', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
         { 'Source Barcode': 'P1', 'Well ID': 'B1', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C2', 'Pattern': 'Pattern1' }, // > 15 µL
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(15000);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(15000);
     });
 
-    it('should correctly set dead volumes for multiple plates with different conditions', () => {
+    it('should derive dead volumes independently for each plate', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' }, // P1 <= 15 µL
         { 'Source Barcode': 'P2', 'Well ID': 'A1', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C3', 'Pattern': 'Pattern2' }, // P2 > 15 µL
@@ -72,37 +85,62 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         { 'Source Barcode': 'P3', 'Well ID': 'C1', 'Volume (µL)': 15, 'Concentration (µM)': 100, 'Compound ID': 'C4', 'Pattern': 'Pattern3' }, // P3 <= 15 µL
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
-      expect(preCalc.plateDeadVolumes.get('P2')).toBe(15000);
-      expect(preCalc.plateDeadVolumes.get('P3')).toBe(2500);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
+      expect(deadVolumeOf(preCalc, 'P2')).toBe(15000);
+      expect(deadVolumeOf(preCalc, 'P3')).toBe(2500);
     });
 
-    it('should handle a source plate with no compounds (empty plateDeadVolumes for it)', () => {
+    it('should create no source plates when there are no compounds', () => {
       const mockInput: InputDataType = createMockInputData([]); // No compounds
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.size).toBe(0);
+      buildSourcePlates(preCalc);
+      expect(preCalc.sourcePlates).toHaveLength(0);
 
       const mockInputWithOtherPlate: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
       ]);
       const preCalc2 = new EchoPreCalculator(mockInputWithOtherPlate, new CheckpointTracker(), mockPreferences);
-      expect(preCalc2.plateDeadVolumes.get('P1')).toBe(2500);
-      expect(preCalc2.plateDeadVolumes.has('P2')).toBe(false);
+      buildSourcePlates(preCalc2);
+      expect(deadVolumeOf(preCalc2, 'P1')).toBe(2500);
+      expect(deadVolumeOf(preCalc2, 'P2')).toBeUndefined();
     });
 
-    it('should default to 2500nL if compound volume is exactly 15µL', () => {
+    it('should derive 2500nL if compound volume is exactly 15µL', () => {
       const mockInput: InputDataType = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 15, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
+    });
+
+    it('should derive 1000nL for 1536 well source plates regardless of well volume', () => {
+      const mockInput: InputDataType = createMockInputData([
+        { 'Source Barcode': 'P1', 'Well ID': 'A01', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
+      ]);
+      const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), { ...mockPreferences, sourcePlateSize: '1536' });
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(1000);
+    });
+
+    it('should prefer an explicitly set dead volume over the derived one', () => {
+      const mockInput: InputDataType = createMockInputData([
+        { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 20, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'Pattern1' },
+      ]);
+      const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
+      buildSourcePlates(preCalc);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(15000);
+
+      preCalc.sourcePlates.find(p => p.barcode === 'P1')!.setDeadVolume(5000);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(5000);
     });
   });
 
   describe('checkSourceVolumes with Per-Plate Dead Volumes', () => {
     const setupPreCalcForVolumeChecks = (
       compounds: InputDataType['Compounds'],
-      initialPlateDeadVolumes?: Map<string, number>,
+      deadVolumeOverrides?: Map<string, number>,
       patterns?: InputDataType['Patterns']
     ): EchoPreCalculator => {
       const mockInput = createMockInputData(compounds);
@@ -125,10 +163,6 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
 
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
 
-      if (initialPlateDeadVolumes) {
-        preCalc.plateDeadVolumes = new Map(initialPlateDeadVolumes);
-      }
-
       preCalc.srcCompoundInventory = buildSrcCompoundInventory(mockInput, preCalc.srcPltSize)
 
       preCalc.dilutionPatterns = new Map();
@@ -147,6 +181,13 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
           }
         });
       });
+      preCalc.sourcePlates = prepareSrcPlates(preCalc.srcCompoundInventory, preCalc.srcPltSize, preCalc.dilutionPatterns, preCalc.inputData)
+
+      if (deadVolumeOverrides) {
+        deadVolumeOverrides.forEach((deadVolume, barcode) => {
+          preCalc.sourcePlates.find(p => p.barcode === barcode)?.setDeadVolume(deadVolume);
+        });
+      }
 
       preCalc.totalVolumes = new Map();
       compounds.forEach(c => {
@@ -172,9 +213,15 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 5, 'Concentration (µM)': 10, 'Compound ID': 'C1', 'Pattern': 'TestPattern' },
       ];
       const preCalc = setupPreCalcForVolumeChecks(compounds, new Map([['P1', 2500]]));
-      preCalc.checkSourceVolumes('volumeCheck');
-      const checkpoint = preCalc.checkpointTracker.getCheckpoint('volumeCheck');
-      expect(checkpoint?.status).toBe('Passed');
+      const checkpointName = 'volumeCheck'
+      const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
+      if (messages.length === 0) {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
+      } else {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Warning", messages);
+      }
+      const checkpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName)
+      expect(checkpoint?.status).toBe('Passed')
     });
 
     it('should issue a warning if available volume (after per-plate dead volume) is insufficient', () => {
@@ -185,30 +232,48 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
 
       preCalc.totalVolumes.get('C1')?.get('TestPattern')?.set(10, 600);
 
-      preCalc.checkSourceVolumes('volumeCheck');
-      const checkpoint = preCalc.checkpointTracker.getCheckpoint('volumeCheck');
+      const checkpointName = 'volumeCheck'
+      const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
+      if (messages.length === 0) {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
+      } else {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Warning", messages);
+      }
+      const checkpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName);
       expect(checkpoint?.status).toBe('Warning');
       expect(checkpoint?.message[0]).toContain('Insufficient source volume of C1 for TestPattern at 10µM');
     });
 
-    it('should find dead volume even if plate barcode is unexpectedly missing from plateDeadVolumes', () => {
+    it('should fall back to the plate derived dead volume when none is explicitly set', () => {
       const compounds: InputDataType['Compounds'] = [
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 5, 'Concentration (µM)': 10, 'Compound ID': 'C1', 'Pattern': 'TestPattern' },
       ];
-      const preCalc = setupPreCalcForVolumeChecks(compounds, new Map());
+      const preCalc = setupPreCalcForVolumeChecks(compounds);
 
-      preCalc.checkSourceVolumes('volumeCheck');
-      const checkpoint = preCalc.checkpointTracker.getCheckpoint('volumeCheck');
+      const checkpointName = 'volumeCheck'
+      const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
+      if (messages.length === 0) {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
+      } else {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Warning", messages);
+      }
+      const checkpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName);
       expect(checkpoint?.status).toBe('Passed');
 
       const compoundsInsufficient: InputDataType['Compounds'] = [
         { 'Source Barcode': 'P2', 'Well ID': 'A1', 'Volume (µL)': 0.5, 'Concentration (µM)': 10, 'Compound ID': 'C2', 'Pattern': 'TestPattern' },
       ];
-      const preCalcInsufficient = setupPreCalcForVolumeChecks(compoundsInsufficient, new Map());
+      const preCalcInsufficient = setupPreCalcForVolumeChecks(compoundsInsufficient);
       preCalcInsufficient.totalVolumes.get('C2')?.get('TestPattern')?.set(10, 500);
 
-      preCalcInsufficient.checkSourceVolumes('volumeCheckInsufficient');
-      const checkpointInsufficient = preCalcInsufficient.checkpointTracker.getCheckpoint('volumeCheckInsufficient');
+      const checkpointName2 = 'volumeCheckInsufficient'
+      const messages2 = checkSourceVolumes(preCalcInsufficient.srcCompoundInventory, preCalcInsufficient.sourcePlates, preCalcInsufficient.dilutionPatterns, preCalcInsufficient.totalVolumes)
+      if (messages2.length === 0) {
+        preCalcInsufficient.checkpointTracker.updateCheckpoint(checkpointName2, "Passed");
+      } else {
+        preCalcInsufficient.checkpointTracker.updateCheckpoint(checkpointName2, "Warning", messages2);
+      }
+      const checkpointInsufficient = preCalcInsufficient.checkpointTracker.getCheckpoint(checkpointName2);
       expect(checkpointInsufficient?.status).toBe('Warning');
       expect(checkpointInsufficient?.message[0]).toContain('Insufficient uncommitted volume of C2');
     });
@@ -219,13 +284,21 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         { 'Source Barcode': 'P2', 'Well ID': 'B1', 'Volume (µL)': 16, 'Concentration (µM)': 10, 'Compound ID': 'C2', 'Pattern': 'TestPattern2' },
         { 'Source Barcode': 'P3', 'Well ID': 'C1', 'Volume (µL)': 2, 'Concentration (µM)': 10, 'Compound ID': 'C3', 'Pattern': 'TestPattern3' },
       ];
-      const preCalc = setupPreCalcForVolumeChecks(
-        compounds,
-        new Map([['P1', 2500], ['P2', 15000], ['P3', 2500]]) // P3 dead vol = 2500
-      );
+      //P1 and P3 derive 2500, P2 derives 15000, leaving only P3 short of its 1000nL requirement
+      const preCalc = setupPreCalcForVolumeChecks(compounds);
 
-      preCalc.checkSourceVolumes('volumeCheckMulti');
-      const checkpoint = preCalc.checkpointTracker.getCheckpoint('volumeCheckMulti');
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
+      expect(deadVolumeOf(preCalc, 'P2')).toBe(15000);
+      expect(deadVolumeOf(preCalc, 'P3')).toBe(2500);
+
+      const checkpointName = 'volumeCheckMulti'
+      const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
+      if (messages.length === 0) {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
+      } else {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Warning", messages);
+      }
+      const checkpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName);
       expect(checkpoint?.status).toBe('Warning');
       expect(checkpoint?.message.length).toBe(1);
       expect(checkpoint?.message[0]).toContain('Insufficient uncommitted volume of C3');
@@ -233,15 +306,17 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
   });
 
   describe('updateDeadVolume Method', () => {
-    it('should update plateDeadVolumes for the specified barcode', () => {
+    it('should set the dead volume on the matching source plate and keep it across recalculation', () => {
       const mockInput = createMockInputData([
         { 'Source Barcode': 'P1', 'Well ID': 'A1', 'Volume (µL)': 10, 'Concentration (µM)': 100, 'Compound ID': 'C1', 'Pattern': 'P1' },
       ]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(2500);
+      preCalc.calculateNeeds();
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(2500);
 
+      //calculateNeeds rebuilds sourcePlates, so this also covers prepareSrcPlates carrying the value onto the new plate
       preCalc.updateDeadVolume('P1', 5000);
-      expect(preCalc.plateDeadVolumes.get('P1')).toBe(5000);
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(5000);
     });
 
     it('should re-run calculateNeeds (implicitly checking source volumes again)', () => {
@@ -262,35 +337,48 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
           fold: 0
         });
       }
+      preCalc.sourcePlates = prepareSrcPlates(preCalc.srcCompoundInventory, preCalc.srcPltSize, preCalc.dilutionPatterns, preCalc.inputData)
 
-      preCalc.checkpointTracker.addCheckpoint("Sufficient Source Volumes");
-      preCalc.checkSourceVolumes("Sufficient Source Volumes");
-      expect(preCalc.checkpointTracker.getCheckpoint("Sufficient Source Volumes")?.status).toBe("Passed");
+      const checkpointName = 'Sufficient Source Volumes'
+      const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
+      if (messages.length === 0) {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
+      } else {
+        preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Warning", messages);
+      }
+      const checkpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName);
+      expect(checkpoint?.status).toBe("Passed");
 
       const originalCalculateNeeds = preCalc.calculateNeeds;
       preCalc.calculateNeeds = jest.fn(() => {
-        preCalc.checkSourceVolumes("Sufficient Source Volumes");
+        const messages = checkSourceVolumes(preCalc.srcCompoundInventory, preCalc.sourcePlates, preCalc.dilutionPatterns, preCalc.totalVolumes)
+        if (messages.length === 0) {
+          preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Passed");
+        } else {
+          preCalc.checkpointTracker.updateCheckpoint(checkpointName, "Warning", messages);
+        }
       });
 
       preCalc.updateDeadVolume('P1', 4000);
 
       expect(preCalc.calculateNeeds).toHaveBeenCalled();
-      const updatedCheckpoint = preCalc.checkpointTracker.getCheckpoint("Sufficient Source Volumes");
+      expect(deadVolumeOf(preCalc, 'P1')).toBe(4000);
+      const updatedCheckpoint = preCalc.checkpointTracker.getCheckpoint(checkpointName);
       expect(updatedCheckpoint?.status).toBe('Warning');
       preCalc.calculateNeeds = originalCalculateNeeds;
       expect(updatedCheckpoint?.message[0]).toContain('Insufficient source volume of C1');
     });
 
-    it('should handle updating dead volume for a plate not initially present (should not error, effectively adds it)', () => {
+    it('should not error when no source plate matches the barcode', () => {
       const mockInput = createMockInputData([]);
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
-      expect(preCalc.plateDeadVolumes.has('P_NEW')).toBe(false);
+      expect(preCalc.sourcePlates).toHaveLength(0);
 
       const mockCalculateNeeds = jest.fn();
       preCalc.calculateNeeds = mockCalculateNeeds;
 
-      preCalc.updateDeadVolume('P_NEW', 7000);
-      expect(preCalc.plateDeadVolumes.get('P_NEW')).toBe(7000);
+      expect(() => preCalc.updateDeadVolume('P_NEW', 7000)).not.toThrow();
+      expect(preCalc.sourcePlates).toHaveLength(0);
       expect(mockCalculateNeeds).toHaveBeenCalled();
     });
   });
@@ -848,7 +936,7 @@ describe('calculateTransferConcentrations', () => {
     expected: Array<{ conc: number; sourceConc: number; sourceType: string; volToTsfr: number }>
   ): void {
     expect(actual.size).toBe(expected.length);
-    
+
     expected.forEach(exp => {
       const actualObj = actual.get(exp.conc);
       expect(actualObj).toBeDefined();
@@ -875,10 +963,10 @@ describe('calculateTransferConcentrations', () => {
     expect(result.volToTsfr).toBeGreaterThanOrEqual(constraints.dropletSize);
     expect(result.volToTsfr).toBeLessThanOrEqual(constraints.maxTransferVolume);
     expect(result.volToTsfr % constraints.dropletSize).toBeCloseTo(0, 10);
-    const dmsoFraction = result.volToTsfr / (constraints.finalAssayVolume*1000 + result.volToTsfr);
+    const dmsoFraction = result.volToTsfr / (constraints.finalAssayVolume * 1000 + result.volToTsfr);
     expect(dmsoFraction).toBeLessThanOrEqual(constraints.maxDMSOFraction);
 
-    const achievedConc = (result.sourceConc * result.volToTsfr) / (constraints.finalAssayVolume*1000 + result.volToTsfr);
+    const achievedConc = (result.sourceConc * result.volToTsfr) / (constraints.finalAssayVolume * 1000 + result.volToTsfr);
     const error = Math.abs(achievedConc - targetConc) / targetConc;
     expect(error).toBeLessThanOrEqual(constraints.allowableError);
   }
@@ -888,8 +976,8 @@ describe('calculateTransferConcentrations', () => {
       const preCalc = createPreCalcForTransferTests();
       const pattern = createTestPattern([10]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
-
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(createMockInputData(),preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+      //const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
 
       expect(result.intermediateConcentrations.size).toBe(0);
       verifyConcentrationResult(result.destinationConcentrations, [
@@ -916,7 +1004,7 @@ describe('calculateTransferConcentrations', () => {
         { concentration: 100 }
       ]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       expect(result.intermediateConcentrations.size).toBe(0);
       const destConc = result.destinationConcentrations.get(50)!;
@@ -928,11 +1016,11 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([100, 50, 25, 12.5]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 10000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       expect(result.intermediateConcentrations.size).toBe(0);
       expect(result.destinationConcentrations.size).toBe(4);
-      
+
       result.destinationConcentrations.forEach((concObj) => {
         expect(concObj.sourceType).toBe('src');
         expect(concObj.sourceConc).toBe(10000);
@@ -949,7 +1037,7 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([10.1]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       expect(result.destinationConcentrations.size).toBe(1);
       const destConc = result.destinationConcentrations.get(10.1)!;
@@ -966,14 +1054,14 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([1]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 100000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       expect(result.intermediateConcentrations.size).toBe(1);
       expect(result.destinationConcentrations.size).toBe(1);
-      
+
       const destConc = result.destinationConcentrations.get(1)!;
       expect(destConc.sourceType).toBe('int1');
-      
+
       const intConc = Array.from(result.intermediateConcentrations.keys())[0];
       expect(intConc).toBeGreaterThan(1);
       expect(intConc).toBeLessThan(100000);
@@ -984,11 +1072,11 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([2, 1, 0.5]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 100000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       expect(result.intermediateConcentrations.size).toBe(1);
       expect(result.destinationConcentrations.size).toBe(3);
-      
+
       const intConc = Array.from(result.intermediateConcentrations.keys())[0];
       result.destinationConcentrations.forEach((concObj) => {
         expect(concObj.sourceType).toBe('int1');
@@ -1004,7 +1092,7 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([5]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       if (result.intermediateConcentrations.size > 0) {
         const intConcObj = Array.from(result.intermediateConcentrations.values())[0];
@@ -1025,7 +1113,7 @@ describe('calculateTransferConcentrations', () => {
         { concentration: 100 }
       ]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       if (result.intermediateConcentrations.size > 0) {
         const intConc = Array.from(result.intermediateConcentrations.keys())[0];
@@ -1045,7 +1133,7 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([0.001]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 10000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       const destConc = result.destinationConcentrations.get(0.001);
       if (destConc && destConc.sourceType === 'int2') {
@@ -1061,7 +1149,7 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([0.1, 0.01, 0.001]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 100000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       let int2Count = 0;
       result.destinationConcentrations.forEach((concObj) => {
@@ -1078,11 +1166,11 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([0.01, 0.005, 0.001]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 50000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
 
       const int1Sources = new Set<number>();
       const int2Sources = new Set<number>();
-      
+
       result.intermediateConcentrations.forEach((concObj, conc) => {
         if (concObj.sourceType === 'src') {
           int1Sources.add(conc);
@@ -1107,15 +1195,15 @@ describe('calculateTransferConcentrations', () => {
         maxDMSOFraction: maxDMSO,
         finalAssayVolume: assayVol
       });
-      
+
       const pattern = createTestPattern([25]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 5000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
       const destConc = result.destinationConcentrations.get(25)!;
-      const actualDMSO = destConc.volToTsfr / (assayVol*1000 + destConc.volToTsfr);
+      const actualDMSO = destConc.volToTsfr / (assayVol * 1000 + destConc.volToTsfr);
       expect(actualDMSO).toBeLessThanOrEqual(maxDMSO);
-      
+
       expect(actualDMSO).toBeGreaterThan(maxDMSO * 0.9);
     });
 
@@ -1124,12 +1212,12 @@ describe('calculateTransferConcentrations', () => {
         maxTransferVolume: 100,
         finalAssayVolume: 10
       });
-      
+
       const pattern = createTestPattern([10]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 200 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       result.destinationConcentrations.forEach((concObj) => {
         expect(concObj.volToTsfr).toBeLessThanOrEqual(100);
       });
@@ -1140,12 +1228,12 @@ describe('calculateTransferConcentrations', () => {
         intermediateBackfillVolume: 2,
         maxTransferVolume: 100
       });
-      
+
       const pattern = createTestPattern([1]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       result.intermediateConcentrations.forEach((concObj) => {
         const dilutionFactor = concObj.volToTsfr / (concObj.volToTsfr + 2000);
         const intConc = concObj.sourceConc * dilutionFactor;
@@ -1165,8 +1253,8 @@ describe('calculateTransferConcentrations', () => {
         { concentration: 100 }
       ]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       let counts = {
         10000: 0,
         1000: 0,
@@ -1190,8 +1278,8 @@ describe('calculateTransferConcentrations', () => {
         { concentration: 50, volume: 50000 }
       ]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       if (result.intermediateConcentrations.size > 0) {
         const intObj = Array.from(result.intermediateConcentrations.values())[0];
         expect(intObj.sourceConc).toBe(10000);
@@ -1208,10 +1296,10 @@ describe('calculateTransferConcentrations', () => {
         { concentration: 0.1 }
       ]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       expect(result.destinationConcentrations.size).toBeGreaterThan(0);
-      
+
       const dest100 = result.destinationConcentrations.get(100);
       const dest01 = result.destinationConcentrations.get(0.1);
       if (dest100 && dest01) {
@@ -1226,10 +1314,10 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([10, 5]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result1 = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
-      const result2 = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result1 = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
+      const result2 = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       expect(result1.destinationConcentrations).toBe(result2.destinationConcentrations);
       expect(result1.intermediateConcentrations).toBe(result2.intermediateConcentrations);
     });
@@ -1240,9 +1328,9 @@ describe('calculateTransferConcentrations', () => {
       const pattern2 = createTestPattern([10, 6]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result1 = preCalc.calculateTransferConcentrations(pattern1, compoundGroup);
-      const result2 = preCalc.calculateTransferConcentrations(pattern2, compoundGroup);
-      
+      const result1 = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern1,compoundGroup,preCalc.getCommonSettings())
+      const result2 = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern2,compoundGroup,preCalc.getCommonSettings())
+
       expect(result1.destinationConcentrations).not.toBe(result2.destinationConcentrations);
       expect(result1.destinationConcentrations.size).toBe(2);
       expect(result2.destinationConcentrations.size).toBe(2);
@@ -1254,9 +1342,9 @@ describe('calculateTransferConcentrations', () => {
       const compoundGroup1 = createTestCompoundGroup([{ concentration: 1000 }]);
       const compoundGroup2 = createTestCompoundGroup([{ concentration: 2000 }]);
 
-      const result1 = preCalc.calculateTransferConcentrations(pattern, compoundGroup1);
-      const result2 = preCalc.calculateTransferConcentrations(pattern, compoundGroup2);
-      
+      const result1 = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup1,preCalc.getCommonSettings())
+      const result2 = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup2,preCalc.getCommonSettings())
+
       const dest1 = result1.destinationConcentrations.get(10)!;
       const dest2 = result2.destinationConcentrations.get(10)!;
       expect(dest1.volToTsfr).not.toBe(dest2.volToTsfr);
@@ -1269,8 +1357,8 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([2000]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       expect(result.destinationConcentrations.has(2000)).toBe(false);
     });
 
@@ -1281,8 +1369,8 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([0.1]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 10000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       expect(result.destinationConcentrations.has(0.1)).toBe(false);
       expect(result.intermediateConcentrations.size).toBe(0);
     });
@@ -1295,8 +1383,8 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([100, 10, 1, 0.1]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 10000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       expect(result.destinationConcentrations.has(100)).toBe(false);
       expect(result.destinationConcentrations.has(10)).toBe(true);
       expect(result.destinationConcentrations.has(1)).toBe(true);
@@ -1312,8 +1400,8 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([0.001]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 10000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       if (!result.destinationConcentrations.has(0.001)) {
         expect(result.destinationConcentrations.size).toBe(0);
       }
@@ -1327,8 +1415,8 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([33.33, 66.66, 99.99]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       result.destinationConcentrations.forEach((concObj) => {
         expect(concObj.volToTsfr % dropletSize).toBe(0);
       });
@@ -1345,12 +1433,12 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([12.3456789]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 1000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       if (result.destinationConcentrations.has(12.3456789)) {
         const destConc = result.destinationConcentrations.get(12.3456789)!;
-        const achieved = (destConc.sourceConc * destConc.volToTsfr) / 
-                        (25000 + destConc.volToTsfr);
+        const achieved = (destConc.sourceConc * destConc.volToTsfr) /
+          (25000 + destConc.volToTsfr);
         const error = Math.abs(achieved - 12.3456789) / 12.3456789;
         expect(error).toBeLessThan(0.01);
       }
@@ -1365,8 +1453,8 @@ describe('calculateTransferConcentrations', () => {
       const pattern = createTestPattern([0.123]);
       const compoundGroup = createTestCompoundGroup([{ concentration: 10000 }]);
 
-      const result = preCalc.calculateTransferConcentrations(pattern, compoundGroup);
-      
+      const result = calculateTransferConcentrations(preCalc.inputData,preCalc.concentrationCache,pattern,compoundGroup,preCalc.getCommonSettings())
+
       if (result.destinationConcentrations.has(0.123)) {
         const destConc = result.destinationConcentrations.get(0.123)!;
         verifyConstraintsSatisfied(destConc, 0.123, {

@@ -3,6 +3,7 @@ import Navigation from "./components/Navigation";
 import NavbarHeightAdjuster from "./components/NavbarHeightAdjuster";
 import Home from "./pages/Home";
 import NoPage from "./pages/NoPage";
+import Changelog from "./pages/Changelog";
 import EchoTransfer from "./pages/EchoTransfer/EchoTransfer";
 import DilutionDesigner from "./pages/DilutionDesigner/DilutionDesigner";
 import MobileCheck from "./components/MobileCheck";
@@ -33,6 +34,7 @@ const router = createHashRouter(
       <Route path="mapperparser" element={<MapperParser />} />
       <Route path="platereformat" element={<PlateReformat />} />
       <Route path="cocktailbuilder" element={<CocktailBuilder />} />
+      <Route path="changelog" element={<Changelog />} />
       <Route path="*" element={<NoPage />} />
     </Route>
   )

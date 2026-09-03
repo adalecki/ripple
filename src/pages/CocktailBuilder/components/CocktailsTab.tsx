@@ -80,7 +80,7 @@ const CocktailsTab: React.FC<CocktailsTabProps> = ({
     <Container fluid className="h-100 pb-2 d-flex flex-column" style={{ minHeight: 0 }}>
       <Row className="flex-shrink-0">
         <Col md={12}>
-          <Card className="page-card">
+          <Card className="page-card mt-2">
             <Card.Header>Substitution Generator</Card.Header>
             <Card.Body>
               <Row className="g-2 align-items-start">

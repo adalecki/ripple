@@ -1,218 +1,314 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
 import '@testing-library/jest-dom';
-import CheckpointDisplayModal from '../CheckpointDisplayModal';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { DilutionPattern } from '../../../../classes/PatternClass';
+import { Plate } from '../../../../classes/PlateClass';
+import { PreferencesState } from '../../../../hooks/usePreferences';
 import { CheckpointTracker } from '../../classes/CheckpointTrackerClass';
 import { EchoPreCalculator } from '../../classes/EchoPreCalculatorClass';
+import { CompoundInventory } from '../../types/echoTypes';
 import { InputDataType } from '../../utils/echoUtils';
-import { PreferencesState } from '../../../../hooks/usePreferences';
+import CheckpointDisplayModal from '../CheckpointDisplayModal';
 
-jest.mock('../../classes/EchoPreCalculatorClass');
-jest.mock('../../classes/CheckpointTrackerClass');
 
-const mockPreferences: PreferencesState = {
+type ModalProps = React.ComponentProps<typeof CheckpointDisplayModal>;
+
+//EchoPreCalculator reads only these four off preferences, so the rest of the state is left out
+const preferences = {
   maxTransferVolume: 500,
   dropletSize: 2.5,
   sourcePlateSize: '384',
-  destinationPlateSize: '384',
-  splitOutputCSVs: true,
-  defaultDMSOTolerance: 0.005,
-  defaultAssayVolume: 25,
-  defaultBackfill: 10,
-  defaultAllowedError: 0.1,
-  defaultDestinationReplicates: 1,
-  useIntermediatePlates: true,
-  dmsoNormalization: true,
-};
+  destinationPlateSize: '384'
+} as unknown as PreferencesState;
 
-const createMockInputData = (): InputDataType => ({
-  Compounds: [], Patterns: [], Layout: [], Barcodes: [],
-  CommonData: {
-    maxDMSOFraction: 0.005, finalAssayVolume: 25000, intermediateBackfillVolume: 10000,
-    allowableError: 0.1, destReplicates: 1, createIntConcs: true, dmsoNormalization: true, evenDepletion: false, updateFromSurveyVolumes: false,
-    skipUnusedBlocks: false, fillIntColumnwise: false
-  },
-});
+function buildInputData(): InputDataType {
+  return {
+    Layout: [{ Pattern: 'Treatment1', 'Well Block': 'A1:B12' }],
+    Patterns: [
+      { Pattern: 'Treatment1', Type: 'Treatment', Direction: ['LR'], Replicates: 1, Conc1: 10, Conc2: 1 },
+      { Pattern: 'Solvent1', Type: 'Solvent', Direction: [], Replicates: 1 }
+    ],
+    Compounds: [
+      { 'Source Barcode': 'SRC1', 'Well ID': 'A1', 'Compound ID': 'CPD1', 'Concentration (µM)': 10000, 'Volume (µL)': 20, Pattern: 'Treatment1' },
+      { 'Source Barcode': 'SRC2', 'Well ID': 'A1', 'Compound ID': 'CPD2', 'Concentration (µM)': 10000, 'Volume (µL)': 10, Pattern: 'Treatment1' }
+    ],
+    Barcodes: [{ 'Intermediate Plate Barcodes': 'INT1', 'Destination Plate Barcodes': 'DEST1' }],
+    CommonData: {
+      maxDMSOFraction: 0.01,
+      intermediateBackfillVolume: 8,
+      finalAssayVolume: 0.025,
+      allowableError: 0.1,
+      destReplicates: 1,
+      createIntConcs: true,
+      dmsoNormalization: true,
+      evenDepletion: false,
+      updateFromSurveyVolumes: false,
+      skipUnusedBlocks: true,
+      fillIntColumnwise: false
+    }
+  };
+}
 
-describe('CheckpointDisplayModal - Dead Volume Functionality', () => {
-  let mockEchoPreCalc: jest.Mocked<EchoPreCalculator>;
-  let mockCheckpointTracker: jest.Mocked<CheckpointTracker>;
-  let mockSetEchoPreCalc: jest.Mock;
-  let mockSetCheckpointTracker: jest.Mock;
-  let mockHandleClose: jest.Mock;
-  let mockHandleCancel: jest.Mock;
-  let mockHandleContinue: jest.Mock;
+function buildInventory(): CompoundInventory {
+  const inventory: CompoundInventory = new Map();
+  inventory.set('CPD1', new Map([
+    ['Treatment1', { locations: [{ barcode: 'SRC1', wellId: 'A1', volume: 20000, concentration: 10000 }] }]
+  ]));
+  inventory.set('CPD2', new Map([
+    ['Treatment1', { locations: [{ barcode: 'SRC2', wellId: 'A1', volume: 10000, concentration: 10000 }] }]
+  ]));
+  //zero-concentration entries are solvent, and CheckpointSummary excludes them from the compound count
+  inventory.set('DMSO', new Map([
+    ['Solvent1', { locations: [{ barcode: 'SRC2', wellId: 'P24', volume: 10000, concentration: 0 }] }]
+  ]));
+  return inventory;
+}
 
-  beforeEach(() => {
-    mockCheckpointTracker = new CheckpointTracker() as jest.Mocked<CheckpointTracker>;
-    mockCheckpointTracker.checkpoints = new Map([['Test Checkpoint', { status: 'Passed', message: [] }]]);
-    
-    mockEchoPreCalc = new EchoPreCalculator(createMockInputData(), mockCheckpointTracker, mockPreferences) as jest.Mocked<EchoPreCalculator>;
-    mockEchoPreCalc.plateDeadVolumes = new Map([
-      ['P1', 2500], // 2.5 µL
-      ['P2', 15000], // 15 µL
-    ]);
-    mockEchoPreCalc.updateDeadVolume = jest.fn<void, [string, number]>();
-    mockEchoPreCalc.checkpointTracker = mockCheckpointTracker;
-    mockEchoPreCalc.totalDMSOBackfillVol = 0;
-    mockEchoPreCalc.maxDMSOVol = 0;
-    mockEchoPreCalc.destinationPlatesCount = 0;
-    mockEchoPreCalc.srcCompoundInventory = new Map();
-    mockEchoPreCalc.dilutionPatterns = new Map();
+function buildDilutionPatterns(): Map<string, DilutionPattern> {
+  return new Map<string, DilutionPattern>([
+    ['Treatment1', { patternName: 'Treatment1', type: 'Treatment', concentrations: [10, 1], replicates: 1, direction: ['LR'], fold: 1 }],
+    ['Solvent1', { patternName: 'Solvent1', type: 'Solvent', concentrations: [], replicates: 1, direction: [], fold: 1 }]
+  ]);
+}
 
+function buildTracker(): CheckpointTracker {
+  const tracker = new CheckpointTracker();
+  tracker.updateCheckpoint('Valid Dilution Patterns', 'Passed');
+  tracker.updateCheckpoint('Build Source Inventory', 'Warning', ["Pattern 'Solvent1' has no compounds associated with it"]);
+  tracker.updateCheckpoint('Calculated Transfer Volumes', 'Passed');
+  return tracker;
+}
 
-    mockSetEchoPreCalc = jest.fn();
-    mockSetCheckpointTracker = jest.fn();
-    mockHandleClose = jest.fn();
-    mockHandleCancel = jest.fn();
-    mockHandleContinue = jest.fn();
-  });
+//calculateNeeds is deliberately not run: the modal only reads these fields, and fixing them keeps the summary assertions stable
+//plate dead volumes are set to values the constructor would never derive, so displayed values can only have come off the plates
+function buildPreCalc(tracker: CheckpointTracker): EchoPreCalculator {
+  const preCalc = new EchoPreCalculator(buildInputData(), tracker, preferences);
+  preCalc.srcCompoundInventory = buildInventory();
+  preCalc.dilutionPatterns = buildDilutionPatterns();
+  preCalc.sourcePlates = [
+    new Plate({ barcode: 'SRC1', plateSize: '384', plateRole: 'source', deadVolume: 12000 }),
+    new Plate({ barcode: 'SRC2', plateSize: '384', plateRole: 'source', deadVolume: 4000 })
+  ];
+  preCalc.destinationPlatesCount = 3;
+  preCalc.maxDMSOVol = 62.5;
+  preCalc.totalDMSOBackfillVol = 1234567;
+  preCalc.dmsoSourceWells = 2;
+  preCalc.dmsoUsableVolume = 45000;
+  return preCalc;
+}
 
-  const renderModal = (overrideEchoPreCalc?: EchoPreCalculator | null) => {
-    render(
-      <CheckpointDisplayModal
-        showModal={true}
-        checkpointTracker={mockCheckpointTracker}
-        echoPreCalc={overrideEchoPreCalc !== undefined ? overrideEchoPreCalc : mockEchoPreCalc}
-        handleClose={mockHandleClose}
-        handleCancel={mockHandleCancel}
-        handleContinue={mockHandleContinue}
-        setEchoPreCalc={mockSetEchoPreCalc}
-        setCheckpointTracker={mockSetCheckpointTracker}
-      />
-    );
+function renderModal(overrides: Partial<ModalProps> = {}) {
+  const handleClose = jest.fn();
+  const handleCancel = jest.fn();
+  const handleContinue = jest.fn();
+  const setEchoPreCalc = jest.fn();
+  const setCheckpointTracker = jest.fn();
+  const tracker = overrides.checkpointTracker ?? buildTracker();
+  const echoPreCalc = overrides.echoPreCalc !== undefined ? overrides.echoPreCalc : buildPreCalc(tracker);
+
+  const props: ModalProps = {
+    showModal: true,
+    checkpointTracker: tracker,
+    echoPreCalc,
+    handleClose,
+    handleCancel,
+    handleContinue,
+    setEchoPreCalc,
+    setCheckpointTracker,
+    ...overrides
   };
 
-  describe('Display of Dead Volumes', () => {
-    it('should display the "Source Plate Dead Volumes" section if echoPreCalc has plateDeadVolumes', () => {
+  const view = render(<CheckpointDisplayModal {...props} />);
+
+  const rerenderWith = (next: Partial<ModalProps>) => {
+    view.rerender(<CheckpointDisplayModal {...props} {...next} />);
+  };
+
+  return { tracker, echoPreCalc, handleClose, handleCancel, handleContinue, setEchoPreCalc, setCheckpointTracker, rerenderWith };
+}
+
+function updateButton() {
+  return screen.getByRole('button', { name: 'Update Dead Volumes' });
+}
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('CheckpointDisplayModal', () => {
+  describe('checkpoint results', () => {
+    it('renders one accordion entry per checkpoint with its status icon', () => {
       renderModal();
-      expect(screen.getByText('Edit Source Plate Dead Volumes')).toBeInTheDocument();
+
+      expect(screen.getByRole('button', { name: /Valid Dilution Patterns/ })).toHaveTextContent('✅');
+      expect(screen.getByRole('button', { name: /Build Source Inventory/ })).toHaveTextContent('⚠️');
+      expect(screen.getByRole('button', { name: /Calculated Transfer Volumes/ })).toHaveTextContent('✅');
     });
 
-    it('should not display the section if echoPreCalc is null or plateDeadVolumes is empty/null', () => {
-      const customMockPreCalc = { ...mockEchoPreCalc, plateDeadVolumes: new Map() } as jest.Mocked<EchoPreCalculator>;
-      renderModal(customMockPreCalc);
-      expect(screen.queryByText('Edit Source Plate Dead Volumes')).not.toBeInTheDocument();
-      
-      renderModal(null); // Test with echoPreCalc as null
-      expect(screen.queryByText('Edit Source Plate Dead Volumes')).not.toBeInTheDocument();
+    it('renders checkpoint messages when present', () => {
+      renderModal();
+
+      expect(screen.getByText("Pattern 'Solvent1' has no compounds associated with it")).toBeInTheDocument();
     });
 
-    it('should render input fields for each plate barcode and display correct dead volume in µL', () => {
-      renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
+    it('allows continuing when no checkpoint has failed', () => {
+      const { handleContinue } = renderModal();
+      const button = screen.getByRole('button', { name: 'Continue' });
 
-      const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      expect(inputP1).toBeInTheDocument();
-      expect(inputP1.value).toBe('2.5');
+      expect(button).toBeEnabled();
+      fireEvent.click(button);
+      expect(handleContinue).toHaveBeenCalledTimes(1);
+    });
 
-      const inputP2 = screen.getByLabelText('P2') as HTMLInputElement;
-      expect(inputP2).toBeInTheDocument();
-      expect(inputP2.value).toBe('15');
+    it('blocks continuing when a checkpoint has failed', () => {
+      const tracker = buildTracker();
+      tracker.updateCheckpoint('Sufficient Source Volumes', 'Failed', ['Insufficient source volume of CPD1']);
+      renderModal({ checkpointTracker: tracker });
+
+      expect(screen.getByRole('button', { name: 'Cannot Continue' })).toBeDisabled();
+      expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+    });
+
+    it('fires the cancel and close handlers', () => {
+      const { handleCancel, handleClose } = renderModal();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(handleCancel).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(handleClose).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('Editing Dead Volumes', () => {
-    it('should update internal state (editableDeadVolumes) on input change', async () => {
+  describe('calculation summary', () => {
+    it('renders the precalculator totals', () => {
       renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
 
-      const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      fireEvent.change(inputP1, { target: { value: '3.5' } });
-
-      expect(inputP1.value).toBe('3.5');
-
-      fireEvent.click(screen.getByText('Update Dead Volumes'));
-      await waitFor(() => {
-        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P1', 3500);
-      });
+      expect(screen.getByText('Destination Plates:').closest('p')!).toHaveTextContent('Destination Plates: 3');
+      expect(screen.getByText('Total Compounds:').closest('p')!).toHaveTextContent('Total Compounds: 2');
+      expect(screen.getByText('Total Patterns:').closest('p')!).toHaveTextContent('Total Patterns: 2');
     });
 
-    it('should not allow negative values in dead volume input', async () => {
+    it('converts DMSO volumes for display', () => {
       renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
-      
-      const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      fireEvent.change(inputP1, { target: { value: '-1' } });
-      expect(inputP1.value).toBe('2.5'); 
 
-      fireEvent.click(screen.getByText('Update Dead Volumes'));
-      await waitFor(() => {
-        const p1Call = (mockEchoPreCalc.updateDeadVolume as jest.Mock).mock.calls.find(call => call[0] === 'P1');
-        expect(p1Call).toBeUndefined(); 
-      });
+      expect(screen.getByText('DMSO Required (estimated):').closest('p')!).toHaveTextContent('1234.57 µL');
+      expect(screen.getByText('DMSO Max Per Well (estimated):').closest('p')!).toHaveTextContent('62.50 nL');
+      expect(screen.getByText('DMSO on Source (usable):').closest('p')!).toHaveTextContent('45.0 µL (2 wells)');
+    });
+
+    it('is omitted when there is no precalculator', () => {
+      renderModal({ echoPreCalc: null });
+
+      expect(screen.queryByText('Calculation Summary')).not.toBeInTheDocument();
     });
   });
 
-  describe('"Update Dead Volumes" Button Click', () => {
-    it('should call echoPreCalc.updateDeadVolume for changed volumes', async () => {
+  describe('dead volume editing', () => {
+    it('renders an input per source plate showing that plate dead volume in µL', () => {
       renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
 
-      const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      fireEvent.change(inputP1, { target: { value: '5' } });
-
-      const inputP2 = screen.getByLabelText('P2') as HTMLInputElement;
-      fireEvent.change(inputP2, { target: { value: '10' } });
-
-      fireEvent.click(screen.getByText('Update Dead Volumes'));
-
-      await waitFor(() => {
-        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P1', 5000);
-        expect(mockEchoPreCalc.updateDeadVolume).toHaveBeenCalledWith('P2', 10000);
-      });
+      expect(screen.getByLabelText('SRC1')).toHaveValue(12);
+      expect(screen.getByLabelText('SRC2')).toHaveValue(4);
     });
 
-    it('should call setEchoPreCalc and setCheckpointTracker if changes were made', async () => {
-      renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
-      
-      const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      fireEvent.change(inputP1, { target: { value: '5' } });
+    it('pushes an edited volume back in nL and hands up a new precalculator and tracker', () => {
+      const tracker = buildTracker();
+      const preCalc = buildPreCalc(tracker);
+      const updateSpy = jest.spyOn(preCalc, 'updateDeadVolume').mockImplementation(() => { });
+      const { setEchoPreCalc, setCheckpointTracker } = renderModal({ checkpointTracker: tracker, echoPreCalc: preCalc });
 
-      fireEvent.click(screen.getByText('Update Dead Volumes'));
+      fireEvent.change(screen.getByLabelText('SRC1'), { target: { value: '20' } });
+      fireEvent.click(updateButton());
 
-      await waitFor(() => {
-        expect(mockSetEchoPreCalc).toHaveBeenCalledTimes(1);
-        expect(mockSetEchoPreCalc.mock.calls[0][0]).toBeInstanceOf(EchoPreCalculator);
-        
-        expect(mockSetCheckpointTracker).toHaveBeenCalledTimes(1);
-        expect(mockSetCheckpointTracker.mock.calls[0][0]).toBeInstanceOf(CheckpointTracker);
-      });
+      expect(updateSpy).toHaveBeenCalledTimes(1);
+      expect(updateSpy).toHaveBeenCalledWith('SRC1', 20000);
+
+      const nextPreCalc = setEchoPreCalc.mock.calls[0][0];
+      expect(nextPreCalc).toBeInstanceOf(EchoPreCalculator);
+      expect(nextPreCalc).not.toBe(preCalc);
+
+      const nextTracker = setCheckpointTracker.mock.calls[0][0];
+      expect(nextTracker).toBeInstanceOf(CheckpointTracker);
+      expect(nextTracker).not.toBe(tracker);
     });
 
-    it('should NOT call setEchoPreCalc or setCheckpointTracker if NO changes were made', async () => {
-      renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
-      
-      fireEvent.click(screen.getByText('Update Dead Volumes'));
+    it('leaves untouched plates alone', () => {
+      const tracker = buildTracker();
+      const preCalc = buildPreCalc(tracker);
+      const updateSpy = jest.spyOn(preCalc, 'updateDeadVolume').mockImplementation(() => { });
+      renderModal({ checkpointTracker: tracker, echoPreCalc: preCalc });
 
-      await waitFor(() => {
-        expect(mockEchoPreCalc.updateDeadVolume).not.toHaveBeenCalled();
-        expect(mockSetEchoPreCalc).not.toHaveBeenCalled();
-        expect(mockSetCheckpointTracker).not.toHaveBeenCalled();
-      });
+      fireEvent.change(screen.getByLabelText('SRC2'), { target: { value: '6' } });
+      fireEvent.click(updateButton());
+
+      expect(updateSpy).toHaveBeenCalledTimes(1);
+      expect(updateSpy).toHaveBeenCalledWith('SRC2', 6000);
     });
 
-     it('should correctly use the updated checkpointTracker from the modified echoPreCalc instance', async () => {
-      const updatedMockTracker = new CheckpointTracker() as jest.Mocked<CheckpointTracker>;
-      updatedMockTracker.checkpoints = new Map([['Test Checkpoint', { status: 'Warning', message: ["New warning!"] }]]);
+    it('does nothing when nothing has been edited', () => {
+      const tracker = buildTracker();
+      const preCalc = buildPreCalc(tracker);
+      const updateSpy = jest.spyOn(preCalc, 'updateDeadVolume').mockImplementation(() => { });
+      const { setEchoPreCalc, setCheckpointTracker } = renderModal({ checkpointTracker: tracker, echoPreCalc: preCalc });
 
-      (mockEchoPreCalc.updateDeadVolume as jest.Mock).mockImplementation(() => {
-        (mockEchoPreCalc as any).checkpointTracker = updatedMockTracker;
-      });
-      
+      fireEvent.click(updateButton());
+
+      expect(updateSpy).not.toHaveBeenCalled();
+      expect(setEchoPreCalc).not.toHaveBeenCalled();
+      expect(setCheckpointTracker).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when an edit matches the plate value', () => {
+      const tracker = buildTracker();
+      const preCalc = buildPreCalc(tracker);
+      const updateSpy = jest.spyOn(preCalc, 'updateDeadVolume').mockImplementation(() => { });
+      const { setEchoPreCalc } = renderModal({ checkpointTracker: tracker, echoPreCalc: preCalc });
+
+      fireEvent.change(screen.getByLabelText('SRC1'), { target: { value: '12' } });
+      fireEvent.click(updateButton());
+
+      expect(updateSpy).not.toHaveBeenCalled();
+      expect(setEchoPreCalc).not.toHaveBeenCalled();
+    });
+
+    it('rejects negative and non-numeric entries', () => {
       renderModal();
-      fireEvent.click(screen.getByText('Edit Source Plate Dead Volumes'));
-      
-      const inputP1 = screen.getByLabelText('P1') as HTMLInputElement;
-      fireEvent.change(inputP1, { target: { value: '5' } }); // Make a change
+      const input = screen.getByLabelText('SRC1');
 
-      fireEvent.click(screen.getByText('Update Dead Volumes'));
+      fireEvent.change(input, { target: { value: '-1' } });
+      expect(input).toHaveValue(12);
 
-      await waitFor(() => {
-        expect(mockSetEchoPreCalc).toHaveBeenCalled();
-        expect(mockSetCheckpointTracker).toHaveBeenCalledWith(updatedMockTracker); // Crucial check
-      });
+      fireEvent.change(input, { target: { value: 'abc' } });
+      expect(input).toHaveValue(12);
+    });
+
+    it('discards pending edits when a different precalculator arrives', () => {
+      const { rerenderWith } = renderModal();
+
+      fireEvent.change(screen.getByLabelText('SRC1'), { target: { value: '20' } });
+      expect(screen.getByLabelText('SRC1')).toHaveValue(20);
+
+      const nextTracker = buildTracker();
+      rerenderWith({ checkpointTracker: nextTracker, echoPreCalc: buildPreCalc(nextTracker) });
+
+      expect(screen.getByLabelText('SRC1')).toHaveValue(12);
+    });
+
+    it('is omitted when there are no source plates', () => {
+      const tracker = buildTracker();
+      const preCalc = buildPreCalc(tracker);
+      preCalc.sourcePlates = [];
+      renderModal({ checkpointTracker: tracker, echoPreCalc: preCalc });
+
+      expect(screen.queryByText('Source Plate Dead Volumes (µL)')).not.toBeInTheDocument();
+    });
+
+    it('is omitted and the update button disabled when there is no precalculator', () => {
+      renderModal({ echoPreCalc: null });
+
+      expect(screen.queryByText('Source Plate Dead Volumes (µL)')).not.toBeInTheDocument();
+      expect(updateButton()).toBeDisabled();
     });
   });
 });

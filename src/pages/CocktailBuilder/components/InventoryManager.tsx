@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormField } from '../../../components/FormField';
 import InfoTooltip from '../../../components/InfoTooltip';
 import { InventoryForm } from './InventoryWizard';
-import { PLATE_TYPE_OPTIONS } from '../utils/cocktailUtils';
+import { usePreferencesValue } from '../../../hooks/usePreferences';
 
 interface InventoryManagerProps {
   form: InventoryForm;
@@ -29,6 +29,11 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({
   const handleFieldChange = (fieldName: keyof InventoryForm, value: string | number) => {
     setForm({ ...form, [fieldName]: value });
   };
+  const plateTypes = usePreferencesValue('plateTypes') as string[];
+
+  if (!plateTypes.includes(form.plateType)) {
+    handleFieldChange('plateType',plateTypes[0])
+  }
 
   return (
     <div>
@@ -53,10 +58,10 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({
         type="select"
         label="Plate Type"
         value={form.plateType}
-        options={PLATE_TYPE_OPTIONS}
+        options={plateTypes.map(t => ({ value: t, label: t }))}
         onChange={value => handleFieldChange('plateType', value)}
         required
-        tooltip='The fluid class but listed as "Plate Type" in Echo software; can be set well-by-well.'
+        tooltip='The fluid class but listed as "Plate Type" in Echo software; can be set well-by-well. These can be changed in Ripple Preferences (gear in top right).'
       />
 
       <Accordion activeKey={activeAccordion} onSelect={k => setActiveAccordion(k as string | null)}>

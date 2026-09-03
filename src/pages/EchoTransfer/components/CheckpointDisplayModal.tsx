@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal, Row, Col, Button, Card, Accordion, Form } from 'react-bootstrap';
 import { CheckpointTracker } from '../classes/CheckpointTrackerClass';
 import { EchoPreCalculator } from '../classes/EchoPreCalculatorClass';
@@ -103,32 +103,35 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
   setCheckpointTracker
 }) => {
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
-  const [editableDeadVolumes, setEditableDeadVolumes] = useState<Map<string, number>>(new Map());
+  const [deadVolumeEdits, setDeadVolumeEdits] = useState<Map<string, number>>(new Map());
+  const [lastPreCalc, setLastPreCalc] = useState<EchoPreCalculator | null>(echoPreCalc);
 
-  useEffect(() => {
-    if (echoPreCalc && echoPreCalc.plateDeadVolumes) {
-      setEditableDeadVolumes(new Map(echoPreCalc.plateDeadVolumes));
-    }
-  }, [echoPreCalc]);
+  //pending edits belong to the precalculator they were typed against, so a different one invalidates them
+  if (lastPreCalc !== echoPreCalc) {
+    setLastPreCalc(echoPreCalc);
+    setDeadVolumeEdits(new Map());
+  }
 
   const handleDeadVolumeChange = (barcode: string, value: string) => {
     const newVolumeNL = parseFloat(value) * 1000;
     if (!isNaN(newVolumeNL) && newVolumeNL >= 0) {
-      setEditableDeadVolumes(prevMap => new Map(prevMap).set(barcode, newVolumeNL));
+      setDeadVolumeEdits(prevMap => new Map(prevMap).set(barcode, newVolumeNL));
     }
   };
 
   const handleUpdateDeadVolumes = () => {
-    if (!echoPreCalc || !setEchoPreCalc || !setCheckpointTracker) return;
+    if (!echoPreCalc) return;
     let hasChanges = false;
-    editableDeadVolumes.forEach((newVolumeNL, barcode) => {
-      if (echoPreCalc.plateDeadVolumes.get(barcode) !== newVolumeNL) {
-        echoPreCalc.updateDeadVolume(barcode, newVolumeNL);
+    const newEchoPreCalcInstance = Object.assign(Object.create(Object.getPrototypeOf(echoPreCalc)), echoPreCalc) as EchoPreCalculator;
+    newEchoPreCalcInstance.checkpointTracker = echoPreCalc.checkpointTracker.clone();
+    deadVolumeEdits.forEach((newVolumeNL, barcode) => {
+      const plate = newEchoPreCalcInstance.sourcePlates.find(p => p.barcode == barcode)
+      if (plate && plate.getDeadVolume() != newVolumeNL) {
+        newEchoPreCalcInstance.updateDeadVolume(barcode, newVolumeNL);
         hasChanges = true;
       }
     });
     if (hasChanges) {
-      const newEchoPreCalcInstance = Object.assign(Object.create(Object.getPrototypeOf(echoPreCalc)), echoPreCalc);
       setEchoPreCalc(newEchoPreCalcInstance);
       setCheckpointTracker(newEchoPreCalcInstance.checkpointTracker);
     }
@@ -166,22 +169,22 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
 
         {echoPreCalc ? <CheckpointSummary echoPreCalc={echoPreCalc} /> : null}
 
-        {echoPreCalc && echoPreCalc.plateDeadVolumes && echoPreCalc.plateDeadVolumes.size > 0 && (
+        {echoPreCalc && echoPreCalc.sourcePlates.length > 0 && (
           <>
             <h5 className="mt-3">Source Plate Dead Volumes (µL)</h5>
             <Accordion className="mt-2">
               <Accordion.Item eventKey="deadVolumesAccordion">
                 <Accordion.Header>Edit Source Plate Dead Volumes</Accordion.Header>
                 <Accordion.Body>
-                  {Array.from(editableDeadVolumes.entries()).map(([barcode, deadVolumeNL]) => (
-                    <Row key={barcode} className="mb-2 align-items-center">
-                      <Col md={5}><Form.Label htmlFor={`deadvol-${barcode}`} className="mb-0">{barcode}</Form.Label></Col>
+                  {echoPreCalc.sourcePlates.map((plate) => (
+                    <Row key={plate.barcode} className="mb-2 align-items-center">
+                      <Col md={5}><Form.Label htmlFor={`deadvol-${plate.barcode}`} className="mb-0">{plate.barcode}</Form.Label></Col>
                       <Col md={7}>
                         <Form.Control
                           type="number"
-                          id={`deadvol-${barcode}`}
-                          value={deadVolumeNL / 1000}
-                          onChange={(e) => handleDeadVolumeChange(barcode, e.target.value)}
+                          id={`deadvol-${plate.barcode}`}
+                          value={(deadVolumeEdits.get(plate.barcode) ?? plate.getDeadVolume()) / 1000}
+                          onChange={(e) => handleDeadVolumeChange(plate.barcode, e.target.value)}
                           step="0.1"
                           min="0"
                         />

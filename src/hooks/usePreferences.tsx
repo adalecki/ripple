@@ -1,7 +1,8 @@
 import { createContext, useContext, useState } from 'react';
 import { PREFERENCES_CONFIG } from '../config/preferencesConfig';
+import { STORAGE_KEYS } from '../utils/storageUtils';
 
-type PreferenceValue = number | boolean | string;
+export type PreferenceValue = number | boolean | string | string[];
 
 export type PreferencesState = {
   [K in typeof PREFERENCES_CONFIG[number]['settings'][number]['prefId']]: PreferenceValue;
@@ -10,7 +11,7 @@ export type PreferencesState = {
 interface PreferencesContextValue {
   preferences: PreferencesState;
   updatePreferences: (newPreferences: PreferencesState) => void;
-  resetPreferences: () => void;
+  resetPreferences: (selectedCategory: string) => void;
 }
 
 export const PreferencesContext = createContext<PreferencesContextValue | null>(null);
@@ -26,7 +27,7 @@ export function getDefaultPreferences(): PreferencesState {
 }
 
 function loadStoredPreferences(): PreferencesState {
-  const stored = localStorage.getItem('echo-preferences');
+  const stored = localStorage.getItem(STORAGE_KEYS.preferences);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -44,15 +45,19 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
   const updatePreferences = (newPreferences: PreferencesState) => {
     setPreferences(newPreferences);
-    localStorage.setItem('echo-preferences', JSON.stringify(newPreferences));
+    localStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(newPreferences));
   };
 
-  const resetPreferences = () => {
-    localStorage.removeItem('echo-preferences');
-    const defaults = getDefaultPreferences();
-    setPreferences(defaults);
-    localStorage.setItem('echo-preferences', JSON.stringify(defaults));
-  };
+const resetPreferences = (categoryId: string) => {
+  const category = PREFERENCES_CONFIG.find(cat => cat.id == categoryId);
+  if (!category) return;
+  const defaults = getDefaultPreferences();
+  const next = { ...preferences };
+  for (const setting of category.settings) {
+    next[setting.prefId] = defaults[setting.prefId];
+  }
+  updatePreferences(next);
+};
 
   return (
     <PreferencesContext.Provider value={{ preferences, updatePreferences, resetPreferences }}>

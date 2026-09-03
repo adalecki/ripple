@@ -1,0 +1,35 @@
+.changelog-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--navbar-height));
+  overflow-y: auto;
+}
+
+.changelog-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.changelog-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: #e74c3c;
+}
+
+.changelog-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+
+.changelog-tag {
+  flex-shrink: 0;
+  min-width: 4.0rem;
+}

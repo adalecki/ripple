@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Alert, Col, Row, Accordion } from 'react-bootstrap';
-import { usePreferences } from '../../../hooks/usePreferences';
-import { PREFERENCES_CONFIG, Setting } from '../../../config/preferencesConfig';
+import { PreferenceValue, usePreferences } from '../../../hooks/usePreferences';
+import { PREFERENCES_CONFIG, Setting, SettingType } from '../../../config/preferencesConfig';
 import { FormField } from '../../../components/FormField';
 import FileUploadCard from '../../../components/FileUploadCard';
 import '../../../css/EchoForm.css';
@@ -57,7 +57,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
   useEffect(() => {
     const newValues: { [key: string]: number | boolean | string } = {};
     [...fields, ...transferFields].forEach(field => {
-      newValues[field.name] = preferences[field.prefId] ?? field.defaultValue;
+      newValues[field.name] = preferences[field.prefId] as Exclude<PreferenceValue,string[]> ?? field.defaultValue;
     });
     setFormValues(newValues);
   }, [preferences]);
@@ -125,7 +125,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
       key={field.name}
       id={field.prefId}
       name={field.name}
-      type={field.type}
+      type={field.type as Exclude<SettingType,'list'>}
       label={field.name}
       value={formValues[field.name]}
       onChange={(value) => handleFieldChange(field.name, value)}
