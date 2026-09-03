@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { read, utils, WorkBook } from 'xlsx';
 import { PREFERENCES_CONFIG, Setting } from '../config/preferencesConfig';
-import { getDefaultPreferences, PreferencesState } from '../hooks/usePreferences';
+import { getDefaultPreferences, PreferencesState, PreferenceValue } from '../hooks/usePreferences';
 import { CheckpointTracker } from '../pages/EchoTransfer/classes/CheckpointTrackerClass';
 import { EchoPreCalculator } from '../pages/EchoTransfer/classes/EchoPreCalculatorClass';
 import { EchoCalculator } from '../pages/EchoTransfer/classes/EchoCalculatorClass';
@@ -53,7 +53,7 @@ function serializeAsFormData(values: { [key: string]: number | boolean | string 
 export function buildFormValues(wb: WorkBook, preferences: PreferencesState) {
   const values: { [key: string]: number | boolean | string } = {};
   for (const field of [...calculatorFields, ...transferFields]) {
-    values[field.name] = preferences[field.prefId] ?? field.defaultValue;
+    values[field.name] = preferences[field.prefId] as Exclude<PreferenceValue, string[]> ?? field.defaultValue;
   }
   applyAssaySettings(wb, values);
 
