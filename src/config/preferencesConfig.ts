@@ -1,4 +1,4 @@
-export type SettingType = 'number' | 'select' | 'switch';
+export type SettingType = 'number' | 'select' | 'switch' | 'list';
 
 export interface SettingOption {
   value: string | number;
@@ -53,8 +53,8 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'select',
         defaultValue: '384',
         options: [
-          { value: '384', label: '384'},
-          { value: '1536', label: '1536'}
+          { value: '384', label: '384' },
+          { value: '1536', label: '1536' }
         ]
       },
       {
@@ -63,9 +63,9 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'select',
         defaultValue: '384',
         options: [
-          { value: '96', label: '96'},
-          { value: '384', label: '384'},
-          { value: '1536', label: '1536'}
+          { value: '96', label: '96' },
+          { value: '384', label: '384' },
+          { value: '1536', label: '1536' }
         ]
       },
       {
@@ -195,10 +195,10 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'select',
         defaultValue: '2',
         options: [
-          { value: '1', label: '1'},
-          { value: '2', label: '2'},
-          { value: '3', label: '3'},
-          { value: '4', label: '4'}
+          { value: '1', label: '1' },
+          { value: '2', label: '2' },
+          { value: '3', label: '3' },
+          { value: '4', label: '4' }
         ]
       },
       {
@@ -206,6 +206,28 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: `Robust Z' Factor`,
         type: 'switch',
         defaultValue: false
+      }
+    ]
+  },
+  {
+    id: 'cocktail-defaults',
+    label: 'Cocktail Builder Values',
+    settings: [
+      {
+        prefId: 'plateTypes',
+        name: 'Plate Types',
+        type: 'list',
+        defaultValue: [
+          '384PP_DMSO2',
+          '384PP_AQ_GP3',
+          '384PP_AQ_SP2',
+          '384PP_AQ_CP',
+          '384LDV_DMSO',
+          '384LDV_AQ_B2',
+          '384LDV_AQ_P2',
+          '1536LDV_DMSO'
+        ],
+        tooltip: 'Echo fluid classes offered in the Inventory tab; the first entry is the default'
       }
     ]
   }
