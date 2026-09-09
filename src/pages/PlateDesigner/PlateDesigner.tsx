@@ -37,12 +37,21 @@ const PlateDesigner: React.FC = () => {
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
-    //document.addEventListener('mousedown', handlePageDblClick);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      //document.removeEventListener('mousedown', handlePageDblClick);
     };
   }, []);
+
+  const activePlateRef = useRef<Plate | null>(null);
+  activePlateRef.current = activePlate();
+
+  function activePlate(): Plate | null {
+    switch (tabKey) {
+      case 'designDst': return currentPlate(designDstPlates, curDesignDstPlateId);
+      case 'designSrc': return currentPlate(designSrcPlates, curDesignSrcPlateId);
+      default: return null;
+    }
+  }
 
   const renderSidebar = () => {
     if (tabKey === 'designDst') {
@@ -167,8 +176,10 @@ const PlateDesigner: React.FC = () => {
     if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag)) return
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
+      const plate = activePlateRef.current;
+      if (!plate) return;
       setSelectedWellIds(prevWells =>
-        moveWellSelection(designSrcPlates[0], prevWells, e.key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', e)
+        moveWellSelection(plate, prevWells, e.key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', e)
       );
     } else if (e.key === 'Enter') {
       e.preventDefault();
@@ -231,17 +242,7 @@ const PlateDesigner: React.FC = () => {
     if (el) el.style.display = "none";
     const parent = (e.target as HTMLElement).closest("[data-view]");
     if (!parent) return;
-    let plate: Plate | null = null
-    switch (tabKey) {
-      case "designDst":
-        plate = currentPlate(designDstPlates, curDesignDstPlateId)
-        break;
-      case "designSrc":
-        plate = currentPlate(designSrcPlates, curDesignSrcPlateId)
-        break;
-      default:
-        plate = null;
-    }
+    const plate = activePlate()
     if (!plate) return;
 
     const region = {

@@ -32,7 +32,7 @@
 # Randomize plate layouts?
 # sensibleWellSelection behavior is confusing, it triggers on calculated blocks not full well selection
 #x Before next push - test TsfrCalcultor now that Design is removed!
-# pull activePlate concept from Combinator into PlateDesigner
+#x pull activePlate concept from Combinator into PlateDesigner
 # update dead vol logic in precalc and calc to work with new plate class deadvol
 # add dead vol of 1uL for 1536 plates
 #x remove "export workbook" button in Design Summary of Combinator
