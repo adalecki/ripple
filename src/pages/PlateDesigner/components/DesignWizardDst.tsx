@@ -281,6 +281,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             patterns={patterns}
             setPatterns={setPatterns}
             curPatternId={curPatternId}
+            selectedPattern={selectedPattern}
           />
         </Col>
         <Col

@@ -21,7 +21,8 @@ interface PatternManagerProps {
     isEditing: boolean;
     isNewPattern: boolean;
     isPickingColor: boolean;
-  }>>
+  }>>;
+  selectedPattern: Pattern | null;
 }
 
 const DIRECTION_OPTIONS = [
@@ -41,7 +42,7 @@ function isPerpendicularDirections(a: string, b: string): boolean {
   return (horizontal.includes(a) && vertical.includes(b)) || (vertical.includes(a) && horizontal.includes(b));
 }
 
-const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState }) => {
+const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState, selectedPattern }) => {
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
   const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
@@ -49,7 +50,6 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
 
   if (curPatternId !== prevPatternId) {
     setPrevPatternId(curPatternId)
-    const selectedPattern = patterns ? patterns.find(p => p.id === curPatternId) : undefined;
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
   }
 
@@ -190,11 +190,11 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   variant="primary"
                   size="sm"
                   onClick={handleEditPattern}
-                  disabled={editingPattern.locations.length > 0}
+                  disabled={!selectedPattern || selectedPattern.locations.length > 0}
                 >
                   Edit
                 </Button>
-                {editingPattern.locations.length > 0 && (
+                {!selectedPattern || selectedPattern.locations.length > 0 && (
                   <small className="text-muted fst-italic ms-2">Can't edit when present on plate</small>
                 )}
               </>
