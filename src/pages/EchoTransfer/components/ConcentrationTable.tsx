@@ -27,12 +27,12 @@ const ConcentrationTable: React.FC<ConcentrationTableProps> = ({
       ...concentrations,
       null
     ]
-    )
-  }
+    );
+  };
 
   return (
     <EditableValueTable
-      tableId='patternConcs'
+      tableId="patternConcs"
       values={tableValues}
       onChange={handleValuesChange}
       disabled={disabled}

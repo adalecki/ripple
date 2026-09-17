@@ -60,7 +60,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
   };
 
   const handleConcentrationChange = (newConcentrations: (number | null)[]) => {
-    if (newConcentrations.length === 0) newConcentrations.push(null)
+    if (newConcentrations.length === 0) newConcentrations.push(null);
     setWellContentsForm({ ...wellContentsForm, concentrations: newConcentrations });
   };
 
@@ -71,7 +71,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
 
   const assignablePatterns = patterns.filter(p => p.type !== 'Unused');
 
-  const expectedWells = validConcentrations.length
+  const expectedWells = validConcentrations.length;
 
   return (
     <div className="d-flex flex-column">
@@ -113,7 +113,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
                     id={`src-pattern-${pattern.id}`}
                     className="form-check-input"
                     checked={wellContentsForm.patternNames.includes(pattern.name)}
-                    onChange={(e) => { handleFieldChange('pattern', pattern.name); e.currentTarget.blur() }}
+                    onChange={(e) => { handleFieldChange('pattern', pattern.name); e.currentTarget.blur(); }}
                     disabled={wellContentsForm.dmsoWells}
                   />
                   <label
@@ -143,7 +143,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
           onSelect={(k) => setActiveAccordion(k as string | null)}
         >
           <Accordion.Item eventKey="basic">
-            <Accordion.Header onClick={() => { (document.activeElement as HTMLElement).blur() }}>Basic</Accordion.Header>
+            <Accordion.Header onClick={() => { (document.activeElement as HTMLElement).blur(); }}>Basic</Accordion.Header>
             <Accordion.Body className="px-2">
               <FormField
                 id="src-compound-id"
@@ -172,7 +172,7 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
           </Accordion.Item>
 
           <Accordion.Item eventKey="advanced">
-            <Accordion.Header onClick={() => { (document.activeElement as HTMLElement).blur() }}>Advanced <InfoTooltip text={<>Select wells on the plate, then press <kbd>Enter</kbd> to apply and advance to the next compound.</>} /></Accordion.Header>
+            <Accordion.Header onClick={() => { (document.activeElement as HTMLElement).blur(); }}>Advanced <InfoTooltip text={<>Select wells on the plate, then press <kbd>Enter</kbd> to apply and advance to the next compound.</>} /></Accordion.Header>
             <Accordion.Body className="px-2">
               <div className="mb-2">
                 <label className="form-label">Compound List</label>
@@ -229,10 +229,10 @@ const ContentsManager: React.FC<ContentsManagerProps> = ({
                 onChange={(value) => handleFieldChange('direction', [value as string])}
                 required
                 options={[
-                  { label: "LR", value: "LR" },
-                  { label: "RL", value: "RL" },
-                  { label: "TB", value: "TB" },
-                  { label: "BT", value: "BT" }
+                  { label: 'LR', value: 'LR' },
+                  { label: 'RL', value: 'RL' },
+                  { label: 'TB', value: 'TB' },
+                  { label: 'BT', value: 'BT' }
                 ]}
                 disabled={wellContentsForm.dmsoWells}
               />

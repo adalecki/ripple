@@ -48,7 +48,7 @@ const DilutionPointsInput: React.FC<DilutionPointsInputProps> = ({
 
   return (
     <Card >
-      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+      <Card.Header className="d-flex justify-content-between align-items-center p-1">
         <h5 className="mb-0">Desired Points</h5>
         <button
           className="btn btn-sm btn-outline-primary"
@@ -57,9 +57,9 @@ const DilutionPointsInput: React.FC<DilutionPointsInputProps> = ({
           +
         </button>
       </Card.Header>
-      <Card.Body className='p-1'>
+      <Card.Body className="p-1">
         <EditableValueTable
-          tableId='points'
+          tableId="points"
           values={tableValues}
           onChange={handleValuesChange}
           showLabels={true}

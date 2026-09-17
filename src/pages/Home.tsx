@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Calculator, ChartColumnIncreasing, MapIcon, LayoutTemplate, Palette, Merge } from 'lucide-react';
-import '../css/Home.css'
+import '../css/Home.css';
 
 const Home = () => {
   return (
@@ -80,7 +80,7 @@ const Home = () => {
                 <Card.Title className="mb-3">Cocktail Builder</Card.Title>
                 <Card.Text className="text-muted">
                   Build plates from hand-listed cocktails of components, dispensed at fixed volumes rather than
-                  by concentration. 
+                  by concentration.
                 </Card.Text>
               </Card.Body>
             </Card>

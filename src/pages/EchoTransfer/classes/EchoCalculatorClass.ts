@@ -52,7 +52,7 @@ export class EchoCalculator {
     echoPreCalc: EchoPreCalculator,
     checkpointTracker: CheckpointTracker,
   ) {
-    this.errors = []
+    this.errors = [];
     this.inputData = echoPreCalc.inputData;
     this.maxDMSOFraction = echoPreCalc.maxDMSOFraction;
     this.intermediateBackfillVolume = echoPreCalc.intermediateBackfillVolume;
@@ -68,21 +68,21 @@ export class EchoCalculator {
     //this.sourcePlates = prepareSrcPlates(this.echoPreCalc.srcCompoundInventory, this.echoPreCalc.srcPltSize, this.echoPreCalc.dilutionPatterns, this.inputData)
     this.sourcePlates = echoPreCalc.sourcePlates;
     this.intermediatePlates = this.prepareIntPlates();
-    this.destinationPlates = this.prepareDestPlates()
-    this.fillIntPlates()
-    this.fillDestPlates()
-    if (this.inputData.CommonData.dmsoNormalization && this.destinationPlates.length > 0) { this.dmsoNormalization() }
+    this.destinationPlates = this.prepareDestPlates();
+    this.fillIntPlates();
+    this.fillDestPlates();
+    if (this.inputData.CommonData.dmsoNormalization && this.destinationPlates.length > 0) { this.dmsoNormalization(); }
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates, ...this.destinationPlates]) {
-      this.findPlateMaxConcentration(plate)
+      this.findPlateMaxConcentration(plate);
     }
-    this.transferSteps = this.transferSteps.filter(step => step.volume > 0)
+    this.transferSteps = this.transferSteps.filter(step => step.volume > 0);
 
   }
 
-  //prepares necessary number of intermediate plates 
+  //prepares necessary number of intermediate plates
   prepareIntPlates(): Plate[] {
-    let totalIntWellsNeeded = { level1: 0, level2: 0 };
-    const echoIntDeadVolume = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000
+    const totalIntWellsNeeded = { level1: 0, level2: 0 };
+    const echoIntDeadVolume = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000;
 
     for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {
       const middleMap = this.echoPreCalc.totalVolumes.get(compoundId);
@@ -95,7 +95,7 @@ export class EchoCalculator {
         const pattern = this.echoPreCalc.dilutionPatterns.get(patternName);
         if (!pattern) continue;
 
-        const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings())
+        const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings());
 
         for (const [intConc, concInfo] of transferConcentrations.intermediateConcentrations) {
           const concInnerMap = volumeMap.get(intConc);
@@ -111,11 +111,11 @@ export class EchoCalculator {
       }
     }
 
-    let dmsoVolAvailable = 0
+    let dmsoVolAvailable = 0;
     for (const srcPlate of this.sourcePlates) {
       for (const well of srcPlate) {
         if (well?.isSolventOnlyWell('DMSO')) {
-          const plateDeadVolume = srcPlate.getDeadVolume()
+          const plateDeadVolume = srcPlate.getDeadVolume();
           dmsoVolAvailable += Math.max(0, well.getSolventVolume('DMSO') - plateDeadVolume);
         }
       }
@@ -145,7 +145,7 @@ export class EchoCalculator {
         plateRole: i < intPlatesCount1 ? 'intermediate1' : 'intermediate2'
       });
       //this.echoPreCalc.plateDeadVolumes.set(newIntPlate.barcode, echoIntDeadVolume)
-      newIntPlate.setDeadVolume(echoIntDeadVolume)
+      newIntPlate.setDeadVolume(echoIntDeadVolume);
       for (const well of newIntPlate) {
         if (well) {
           well.addSolvent({ name: 'DMSO', volume: this.intermediateBackfillVolume });
@@ -158,7 +158,7 @@ export class EchoCalculator {
   }
 
   fillIntPlates() {
-    const echoIntDeadVolume = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000
+    const echoIntDeadVolume = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000;
     const intermediateNeeds = new Map<string, Map<number, number>>();
 
     for (const [compoundId, patternMap] of this.echoPreCalc.srcCompoundInventory) {
@@ -174,7 +174,7 @@ export class EchoCalculator {
         const pattern = this.echoPreCalc.dilutionPatterns.get(patternName);
         if (!pattern) continue;
 
-        const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings())
+        const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings());
         const volumeMap = this.echoPreCalc.totalVolumes.get(compoundId)?.get(patternName);
         if (!volumeMap) continue;
 
@@ -210,8 +210,8 @@ export class EchoCalculator {
 
         for (const intWell of wellBlock) {
 
-          const possibleLocs = this.findAvailableIntermediates(compoundId, concInfo)
-          const sourceWell = this.findSourceWell(possibleLocs, concInfo.volToTsfr, this.evenDepletion)
+          const possibleLocs = this.findAvailableIntermediates(compoundId, concInfo);
+          const sourceWell = this.findSourceWell(possibleLocs, concInfo.volToTsfr, this.evenDepletion);
           if (!sourceWell) break;
 
           const transferStep: TransferStepExport = {
@@ -239,53 +239,52 @@ export class EchoCalculator {
           }
           this.intermediateWellCache.get(compoundId)!.set(intConc, cacheArr);
 
-          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
+          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
         }
       }
     }
   }
 
   findSourceWell(locations: { barcode: string, wellId: string }[], volume: number, evenDepletion: boolean): { barcode: string, wellId: string } | null {
-    const plates = [...this.sourcePlates, ...this.intermediatePlates]
+    const plates = [...this.sourcePlates, ...this.intermediatePlates];
     let plate: Plate | undefined;
     if (evenDepletion) {
-      const wells: Well[] = []
+      const wells: Well[] = [];
       for (const loc of locations) {
-        const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate)
-        if (!well) continue
-        if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode) }
-        if (!plate) continue
+        const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate);
+        if (!well) continue;
+        if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
+        if (!plate) continue;
         //const srcDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plate.barcode) || (well.getTotalVolume() < 15000 ? 2500 : 15000) //might as well check volumes in first pass
-        const srcDeadVolume = plate.getDeadVolume()
+        const srcDeadVolume = plate.getDeadVolume();
         if (well.getTotalVolume() >= (volume + srcDeadVolume)) {
-          wells.push(well)
+          wells.push(well);
         }
       }
       if (wells.length > 0) {
-        const maxWell = wells.reduce((prev, current) => (prev.getTotalVolume() >= current.getTotalVolume()) ? prev : current)
-        return { barcode: maxWell.parentBarcode, wellId: maxWell.id }
+        const maxWell = wells.reduce((prev, current) => (prev.getTotalVolume() >= current.getTotalVolume()) ? prev : current);
+        return { barcode: maxWell.parentBarcode, wellId: maxWell.id };
       }
-    }
-    else {
+    } else {
       for (const loc of locations) {
-        const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate)
-        if (!well) continue
-        if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode) }
-        if (!plate) continue
+        const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate);
+        if (!well) continue;
+        if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
+        if (!plate) continue;
         //const srcDeadVolume = this.echoPreCalc.plateDeadVolumes.get(well.parentBarcode) || (well.getTotalVolume() < 15000 ? 2500 : 15000)
-        const srcDeadVolume = plate.getDeadVolume()
+        const srcDeadVolume = plate.getDeadVolume();
         if (well.getTotalVolume() >= (volume + srcDeadVolume)) {
-          return { barcode: well.parentBarcode, wellId: well.id }
+          return { barcode: well.parentBarcode, wellId: well.id };
         }
       }
     }
-    return null
+    return null;
   }
 
   findAvailableIntermediates(compoundId: string, concInfo: ConcentrationObj): { barcode: string, wellId: string }[] {
-    let possibleLocs: { barcode: string, wellId: string }[] = []
+    const possibleLocs: { barcode: string, wellId: string }[] = [];
     if (concInfo.sourceType === 'src') {
-      const patternMap = this.echoPreCalc.srcCompoundInventory.get(compoundId)
+      const patternMap = this.echoPreCalc.srcCompoundInventory.get(compoundId);
       if (!patternMap) return possibleLocs;
       for (const compoundGroup of patternMap.values()) {
         for (const loc of compoundGroup.locations) {
@@ -294,19 +293,18 @@ export class EchoCalculator {
           }
         }
       }
-    }
-    else {
-      const cpdIntWellCache = this.intermediateWellCache.get(compoundId)
+    } else {
+      const cpdIntWellCache = this.intermediateWellCache.get(compoundId);
       if (!cpdIntWellCache) return possibleLocs;
-      const concWellCache = cpdIntWellCache.get(concInfo.sourceConc)
+      const concWellCache = cpdIntWellCache.get(concInfo.sourceConc);
       if (!concWellCache) return possibleLocs;
       for (const plateObj of concWellCache) {
         for (const wellId of plateObj.wellIds) {
-          possibleLocs.push({ barcode: plateObj.barcode, wellId: wellId })
+          possibleLocs.push({ barcode: plateObj.barcode, wellId: wellId });
         }
       }
     }
-    return possibleLocs
+    return possibleLocs;
   }
 
   findConcInfo(compoundId: string, targetConc: number): ConcentrationObj | null {
@@ -314,36 +312,36 @@ export class EchoCalculator {
       const pattern = this.echoPreCalc.dilutionPatterns.get(patternName);
       if (!pattern) continue;
 
-      const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings())
+      const transferConcentrations = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, pattern, compoundGroup, this.echoPreCalc.getCommonSettings());
       const concInfo = transferConcentrations.intermediateConcentrations.get(targetConc);
       if (concInfo) {
-        return concInfo
+        return concInfo;
       }
     }
     return null;
   }
 
   prepareDestPlates(): Plate[] {
-    const destPlates: Plate[] = []
-    const barcodes = []
+    const destPlates: Plate[] = [];
+    const barcodes = [];
     for (const row of this.inputData.Barcodes) {
-      barcodes.push(row['Destination Plate Barcodes'])
+      barcodes.push(row['Destination Plate Barcodes']);
     }
     if (this.echoPreCalc.destinationPlatesCount > barcodes.length) {
-      const extraNumNeeded = this.echoPreCalc.destinationPlatesCount - barcodes.length
+      const extraNumNeeded = this.echoPreCalc.destinationPlatesCount - barcodes.length;
       for (let i = 1; i <= extraNumNeeded; i++) {
-        const barcode = `DestPlate_${i.toString().padStart(this.echoPreCalc.destinationPlatesCount.toString().length, '0')}` //padding for sorting of transfer list
-        barcodes.push(barcode)
+        const barcode = `DestPlate_${i.toString().padStart(this.echoPreCalc.destinationPlatesCount.toString().length, '0')}`; //padding for sorting of transfer list
+        barcodes.push(barcode);
       }
     }
     for (let i = 0; i < this.echoPreCalc.destinationPlatesCount; i++) {
-      const newDestPlate = new Plate({ barcode: barcodes[i], plateSize: this.echoPreCalc.dstPltSize, plateRole: 'destination' })
+      const newDestPlate = new Plate({ barcode: barcodes[i], plateSize: this.echoPreCalc.dstPltSize, plateRole: 'destination' });
       for (const well of newDestPlate) {
         if (well) { well.addSolvent({ name: 'Assay Buffer', volume: this.finalAssayVolume }); }
       }
-      destPlates.push(newDestPlate)
+      destPlates.push(newDestPlate);
     }
-    return destPlates
+    return destPlates;
   }
 
   fillDestPlates() {
@@ -360,11 +358,11 @@ export class EchoCalculator {
       }
     }
 
-    const controlCompounds: ControlCompounds = new Map()
+    const controlCompounds: ControlCompounds = new Map();
     for (const [_, pattern] of this.echoPreCalc.dilutionPatterns) {
       if (pattern.type == 'Control' && !controlCompounds.has(pattern.patternName)) {
-        const controlSlots = this.inputData.Layout.filter((block) => block.Pattern === pattern.patternName)
-        controlCompounds.set(pattern.patternName, { memberCompounds: [], destSlots: controlSlots.length })
+        const controlSlots = this.inputData.Layout.filter((block) => block.Pattern === pattern.patternName);
+        controlCompounds.set(pattern.patternName, { memberCompounds: [], destSlots: controlSlots.length });
       }
     }
 
@@ -386,8 +384,7 @@ export class EchoCalculator {
           if (dilutionPattern && dilutionPattern.type == 'Treatment') {
             const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName);
             this.transferCompound(plateGroup, destLocation, compoundId, dilutionPattern, compoundGroup);
-          }
-          else if (dilutionPattern && dilutionPattern.type == 'Control') {
+          } else if (dilutionPattern && dilutionPattern.type == 'Control') {
             const controlPatternInfo = controlCompounds.get(patternName)!;
             if (!controlPatternInfo.memberCompounds.includes(compoundId)) {
               controlPatternInfo.memberCompounds.push(compoundId);
@@ -415,56 +412,56 @@ export class EchoCalculator {
     }
 
     for (const [patternName, controlPatternInfo] of controlCompounds) {
-      const ctrlTransfers = controlPatternInfo.destSlots * this.destinationPlates.length
-      const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName)
+      const ctrlTransfers = controlPatternInfo.destSlots * this.destinationPlates.length;
+      const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName);
       if (dilutionPattern) {
         for (let i = 0; i < ctrlTransfers; i++) {
-          const ctrlIdx = i % controlPatternInfo.memberCompounds.length
-          const compoundId = controlPatternInfo.memberCompounds[ctrlIdx]
-          const srcCompound = this.echoPreCalc.srcCompoundInventory.get(compoundId)
-          if (!srcCompound) continue
-          const compoundGroup = srcCompound.get(patternName)
-          if (!compoundGroup) continue
-          const destLocation = this.findNextAvailableBlock(this.destinationPlates, this.inputData.Layout, patternName)
-          this.transferCompound(this.destinationPlates, destLocation, compoundId, dilutionPattern, compoundGroup)
+          const ctrlIdx = i % controlPatternInfo.memberCompounds.length;
+          const compoundId = controlPatternInfo.memberCompounds[ctrlIdx];
+          const srcCompound = this.echoPreCalc.srcCompoundInventory.get(compoundId);
+          if (!srcCompound) continue;
+          const compoundGroup = srcCompound.get(patternName);
+          if (!compoundGroup) continue;
+          const destLocation = this.findNextAvailableBlock(this.destinationPlates, this.inputData.Layout, patternName);
+          this.transferCompound(this.destinationPlates, destLocation, compoundId, dilutionPattern, compoundGroup);
         }
       }
     }
   }
 
   dmsoNormalization() {
-    let possibleLocs: { barcode: string, wellId: string }[] = []
-    let failedNorms: Map<string,Set<string>> = new Map()
+    const possibleLocs: { barcode: string, wellId: string }[] = [];
+    const failedNorms: Map<string,Set<string>> = new Map();
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates]) {
       for (const well of plate) {
-        if (well && well.isSolventOnlyWell('DMSO')) { possibleLocs.push({ barcode: well.parentBarcode, wellId: well.id }) }
+        if (well && well.isSolventOnlyWell('DMSO')) { possibleLocs.push({ barcode: well.parentBarcode, wellId: well.id }); }
       }
     }
-    const treatmentWellIds = new Set<string>()
+    const treatmentWellIds = new Set<string>();
     if (this.inputData.CommonData.skipUnusedBlocks) {
-      const treatmentPatternNames = new Set<string>()
-      this.echoPreCalc.dilutionPatterns.forEach((v, k) => { if (v.type == 'Treatment') treatmentPatternNames.add(k) })
+      const treatmentPatternNames = new Set<string>();
+      this.echoPreCalc.dilutionPatterns.forEach((v, k) => { if (v.type == 'Treatment') treatmentPatternNames.add(k); });
 
       for (const line of this.echoPreCalc.inputData.Layout) {
         if (treatmentPatternNames.has(line.Pattern)) {
-          this.destinationPlates[0].getSomeWells(line['Well Block']).map((w) => w.id).forEach((id) => treatmentWellIds.add(id))
+          this.destinationPlates[0].getSomeWells(line['Well Block']).map((w) => w.id).forEach((id) => treatmentWellIds.add(id));
         }
       }
     }
 
     for (const plate of this.destinationPlates) {
-      let maxVolume = 0
+      let maxVolume = 0;
       for (const well of plate) {
         if (well && !well.getIsUnused()) {
-          const vol = well.getTotalVolume()
-          if (vol > maxVolume) { maxVolume = vol }
+          const vol = well.getTotalVolume();
+          if (vol > maxVolume) { maxVolume = vol; }
         }
       }
       for (const well of plate) {
         if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length == 0)) {
-          const volToAdd = (maxVolume - well.getTotalVolume())
+          const volToAdd = (maxVolume - well.getTotalVolume());
           if (volToAdd > 0) {
-            const srcWell = this.findSourceWell(possibleLocs, volToAdd, this.evenDepletion)
+            const srcWell = this.findSourceWell(possibleLocs, volToAdd, this.evenDepletion);
             if (srcWell) {
               const transferStep: TransferStepExport = {
                 sourceBarcode: srcWell.barcode,
@@ -472,20 +469,19 @@ export class EchoCalculator {
                 destinationBarcode: plate.barcode,
                 destinationWellId: well.id,
                 volume: volToAdd
-              }
+              };
               const transferInfo: TransferInfo = {
                 transferType: 'solvent',
                 solventName: 'DMSO'
-              }
-              executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
-            }
-            else {
-              let plateFails = failedNorms.get(plate.barcode)
+              };
+              executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
+            } else {
+              let plateFails = failedNorms.get(plate.barcode);
               if (!plateFails) {
-                failedNorms.set(plate.barcode, new Set<string>())
-                plateFails = failedNorms.get(plate.barcode)
+                failedNorms.set(plate.barcode, new Set<string>());
+                plateFails = failedNorms.get(plate.barcode);
               }
-              plateFails!.add(well.id)
+              plateFails!.add(well.id);
             }
           }
         }
@@ -493,31 +489,30 @@ export class EchoCalculator {
     }
     if (failedNorms.size > 0) {
       failedNorms.forEach((v,k) => {
-        let wellBlock = formatWellBlock(Array.from(v))
-        this.errors.push(`Insufficient DMSO to normalize ${k} - ${wellBlock}`)
-      })
+        const wellBlock = formatWellBlock(Array.from(v));
+        this.errors.push(`Insufficient DMSO to normalize ${k} - ${wellBlock}`);
+      });
     }
   }
 
   transferCompound(destPlates: Plate[], destLocation: { barcode: string, wellBlock: string }, compoundId: string, dilutionPattern: DilutionPattern, compoundGroup: CompoundGroup, dirIdx: number = 0) {
-    const transferMap = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, dilutionPattern, compoundGroup, this.echoPreCalc.getCommonSettings())
-    const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode)
-    if (!destPlate) return
+    const transferMap = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, dilutionPattern, compoundGroup, this.echoPreCalc.getCommonSettings());
+    const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode);
+    if (!destPlate) return;
     // non-matrix combinations carry a single direction shared by every compound in the tuple
-    const direction = dilutionPattern.direction[dirIdx] ?? dilutionPattern.direction[0]
-    const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, direction)
+    const direction = dilutionPattern.direction[dirIdx] ?? dilutionPattern.direction[0];
+    const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, direction);
     for (const concIdx in dilutionPattern.concentrations) {
-      const conc = dilutionPattern.concentrations[concIdx]
-      const concInfo = transferMap.destinationConcentrations.get(conc)
-      const wellsToTransferTo = wellConcentrationArr[concIdx]
-      if (!concInfo) continue
+      const conc = dilutionPattern.concentrations[concIdx];
+      const concInfo = transferMap.destinationConcentrations.get(conc);
+      const wellsToTransferTo = wellConcentrationArr[concIdx];
+      if (!concInfo) continue;
       for (const wellId of wellsToTransferTo) {
-        let possibleSrcLocs: { barcode: string, wellId: string }[]
+        let possibleSrcLocs: { barcode: string, wellId: string }[];
         if (concInfo.sourceType == 'src') {
-          possibleSrcLocs = this.echoPreCalc.srcCompoundInventory.get(compoundId)!.get(dilutionPattern.patternName)!.locations.filter((inv) => inv.concentration == concInfo.sourceConc).map(loc => { return { barcode: loc.barcode, wellId: loc.wellId } })
-        }
-        else {
-          const possibleIntLocs = this.intermediateWellCache.get(compoundId)!.get(concInfo.sourceConc)!
+          possibleSrcLocs = this.echoPreCalc.srcCompoundInventory.get(compoundId)!.get(dilutionPattern.patternName)!.locations.filter((inv) => inv.concentration == concInfo.sourceConc).map(loc => { return { barcode: loc.barcode, wellId: loc.wellId }; });
+        } else {
+          const possibleIntLocs = this.intermediateWellCache.get(compoundId)!.get(concInfo.sourceConc)!;
           possibleSrcLocs = possibleIntLocs.flatMap(item => {
             return item.wellIds.map(wellId => ({
               barcode: item.barcode,
@@ -525,7 +520,7 @@ export class EchoCalculator {
             }));
           });
         }
-        const srcWell = this.findSourceWell(possibleSrcLocs, concInfo.volToTsfr, this.evenDepletion)
+        const srcWell = this.findSourceWell(possibleSrcLocs, concInfo.volToTsfr, this.evenDepletion);
         if (srcWell) {
           const transferStep: TransferStepExport = {
             sourceBarcode: srcWell.barcode,
@@ -533,12 +528,12 @@ export class EchoCalculator {
             destinationBarcode: destPlate.barcode,
             destinationWellId: wellId,
             volume: concInfo.volToTsfr
-          }
+          };
           const transferInfo: TransferInfo = {
             transferType: 'compound',
             compoundName: compoundId
-          }
-          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null
+          };
+          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
         }
       }
     }
@@ -555,12 +550,12 @@ export class EchoCalculator {
 
   findNextAvailableDMSOWell(plates: Plate[], lastUsed: { barcode: string, wellId: string }, volume: number): { barcode: string, wellId: string } {
     //hard coded solvent name for now, could expand to aqueous later
-    const solventName = 'DMSO'
+    const solventName = 'DMSO';
     //check if last used well is still fine
-    let plateIdx = plates.findIndex(plate => plate.barcode == lastUsed.barcode);
+    const plateIdx = plates.findIndex(plate => plate.barcode == lastUsed.barcode);
     if (plateIdx > -1) {
       //const echoDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plates[plateIdx].barcode) as number
-      const echoDeadVolume = plates[plateIdx].getDeadVolume()
+      const echoDeadVolume = plates[plateIdx].getDeadVolume();
       const well = plates[plateIdx].getWell(lastUsed.wellId);
       if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
         return lastUsed;
@@ -592,7 +587,7 @@ export class EchoCalculator {
     else {
       for (const plate of plates) {
         //const echoDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plate.barcode) as number
-        const echoDeadVolume = plate.getDeadVolume()
+        const echoDeadVolume = plate.getDeadVolume();
         for (const well of plate) {
           if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
             return { barcode: plate.barcode, wellId: well.id };
@@ -600,8 +595,8 @@ export class EchoCalculator {
         }
       }
     }
-    //only should return if no available wells found 
-    return { barcode: '', wellId: '' }
+    //only should return if no available wells found
+    return { barcode: '', wellId: '' };
   }
 
   findNextAvailableBlock(plates: Plate[], layout: InputDataType['Layout'], patternName: string): { barcode: string, wellBlock: string } {
@@ -682,14 +677,14 @@ export class EchoCalculator {
           const coordsA = getCoordsFromWellId(a);
           const coordsB = getCoordsFromWellId(b);
           return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
-          })
+          });
         }
         const wellBlock = formatWellBlock(availableWells.slice(0, numberWells));
         return { barcode: plate.barcode, wellBlock };
       }
     }
 
-    return { barcode: '', wellBlock: '' }
+    return { barcode: '', wellBlock: '' };
   }
 
   findPlateMaxConcentration(plate: Plate) {

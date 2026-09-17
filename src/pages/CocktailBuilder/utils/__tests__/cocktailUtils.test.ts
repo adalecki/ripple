@@ -16,7 +16,7 @@ function loadExampleWorkbook() {
   return read(readFileSync(path), { type: 'buffer' });
 }
 
-const example = echoInputValidation(loadExampleWorkbook(),"384","384",2.5).inputData;
+const example = echoInputValidation(loadExampleWorkbook(),'384','384',2.5).inputData;
 
 function roundTrip() {
   const { recipes, srcPlates, cocktails } = buildDesignFromInputData(example, '384', '384');
@@ -46,7 +46,7 @@ describe('recipeSlotCount', () => {
 });
 
 describe('CocktailBuilder end-to-end against the example workbook', () => {
-  const { inputData, errors } = echoInputValidation(loadExampleWorkbook(),"384","384",2.5);
+  const { inputData, errors } = echoInputValidation(loadExampleWorkbook(),'384','384',2.5);
 
   test('the example workbook validates cleanly', () => {
     expect(errors).toEqual([]);
@@ -189,7 +189,7 @@ describe('workbook round trip', () => {
   });
 
   test('the round-tripped design still validates cleanly', () => {
-    expect(validateInputData(rebuilt,"384","384",2.5)).toEqual([]);
+    expect(validateInputData(rebuilt,'384','384',2.5)).toEqual([]);
   });
 });
 

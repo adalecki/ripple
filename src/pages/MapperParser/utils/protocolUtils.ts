@@ -67,18 +67,18 @@ export function loadProtocols(): Protocol[] {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      if (parsed.length == 0) return defaultProtocols
-      
+      if (parsed.length == 0) return defaultProtocols;
+
       const migrated = parsed.map((p: any) => {
         const protocol = {
           ...p
         };
-        
+
         if (protocol.parseStrategy.useFullFilename === undefined) {
-          const wasFullFilename = protocol.parseStrategy.barcodeDelimiter == null || 
+          const wasFullFilename = protocol.parseStrategy.barcodeDelimiter == null ||
                                  protocol.parseStrategy.barcodeDelimiter === '';
           protocol.parseStrategy.useFullFilename = wasFullFilename;
-          
+
           if (!protocol.parseStrategy.barcodeDelimiter || protocol.parseStrategy.barcodeDelimiter === null) {
             protocol.parseStrategy.barcodeDelimiter = '_';
           }
@@ -86,10 +86,10 @@ export function loadProtocols(): Protocol[] {
             protocol.parseStrategy.barcodeChunk = 1;
           }
         }
-        
+
         return protocol;
       });
-      
+
       return migrated;
     } catch (e) {
       console.error('Failed to parse stored protocols:', e);
@@ -109,7 +109,7 @@ export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
   //while (existingIds.includes(newId)) {
   //  newId += 1
   //}
-  const newId = generateId(existingProtocols)
+  const newId = generateId(existingProtocols);
   return {
     id: newId,
     name: `New Protocol ${existingProtocols.length + 1}`,
@@ -134,7 +134,7 @@ export function createNewProtocol(existingProtocols: Protocol[]): Protocol {
 
 export function duplicateProtocol(protocol: Protocol): Protocol {
   const newId = Date.now();
-  
+
   return {
     ...JSON.parse(JSON.stringify(protocol)),
     id: newId,
@@ -143,8 +143,8 @@ export function duplicateProtocol(protocol: Protocol): Protocol {
 }
 
 export function updateProtocol(protocols: Protocol[], protocolId: number, updates: Partial<Protocol>): Protocol[] {
-  return protocols.map(p => 
-    p.id === protocolId 
+  return protocols.map(p =>
+    p.id === protocolId
       ? { ...p, ...updates }
       : p
   );

@@ -1,8 +1,8 @@
 /**
  * @jest-environment node
  */
-import { 
-  formatWellBlock, 
+import {
+  formatWellBlock,
   mapWellsToConcentrations,
   numberToLetters,
   lettersToNumber,
@@ -13,9 +13,9 @@ import {
   modifyPlate,
   calculateBlockBorders,
   splitIntoBlocks
-} from "../../../../utils/plateUtils";
-import { Plate } from "../../../../classes/PlateClass";
-import { Pattern } from "../../../../classes/PatternClass";
+} from '../../../../utils/plateUtils';
+import { Plate } from '../../../../classes/PlateClass';
+import { Pattern } from '../../../../classes/PatternClass';
 
 describe('numberToLetters', () => {
   test('converts numbers to single letters', () => {
@@ -97,7 +97,7 @@ describe('getCoordsFromWellId', () => {
       { row: 15, col: 23 },
       { row: 31, col: 47 },
     ];
-    
+
     testCases.forEach(({ row, col }) => {
       const wellId = getWellIdFromCoords(row, col);
       expect(getCoordsFromWellId(wellId)).toEqual({ row, col });
@@ -132,11 +132,11 @@ describe('clonePlate', () => {
     const original = new Plate({ id: 1, barcode: 'P1', plateSize: '96' });
     const well = original.getWell('A01');
     if (well) {
-      well.addContent({ 
-        compoundId: 'C1', 
-        concentration: 100, 
+      well.addContent({
+        compoundId: 'C1',
+        concentration: 100,
         volume: 1000,
-        patternName: 'P1' 
+        patternName: 'P1'
       },
         { name: 'DMSO', fraction: 1 }
       );
@@ -167,7 +167,7 @@ describe('modifyPlate', () => {
       new Plate({ id: 2, barcode: 'P2' }),
       new Plate({ id: 3, barcode: 'P3' }),
     ];
-    
+
     const mockSetPlates = jest.fn();
     const modifiedPlate = new Plate({ id: 2, barcode: 'P2-Modified' });
 
@@ -232,18 +232,18 @@ describe('formatWellBlock', () => {
   test('handles 1536-well plate format', () => {
     // Corners
     expect(formatWellBlock(['A01', 'A48', 'AF01', 'AF48'])).toBe('A01;A48;AF01;AF48');
-    
+
     // Top row
     expect(formatWellBlock(['A01', 'A02', 'A03', 'A48'])).toBe('A01:A03;A48');
-    
+
     // First column
     expect(formatWellBlock(['A01', 'B01', 'AE01', 'AF01'])).toBe('A01:B01;AE01:AF01');
-    
+
     // Mixed corners with gaps
     expect(formatWellBlock(['A01', 'A02', 'A03', 'A48', 'B48', 'C48', 'AF48', 'AF47', 'AF46', 'AF01', 'AE01', 'AD01', 'P25', 'Q24', 'P24', 'Q25'])).toBe('A01:A03;A48:C48;P24:Q25;AD01:AF01;AF46:AF48');
 
     // Cross into double row letters
-    expect(formatWellBlock(['Y27', 'Y28', 'Y29', 'Y30', 'Y31', 'Z27', 'Z28', 'Z29', 'Z30', 'Z31', 'AA27', 'AA28', 'AA29', 'AA30', 'AA31', 'AB27', 'AB28', 'AB29', 'AB30', 'AB31', ])).toBe('Y27:AB31')
+    expect(formatWellBlock(['Y27', 'Y28', 'Y29', 'Y30', 'Y31', 'Z27', 'Z28', 'Z29', 'Z30', 'Z31', 'AA27', 'AA28', 'AA29', 'AA30', 'AA31', 'AB27', 'AB28', 'AB29', 'AB30', 'AB31', ])).toBe('Y27:AB31');
   });
 
   // Edge cases
@@ -272,7 +272,7 @@ describe('formatWellBlock', () => {
     const corner3 = ['AD01', 'AE01', 'AF01'];  // Bottom-left
     const corner4 = ['AD48', 'AE48', 'AF48'];  // Bottom-right
     const middle = ['M24', 'N24', 'O24'];  // Middle section
-    
+
     const wells = [...corner1, ...corner2, ...corner3, ...corner4, ...middle];
     expect(formatWellBlock(wells)).toBe('A01:C01;A48:C48;M24:O24;AD01:AF01;AD48:AF48');
   });
@@ -294,36 +294,36 @@ describe('formatWellBlock', () => {
 });
 
 describe('mapWellsToConcentrations', () => {
-  const plate = new Plate({plateSize: '1536'})
-  
+  const plate = new Plate({ plateSize: '1536' });
+
   test('LR direction: concentrations distributed across rows, not stacked in columns', () => {
     // Select A01:D04 (4 rows, 4 columns) with 2 concentrations, 2 replicates each
     const wellBlock = 'A01:D04';
     const concentrations = [10, 5];
     const direction = 'LR';
-    
+
     // Expected: each concentration gets 8 wells (4 rows * 2 wells per row)
     // Within each row, alternate between concentrations: conc1, conc2, conc1, conc2
     const expectation = [
       ['A01', 'B01', 'C01', 'D01', 'A03', 'B03', 'C03', 'D03'], // First concentration (columns 1&3 from each row)
       ['A02', 'B02', 'C02', 'D02', 'A04', 'B04', 'C04', 'D04']  // Second concentration (columns 2&4 from each row)
     ];
-    
+
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
   test('TB direction: concentrations distributed across columns, not stacked in rows', () => {
-    // Select A01:D04 (4 rows, 4 columns) with 2 concentrations, 2 replicates each  
+    // Select A01:D04 (4 rows, 4 columns) with 2 concentrations, 2 replicates each
     const wellBlock = 'A01:D04';
     const concentrations = [10, 5];
     const direction = 'TB';
-    
+
     // Expected: each concentration gets 8 wells (4 columns * 2 replicates)
     const expectation = [
       ['A01', 'A02', 'A03', 'A04', 'C01', 'C02', 'C03', 'C04'], // First concentration
       ['B01', 'B02', 'B03', 'B04', 'D01', 'D02', 'D03', 'D04']  // Second concentration
     ];
-    
+
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
@@ -332,32 +332,32 @@ describe('mapWellsToConcentrations', () => {
     const wellBlock = 'A01:B08';
     const concentrations = [10, 8, 6, 4];
     const direction = 'LR';
-    
+
     // Expected: each concentration gets 4 wells (2 rows * 2 columns)
     const expectation = [
       ['A01','B01','A05','B05'], // Concentration 1 (columns 1,5)
       ['A02','B02','A06','B06'], // Concentration 2 (columns 2,6)
-      ['A03','B03','A07','B07'], // Concentration 3 (columns 3,7)  
+      ['A03','B03','A07','B07'], // Concentration 3 (columns 3,7)
       ['A04','B04','A08','B08']  // Concentration 4 (columns 4,8)
     ];
-    
+
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
   test('TB direction with 4 concentrations across 8 rows', () => {
     // Select A01:H02 (8 rows, 2 columns) with 4 concentrations, 1 replicate each
-    const wellBlock = 'A01:H02';  
+    const wellBlock = 'A01:H02';
     const concentrations = [10, 8, 6, 4];
     const direction = 'TB';
-    
+
     // Expected: each concentration gets 4 wells (2 columns * 2 rows)
     const expectation = [
       ['A01','A02','E01','E02'], // Concentration 1 (rows A,E)
       ['B01','B02','F01','F02'], // Concentration 2 (rows B,F)
-      ['C01','C02','G01','G02'], // Concentration 3 (rows C,G)  
+      ['C01','C02','G01','G02'], // Concentration 3 (rows C,G)
       ['D01','D02','H01','H02']  // Concentration 4 (rows D,H)
     ];
-    
+
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
@@ -365,13 +365,13 @@ describe('mapWellsToConcentrations', () => {
     const wellBlock = 'A01:B04';
     const concentrations = [10, 5];
     const direction = 'RL';
-    
+
     // Expected: same row distribution as LR, but columns reversed
     const expectation = [
       ['A04','B04','A02','B02'], // First concentration (columns 4,2)
-      ['A03','B03','A01','B01']  // Second concentration (columns 3,1)  
+      ['A03','B03','A01','B01']  // Second concentration (columns 3,1)
     ];
-    
+
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
@@ -379,13 +379,13 @@ describe('mapWellsToConcentrations', () => {
     const wellBlock = 'A01:D02';
     const concentrations = [10, 5];
     const direction = 'BT';
-    
+
     // Expected: same column distribution as TB, but rows reversed
     const expectation = [
       ['D01','D02','B01','B02'], // First concentration (rows D,B)
       ['C01','C02','A01','A02']  // Second concentration (rows C,A)
     ];
-    
+
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
@@ -393,7 +393,7 @@ describe('mapWellsToConcentrations', () => {
     const wellBlock = 'A01:B10';
     const concentrations = [10,9,8,7,6,5,4,3,2,1];
     const direction = 'LR';
-    const expectation = [['A01','B01'],['A02','B02'],['A03','B03'],['A04','B04'],['A05','B05'],['A06','B06'],['A07','B07'],['A08','B08'],['A09','B09'],['A10','B10']]
+    const expectation = [['A01','B01'],['A02','B02'],['A03','B03'],['A04','B04'],['A05','B05'],['A06','B06'],['A07','B07'],['A08','B08'],['A09','B09'],['A10','B10']];
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
@@ -401,7 +401,7 @@ describe('mapWellsToConcentrations', () => {
     const wellBlock = 'A01:J02';
     const concentrations = [10,9,8,7,6,5,4,3,2,1];
     const direction = 'TB';
-    const expectation = [['A01','A02'],['B01','B02'],['C01','C02'],['D01','D02'],['E01','E02'],['F01','F02'],['G01','G02'],['H01','H02'],['I01','I02'],['J01','J02']]
+    const expectation = [['A01','A02'],['B01','B02'],['C01','C02'],['D01','D02'],['E01','E02'],['F01','F02'],['G01','G02'],['H01','H02'],['I01','I02'],['J01','J02']];
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
   });
 
@@ -410,15 +410,15 @@ describe('mapWellsToConcentrations', () => {
     const concentrations = [3,2,1];
     const direction = 'LR';
     const expectation = [['A01','B02'],['C01','A02'],['B01','C02']];
-    expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation)
-  })
+    expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
+  });
 });
 
 describe('calculateBlockBorders', () => {
   test('returns empty borders for plate with no patterns', () => {
     const plate = new Plate({ plateSize: '96' });
     const borders = calculateBlockBorders(plate);
-    
+
     // All wells should have no borders
     for (const well of plate) {
       if (well) {
@@ -442,7 +442,7 @@ describe('calculateBlockBorders', () => {
       concentrations: [100],
       locations: []
     });
-    
+
     plate.applyPattern('A01:B02', pattern);
     const borders = calculateBlockBorders(plate);
 
@@ -453,7 +453,7 @@ describe('calculateBlockBorders', () => {
       bottom: false,
       left: true
     });
-    
+
     expect(borders.get('B02')).toEqual({
       top: false,
       right: true,
@@ -480,10 +480,10 @@ describe('calculateBlockBorders', () => {
       concentrations: [100],
       locations: []
     });
-    
+
     plate.applyPattern('A01:B02', pattern);
     plate.applyPattern('D04:E05', pattern);
-    
+
     const borders = calculateBlockBorders(plate);
 
     // Each block should have its own borders
@@ -512,7 +512,7 @@ describe('calculateBlockBorders', () => {
       concentrations: [100],
       locations: []
     });
-    
+
     // Apply pattern to bottom-right corner
     plate.applyPattern('H12', pattern);
     const borders = calculateBlockBorders(plate);
@@ -541,7 +541,7 @@ describe('splitIntoBlocks', () => {
 
     const wells = ['A01', 'A02', 'B01', 'B02', 'C01'];
     const blocks = splitIntoBlocks(wells, unusedPattern, plate);
-    
+
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toBe('A01:B02;C01');
   });
@@ -560,7 +560,7 @@ describe('splitIntoBlocks', () => {
     // 8 wells total: 2 concentrations x 2 replicates = 4 wells per block
     const wells = ['A01', 'A02', 'A03', 'A04', 'B01', 'B02', 'B03', 'B04'];
     const blocks = splitIntoBlocks(wells, pattern, plate);
-    
+
     expect(blocks).toHaveLength(2);
     expect(blocks[0]).toBe('A01:B02');
     expect(blocks[1]).toBe('A03:B04');
@@ -578,7 +578,7 @@ describe('splitIntoBlocks', () => {
     });
 
     const wells = ['A01', 'A02', 'A03', 'A04']; // 4 wells, not divisible by 3
-    
+
     expect(() => splitIntoBlocks(wells, pattern, plate)).toThrow(
       'The number of wells must be divisible by the number of concentrations.'
     );
@@ -596,7 +596,7 @@ describe('splitIntoBlocks', () => {
     });
 
     const wells = ['A01', 'A02', 'A03', 'A04']; // 4 wells / 2 conc = 2 wells per conc, not divisible by 3 replicates
-    
+
     expect(() => splitIntoBlocks(wells, pattern, plate)).toThrow(
       'The number of wells per concentration must be divisible by the original number of replicates.'
     );
@@ -622,7 +622,7 @@ describe('splitIntoBlocks', () => {
     }
 
     const blocks = splitIntoBlocks(wells, pattern, plate);
-    
+
     expect(blocks).toHaveLength(2);
     // First block should contain first 9 wells arranged properly
     expect(blocks[0]).toBe('A01:C03');
@@ -644,7 +644,7 @@ describe('splitIntoBlocks', () => {
     // 4 wells: 2 valid conc x 2 rep = 4 wells per block
     const wells = ['A01', 'A02', 'B01', 'B02'];
     const blocks = splitIntoBlocks(wells, pattern, plate);
-    
+
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toBe('A01:B02');
   });

@@ -42,8 +42,7 @@ function serializeAsFormData(values: { [key: string]: number | boolean | string 
     const value = values[field.name];
     if (field.type === 'switch') {
       if (value) formValues[field.name] = 'on';
-    }
-    else {
+    } else {
       formValues[field.name] = String(value);
     }
   }
@@ -108,7 +107,7 @@ export function runEchoPipeline(filePath: string, preferences: PreferencesState 
   for (const steps of transferMap.values()) {
     allSteps = allSteps.concat(steps);
   }
-  const hasPlateType = allSteps.some(s => s.sourcePlateType != undefined)
+  const hasPlateType = allSteps.some(s => s.sourcePlateType !== undefined);
   const rows = allSteps.map(step => rowColExport(step, hasPlateType));
 
   return { csv: generateTransferListCSV(rows), errors: calc.errors, checkpointTracker };

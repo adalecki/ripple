@@ -71,7 +71,7 @@ const ExportProtocolsModal: React.FC<ExportProtocolsModalProps> = ({
             className="fw-bold"
           />
         </div>
-        
+
         <ListGroup style={{ maxHeight: '400px', overflowY: 'auto' }}>
           {protocols.map((protocol) => (
             <ListGroup.Item
@@ -94,7 +94,7 @@ const ExportProtocolsModal: React.FC<ExportProtocolsModalProps> = ({
             </ListGroup.Item>
           ))}
         </ListGroup>
-        
+
         {protocols.length === 0 && (
           <div className="text-center py-4 text-muted">
             No protocols available to export
@@ -110,8 +110,8 @@ const ExportProtocolsModal: React.FC<ExportProtocolsModalProps> = ({
         <Button variant="secondary" onClick={onHide}>
           Cancel
         </Button>
-        <Button 
-          variant="success" 
+        <Button
+          variant="success"
           onClick={handleExport}
           disabled={selectedCount === 0}
         >

@@ -30,16 +30,15 @@ const EchoForm: React.FC<EchoFormProps> = ({
   const [validated, setValidated] = useState(false);
   const { preferences } = usePreferences();
   const [formValues, setFormValues] = useState<{ [key: string]: number | boolean | string }>({});
-  const [showAlert, setShowAlert] = useState<string[]>([])
-  const [clearKey, setClearKey] = useState(0)
+  const [showAlert, setShowAlert] = useState<string[]>([]);
+  const [clearKey, setClearKey] = useState(0);
 
   let fields = PREFERENCES_CONFIG.find(p => p.id === 'calculator-defaults')?.settings || [];
   if (setTransferFile) {
-    const retainedSettingsNames = ['Well Volume (µL)', 'Backfill (µL)', 'Use Source Survey Volumes']
-    fields = fields.filter(s => retainedSettingsNames.includes(s.name))
-  }
-  else {
-    fields = fields.filter(s => s.name != 'Use Source Survey Volumes')
+    const retainedSettingsNames = ['Well Volume (µL)', 'Backfill (µL)', 'Use Source Survey Volumes'];
+    fields = fields.filter(s => retainedSettingsNames.includes(s.name));
+  } else {
+    fields = fields.filter(s => s.name != 'Use Source Survey Volumes');
   }
 
   const transferSettingNames = ['Max Transfer Volume', 'Echo Droplet Size', 'Source Plate Size', 'Destination Plate Size'];
@@ -80,23 +79,23 @@ const EchoForm: React.FC<EchoFormProps> = ({
       const file = files[0];
       setExcelFile(file);
 
-      const ab = await file.arrayBuffer()
+      const ab = await file.arrayBuffer();
       const wb = read(ab, { type: 'array' }) as WorkBook;
-      const fieldNames = fields.map(f => f.name)
-      const changedFields: string[] = []
+      const fieldNames = fields.map(f => f.name);
+      const changedFields: string[] = [];
 
       if (wb && wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
-        const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay'])
+        const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay']);
         for (const line of assayNumbers) {
           if (fieldNames.includes(line.Setting) && !isNaN(line.Value) && formValues[line.Setting] != line.Value) {
-            handleFieldChange(line.Setting, line.Value)
-            changedFields.push(line.Setting)
+            handleFieldChange(line.Setting, line.Value);
+            changedFields.push(line.Setting);
           }
         }
       }
 
       if (changedFields.length > 0) {
-        setShowAlert(changedFields)
+        setShowAlert(changedFields);
       }
     } else if (files.length === 0) {
       setExcelFile(null);
@@ -141,14 +140,14 @@ const EchoForm: React.FC<EchoFormProps> = ({
 
   const handleClearForm = () => {
     setExcelFile(null);
-    if (setTransferFile) setTransferFile(null)
+    if (setTransferFile) setTransferFile(null);
     setValidated(false);
-    setShowAlert([])
-    setClearKey(prev => prev + 1)
+    setShowAlert([]);
+    setClearKey(prev => prev + 1);
     handleClear();
   };
 
-  const disabled: boolean = (!excelFile || (setTransferFile ? !transferFile : false))
+  const disabled: boolean = (!excelFile || (setTransferFile ? !transferFile : false));
 
 
 
@@ -164,7 +163,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
               title="Ripple Input"
               description="Original Ripple file"
               multiple={false}
-              name='excelFile'
+              name="excelFile"
             >
               {excelFile && (
                 <div className="mt-2">
@@ -176,7 +175,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
             </FileUploadCard>
           </Col>
           {setTransferFile && (
-            <Col md='6'>
+            <Col md="6">
               <FileUploadCard
                 key={`transfer-${clearKey}`}
                 onFilesSelected={handleTransferFileSelected}
@@ -184,7 +183,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
                 title="Transfer Log"
                 description="Echo output log"
                 multiple={false}
-                name='transferFile'
+                name="transferFile"
               >
                 {transferFile && (
                   <div className="mt-2">
@@ -218,12 +217,12 @@ const EchoForm: React.FC<EchoFormProps> = ({
         )}
 
         <br />
-        <div className='form-buttons'>
+        <div className="form-buttons">
           <Button type="submit" disabled={disabled}>{submitText}</Button>
           <Button variant="outline-danger" onClick={handleClearForm}>Clear Plates</Button>
         </div>
         <br />
-        <Alert variant='warning' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
+        <Alert variant="warning" show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
           The following values were imported from the file:
           <ul>
             {showAlert.map((alert, idx) => <li key={idx}>{alert}</li>)}

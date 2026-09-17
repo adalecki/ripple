@@ -24,7 +24,7 @@ export class CheckpointTracker {
   }
 
   getCheckpoint(name: string): CheckResult | undefined {
-    return this.checkpoints.get(name)
+    return this.checkpoints.get(name);
   }
 
   getCheckpoints(): Map<string, CheckResult> {

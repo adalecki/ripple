@@ -52,13 +52,13 @@ export interface SinglePoint {
 }
 
 export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Protocol): {curveData: CurveData[], sPData: SinglePoint[]} {
-  if (!protocol) return {curveData: [], sPData: []}
+  if (!protocol) return { curveData: [], sPData: [] };
   const treatmentGroups = new Map<string, ConcentrationPoint[]>();
   const sPData: SinglePoint[] = [];
-  const controlMap: Map<string, string> = new Map()
+  const controlMap: Map<string, string> = new Map();
   for (const control of protocol.dataProcessing.controls) {
-    const wellIds = plate.getSomeWells(control.wells).map(well => well.id)
-    wellIds.forEach((wellId) => controlMap.set(wellId, control.type))
+    const wellIds = plate.getSomeWells(control.wells).map(well => well.id);
+    wellIds.forEach((wellId) => controlMap.set(wellId, control.type));
 
   }
   for (const well of plate) {
@@ -68,32 +68,32 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
     }
 
     if (controlMap.has(well.id)) {
-      const controlType = controlMap.get(well.id)! as SinglePoint['controlType']
+      const controlType = controlMap.get(well.id)! as SinglePoint['controlType'];
       const contents = well.getContents().filter(content => content.compoundId != undefined);
-      const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration, volume: c.volume }))
+      const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration, volume: c.volume }));
       sPData.push({
         controlType: controlType,
         contents: shortContents,
         responseValue: (normalized ? well.normalizedResponse : well.rawResponse) as number,
         wellId: well.id
-      })
-      continue
+      });
+      continue;
     }
 
-    const treatmentKey = getTreatmentKey(well)
+    const treatmentKey = getTreatmentKey(well);
     if (treatmentKey !== 'EMPTY_WELL') {
-      const responseValue = (normalized ? well.normalizedResponse : well.rawResponse) as number
+      const responseValue = (normalized ? well.normalizedResponse : well.rawResponse) as number;
       if (!treatmentGroups.has(treatmentKey)) {
-        treatmentGroups.set(treatmentKey, [])
+        treatmentGroups.set(treatmentKey, []);
       }
-      const contents = well.getContents()
+      const contents = well.getContents();
       //for potential DRs only can worry about first concentration
-      const dosedContent = contents.find(c => c.concentration !== null)!
+      const dosedContent = contents.find(c => c.concentration !== null)!;
       treatmentGroups.get(treatmentKey)!.push({
         concentration: dosedContent.concentration!,
         responseValue,
         wellId: well.id
-      })
+      });
     }
   }
 
@@ -110,18 +110,17 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
         points,
         aggregatedPoints
       });
-    }
-    else {
+    } else {
       for (const point of points) {
-        const well = plate.getWell(point.wellId)!
+        const well = plate.getWell(point.wellId)!;
         const contents = well.getContents().filter(content => content.compoundId != undefined);
-        const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration, volume: c.volume }))
+        const shortContents = contents.map(c => ({ compoundId: c.compoundId as string, concentration: c.concentration, volume: c.volume }));
         sPData.push({
           controlType: 'None',
           contents: shortContents,
           responseValue: (normalized ? well.normalizedResponse : well.rawResponse) as number,
           wellId: well.id
-        })
+        });
       }
 
     }
@@ -130,7 +129,7 @@ export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Proto
   return {
     curveData: curves.sort((a, b) => a.treatmentId.localeCompare(b.treatmentId)),
     sPData: sPData.sort((a, b) => (getWellIndex(a.wellId, plate) as number) - (getWellIndex(b.wellId, plate) as number))
-  }
+  };
 };
 
 export function getAllPlatesData(
@@ -143,10 +142,10 @@ export function getAllPlatesData(
 
   for (const plate of plates) {
     const { curveData, sPData } = getPlateData(plate, normalized, protocol);
-    curveData.forEach((data) => data.treatmentId = plate.barcode + "_" + data.treatmentId)
+    curveData.forEach((data) => data.treatmentId = plate.barcode + '_' + data.treatmentId);
 
 
-    allCurveData.push(...curveData)
+    allCurveData.push(...curveData);
     allSPData.push(...sPData);
   }
 
@@ -190,18 +189,17 @@ export function yAxisDomains(plate: Plate, normalized: Boolean): { yLo: number, 
   let yHi = 100;
 
   if (normalized) {
-    if (isNaN(parseFloat(plate.metadata.normalizedMinValue)) || isNaN(parseFloat(plate.metadata.normalizedMaxValue))) return { yLo, yHi }
+    if (isNaN(parseFloat(plate.metadata.normalizedMinValue)) || isNaN(parseFloat(plate.metadata.normalizedMaxValue))) return { yLo, yHi };
     const window = plate.metadata.normalizedMaxValue - plate.metadata.normalizedMinValue;
-    yLo = Math.min(yLo, plate.metadata.normalizedMinValue - (window / 20))
-    yHi = Math.max(yHi, plate.metadata.normalizedMaxValue + (window / 20))
-  }
-  else {
-    if (isNaN(parseFloat(plate.metadata.globalMinResponse)) || isNaN(parseFloat(plate.metadata.globalMaxResponse))) return { yLo, yHi }
+    yLo = Math.min(yLo, plate.metadata.normalizedMinValue - (window / 20));
+    yHi = Math.max(yHi, plate.metadata.normalizedMaxValue + (window / 20));
+  } else {
+    if (isNaN(parseFloat(plate.metadata.globalMinResponse)) || isNaN(parseFloat(plate.metadata.globalMaxResponse))) return { yLo, yHi };
     const window = plate.metadata.globalMaxResponse - plate.metadata.globalMinResponse;
-    yLo = plate.metadata.globalMinResponse - (window / 20)
-    yHi = plate.metadata.globalMaxResponse + (window / 20)
+    yLo = plate.metadata.globalMinResponse - (window / 20);
+    yHi = plate.metadata.globalMaxResponse + (window / 20);
   }
-  return { yLo, yHi }
+  return { yLo, yHi };
 }
 
 export function aggregateData(points: ConcentrationPoint[]): AggregatedPoint[] {
@@ -235,7 +233,7 @@ export function fourPL(x: number, top: number, bottom: number, hillslope: number
 }
 
 export function formatEC50(value: number): string {
-  if (value === 0 || isNaN(value) || !isFinite(value)) return "N/A";
+  if (value === 0 || isNaN(value) || !isFinite(value)) return 'N/A';
   if (value < 0.001) return value.toExponential(2);
   if (value < 1) return value.toFixed(3);
   if (value < 1000) return value.toFixed(1);
@@ -245,7 +243,7 @@ export function formatEC50(value: number): string {
 export function hasResponseData(plate: Plate): boolean {
   if (!plate) return false;
   for (const well of plate) {
-    if (!well) continue
+    if (!well) continue;
     if (well.rawResponse !== null || well.normalizedResponse !== null) {
       return true;
     }
@@ -256,7 +254,7 @@ export function hasResponseData(plate: Plate): boolean {
 export function hasCompounds(plate: Plate): boolean {
   if (!plate) return false;
   for (const well of plate) {
-    if (!well) continue
+    if (!well) continue;
     const contents = well.getContents();
     if (contents.some(content => content.compoundId && (content.concentration === null ? content.volume > 0 : content.concentration > 0))) {
       return true;
@@ -269,7 +267,7 @@ export function getMaskedWells(plate: Plate): string[] {
   if (!plate) return [];
   const maskedWells: string[] = [];
   for (const well of plate) {
-    if (!well) continue
+    if (!well) continue;
     if (well.getIsUnused()) {
       maskedWells.push(well.id);
     }
@@ -303,22 +301,22 @@ export function createLogTicks(min: number, max: number, gridSize: number) {
 };
 
 export function plateZPrimeFactor(plate: Plate, protocol: Protocol, robust: Boolean = false): number {
-  let zFactor = 0
-  const maxCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MaxCtrl')
-  const minCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MinCtrl')
-  if (!(maxCtrl && minCtrl)) return zFactor
-  const maxResps = plate.getSomeWells(maxCtrl.wells).map((well) => well.rawResponse).filter((resp) => typeof(resp) === 'number')
-  const minResps = plate.getSomeWells(minCtrl.wells).map((well) => well.rawResponse).filter((resp) => typeof(resp) === 'number')
-  if (maxResps.length < 3 || minResps.length < 3) return zFactor
-  const maxMean = maxResps.reduce((a,b) => a+b)/maxResps.length
-  const minMean = minResps.reduce((a,b) => a+b)/minResps.length
-  const maxStdev = getStandardDeviation(maxResps) as number
-  const minStdev = getStandardDeviation(minResps) as number
-  const maxMAD = getMedianAbsoluteDeviation(maxResps)
-  const minMAD = getMedianAbsoluteDeviation(minResps)
+  let zFactor = 0;
+  const maxCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MaxCtrl');
+  const minCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MinCtrl');
+  if (!(maxCtrl && minCtrl)) return zFactor;
+  const maxResps = plate.getSomeWells(maxCtrl.wells).map((well) => well.rawResponse).filter((resp) => typeof(resp) === 'number');
+  const minResps = plate.getSomeWells(minCtrl.wells).map((well) => well.rawResponse).filter((resp) => typeof(resp) === 'number');
+  if (maxResps.length < 3 || minResps.length < 3) return zFactor;
+  const maxMean = maxResps.reduce((a,b) => a+b)/maxResps.length;
+  const minMean = minResps.reduce((a,b) => a+b)/minResps.length;
+  const maxStdev = getStandardDeviation(maxResps) as number;
+  const minStdev = getStandardDeviation(minResps) as number;
+  const maxMAD = getMedianAbsoluteDeviation(maxResps);
+  const minMAD = getMedianAbsoluteDeviation(minResps);
   robust ? zFactor = 1 - ((3 * (maxMAD + minMAD))/Math.abs(getMedian(maxResps) - getMedian(minResps)))
-         : zFactor = 1 - ((3 * (maxStdev + minStdev))/Math.abs(maxMean - minMean))
-  return zFactor
+         : zFactor = 1 - ((3 * (maxStdev + minStdev))/Math.abs(maxMean - minMean));
+  return zFactor;
 }
 
 export function getStandardDeviation(array: number[]) {
@@ -333,20 +331,20 @@ export function getStandardDeviation(array: number[]) {
 }
 
 export function getMedianAbsoluteDeviation(array: number[]) {
-  const arrayMedian = getMedian(array)
-  const deviations: number[] = []
+  const arrayMedian = getMedian(array);
+  const deviations: number[] = [];
   for (const num of array) {
-    deviations.push(Math.abs(num - arrayMedian))
+    deviations.push(Math.abs(num - arrayMedian));
   }
-  return getMedian(deviations)
+  return getMedian(deviations);
 }
 
 export function getMedian(array: number[]): number {
-  const sortedArr = [...array].sort((a,b) => a - b)
-  const middle = Math.floor(sortedArr.length/2)
+  const sortedArr = [...array].sort((a,b) => a - b);
+  const middle = Math.floor(sortedArr.length/2);
   if (sortedArr.length % 2 !== 0) {
-    return sortedArr[middle]
+    return sortedArr[middle];
   } else {
-    return (sortedArr[middle - 1] + sortedArr[middle])/2
+    return (sortedArr[middle - 1] + sortedArr[middle])/2;
   }
 }

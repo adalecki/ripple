@@ -38,12 +38,12 @@ function describeEllipticalArc({
   const start: Point = polarToElliptical(centerX, centerY, radiusX, radiusY, endAngle);
   const end: Point = polarToElliptical(centerX, centerY, radiusX, radiusY, startAngle);
 
-  const largeArcFlag: string = Math.abs(endAngle - startAngle) <= 180 ? "0" : "1";
+  const largeArcFlag: string = Math.abs(endAngle - startAngle) <= 180 ? '0' : '1';
 
   const d: string = [
-    "M", start.x, start.y,
-    "A", radiusX, radiusY, 0, largeArcFlag, 0, end.x, end.y
-  ].join(" ");
+    'M', start.x, start.y,
+    'A', radiusX, radiusY, 0, largeArcFlag, 0, end.x, end.y
+  ].join(' ');
 
   return d;
 }
@@ -153,7 +153,7 @@ const Logo = () => {
         <circle cx="135" cy="20" r="15" />
       </g>
     </svg>
-  )
-}
+  );
+};
 
-export default Logo
+export default Logo;

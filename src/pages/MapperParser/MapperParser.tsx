@@ -58,8 +58,7 @@ const MapperParser: React.FC = () => {
           initialFilter={initialFilter}
         />
       );
-    }
-    else if (tabKey === 'protocols') {
+    } else if (tabKey === 'protocols') {
       return (
         <Sidebar
           key={tabKey}
@@ -73,7 +72,7 @@ const MapperParser: React.FC = () => {
           filterOptions={['Table', 'Matrix']}
           title="Protocols"
         />
-      )
+      );
     }
     return null;
   };
@@ -113,6 +112,6 @@ const MapperParser: React.FC = () => {
     </MappedPlatesContext.Provider>
 
   );
-}
+};
 
 export default MapperParser;

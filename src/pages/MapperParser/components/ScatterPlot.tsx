@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from 'react-bootstrap';
 import PlotFigure from './PlotFigure';
-import * as Plot from "@observablehq/plot";
+import * as Plot from '@observablehq/plot';
 import { SinglePoint } from '../utils/resultsUtils';
 
 interface ScatterPlotProps {
@@ -11,13 +11,13 @@ interface ScatterPlotProps {
 }
 
 const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
-  const scatterNode = useRef(null)
-  const [dimensions, setDimensions] = useState({ width: 100, height: 100 })
+  const scatterNode = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 100, height: 100 });
 
   useEffect(() => {
     if (scatterNode.current) {
       const observer = new ResizeObserver((entries) => {
-        for (let entry of entries) {
+        for (const entry of entries) {
           setDimensions({
             width: entry.contentRect.width,
             height: entry.contentRect.height,
@@ -81,13 +81,13 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
       ...point,
       xIndex: index
     };
-    data.toolTip = formatTooltip(point)
+    data.toolTip = formatTooltip(point);
     return data;
   });
 
   return (
     <Card className="flex-grow-1 page-card">
-      <Card.Header className='bg-light'>
+      <Card.Header className="bg-light">
         <div className="d-flex align-items-center">
           <span><strong>Well Data</strong> ({sPData.length} wells)</span>
         </div>
@@ -101,34 +101,34 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
             marginBottom: 60,
             marginRight: 20,
             style: {
-              fontSize: "12px",
-              maxWidth: "none",
+              fontSize: '12px',
+              maxWidth: 'none',
             },
             y: {
               domain: [yLo, yHi],
-              label: "Response",
-              axis: "left"
+              label: 'Response',
+              axis: 'left'
             },
             x: {
               domain: [0, sPData.length - 1],
-              label: "Well Index",
-              axis: "bottom"
+              label: 'Well Index',
+              axis: 'bottom'
             },
             marks: [
-              Plot.ruleY([yLo], { stroke: "#000", strokeWidth: 1 }),
-              Plot.ruleX([0], { stroke: "#000", strokeWidth: 1 }),
+              Plot.ruleY([yLo], { stroke: '#000', strokeWidth: 1 }),
+              Plot.ruleX([0], { stroke: '#000', strokeWidth: 1 }),
 
               Plot.dot(plotData, {
-                x: "xIndex",
-                y: "responseValue",
+                x: 'xIndex',
+                y: 'responseValue',
                 fill: (d: any) => getColor(d.controlType),
                 r: 4,
-                stroke: "#ffffff",
+                stroke: '#ffffff',
                 strokeWidth: 1
               }),
               Plot.tip(plotData, Plot.pointer({
-                x: "xIndex",
-                y: "responseValue",
+                x: 'xIndex',
+                y: 'responseValue',
                 title: (d) => d.toolTip
               }))
             ]

@@ -7,7 +7,7 @@ import { FormField } from './FormField';
 import StringListField from './StringListField';
 import type { PreferencesState, PreferenceValue } from '../hooks/usePreferences';
 
-import '../css/PreferencesModal.css'
+import '../css/PreferencesModal.css';
 
 
 interface PreferencesModalProps {

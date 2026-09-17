@@ -42,15 +42,15 @@ export class EchoPreCalculator {
     this.allowableError = inputData.CommonData.allowableError;
     this.destinationPlatesCount = 0;
     this.destinationWellsCount = 0;
-    this.dilutionPatterns = new Map()
-    this.concentrationCache = new Map()
-    this.totalVolumes = new Map()
-    this.srcCompoundInventory = new Map()
+    this.dilutionPatterns = new Map();
+    this.concentrationCache = new Map();
+    this.totalVolumes = new Map();
+    this.srcCompoundInventory = new Map();
     this.maxDMSOVol = 0;
     this.totalDMSOBackfillVol = 0;
     this.checkpointTracker = checkpointTracker;
-    this.maxTransferVolume = (typeof (preferences.maxTransferVolume) == 'number' ? preferences.maxTransferVolume : 500)
-    this.dropletSize = (typeof (preferences.dropletSize) == 'number' ? preferences.dropletSize : 2.5);
+    this.maxTransferVolume = (typeof (preferences.maxTransferVolume) === 'number' ? preferences.maxTransferVolume : 500);
+    this.dropletSize = (typeof (preferences.dropletSize) === 'number' ? preferences.dropletSize : 2.5);
     this.srcPltSize = ['384', '1536'].includes(preferences.sourcePlateSize as PlateSize) ? preferences.sourcePlateSize as PlateSize : '384';
     this.dstPltSize = ['96', '384', '1536'].includes(preferences.destinationPlateSize as PlateSize) ? preferences.destinationPlateSize as PlateSize : '384';
     this.dmsoSourceWells = 0;
@@ -85,71 +85,70 @@ export class EchoPreCalculator {
       dropletSize: this.dropletSize,
       intermediateBackfillVolume: this.intermediateBackfillVolume,
       allowableError: this.allowableError
-    }
-    return commonSettings
+    };
+    return commonSettings;
   }
 
   calculateNeeds() {
     const checkpointNames = {
-      step1: "Valid Dilution Patterns",
-      step2: "Build Source Inventory",
-      step3: "Calculated Transfer Volumes",
-      step4: "Sufficient Source Volumes",
-      step5: "DMSO Source Detection"
-    }
-    const commonSettings: CommonSettings = this.getCommonSettings()
+      step1: 'Valid Dilution Patterns',
+      step2: 'Build Source Inventory',
+      step3: 'Calculated Transfer Volumes',
+      step4: 'Sufficient Source Volumes',
+      step5: 'DMSO Source Detection'
+    };
+    const commonSettings: CommonSettings = this.getCommonSettings();
 
     try {
       this.dilutionPatterns = analyzeDilutionPatterns(this.inputData.Patterns);
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step1, "Passed")
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step1, 'Passed');
     } catch (err: unknown) {
       if (err instanceof Error) {
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step1, "Failed", [err.message])
-        console.log(err.stack)
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step1, 'Failed', [err.message]);
+        console.log(err.stack);
       }
     }
     try {
-      this.srcCompoundInventory = buildSrcCompoundInventory(this.inputData, this.srcPltSize)
-      this.sourcePlates = prepareSrcPlates(this.srcCompoundInventory, this.srcPltSize, this.dilutionPatterns, this.inputData, this.sourcePlates)
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Pending")
-      const missingPatterns: string[] = []
+      this.srcCompoundInventory = buildSrcCompoundInventory(this.inputData, this.srcPltSize);
+      this.sourcePlates = prepareSrcPlates(this.srcCompoundInventory, this.srcPltSize, this.dilutionPatterns, this.inputData, this.sourcePlates);
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step2, 'Pending');
+      const missingPatterns: string[] = [];
       for (const [patternName, pattern] of this.dilutionPatterns) {
         if (pattern.type !== 'Solvent' && pattern.type !== 'Unused') {
-          let hasCompounds = false
+          let hasCompounds = false;
           for (const [_, compoundPatterns] of this.srcCompoundInventory) {
             if (compoundPatterns.has(patternName)) {
-              hasCompounds = true
-              break
+              hasCompounds = true;
+              break;
             }
           }
           if (!hasCompounds) {
-            missingPatterns.push(patternName)
+            missingPatterns.push(patternName);
           }
         }
       }
       if (missingPatterns.length > 0) {
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Warning", missingPatterns.map(p => `Pattern '${p}' has no compounds associated with it`))
-      }
-      else { this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Passed") }
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step2, 'Warning', missingPatterns.map(p => `Pattern '${p}' has no compounds associated with it`));
+      } else { this.checkpointTracker.updateCheckpoint(checkpointNames.step2, 'Passed'); }
 
     } catch (err: unknown) {
       if (err instanceof Error) {
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step2, "Failed", [err.message])
-        console.log(err.stack)
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step2, 'Failed', [err.message]);
+        console.log(err.stack);
       }
     }
     const { dmsoWellCount, totalDMSOVolume } = calculateDMSOSources(this.inputData['Compounds'], this.sourcePlates, this.srcCompoundInventory, this.dilutionPatterns);
-    this.dmsoSourceWells = dmsoWellCount
-    this.dmsoUsableVolume = totalDMSOVolume
+    this.dmsoSourceWells = dmsoWellCount;
+    this.dmsoUsableVolume = totalDMSOVolume;
     if (dmsoWellCount > 0) {
       const messages = [`Detected ${dmsoWellCount} DMSO source wells with ${(totalDMSOVolume / 1000).toFixed(1)} µL usable volume`];
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step5, "Passed", messages);
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step5, 'Passed', messages);
     } else {
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step5, "Passed", ["No DMSO source wells detected"]);
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step5, 'Passed', ['No DMSO source wells detected']);
     }
-    this.destinationPlatesCount = calculateDestinationPlates(this.srcCompoundInventory, this.dilutionPatterns, this.inputData)
-    this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.dilutionPatterns, this.inputData, commonSettings)
-    this.checkpointTracker.updateCheckpoint(checkpointNames.step3, "Pending")
+    this.destinationPlatesCount = calculateDestinationPlates(this.srcCompoundInventory, this.dilutionPatterns, this.inputData);
+    this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.dilutionPatterns, this.inputData, commonSettings);
+    this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
       if (!this.totalVolumes.get(compoundId)) {
         this.totalVolumes.set(compoundId, new Map());
@@ -163,60 +162,59 @@ export class EchoPreCalculator {
             middleMap.set(patternName, new Map());
           }
           const innerMap = middleMap.get(patternName)!;
-          const result = calculateTransferVolumes(pattern, compoundGroup, this.inputData, this.concentrationCache, commonSettings, this.srcCompoundInventory, this.destinationPlatesCount, this.maxDMSOVol)
+          const result = calculateTransferVolumes(pattern, compoundGroup, this.inputData, this.concentrationCache, commonSettings, this.srcCompoundInventory, this.destinationPlatesCount, this.maxDMSOVol);
           for (const [conc, volume] of result.totalVolumes) {
             innerMap.set(conc, volume);
           }
-          this.destinationWellsCount += result.destinationWellsCount
-          if (this.inputData.CommonData.dmsoNormalization) { this.totalDMSOBackfillVol += result.totalDMSOBackfillVol }
-          const transferConcentrations = calculateTransferConcentrations(this.inputData, this.concentrationCache, pattern, compoundGroup, commonSettings)
+          this.destinationWellsCount += result.destinationWellsCount;
+          if (this.inputData.CommonData.dmsoNormalization) { this.totalDMSOBackfillVol += result.totalDMSOBackfillVol; }
+          const transferConcentrations = calculateTransferConcentrations(this.inputData, this.concentrationCache, pattern, compoundGroup, commonSettings);
           for (const conc of pattern.concentrations) {
             if (!(transferConcentrations.destinationConcentrations.get(conc))) {
               const msg = `Couldn't build ${compoundId} concentration ${conc} in ${patternName}`;
               const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
               if (checkpoint) {
-                this.checkpointTracker.updateCheckpoint(checkpointNames.step3, "Warning", [...checkpoint.message, msg]);
+                this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [...checkpoint.message, msg]);
               }
             }
           }
         } catch (err) {
           if (err instanceof Error) {
-            let checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
-            let msg = `${compoundId} failed: ${err}`;
+            const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
+            const msg = `${compoundId} failed: ${err}`;
             if (checkpoint) {
-              this.checkpointTracker.updateCheckpoint(checkpointNames.step3, "Failed", [...checkpoint.message, msg]);
+              this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [...checkpoint.message, msg]);
             }
             console.log(err.stack);
           }
         }
       }
     }
-    if (this.inputData.CommonData.dmsoNormalization) { this.totalDMSOBackfillVol += calculateFinalDMSONeeded(this.inputData, commonSettings, this.destinationPlatesCount, this.destinationWellsCount, this.dilutionPatterns, this.maxDMSOVol) }
-    if (this.checkpointTracker.getCheckpoint(checkpointNames.step3)?.status == "Pending") {
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step3, "Passed")
+    if (this.inputData.CommonData.dmsoNormalization) { this.totalDMSOBackfillVol += calculateFinalDMSONeeded(this.inputData, commonSettings, this.destinationPlatesCount, this.destinationWellsCount, this.dilutionPatterns, this.maxDMSOVol); }
+    if (this.checkpointTracker.getCheckpoint(checkpointNames.step3)?.status == 'Pending') {
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Passed');
     }
     try {
-      this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Pending")
-      const messages = checkSourceVolumes(this.srcCompoundInventory, this.sourcePlates, this.dilutionPatterns, this.totalVolumes)
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Pending');
+      const messages = checkSourceVolumes(this.srcCompoundInventory, this.sourcePlates, this.dilutionPatterns, this.totalVolumes);
       if (messages.length === 0) {
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Passed");
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Passed');
       } else {
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Warning", messages);
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Warning', messages);
       }
     } catch (err) {
       if (err instanceof Error) {
-        let checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step4)
-        let msg = `Volume checking failed failed: ${err}`
-        if (checkpoint) { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Failed", [...checkpoint.message, msg]) }
-        else { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, "Failed", [msg]) }
+        const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step4);
+        const msg = `Volume checking failed failed: ${err}`;
+        if (checkpoint) { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [...checkpoint.message, msg]); } else { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg]); }
       }
     }
   }
 
   updateDeadVolume(barcode: string, newDeadVolumeNL: number): void {
     this.plateDeadVolumes.set(barcode, newDeadVolumeNL);
-    const srcPlate = this.sourcePlates.find(p => p.barcode === barcode)
-    if (srcPlate) { srcPlate.setDeadVolume(newDeadVolumeNL) }
+    const srcPlate = this.sourcePlates.find(p => p.barcode === barcode);
+    if (srcPlate) { srcPlate.setDeadVolume(newDeadVolumeNL); }
     this.calculateNeeds();
   }
 }

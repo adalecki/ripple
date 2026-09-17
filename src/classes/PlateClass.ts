@@ -1,6 +1,6 @@
-import { mapWellsToConcentrations, mapWellsToMatrixConcentrations, getWellIdFromCoords, getWellIdsFromRange } from "../utils/plateUtils";
-import { Pattern, isCombinationType, getCombinationFold, CombinationType } from "./PatternClass";
-import { Well } from "./WellClass";
+import { mapWellsToConcentrations, mapWellsToMatrixConcentrations, getWellIdFromCoords, getWellIdsFromRange } from '../utils/plateUtils';
+import { Pattern, isCombinationType, getCombinationFold, CombinationType } from './PatternClass';
+import { Well } from './WellClass';
 export type PlateRole = 'source' | 'intermediate1' | 'intermediate2' | 'destination';
 export type PlateSize = '12' | '24' | '48' | '96' | '384' | '1536';
 
@@ -102,7 +102,7 @@ export class Plate {
   }
 
   setDeadVolume(volume: number): void {
-    this.deadVolume = volume
+    this.deadVolume = volume;
   }
 
   bulkFillWells(wellIds: string[], volume: number, solventName: string = 'DMSO'): void {
@@ -115,11 +115,11 @@ export class Plate {
   }
 
   getWell(wellId: string): Well | null {
-    let paddedWellId = wellId
-    const splitWell = wellId.match(/([A-Z]+)(\d+)/)
+    let paddedWellId = wellId;
+    const splitWell = wellId.match(/([A-Z]+)(\d+)/);
 
     if (splitWell && splitWell[2].length === 1) {
-      paddedWellId = `${splitWell[1]}${splitWell[2].toString().padStart(2, '0')}`
+      paddedWellId = `${splitWell[1]}${splitWell[2].toString().padStart(2, '0')}`;
     }
     return this.wells[paddedWellId] || null;
   }
@@ -129,19 +129,18 @@ export class Plate {
   }
 
   getWellIds() {
-    return Object.keys(this.wells)
+    return Object.keys(this.wells);
   }
 
   getSomeWells(rawRange: string): Well[] {
     const wellIDs = getWellIdsFromRange(rawRange);
     const wells: Well[] = wellIDs.reduce((wells: Well[], wellID) => {
-      const well = this.wells[wellID]
-      if (well) { wells.push(well) }
-      else { console.warn(`Well ${wellID} not found`) }
-      return wells
-    }, [])
+      const well = this.wells[wellID];
+      if (well) { wells.push(well); } else { console.warn(`Well ${wellID} not found`); }
+      return wells;
+    }, []);
 
-    return wells
+    return wells;
   }
 
   applyPattern(wellBlock: string, pattern: Pattern) {
@@ -150,35 +149,35 @@ export class Plate {
       for (const well of wells) {
         well.markAsUnused();
       }
-    } else if (pattern.type == 'Recipe') {
-      const volumes = pattern.volumes.filter(v => v != null)
+    } else if (pattern.type === 'Recipe') {
+      const volumes = pattern.volumes.filter(v => v != null);
       for (const well of this.getSomeWells(wellBlock)) {
-        well.applyPatternVolumes(pattern.name, volumes)
+        well.applyPatternVolumes(pattern.name, volumes);
       }
     } else if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
-      const concentrations = pattern.concentrations.filter(c => c != null)
-      const matrixConcs = mapWellsToMatrixConcentrations(this, wellBlock, concentrations, pattern.direction)
+      const concentrations = pattern.concentrations.filter(c => c != null);
+      const matrixConcs = mapWellsToMatrixConcentrations(this, wellBlock, concentrations, pattern.direction);
       for (const { wellId, concentrations: pair } of matrixConcs) {
-        const well = this.getWell(wellId)
-        if (well) { well.applyPatternContents(pattern.name, pair) }
+        const well = this.getWell(wellId);
+        if (well) { well.applyPatternContents(pattern.name, pair); }
       }
     } else if (isCombinationType(pattern.type)) {
-      const fold = pattern.fold ?? getCombinationFold(pattern.type as CombinationType)
-      const concentrations = pattern.concentrations.filter(c => c != null)
-      const concentrationArr = mapWellsToConcentrations(this, wellBlock, concentrations, pattern.direction[0])
+      const fold = pattern.fold ?? getCombinationFold(pattern.type as CombinationType);
+      const concentrations = pattern.concentrations.filter(c => c != null);
+      const concentrationArr = mapWellsToConcentrations(this, wellBlock, concentrations, pattern.direction[0]);
       for (const concIdx in concentrations) {
         for (const wellId of concentrationArr[concIdx]) {
-          const well = this.getWell(wellId)
-          if (well) { well.applyPatternContents(pattern.name, Array(fold).fill(concentrations[concIdx])) }
+          const well = this.getWell(wellId);
+          if (well) { well.applyPatternContents(pattern.name, Array(fold).fill(concentrations[concIdx])); }
         }
       }
     } else {
-      const concentrations = pattern.concentrations.filter(c => c != null)
-      const concentrationArr = mapWellsToConcentrations(this, wellBlock, concentrations, pattern.direction[0])
+      const concentrations = pattern.concentrations.filter(c => c != null);
+      const concentrationArr = mapWellsToConcentrations(this, wellBlock, concentrations, pattern.direction[0]);
       for (const concIdx in concentrations) {
         for (const wellId of concentrationArr[concIdx]) {
-          const well = this.getWell(wellId)
-          if (well) { well.applyPattern(pattern.name, concentrations[concIdx]) }
+          const well = this.getWell(wellId);
+          if (well) { well.applyPattern(pattern.name, concentrations[concIdx]); }
         }
       }
     }
@@ -194,9 +193,9 @@ export class Plate {
   }
 
   removePattern(wellBlock: string, patternName: string): void {
-    const wells = this.getSomeWells(wellBlock)
+    const wells = this.getSomeWells(wellBlock);
     for (const well of wells) {
-      well.removePattern(patternName)
+      well.removePattern(patternName);
       if (this.patterns[patternName]?.type === 'Unused') {
         well.markAsUsed();
       }

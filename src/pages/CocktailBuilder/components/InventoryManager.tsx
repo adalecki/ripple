@@ -32,7 +32,7 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({
   const plateTypes = usePreferencesValue('plateTypes') as string[];
 
   if (!plateTypes.includes(form.plateType)) {
-    handleFieldChange('plateType',plateTypes[0])
+    handleFieldChange('plateType',plateTypes[0]);
   }
 
   return (

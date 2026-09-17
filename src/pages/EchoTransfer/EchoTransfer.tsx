@@ -61,7 +61,7 @@ const EchoTransfer: React.FC = () => {
               mountOnEnter
             >
               <Tab eventKey="calculator" title="Calculator">
-                <EchoCalc showExamples={() => {setTabKey('about')}}/>
+                <EchoCalc showExamples={() => {setTabKey('about');}}/>
               </Tab>
               <Tab eventKey="about" title="About">
                 <About />
@@ -71,7 +71,7 @@ const EchoTransfer: React.FC = () => {
         </Col>
       </Row>
     </PlatesContext.Provider>
-  )
-}
+  );
+};
 
 export default EchoTransfer;

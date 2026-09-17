@@ -1,10 +1,10 @@
-import type React from "react"
-import type { ClipboardEvent, KeyboardEvent } from "react"
-import { Card, ListGroup, Button, Form, Alert } from "react-bootstrap"
-import { Plate, type PlateSize } from "../../../classes/PlateClass"
-import { Plus } from "lucide-react"
-import { useState } from "react"
-import { clonePlate, currentPlate, modifyPlate, TransferBlock } from "../../../utils/plateUtils"
+import type React from 'react';
+import type { ClipboardEvent, KeyboardEvent } from 'react';
+import { Card, ListGroup, Button, Form, Alert } from 'react-bootstrap';
+import { Plate, type PlateSize } from '../../../classes/PlateClass';
+import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { clonePlate, currentPlate, modifyPlate, TransferBlock } from '../../../utils/plateUtils';
 
 interface PlateListProps {
   srcPlates: Plate[],
@@ -41,26 +41,26 @@ const PlateList: React.FC<PlateListProps> = ({
   setSelectedDstWells,
   transferBlocks
 }) => {
-  const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([])
-  const [alertMessage, setAlertMessage] = useState<string>('')
+  const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([]);
+  const [alertMessage, setAlertMessage] = useState<string>('');
 
   const BarcodeAlert = () => {
     return (
       <Alert show={reusedBarcodes.length > 0} variant="warning">
         {reusedBarcodes.join(', ')} {alertMessage}
         <div className="d-flex justify-content-end">
-          <Button onClick={() => { setReusedBarcodes([]); setAlertMessage('') }}>
+          <Button onClick={() => { setReusedBarcodes([]); setAlertMessage(''); }}>
             Clear
           </Button>
         </div>
       </Alert>
     );
-  }
+  };
 
   const renderList = (
     plates: Plate[],
     setPlates: React.Dispatch<React.SetStateAction<Plate[]>>,
-    type: "src" | "dst",
+    type: 'src' | 'dst',
     curPlateId: number | null,
     setCurPlateId: (value: React.SetStateAction<number | null>) => void,
     addPlate: () => void,
@@ -102,7 +102,7 @@ const PlateList: React.FC<PlateListProps> = ({
                   e.stopPropagation();
                   deletePlate(plate.id);
                 }}
-                disabled={!!(transferBlocks.find(block => (type === "src" ? block.sourcePlateId == plate.id : block.destinationPlateId == plate.id)))}
+                disabled={!!(transferBlocks.find(block => (type === 'src' ? block.sourcePlateId == plate.id : block.destinationPlateId == plate.id)))}
                 style={{ padding: '0.25rem 0.5rem' }}
               >
                 x
@@ -111,27 +111,27 @@ const PlateList: React.FC<PlateListProps> = ({
           </ListGroup.Item>
         ))}
       </ListGroup>
-    )
-  }
+    );
+  };
 
   const addSourcePlate = () => {
     const newPlate = new Plate({ plateSize: srcPlateSize, plateRole: 'source' });
-    let inc = srcPlates.length + 1
+    let inc = srcPlates.length + 1;
     while (srcPlates.find((p) => p.barcode == 'src' + inc)) {
-      inc += 1
+      inc += 1;
     }
-    newPlate.barcode = 'src' + inc
+    newPlate.barcode = 'src' + inc;
     setSrcPlates(prev => [...prev, newPlate]);
     setCurSrcPlateId(newPlate.id);
   };
 
   const addDestPlate = () => {
     const newPlate = new Plate({ plateSize: dstPlateSize, plateRole: 'destination' });
-    let inc = dstPlates.length + 1
+    let inc = dstPlates.length + 1;
     while (dstPlates.find((p) => p.barcode == 'dst' + inc)) {
-      inc += 1
+      inc += 1;
     }
-    newPlate.barcode = 'dst' + inc
+    newPlate.barcode = 'dst' + inc;
     setDstPlates(prev => [...prev, newPlate]);
     setCurDstPlateId(newPlate.id);
   };
@@ -140,7 +140,7 @@ const PlateList: React.FC<PlateListProps> = ({
     setSrcPlates(prev => prev.filter(p => p.id !== plateId));
     if (curSrcPlateId === plateId) {
       setCurSrcPlateId(srcPlates.length > 1 ? srcPlates[0].id : null);
-      setSelectedSrcWells([])
+      setSelectedSrcWells([]);
     }
   };
 
@@ -148,24 +148,24 @@ const PlateList: React.FC<PlateListProps> = ({
     setDstPlates(prev => prev.filter(p => p.id !== plateId));
     if (curDstPlateId === plateId) {
       setCurDstPlateId(dstPlates.length > 1 ? dstPlates[0].id : null);
-      setSelectedDstWells([])
+      setSelectedDstWells([]);
     }
   };
 
   const updateSourceBarcode = (plateId: number, barcode: string) => {
-    const plate = currentPlate(srcPlates, plateId)
-    if (!plate) return
-    const clonedPlate = clonePlate(plate)
-    clonedPlate.barcode = barcode
-    modifyPlate(clonedPlate, srcPlates, setSrcPlates, plateId)
+    const plate = currentPlate(srcPlates, plateId);
+    if (!plate) return;
+    const clonedPlate = clonePlate(plate);
+    clonedPlate.barcode = barcode;
+    modifyPlate(clonedPlate, srcPlates, setSrcPlates, plateId);
   };
 
   const updateDestBarcode = (plateId: number, barcode: string) => {
-    const plate = currentPlate(dstPlates, plateId)
-    if (!plate) return
-    const clonedPlate = clonePlate(plate)
-    clonedPlate.barcode = barcode
-    modifyPlate(clonedPlate, dstPlates, setDstPlates, plateId)
+    const plate = currentPlate(dstPlates, plateId);
+    if (!plate) return;
+    const clonedPlate = clonePlate(plate);
+    clonedPlate.barcode = barcode;
+    modifyPlate(clonedPlate, dstPlates, setDstPlates, plateId);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>, curId: number | null, setCurId: (value: React.SetStateAction<number | null>) => void, plateList: Plate[], addPlate: () => void, srcOrDst: string) => {
@@ -183,7 +183,7 @@ const PlateList: React.FC<PlateListProps> = ({
           }
         }
       } else {
-        addPlate()
+        addPlate();
         //timeout to allow time to render new plate in list, then focus on the text field
         setTimeout(() => {
           const selectorGroup = document.getElementById(`${srcOrDst}${plateList.length + 1}`);
@@ -209,21 +209,20 @@ const PlateList: React.FC<PlateListProps> = ({
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>, currentId: number, plates: Plate[], onChange: (plates: Plate[]) => void) => {
-    const duplicateBarcodes: string[] = []
+    const duplicateBarcodes: string[] = [];
     const pasteData = e.clipboardData
       .getData('text')
       .split(/\r?\n/)
       .map(line => line.trim())
-      .filter(line => line !== '')
-    if (pasteData.length < 1) return
+      .filter(line => line !== '');
+    if (pasteData.length < 1) return;
 
     if (pasteData.length == 1) {
       if (plates.some(p => p.barcode == pasteData[0])) {
-        e.preventDefault()
-        duplicateBarcodes.push(pasteData[0])
-      }
-      else {
-        return
+        e.preventDefault();
+        duplicateBarcodes.push(pasteData[0]);
+      } else {
+        return;
       }
     }
 
@@ -234,13 +233,12 @@ const PlateList: React.FC<PlateListProps> = ({
 
       pasteData.forEach((barcode, index) => {
         const targetIndex = currentIndex + index;
-        const reusedBarcode = plates.some(p => p.barcode == barcode)
+        const reusedBarcode = plates.some(p => p.barcode == barcode);
         if (reusedBarcode) {
-          duplicateBarcodes.push(barcode)
-        }
-        else {
+          duplicateBarcodes.push(barcode);
+        } else {
           if (targetIndex < newPlates.length) {
-            newPlates[targetIndex].barcode = barcode
+            newPlates[targetIndex].barcode = barcode;
           } else {
             newPlates.push(new Plate({ id: Date.now() + index, plateSize: dstPlateSize, barcode: barcode }));
           }
@@ -249,14 +247,14 @@ const PlateList: React.FC<PlateListProps> = ({
 
       onChange(newPlates);
     }
-    setReusedBarcodes(prev => Array.from(new Set([...prev, ...duplicateBarcodes])))
-    setAlertMessage('already in list; skipped')
+    setReusedBarcodes(prev => Array.from(new Set([...prev, ...duplicateBarcodes])));
+    setAlertMessage('already in list; skipped');
   };
 
   const handleBlur = (barcode: string, plates: Plate[]) => {
     if (plates.filter(p => p.barcode == barcode).length > 1) {
-      setReusedBarcodes([barcode])
-      setAlertMessage('already in plate list, change to avoid unexpected behavior')
+      setReusedBarcodes([barcode]);
+      setAlertMessage('already in plate list, change to avoid unexpected behavior');
     }
   };
 
@@ -289,7 +287,7 @@ const PlateList: React.FC<PlateListProps> = ({
 
           {srcPlates.length === 0 ? (
             <div className="text-muted small ms-3">No source plates</div>
-          ) : (<div>{renderList(srcPlates, setSrcPlates, "src", curSrcPlateId, setCurSrcPlateId, addSourcePlate, updateSourceBarcode, deleteSourcePlate)}</div>)}
+          ) : (<div>{renderList(srcPlates, setSrcPlates, 'src', curSrcPlateId, setCurSrcPlateId, addSourcePlate, updateSourceBarcode, deleteSourcePlate)}</div>)}
         </div>
 
         <div className="mb-4">
@@ -318,12 +316,12 @@ const PlateList: React.FC<PlateListProps> = ({
 
           {dstPlates.length === 0 ? (
             <div className="text-muted small ms-3">No destination plates</div>
-          ) : (<div>{renderList(dstPlates, setDstPlates, "dst", curDstPlateId, setCurDstPlateId, addDestPlate, updateDestBarcode, deleteDestPlate)}</div>)}
+          ) : (<div>{renderList(dstPlates, setDstPlates, 'dst', curDstPlateId, setCurDstPlateId, addDestPlate, updateDestBarcode, deleteDestPlate)}</div>)}
         </div>
       </Card.Body>
       <BarcodeAlert />
     </Card>
-  )
-}
+  );
+};
 
-export default PlateList
+export default PlateList;

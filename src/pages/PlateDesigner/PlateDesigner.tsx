@@ -11,28 +11,28 @@ import Sidebar from '../../components/Sidebar.tsx';
 import Instructions from './components/Instructions.tsx';
 
 const PlateDesigner: React.FC = () => {
-  const { preferences } = usePreferences()
+  const { preferences } = usePreferences();
   const [tabKey, setTabKey] = useState<string>('designDst');
-  const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize)
-  const [designDstPlateSize, setDesignDstPlateSize] = useState(preferences.destinationPlateSize as PlateSize)
+  const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize);
+  const [designDstPlateSize, setDesignDstPlateSize] = useState(preferences.destinationPlateSize as PlateSize);
   const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize })]);
   const [designDstPlates, setDesignDstPlates] = useState<Plate[]>([new Plate({ barcode: 'DST001', plateSize: designDstPlateSize })]);
-  const [curDesignSrcPlateId, setCurDesignSrcPlateId] = useState<number | null>(designSrcPlates[0] ? designSrcPlates[0].id || null : null)
-  const [curDesignDstPlateId, setCurDesignDstPlateId] = useState<number | null>(designDstPlates[0] ? designDstPlates[0].id || null : null)
-  const [curPatternId, setCurPatternId] = useState<number | null>(null)
-  const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
-  const [selectedWellIds, setSelectedWellIds] = useState<string[]>([])
+  const [curDesignSrcPlateId, setCurDesignSrcPlateId] = useState<number | null>(designSrcPlates[0] ? designSrcPlates[0].id || null : null);
+  const [curDesignDstPlateId, setCurDesignDstPlateId] = useState<number | null>(designDstPlates[0] ? designDstPlates[0].id || null : null);
+  const [curPatternId, setCurPatternId] = useState<number | null>(null);
+  const [prevPatternId, setPrevPatternId] = useState<number | null>(null);
+  const [selectedWellIds, setSelectedWellIds] = useState<string[]>([]);
   const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false })
+  const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false });
 
   if (curPatternId !== prevPatternId) {
-    setPrevPatternId(curPatternId)
-    setPatternState({ isEditing: (patternState.isNewPattern ? true : false), isNewPattern: false, isPickingColor: false })
+    setPrevPatternId(curPatternId);
+    setPatternState({ isEditing: (patternState.isNewPattern ? true : false), isNewPattern: false, isPickingColor: false });
   }
 
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
-  //ref is used on DesignWizardSrc to get around stale state closure 
+  //ref is used on DesignWizardSrc to get around stale state closure
   const enterCallbackRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -107,9 +107,9 @@ const PlateDesigner: React.FC = () => {
   const handleAddPattern = () => {
     let iter = patterns.length + 1;
     while (patterns.find(p => p.name == `Pattern ${iter}`)) {
-      iter += 1
+      iter += 1;
     }
-    const name = `Pattern ${iter}`
+    const name = `Pattern ${iter}`;
     const newPattern = new Pattern({
       name: name,
       type: 'Treatment',
@@ -120,7 +120,7 @@ const PlateDesigner: React.FC = () => {
     });
     setPatterns([...patterns, newPattern]);
     setCurPatternId(newPattern.id);
-    setPatternState({ isEditing: true, isNewPattern: true, isPickingColor: false })
+    setPatternState({ isEditing: true, isNewPattern: true, isPickingColor: false });
   };
 
   const handleDeletePattern = (patternId: number) => {
@@ -136,33 +136,32 @@ const PlateDesigner: React.FC = () => {
     if (curPatternId === patternId) {
       setCurPatternId(null);
     }
-  }
+  };
 
   const handleAddPlate = () => {
     let iter = designSrcPlates.length + 1;
     while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3, '0')}`) != undefined) {
-      iter += 1
+      iter += 1;
     }
     const barcode = `SRC${iter.toString().padStart(3, '0')}`;
-    const newPlate = new Plate({ barcode: barcode, plateSize: designSrcPlateSize })
-    setDesignSrcPlates([...designSrcPlates, newPlate])
-    setCurDesignSrcPlateId(newPlate.id)
-  }
+    const newPlate = new Plate({ barcode: barcode, plateSize: designSrcPlateSize });
+    setDesignSrcPlates([...designSrcPlates, newPlate]);
+    setCurDesignSrcPlateId(newPlate.id);
+  };
 
   const handleDeletePlate = (plateId: number) => {
-    const remainingSrcPlates = designSrcPlates.filter(p => p.id !== plateId)
+    const remainingSrcPlates = designSrcPlates.filter(p => p.id !== plateId);
     if (remainingSrcPlates.length < 1) {
-      const newPlate = new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize })
-      setDesignSrcPlates([newPlate])
-      setCurDesignSrcPlateId(newPlate.id)
-    }
-    else {
-      setDesignSrcPlates([...remainingSrcPlates])
+      const newPlate = new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize });
+      setDesignSrcPlates([newPlate]);
+      setCurDesignSrcPlateId(newPlate.id);
+    } else {
+      setDesignSrcPlates([...remainingSrcPlates]);
     }
     if (curDesignSrcPlateId === plateId) {
-      setCurDesignSrcPlateId(null)
+      setCurDesignSrcPlateId(null);
     }
-  }
+  };
 
   const handlePageDblClick = (e: React.MouseEvent<Element, MouseEvent>) => {
     if (e.detail > 1) {
@@ -173,7 +172,7 @@ const PlateDesigner: React.FC = () => {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     const tag = (document.activeElement as HTMLElement)?.tagName;
-    if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag)) return
+    if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag)) return;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
       const plate = activePlateRef.current;
@@ -206,9 +205,9 @@ const PlateDesigner: React.FC = () => {
     if (el) {
       el.style.left = `${start.x}px`;
       el.style.top = `${start.y}px`;
-      el.style.width = "0px";
-      el.style.height = "0px";
-      el.className = "selection-rectangle";
+      el.style.width = '0px';
+      el.style.height = '0px';
+      el.className = 'selection-rectangle';
     }
   };
 
@@ -226,7 +225,7 @@ const PlateDesigner: React.FC = () => {
 
     const el = selectionRef.current;
     if (el) {
-      el.style.display = "block"
+      el.style.display = 'block';
       el.style.left = `${left}px`;
       el.style.top = `${top}px`;
       el.style.width = `${width}px`;
@@ -239,10 +238,10 @@ const PlateDesigner: React.FC = () => {
     dragState.current.mouseDown = false;
     dragState.current.dragging = false;
     const el = selectionRef.current;
-    if (el) el.style.display = "none";
-    const parent = (e.target as HTMLElement).closest("[data-view]");
+    if (el) el.style.display = 'none';
+    const parent = (e.target as HTMLElement).closest('[data-view]');
     if (!parent) return;
-    const plate = activePlate()
+    const plate = activePlate();
     if (!plate) return;
 
     const region = {
@@ -251,14 +250,13 @@ const PlateDesigner: React.FC = () => {
       x2: Math.max(dragState.current.startX, dragState.current.endX),
       y2: Math.max(dragState.current.startY, dragState.current.endY)
     };
-    const startEl = document.elementFromPoint(region.x1, region.y1)
-    const endEl = document.elementFromPoint(region.x2, region.y2)
-    const labelWells = labelDrag(startEl, endEl, plate)
+    const startEl = document.elementFromPoint(region.x1, region.y1);
+    const endEl = document.elementFromPoint(region.x2, region.y2);
+    const labelWells = labelDrag(startEl, endEl, plate);
     if (labelWells.length > 0) {
-      selectorHelper(e, labelWells, selectedWellIds, setSelectedWellIds)
-    }
-    else {
-      const canvas = parent.getElementsByTagName('canvas')[0]
+      selectorHelper(e, labelWells, selectedWellIds, setSelectedWellIds);
+    } else {
+      const canvas = parent.getElementsByTagName('canvas')[0];
       const rect = canvas.getBoundingClientRect();
       const cx = region.x1 - rect.left;
       const cy = region.y1 - rect.top;
@@ -294,26 +292,26 @@ const PlateDesigner: React.FC = () => {
     const target = e.target as HTMLDivElement;
     const targetLabel = target.innerText;
 
-    const parentPlate = target.closest("[data-view]");
+    const parentPlate = target.closest('[data-view]');
     if (!parentPlate) return;
 
-    let plate: Plate | null = null
+    let plate: Plate | null = null;
     switch (tabKey) {
-      case "designDst":
-        plate = currentPlate(designDstPlates, curDesignDstPlateId)
+      case 'designDst':
+        plate = currentPlate(designDstPlates, curDesignDstPlateId);
         break;
-      case "designSrc":
-        plate = currentPlate(designSrcPlates, curDesignSrcPlateId)
+      case 'designSrc':
+        plate = currentPlate(designSrcPlates, curDesignSrcPlateId);
         break;
       default:
         plate = null;
     }
 
-    if (!plate) return
+    if (!plate) return;
 
     const newSelected: string[] = [];
 
-    if (target.className.includes("all-wells-container")) {
+    if (target.className.includes('all-wells-container')) {
       for (let r = 0; r < plate.rows; r++) {
         for (let c = 0; c < plate.columns; c++) {
           newSelected.push(getWellIdFromCoords(r, c));
@@ -337,10 +335,10 @@ const PlateDesigner: React.FC = () => {
         if (shouldSelect) newSelected.push(wellId);
       }
     }
-    selectorHelper(e, newSelected, selectedWellIds, setSelectedWellIds)
+    selectorHelper(e, newSelected, selectedWellIds, setSelectedWellIds);
   };
 
-  if (patterns.length === 0) handleAddPattern()
+  if (patterns.length === 0) handleAddPattern();
 
   return (
     <div>
@@ -401,9 +399,9 @@ const PlateDesigner: React.FC = () => {
           </div>
         </Col>
       </Row>
-      <div ref={selectionRef} style={{ position: "absolute", pointerEvents: "none", display: "none" }} />
+      <div ref={selectionRef} style={{ position: 'absolute', pointerEvents: 'none', display: 'none' }} />
     </div>
-  )
-}
+  );
+};
 
 export default PlateDesigner;

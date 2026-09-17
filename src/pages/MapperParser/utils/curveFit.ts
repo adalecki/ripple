@@ -2,7 +2,7 @@ import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 
 export interface CurveFitResult {
   A: number; //Bottom
-  B: number; //Hillslope  
+  B: number; //Hillslope
   C: number; //EC50
   D: number; //Top
 }
@@ -18,14 +18,14 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
   if (x.length !== y.length) {
     throw new Error('x and y arrays must have the same length');
   }
-  
+
   if (x.length < 3) {
     throw new Error('Need at least 3 data points for curve fitting');
   }
   const maxY = Math.max(...y);
   const minY = Math.min(...y);
   const normedY: number[] = [];
-  
+
   for (let i = 0; i < y.length; i++) {
     const norm = ((y[i] - minY) / (maxY - minY)) * 100;
     normedY.push(norm);
@@ -38,13 +38,13 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
   }
 
   const initialSlope = (y[y.length - 1] - y[0]) / y.length;
-  
+
   const estA = Math.min(...y);
   const estB = (initialSlope < 0 ? 1 : -1);
   const estD = Math.max(...y);
 
   const midpoint = (estA + estD) / 2;
-  const closest = y.reduce((prev, curr) => 
+  const closest = y.reduce((prev, curr) =>
     (Math.abs(curr - midpoint) < Math.abs(prev - midpoint) ? curr : prev)
   );
   const estC = x[y.indexOf(closest)];
@@ -63,7 +63,7 @@ export function curveFit(x: number[] = [], y: number[] = [], options: CurveFitOp
     x: x,
     y: y
   };
-  
+
   const fittedParams = levenbergMarquardt(data, fourPL, lmOptions).parameterValues;
   return fittedParams;
 }

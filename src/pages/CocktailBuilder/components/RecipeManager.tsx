@@ -65,14 +65,14 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
   const handleEditRecipe = () => {
     setRecipeState({ ...recipeState, isEditing: true });
     if (editingRecipe && editingRecipe.volumes.length == 0) {
-      setEditingRecipe(new Pattern({ ...editingRecipe, volumes: [null] }))
+      setEditingRecipe(new Pattern({ ...editingRecipe, volumes: [null] }));
     }
   };
 
   const handleSaveRecipe = () => {
     if (!editingRecipe) return;
-    const volumes = editingRecipe.volumes.filter(v => v != null)
-    const saveRecipe = new Pattern({ ...editingRecipe, volumes: volumes })
+    const volumes = editingRecipe.volumes.filter(v => v != null);
+    const saveRecipe = new Pattern({ ...editingRecipe, volumes: volumes });
     setRecipes(recipes.map(r => r.id === saveRecipe.id ? saveRecipe : r));
     setRecipeState({ ...recipeState, isEditing: false, isPickingColor: false });
   };

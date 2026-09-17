@@ -29,8 +29,8 @@ const ConcentrationTable: React.FC<ConcentrationTableProps> = ({
       ...concentrations,
       null
     ]
-    )
-  }
+    );
+  };
 
   return (
     <EditableValueTable

@@ -16,7 +16,7 @@ import {
   applyScheme,
   deleteScheme
 } from './utils/reformatUtils';
-import '../../css/PlateReformat.css'
+import '../../css/PlateReformat.css';
 import { generateSingleColor } from '../../utils/wellColors';
 import { labelDrag, selectorHelper } from '../../utils/designUtils';
 import { defaults } from './utils/defaultSchemes';
@@ -26,14 +26,14 @@ function PlateReformat() {
   const [dstPlates, setDstPlates] = useState<Plate[]>([]);
   const [curSrcPlateId, setCurSrcPlateId] = useState<number | null>(null);
   const [curDstPlateId, setCurDstPlateId] = useState<number | null>(null);
-  const [srcPlateSize, setSrcPlateSize] = useState<PlateSize>('384')
-  const [dstPlateSize, setDstPlateSize] = useState<PlateSize>('384')
+  const [srcPlateSize, setSrcPlateSize] = useState<PlateSize>('384');
+  const [dstPlateSize, setDstPlateSize] = useState<PlateSize>('384');
   const [selectedSrcWells, setSelectedSrcWells] = useState<string[]>([]);
   const [selectedDstWells, setSelectedDstWells] = useState<string[]>([]);
   const [transferBlocks, setTransferBlocks] = useState<TransferBlock[]>([]);
   const [schemes, setSchemes] = useState<ReformatScheme[]>(() => loadSchemes());
   const [showManageModal, setShowManageModal] = useState(false);
-  const [tsfrIdx, setTsfrIdx] = useState<number>(0)
+  const [tsfrIdx, setTsfrIdx] = useState<number>(0);
 
   const srcDisplayPlate = currentPlate(srcPlates, curSrcPlateId);
   const dstDisplayPlate = currentPlate(dstPlates, curDstPlateId);
@@ -42,9 +42,9 @@ function PlateReformat() {
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
 
   useEffect(() => {
-    document.addEventListener("mousedown", handlePageDblClick);
+    document.addEventListener('mousedown', handlePageDblClick);
     return () => {
-      document.removeEventListener("mousedown", handlePageDblClick);
+      document.removeEventListener('mousedown', handlePageDblClick);
     };
   }, []);
 
@@ -62,9 +62,9 @@ function PlateReformat() {
     if (el) {
       el.style.left = `${start.x}px`;
       el.style.top = `${start.y}px`;
-      el.style.width = "0px";
-      el.style.height = "0px";
-      el.className = "selection-rectangle";
+      el.style.width = '0px';
+      el.style.height = '0px';
+      el.className = 'selection-rectangle';
     }
   };
 
@@ -81,7 +81,7 @@ function PlateReformat() {
 
     const el = selectionRef.current;
     if (el) {
-      el.style.display = "block"
+      el.style.display = 'block';
       el.style.left = `${left}px`;
       el.style.top = `${top}px`;
       el.style.width = `${width}px`;
@@ -94,29 +94,28 @@ function PlateReformat() {
     dragState.current.mouseDown = false;
     dragState.current.dragging = false;
     const el = selectionRef.current;
-    if (el) el.style.display = "none";
-    const parent = (e.target as HTMLElement).closest("[data-view]");
+    if (el) el.style.display = 'none';
+    const parent = (e.target as HTMLElement).closest('[data-view]');
     if (!parent) return;
-    const selectorQuery = parent.getAttribute("data-view")?.split("-")[1];
+    const selectorQuery = parent.getAttribute('data-view')?.split('-')[1];
     if (!selectorQuery) return;
-    const plate = selectorQuery === "source" ? srcDisplayPlate : dstDisplayPlate;
+    const plate = selectorQuery === 'source' ? srcDisplayPlate : dstDisplayPlate;
     if (!plate) return;
-    const selected = selectorQuery === "source" ? selectedSrcWells : selectedDstWells;
-    const setSelected = selectorQuery === "source" ? setSelectedSrcWells : setSelectedDstWells;
+    const selected = selectorQuery === 'source' ? selectedSrcWells : selectedDstWells;
+    const setSelected = selectorQuery === 'source' ? setSelectedSrcWells : setSelectedDstWells;
     const region = {
       x1: Math.min(dragState.current.startX, dragState.current.endX),
       y1: Math.min(dragState.current.startY, dragState.current.endY),
       x2: Math.max(dragState.current.startX, dragState.current.endX),
       y2: Math.max(dragState.current.startY, dragState.current.endY)
     };
-    const startEl = document.elementFromPoint(region.x1, region.y1)
-    const endEl = document.elementFromPoint(region.x2, region.y2)
-    const labelWells = labelDrag(startEl, endEl, plate)
+    const startEl = document.elementFromPoint(region.x1, region.y1);
+    const endEl = document.elementFromPoint(region.x2, region.y2);
+    const labelWells = labelDrag(startEl, endEl, plate);
     if (labelWells.length > 0) {
-      selectorHelper(e, labelWells, selected, setSelected)
-    }
-    else {
-      const canvas = parent.getElementsByTagName('canvas')[0]
+      selectorHelper(e, labelWells, selected, setSelected);
+    } else {
+      const canvas = parent.getElementsByTagName('canvas')[0];
       const rect = canvas.getBoundingClientRect();
       const cx = region.x1 - rect.left;
       const cy = region.y1 - rect.top;
@@ -160,11 +159,11 @@ function PlateReformat() {
     setSrcPlates(result.srcPlates);
     setDstPlates(result.dstPlates);
     setTransferBlocks(result.transferBlocks);
-    setTsfrIdx(result.transferBlocks.length)
+    setTsfrIdx(result.transferBlocks.length);
     setCurSrcPlateId(result.srcPlates[0]?.id ?? null);
     setCurDstPlateId(result.dstPlates[0]?.id ?? null);
-    setSrcPlateSize(scheme.srcPlateSize)
-    setDstPlateSize(scheme.dstPlateSize)
+    setSrcPlateSize(scheme.srcPlateSize);
+    setDstPlateSize(scheme.dstPlateSize);
     setSelectedSrcWells([]);
     setSelectedDstWells([]);
   };
@@ -197,13 +196,13 @@ function PlateReformat() {
   };
 
   const handleAddTransfer = (transferBlock: TransferBlock) => {
-    const newTsfrIdx = tsfrIdx + 1
-    if (!transferBlock.color) { transferBlock.color = generateSingleColor(0.75638, newTsfrIdx) }
-    setTsfrIdx(newTsfrIdx)
+    const newTsfrIdx = tsfrIdx + 1;
+    if (!transferBlock.color) { transferBlock.color = generateSingleColor(0.75638, newTsfrIdx); }
+    setTsfrIdx(newTsfrIdx);
     setTransferBlocks(prev => [...prev, transferBlock]);
     setSelectedDstWells([]);
     setSelectedSrcWells([]);
-  }
+  };
 
   const handleLoadDefaults = () => {
     const existingIds = new Set(schemes.map(s => s.id));
@@ -221,10 +220,10 @@ function PlateReformat() {
   }
 
   return (
-    <Row className='plate-reformat'
+    <Row className="plate-reformat"
       onMouseMove={handleMouseSelectionMove}
       onMouseUp={handleMouseUp}>
-      <Col md={3} className='plate-reformat-sidebar'>
+      <Col md={3} className="plate-reformat-sidebar">
         <ReformatSchemesCard
           schemes={schemes}
           onLoadScheme={handleLoadScheme}
@@ -264,7 +263,7 @@ function PlateReformat() {
           plates={[...srcPlates, ...dstPlates]}
         />
       </Col>
-      <Col md={9} className='noselect' onMouseDown={handleMouseDown}>
+      <Col md={9} className="noselect" onMouseDown={handleMouseDown}>
         {srcDisplayPlate && dstDisplayPlate &&
           <DualCanvasPlateView
             plateBarcodeCache={plateBarcodeCache}

@@ -18,7 +18,7 @@ function generateDestinationPlatesCSV(
     for (const well of plate) {
       if (well && (includeEmptyWells || well.getContents().length > 0)) {
         maxContents = Math.max(maxContents, well.getContents().length);
-        if (well.normalizedResponse !== null) { hasNormData = true }
+        if (well.normalizedResponse !== null) { hasNormData = true; }
       }
     }
   }
@@ -31,7 +31,7 @@ function generateDestinationPlatesCSV(
   }
 
   headers.push('Raw Response');
-  if (hasNormData) headers.push('Normalized Response')
+  if (hasNormData) headers.push('Normalized Response');
 
   if (protocol) {
     for (const field of protocol.metadataFields) {
@@ -52,7 +52,7 @@ function generateDestinationPlatesCSV(
       row.push(plate.barcode);
       row.push(well.id);
 
-      const contents = well.getContents()
+      const contents = well.getContents();
       for (let i = 0; i < maxContents; i++) {
         if (i < contents.length) {
           row.push(contents[i].compoundId || '');
@@ -63,7 +63,7 @@ function generateDestinationPlatesCSV(
         }
       }
       row.push(well.rawResponse?.toString() || '');
-      if (hasNormData) row.push((+well.normalizedResponse?.toFixed(4)!).toString() || '')
+      if (hasNormData) row.push((+well.normalizedResponse?.toFixed(4)!).toString() || '');
 
       if (protocol) {
         for (const field of protocol.metadataFields) {
@@ -124,7 +124,7 @@ export function exportDestinationPlatesCSV(
   includeEmptyWells: boolean = true,
   customFilename?: string
 ): void {
-  const destinationPlates = getDestinationPlates(plates)
+  const destinationPlates = getDestinationPlates(plates);
 
   if (destinationPlates.length === 0) {
     console.warn('No destination plates found for export');
@@ -146,7 +146,7 @@ type ExportOpts = {
   marginY?: number;
   gapX?: number;
   gapY?: number;
-  imageType?: "PNG" | "JPEG";
+  imageType?: 'PNG' | 'JPEG';
 };
 
 export function pdfExport(
@@ -160,10 +160,10 @@ export function pdfExport(
     marginY = 0,
     gapX = 0,
     gapY = 0,
-    imageType = "JPEG"
+    imageType = 'JPEG'
   } = { ...opts };
 
-  const pdf = new jsPDF("portrait", "pt", "letter");
+  const pdf = new jsPDF('portrait', 'pt', 'letter');
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
 
@@ -175,7 +175,7 @@ export function pdfExport(
   const usableWidth = pdfWidth - 2 * marginX - (perRow - 1) * gapX;
   const cellWidthPt = usableWidth / perRow;
 
-  const cards = Array.from(curvesNode.querySelectorAll(".card")) as HTMLElement[];
+  const cards = Array.from(curvesNode.querySelectorAll('.card')) as HTMLElement[];
   if (!cards.length) return pdf;
 
   const containerRect = curvesNode.getBoundingClientRect();
@@ -197,11 +197,11 @@ export function pdfExport(
     const cardWidth = cardRect.width * scaleX;
     const cardHeight = cardRect.height * scaleY;
 
-    const tile = document.createElement("canvas");
+    const tile = document.createElement('canvas');
     tile.width = cardWidth;
     tile.height = cardHeight;
-    const tileCtx = tile.getContext("2d")!;
-    
+    const tileCtx = tile.getContext('2d')!;
+
     tileCtx.drawImage(
       bigCanvas,
       canvasX, canvasY, cardWidth, cardHeight,

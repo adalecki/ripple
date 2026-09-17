@@ -54,7 +54,7 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
   const [selectedExportIds, setSelectedExportIds] = useState<Set<number>>(new Set());
   const [selectAllExport, setSelectAllExport] = useState(false);
 
-  const existingNames = schemes.flatMap(s => s.name)
+  const existingNames = schemes.flatMap(s => s.name);
 
   useEffect(() => {
     if (mode === 'export') {

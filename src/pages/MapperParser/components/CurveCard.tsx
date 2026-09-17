@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Col } from 'react-bootstrap';
 import PlotFigure from './PlotFigure';
-import * as Plot from "@observablehq/plot";
+import * as Plot from '@observablehq/plot';
 import { curveFit } from '../utils/curveFit';
 import { CurveData, FittedPoint, fourPL, formatEC50, AggregatedPoint, createLogTicks } from '../utils/resultsUtils';
 
@@ -44,7 +44,7 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
     }
   } catch (error) {
     console.warn('Curve fitting failed for treatment:', curveData.treatmentId, error);
-    fittingError = "Curve fitting failed";
+    fittingError = 'Curve fitting failed';
     dataPoints = aggregatedData.map(d => ({ concentration: d.concentration, mean: d.mean }));
   }
 
@@ -52,8 +52,8 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
   const xTicks = createLogTicks(Math.min(...x), Math.max(...x), gridSize);
   return (
     <Col key={treatmentKey}>
-      <Card className='page-card'>
-        <Card.Header className='bg-light'>
+      <Card className="page-card">
+        <Card.Header className="bg-light">
           <div className="d-flex justify-content-between align-items-center">
             <strong><span>{curveData.treatmentId}</span></strong>
             <div className="text-end">
@@ -73,18 +73,18 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
               height: Math.min(curveWidth*0.75,400),
               marginLeft: 70,
               style: {
-                fontSize: "12px",
+                fontSize: '12px',
                 overflow: 'visible'
               },
               y: {
                 domain: [yLo, yHi],
-                label: "Response",
-                axis: "left"
+                label: 'Response',
+                axis: 'left'
               },
               x: {
-                type: "log",
+                type: 'log',
                 domain: [Math.min(...x) * 0.95, Math.max(...x) * 1.05],
-                label: "Concentration (µM)",
+                label: 'Concentration (µM)',
                 ticks: xTicks,
                 tickFormat: (d: number) => {
                   if (d >= 1000) return `${(d / 1000).toFixed(0)}k`;
@@ -93,24 +93,24 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
                   if (d >= 0.01) return d.toFixed(2);
                   return d.toExponential(1);
                 },
-                axis: "bottom"
+                axis: 'bottom'
               },
               marks: [
-                Plot.ruleY([yLo], { stroke: "#000", strokeWidth: 1 }),
-                Plot.ruleX([Math.min(...x) * 0.95], { stroke: "#000", strokeWidth: 1 }),
+                Plot.ruleY([yLo], { stroke: '#000', strokeWidth: 1 }),
+                Plot.ruleX([Math.min(...x) * 0.95], { stroke: '#000', strokeWidth: 1 }),
 
                 Plot.dot(aggregatedData, {
-                  x: "concentration",
-                  y: "mean",
-                  fill: "#2563eb",
+                  x: 'concentration',
+                  y: 'mean',
+                  fill: '#2563eb',
                   r: Math.min(6, (8 - gridSize)),
-                  stroke: "#ffffff",
+                  stroke: '#ffffff',
                   strokeWidth: 2,
                   channels: {
-                    concentration: "concentration",
-                    mean: "mean",
-                    stdDev: "stdDev",
-                    count: "count",
+                    concentration: 'concentration',
+                    mean: 'mean',
+                    stdDev: 'stdDev',
+                    count: 'count',
                     wells: (d: AggregatedPoint) => d.wellIds.join(', ')
                   },
                   tip: {
@@ -127,19 +127,19 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
                 }),
 
                 Plot.ruleX(aggregatedData, {
-                  x: "concentration",
+                  x: 'concentration',
                   y1: (d: AggregatedPoint) => Math.max(yLo, d.mean - d.stdDev),
                   y2: (d: AggregatedPoint) => Math.min(yHi, d.mean + d.stdDev),
-                  stroke: "#2563eb",
+                  stroke: '#2563eb',
                   strokeWidth: 2,
                   opacity: 0.6
                 }),
 
                 ...(fittingError ? [] : [
                   Plot.line(dataPoints, {
-                    x: "concentration",
-                    y: "mean",
-                    stroke: "#dc2626",
+                    x: 'concentration',
+                    y: 'mean',
+                    stroke: '#dc2626',
                     strokeWidth: 2.5,
                     opacity: 0.9
                   })
@@ -148,14 +148,14 @@ const CurveCard: React.FC<CurveCardProps> = ({ treatmentKey, curveData, yLo, yHi
             }}
           />
           {!fittingError && fittedParams.length >= 4 && showFitParams === 'true' && (
-            <div className='text-muted small'>
+            <div className="text-muted small">
               <strong>Fit Parameters:</strong> Top: {fittedParams[3].toFixed(1)}, Bottom: {fittedParams[0].toFixed(1)}, Hill: {fittedParams[1].toFixed(2)}
             </div>
           )}
         </Card.Body>
       </Card>
     </Col>
-  )
+  );
 };
 
 export default CurveCard;

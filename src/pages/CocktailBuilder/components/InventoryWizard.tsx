@@ -83,11 +83,11 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
       const well = newPlate.getWell(wellId);
       if (!well) continue;
       well.clearContents();
-      well.addContent({ 
-        compoundId: content, 
-        concentration: null, 
+      well.addContent({
+        compoundId: content,
+        concentration: null,
         volume: form.volume as number * 1000,
-        patternName: content 
+        patternName: content
       },
         { name: form.plateType, fraction: 1 }
       );

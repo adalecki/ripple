@@ -1,4 +1,4 @@
-import { PlateSize } from "../../../classes/PlateClass";
+import { PlateSize } from '../../../classes/PlateClass';
 
 export interface CompoundLocation {
   barcode: string;

@@ -34,7 +34,7 @@ const DilutionStocksInput: React.FC<DilutionStocksInputProps> = ({
 
   return (
     <Card>
-      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+      <Card.Header className="d-flex justify-content-between align-items-center p-1">
         <h5 className="mb-0">Stock Concentrations</h5>
         <button
           className="btn btn-sm btn-outline-primary"
@@ -43,9 +43,9 @@ const DilutionStocksInput: React.FC<DilutionStocksInputProps> = ({
           +
         </button>
       </Card.Header>
-      <Card.Body className='p-1'>
+      <Card.Body className="p-1">
         <EditableValueTable
-          tableId='stocks'
+          tableId="stocks"
           values={tableValues}
           onChange={handleValuesChange}
           showLabels={true}

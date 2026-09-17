@@ -1,4 +1,4 @@
-import * as Plot from "@observablehq/plot";
+import * as Plot from '@observablehq/plot';
 import React, { useRef, useEffect } from 'react';
 
 interface PlotFigureProps {
@@ -10,10 +10,10 @@ const PlotFigure: React.FC<PlotFigureProps> = ({ options }) => {
 
   useEffect(() => {
     if (options == null || !containerRef.current) return;
-    
+
     const plot = Plot.plot(options);
     containerRef.current.append(plot);
-    
+
     return () => plot.remove();
   }, [options]);
 

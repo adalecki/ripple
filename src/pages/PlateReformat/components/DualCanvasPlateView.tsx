@@ -1,10 +1,10 @@
-import React from "react";
-import { Row, Col, Container } from "react-bootstrap";
-import PlateViewCanvas from "../../../components/PlateViewCanvas";
-import { Plate } from "../../../classes/PlateClass";
-import { buildWellTransferMap, formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, type TransferBlock } from "../../../utils/plateUtils";
-import { getPlateColorAndBorders } from "../utils/reformatUtils";
-import { selectorHelper } from "../../../utils/designUtils";
+import React from 'react';
+import { Row, Col, Container } from 'react-bootstrap';
+import PlateViewCanvas from '../../../components/PlateViewCanvas';
+import { Plate } from '../../../classes/PlateClass';
+import { buildWellTransferMap, formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, numberToLetters, type TransferBlock } from '../../../utils/plateUtils';
+import { getPlateColorAndBorders } from '../utils/reformatUtils';
+import { selectorHelper } from '../../../utils/designUtils';
 
 interface DualPlateViewProps {
   plateBarcodeCache: Map<number,string>
@@ -29,8 +29,8 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
   selectedDstWells,
   setSelectedDstWells,
   selectionRef,
-  sourceLabel = "Source Plate",
-  destLabel = "Destination Plate",
+  sourceLabel = 'Source Plate',
+  destLabel = 'Destination Plate',
   transferBlocks = []
 }) => {
 
@@ -39,19 +39,19 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
     const target = e.target as HTMLDivElement;
     const targetLabel = target.innerText;
 
-    const parentPlate = target.closest("[data-view]");
+    const parentPlate = target.closest('[data-view]');
     if (!parentPlate) return;
 
-    const selectorQuery = parentPlate.getAttribute("data-view")?.split("-")[1];
+    const selectorQuery = parentPlate.getAttribute('data-view')?.split('-')[1];
     if (!selectorQuery) return;
 
-    const plate = selectorQuery === "source" ? sourcePlate : destPlate;
-    const selected = selectorQuery === "source" ? selectedSrcWells : selectedDstWells;
-    const setSelected = selectorQuery === "source" ? setSelectedSrcWells : setSelectedDstWells;
+    const plate = selectorQuery === 'source' ? sourcePlate : destPlate;
+    const selected = selectorQuery === 'source' ? selectedSrcWells : selectedDstWells;
+    const setSelected = selectorQuery === 'source' ? setSelectedSrcWells : setSelectedDstWells;
 
     const newSelected: string[] = [];
 
-    if (target.className.includes("all-wells-container")) {
+    if (target.className.includes('all-wells-container')) {
       for (let r = 0; r < plate.rows; r++) {
         for (let c = 0; c < plate.columns; c++) {
           newSelected.push(getWellIdFromCoords(r, c));
@@ -75,20 +75,20 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
         if (shouldSelect) newSelected.push(wellId);
       }
     }
-    selectorHelper(e, newSelected, selected, setSelected)
+    selectorHelper(e, newSelected, selected, setSelected);
   };
 
-  const { colorConfig: sourceColorConfig, borderMap: sourceBorderMap } = getPlateColorAndBorders(sourcePlate, transferBlocks, "source");
-  const sourceTransferMap = buildWellTransferMap(sourcePlate,transferBlocks,'source', plateBarcodeCache)
-  const { colorConfig: destColorConfig, borderMap: destBorderMap } = getPlateColorAndBorders(destPlate, transferBlocks, "destination");
-  const destTransferMap = buildWellTransferMap(destPlate,transferBlocks,'destination', plateBarcodeCache)
+  const { colorConfig: sourceColorConfig, borderMap: sourceBorderMap } = getPlateColorAndBorders(sourcePlate, transferBlocks, 'source');
+  const sourceTransferMap = buildWellTransferMap(sourcePlate,transferBlocks,'source', plateBarcodeCache);
+  const { colorConfig: destColorConfig, borderMap: destBorderMap } = getPlateColorAndBorders(destPlate, transferBlocks, 'destination');
+  const destTransferMap = buildWellTransferMap(destPlate,transferBlocks,'destination', plateBarcodeCache);
 
   return (
     <Container fluid>
       <Row>
         <Col md={6}>
           <h5 className="text-center mb-3">
-            {sourceLabel} {sourcePlate && ` (${sourcePlate.barcode || "No Barcode"})`}
+            {sourceLabel} {sourcePlate && ` (${sourcePlate.barcode || 'No Barcode'})`}
           </h5>
 
           <PlateViewCanvas
@@ -111,7 +111,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
         <Col md={6}>
 
           <h5 className="text-center mb-3">
-            {destLabel} {destPlate && ` (${destPlate.barcode || "No Barcode"})`}
+            {destLabel} {destPlate && ` (${destPlate.barcode || 'No Barcode'})`}
           </h5>
 
           <PlateViewCanvas
@@ -131,7 +131,7 @@ const DualCanvasPlateView: React.FC<DualPlateViewProps> = ({
           )}
         </Col>
       </Row>
-      <div ref={selectionRef} style={{ position: "absolute", pointerEvents: "none", display: "none" }} />
+      <div ref={selectionRef} style={{ position: 'absolute', pointerEvents: 'none', display: 'none' }} />
     </Container>
 
   );

@@ -27,8 +27,8 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({
   showFitParams,
   gridSize
 }) => {
-  const [curvesNode, setCurvesNode] = useState<HTMLDivElement | null>(null)
-  const [dimensions, setDimensions] = useState({ width: 1100, height: 1100 })
+  const [curvesNode, setCurvesNode] = useState<HTMLDivElement | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 1100, height: 1100 });
   const [isExporting, setIsExporting] = useState(false);
 
   const curvesRef = useCallback((node: HTMLDivElement) => {
@@ -55,14 +55,14 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({
         resizeObserver.disconnect();
       };
     }
-  }, [curvesNode])
+  }, [curvesNode]);
 
 const exportToPDF = async () => {
   if (!curvesNode || curveData.length === 0) return;
   setIsExporting(true);
   try {
     const clone = curvesNode.cloneNode(true) as HTMLElement;
-    
+
     clone.style.position = 'absolute';
     clone.style.top = '-9999px';
     clone.style.left = '-9999px';
@@ -70,9 +70,9 @@ const exportToPDF = async () => {
     clone.style.maxHeight = 'none';
     clone.style.height = 'auto';
     clone.style.width = curvesNode.offsetWidth + 'px';
-    
+
     document.body.appendChild(clone);
-    
+
     clone.offsetHeight;
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -94,7 +94,7 @@ const exportToPDF = async () => {
       marginY: 8,
       gapX: 4,
       gapY: 4,
-      imageType: "JPEG",
+      imageType: 'JPEG',
     });
 
     const timestamp = new Date().toISOString().slice(0, 10);
@@ -140,12 +140,12 @@ const exportToPDF = async () => {
 
   return (
     <Card>
-      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+      <Card.Header className="d-flex justify-content-between align-items-center p-1">
         <h5 className="mb-0">Dose-Response Curves</h5>
         <div className="d-flex align-items-center gap-2">
           <span className="text-muted">
             {curveData.length} curve{curveData.length !== 1 ? 's' : ''} found
-            {protocol && protocol.dataProcessing.controls.length > 0 && (" (controls excluded)")}
+            {protocol && protocol.dataProcessing.controls.length > 0 && (' (controls excluded)')}
           </span>
           {curveData.length > 0 && (
             <Button
@@ -160,11 +160,11 @@ const exportToPDF = async () => {
           )}
         </div>
       </Card.Header>
-      <Card.Body className='overflow-auto' style={{ scrollbarGutter: 'stable' }}>
+      <Card.Body className="overflow-auto" style={{ scrollbarGutter: 'stable' }}>
         {!plates[0] || !hasResponseData(plates[0]) ?
           <div>
             <h5>No plate data</h5>
-            <p className='text-muted'>Please upload and parse plates to view response data</p>
+            <p className="text-muted">Please upload and parse plates to view response data</p>
           </div>
           :
           <Row md={gridSize} className="g-2" ref={curvesRef}>

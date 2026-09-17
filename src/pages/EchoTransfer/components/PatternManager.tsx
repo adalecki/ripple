@@ -5,7 +5,7 @@ import { PatternsContext } from '../../../contexts/Context';
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
 
-import '../../../css/PatternManager.css'
+import '../../../css/PatternManager.css';
 import { FormField } from '../../../components/FormField';
 
 interface PatternManagerProps {
@@ -13,28 +13,28 @@ interface PatternManagerProps {
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}) => {
+const PatternManager: React.FC<PatternManagerProps> = ({ isEditing, setIsEditing }) => {
   const { patterns, setPatterns, selectedPatternId, setSelectedPatternId } = useContext(PatternsContext);
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
-  const [isNewPattern, setIsNewPattern] = useState<boolean>(false)
+  const [isNewPattern, setIsNewPattern] = useState<boolean>(false);
 
   useEffect(() => {
     const selectedPattern = patterns.find(p => p.id === selectedPatternId);
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
     setIsPickingColor(false);
     if (!isNewPattern) {
-      setIsEditing(false)
+      setIsEditing(false);
     }
-    setIsNewPattern(false)
+    setIsNewPattern(false);
   }, [selectedPatternId, patterns]);
 
   const handleAddPattern = () => {
     let iter = patterns.length + 1;
     while (patterns.find(p => p.name == `Pattern ${iter}`)) {
-      iter += 1
+      iter += 1;
     }
-    const name = `Pattern ${iter}`
+    const name = `Pattern ${iter}`;
     const newPattern = new Pattern({
       name: name,
       type: 'Treatment',
@@ -43,24 +43,24 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}
       concentrations: [null],
       locations: []
     });
-    setIsPickingColor(false)
+    setIsPickingColor(false);
     setPatterns([...patterns, newPattern]);
     setSelectedPatternId(newPattern.id);
-    setIsNewPattern(true)
+    setIsNewPattern(true);
     setIsEditing(true);
   };
 
   const handleEditPattern = () => {
     setIsEditing(true);
     if (editingPattern && editingPattern.concentrations.length == 0) {
-      setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }))
+      setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }));
     }
   };
 
   const handleSavePattern = () => {
     if (editingPattern) {
-      const concentrations = editingPattern.concentrations.filter(c => c != null)
-      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations })
+      const concentrations = editingPattern.concentrations.filter(c => c != null);
+      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations });
       setPatterns(patterns.map(p => p.id === savePattern.id ? savePattern : p));
       setIsEditing(false);
       setIsPickingColor(false);
@@ -81,7 +81,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}
       } else if (fieldName === 'type' && editingPattern.type === 'Unused') {
         setEditingPattern(new Pattern({
           ...editingPattern,
-          [fieldName]: value as "Treatment" | "Control" | "Solvent" | "Unused",
+          [fieldName]: value as 'Treatment' | 'Control' | 'Solvent' | 'Unused',
           concentrations: [null]
         }));
       } else {
@@ -138,65 +138,65 @@ const PatternManager: React.FC<PatternManagerProps> = ({isEditing, setIsEditing}
           </div>
           <Form>
             <FormField
-              key='pattern-name'
-              id='pattern-name'
-              name='name'
-              type='text'
-              label='Name'
+              key="pattern-name"
+              id="pattern-name"
+              name="name"
+              type="text"
+              label="Name"
               value={editingPattern.name}
-              onChange={(value) => handleFieldChange("name", value)}
+              onChange={(value) => handleFieldChange('name', value)}
               required={true}
               disabled={!isEditing}
             />
             <FormField
-              key='pattern-type'
-              id='pattern-type'
-              name='type'
-              type='select'
-              label='Type'
+              key="pattern-type"
+              id="pattern-type"
+              name="type"
+              type="select"
+              label="Type"
               value={editingPattern.type}
-              onChange={(value) => handleFieldChange("type", value)}
+              onChange={(value) => handleFieldChange('type', value)}
               required={true}
               disabled={!isEditing}
               options={[
-                { label: "Control", value: "Control" },
-                { label: "Treatment", value: "Treatment" },
-                { label: "Unused", value: "Unused" }
+                { label: 'Control', value: 'Control' },
+                { label: 'Treatment', value: 'Treatment' },
+                { label: 'Unused', value: 'Unused' }
               ]}
             />
             {editingPattern.type !== 'Unused' && (
               <>
                 <FormField
-                  key='pattern-replicates'
-                  id='pattern-replicates'
-                  name='replicates'
-                  type='number'
-                  label='Replicates'
+                  key="pattern-replicates"
+                  id="pattern-replicates"
+                  name="replicates"
+                  type="number"
+                  label="Replicates"
                   value={editingPattern.replicates}
-                  onChange={(value) => handleFieldChange("replicates", value)}
+                  onChange={(value) => handleFieldChange('replicates', value)}
                   required={true}
                   disabled={!isEditing}
                   step={1}
                 />
                 <FormField
-                  key='pattern-direction'
-                  id='pattern-direction'
-                  name='direction'
-                  type='select'
-                  label='Direction'
+                  key="pattern-direction"
+                  id="pattern-direction"
+                  name="direction"
+                  type="select"
+                  label="Direction"
                   value={editingPattern.direction[0]}
-                  onChange={(value) => handleFieldChange("direction", [value])}
+                  onChange={(value) => handleFieldChange('direction', [value])}
                   required={true}
                   disabled={!isEditing}
                   options={[
-                    { label: "Left to Right", value: "LR" },
-                    { label: "Right to Left", value: "RL" },
-                    { label: "Top to Bottom", value: "TB" },
-                    { label: "Bottom to Top", value: "BT" }
+                    { label: 'Left to Right', value: 'LR' },
+                    { label: 'Right to Left', value: 'RL' },
+                    { label: 'Top to Bottom', value: 'TB' },
+                    { label: 'Bottom to Top', value: 'BT' }
                   ]}
                 />
-                <div className='form-field'>
-                  <div className='form-label'>Color</div>
+                <div className="form-field">
+                  <div className="form-label">Color</div>
                   <div
                     className="color-preview form-field-input"
                     style={{ backgroundColor: editingPattern.color }}

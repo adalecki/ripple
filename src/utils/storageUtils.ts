@@ -1,4 +1,4 @@
-import { CHANGELOG } from "../config/changelog";
+import { CHANGELOG } from '../config/changelog';
 
 export const APP_VERSION = CHANGELOG[0].version;
 
@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
   preferences: 'ripple:preferences',
   protocols: 'ripple:protocols',
   schemes: 'ripple:schemes'
-}
+};
 
 export interface RippleMeta {
   version: string;

@@ -56,7 +56,7 @@ function createMockWorksheet(headers: string[], data: any[]): WorkSheet {
     });
   });
 
-  ws['!ref'] = "A1:" + String.fromCharCode(65 + headers.length - 1) + (data.length + 1).toString()
+  ws['!ref'] = 'A1:' + String.fromCharCode(65 + headers.length - 1) + (data.length + 1).toString();
 
   return ws;
 }
@@ -66,7 +66,7 @@ const validHeaders = {
   Layout: ['Pattern', 'Well Block'],
   Compounds: ['Source Barcode', 'Well ID', 'Concentration (µM)', 'Compound ID', 'Volume (µL)', 'Pattern'],
   Barcodes: ['Intermediate Plate Barcodes', 'Destination Plate Barcodes']
-}
+};
 
 // Base valid data structures
 const validPatternsData = [
@@ -330,7 +330,7 @@ describe('echoInputValidation - Patterns Tab Validation', () => {
         'Volume (µL)': 50,
         'Pattern': 'Combo1'
       }
-    ]
+    ];
     wb.Sheets.Patterns = createMockWorksheet(
       validHeaders.Patterns,
       combinationPattern

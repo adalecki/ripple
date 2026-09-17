@@ -8,7 +8,7 @@ import DilutionStocksInput from './components/DilutionStocks';
 import DilutionPointsInput from './components/DilutionPoints';
 import DilutionGraph from './components/DilutionGraph';
 
-import './css/DilutionDesigner.css'
+import './css/DilutionDesigner.css';
 
 const DilutionDesigner: React.FC = () => {
   const { preferences } = usePreferences();
@@ -27,10 +27,10 @@ const DilutionDesigner: React.FC = () => {
 
   useEffect(() => {
     if (preferences.maxTransferVolume != settings.maxTransferVolume) {
-      handleSettingChange('maxTransferVolume', preferences.maxTransferVolume)
+      handleSettingChange('maxTransferVolume', preferences.maxTransferVolume);
     }
     if (preferences.dropletSize != settings.dropletSize) {
-      handleSettingChange('dropletSize', preferences.dropletSize)
+      handleSettingChange('dropletSize', preferences.dropletSize);
     }
   }, [preferences]);
 

@@ -23,11 +23,11 @@ const TransferBox: React.FC<TransferBoxProps> = ({
   selectedDstWells,
   onAddTransfer,
 }) => {
-  const [volume, setVolume] = useState<string>('100')
-  const [treatIdentical, setTreatIdentical] = useState(false)
-  const sourceBlock = formatWellBlock(selectedSrcWells)
-  const destinationBlock = formatWellBlock(selectedDstWells)
-  const tileScheme = getTileScheme(sourceBlock, destinationBlock)
+  const [volume, setVolume] = useState<string>('100');
+  const [treatIdentical, setTreatIdentical] = useState(false);
+  const sourceBlock = formatWellBlock(selectedSrcWells);
+  const destinationBlock = formatWellBlock(selectedDstWells);
+  const tileScheme = getTileScheme(sourceBlock, destinationBlock);
 
   const canAdd =
     (
@@ -44,7 +44,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
 
   const handleAddTransfer = () => {
     if (!canAdd || !sourcePlate || !destPlate) return;
-    const transferBlock = calculateTransferBlock(sourcePlate,destPlate,sourceBlock,destinationBlock,parseFloat(volume),treatIdentical,selectedSrcWells,selectedDstWells)
+    const transferBlock = calculateTransferBlock(sourcePlate,destPlate,sourceBlock,destinationBlock,parseFloat(volume),treatIdentical,selectedSrcWells,selectedDstWells);
     onAddTransfer(transferBlock);
   };
 
@@ -63,7 +63,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
           unit={'nL'}
           step={2.5}
           min={0}
-          className='default-label-text border-bottom pb-2 mb-2'
+          className="default-label-text border-bottom pb-2 mb-2"
         />
         <span className="d-flex">
           <FormField
@@ -75,7 +75,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
             value={treatIdentical}
             onChange={(value) => setTreatIdentical(value)}
             required={true}
-            className='default-label-text'
+            className="default-label-text"
           />
           <InfoTooltip text="Source wells will be depleted evenly to apply to all selected destination wells. Source layout isn't preserved on destination." />
         </span>

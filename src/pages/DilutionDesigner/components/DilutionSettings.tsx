@@ -17,11 +17,11 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
 }) => {
   return (
     <Card>
-      <Card.Header className='d-flex justify-content-between align-items-center p-1'>
+      <Card.Header className="d-flex justify-content-between align-items-center p-1">
         <h5 className="mb-0">Transfer Settings</h5>
-        <InfoTooltip text='To change transfer volume or droplet size, change your preferences (gear in the top right)' />
+        <InfoTooltip text="To change transfer volume or droplet size, change your preferences (gear in the top right)" />
       </Card.Header>
-      <Card.Body className='p-1'>
+      <Card.Body className="p-1">
         <FormField
           id="dmsoLimit"
           name="dmsoLimit"
@@ -32,7 +32,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           step={0.001}
           error={errors.dmsoLimit}
-          className='mb-2'
+          className="mb-2"
         />
 
         <FormField
@@ -45,7 +45,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           unit="µL"
           error={errors.assayVolume}
-          className='mb-2'
+          className="mb-2"
         />
 
         <FormField
@@ -58,7 +58,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           required={true}
           step={0.05}
           error={errors.allowableError}
-          className='mb-2'
+          className="mb-2"
         />
 
         <FormField
@@ -69,7 +69,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           value={settings.useIntConcs}
           onChange={(value) => onSettingChange('useIntConcs', value)}
           error={errors.useIntConcs}
-          className='mb-2'
+          className="mb-2"
         />
 
         <FormField
@@ -83,7 +83,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           unit="µL"
           error={errors.backfillVolume}
           disabled={!settings.useIntConcs}
-          className='mb-2'
+          className="mb-2"
         />
 
         <FormField
@@ -97,7 +97,7 @@ export const DilutionSettingsInput: React.FC<DilutionSettingsInputProps> = ({
           step={1}
           error={errors.numIntConcs}
           disabled={!settings.useIntConcs}
-          className='mb-2'
+          className="mb-2"
         />
       </Card.Body>
     </Card>

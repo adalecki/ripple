@@ -23,7 +23,7 @@ const MobileCheck = ({ children }: {children: React.ReactNode}) => {
         </Col>
       </Row>
     </Container>
-  ) : children; 
+  ) : children;
 };
 
 export default MobileCheck;

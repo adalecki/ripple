@@ -10,7 +10,7 @@ const CHANGELOG_PATH = '/changelog';
 
 function badgeVariant(entry: ChangeEntry): string {
   switch (entry.type) {
-    case 'UI': return 'success'
+    case 'UI': return 'success';
     case 'Backend': return 'secondary';
   }
 }
@@ -34,7 +34,7 @@ const Changelog: React.FC = () => {
   }, []);
 
   return (
-    <div className='changelog-page'>
+    <div className="changelog-page">
       <Container className="mt-5 d-flex flex-column" style={{ scrollbarGutter: 'stable', minHeight: 0 }}>
         <Row className="justify-content-center d-flex">
           <Col md={8}>

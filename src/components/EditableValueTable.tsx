@@ -172,7 +172,7 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
               </td>
               {showDelete && (
                 <td>
-                  <button 
+                  <button
                     onClick={() => handleDelete(item.id)}
                     className={`delete-btn ${disabled ? 'disabled' : ''}`}
                     disabled={disabled}
