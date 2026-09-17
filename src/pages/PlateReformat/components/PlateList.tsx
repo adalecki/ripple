@@ -102,7 +102,7 @@ const PlateList: React.FC<PlateListProps> = ({
                   e.stopPropagation();
                   deletePlate(plate.id);
                 }}
-                disabled={!!(transferBlocks.find(block => (type === 'src' ? block.sourcePlateId == plate.id : block.destinationPlateId == plate.id)))}
+                disabled={!!(transferBlocks.find(block => (type === 'src' ? block.sourcePlateId === plate.id : block.destinationPlateId === plate.id)))}
                 style={{ padding: '0.25rem 0.5rem' }}
               >
                 x
@@ -117,7 +117,7 @@ const PlateList: React.FC<PlateListProps> = ({
   const addSourcePlate = () => {
     const newPlate = new Plate({ plateSize: srcPlateSize, plateRole: 'source' });
     let inc = srcPlates.length + 1;
-    while (srcPlates.find((p) => p.barcode == 'src' + inc)) {
+    while (srcPlates.find((p) => p.barcode === 'src' + inc)) {
       inc += 1;
     }
     newPlate.barcode = 'src' + inc;
@@ -128,7 +128,7 @@ const PlateList: React.FC<PlateListProps> = ({
   const addDestPlate = () => {
     const newPlate = new Plate({ plateSize: dstPlateSize, plateRole: 'destination' });
     let inc = dstPlates.length + 1;
-    while (dstPlates.find((p) => p.barcode == 'dst' + inc)) {
+    while (dstPlates.find((p) => p.barcode === 'dst' + inc)) {
       inc += 1;
     }
     newPlate.barcode = 'dst' + inc;
@@ -217,8 +217,8 @@ const PlateList: React.FC<PlateListProps> = ({
       .filter(line => line !== '');
     if (pasteData.length < 1) return;
 
-    if (pasteData.length == 1) {
-      if (plates.some(p => p.barcode == pasteData[0])) {
+    if (pasteData.length === 1) {
+      if (plates.some(p => p.barcode === pasteData[0])) {
         e.preventDefault();
         duplicateBarcodes.push(pasteData[0]);
       } else {
@@ -233,7 +233,7 @@ const PlateList: React.FC<PlateListProps> = ({
 
       pasteData.forEach((barcode, index) => {
         const targetIndex = currentIndex + index;
-        const reusedBarcode = plates.some(p => p.barcode == barcode);
+        const reusedBarcode = plates.some(p => p.barcode === barcode);
         if (reusedBarcode) {
           duplicateBarcodes.push(barcode);
         } else {
@@ -252,7 +252,7 @@ const PlateList: React.FC<PlateListProps> = ({
   };
 
   const handleBlur = (barcode: string, plates: Plate[]) => {
-    if (plates.filter(p => p.barcode == barcode).length > 1) {
+    if (plates.filter(p => p.barcode === barcode).length > 1) {
       setReusedBarcodes([barcode]);
       setAlertMessage('already in plate list, change to avoid unexpected behavior');
     }

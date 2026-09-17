@@ -105,7 +105,7 @@ export function getWellIndex(wellId: string, plate: Plate): number | null {
 export function currentPlate(plates: Plate[], curPlateId: PlatesContextType['curPlateId']) {
   let plate = null;
   if (curPlateId != null) {
-    plate = plates.find((plate) => plate.id == curPlateId) || null;
+    plate = plates.find((plate) => plate.id === curPlateId) || null;
   }
   return plate;
 }
@@ -115,7 +115,7 @@ export function clonePlate(plate: Plate) {
 }
 
 export function modifyPlate(clonePlate: Plate, plates: Plate[], setPlates: PlatesContextType['setPlates'], curPlateId: PlatesContextType['curPlateId']) {
-  const plateIdx = plates.findIndex((plate) => plate.id == curPlateId);
+  const plateIdx = plates.findIndex((plate) => plate.id === curPlateId);
   const newPlates = [...plates];
   newPlates[plateIdx] = clonePlate;
   setPlates(newPlates);
@@ -395,7 +395,7 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     return [formatWellBlock(wells)];
   }
 
-  if (pattern.type == 'Recipe') {
+  if (pattern.type === 'Recipe') {
     const blocks: string[] = [];
     for (let i = 0; i + pattern.replicates <= wells.length; i += pattern.replicates) {
       blocks.push(formatWellBlock(wells.slice(i, i + pattern.replicates)));

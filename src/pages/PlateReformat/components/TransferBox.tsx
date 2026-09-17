@@ -31,15 +31,15 @@ const TransferBox: React.FC<TransferBoxProps> = ({
 
   const canAdd =
     (
-      sourcePlate !== null &&
-      destPlate !== null &&
+      sourcePlate != null &&
+      destPlate != null &&
       selectedSrcWells.length > 0 &&
       (!treatIdentical ? (selectedDstWells.length >= selectedSrcWells.length &&
-        (selectedDstWells.length == selectedSrcWells.length || tileScheme.canTile)) :
+        (selectedDstWells.length === selectedSrcWells.length || tileScheme.canTile)) :
         selectedDstWells.length > 0) &&
       !isNaN(parseFloat(volume)) &&
       parseFloat(volume) > 0 &&
-      parseFloat(volume) % 2.5 == 0
+      parseFloat(volume) % 2.5 === 0
     );
 
   const handleAddTransfer = () => {
@@ -104,7 +104,7 @@ const TransferBox: React.FC<TransferBoxProps> = ({
               {selectedSrcWells.length > 0 || selectedDstWells.length > 0 ? (
                 <>
                   {selectedSrcWells.length} <MoveRight size={16} strokeWidth={2} /> {selectedDstWells.length} wells
-                  {selectedDstWells.length % selectedSrcWells.length != 0 &&
+                  {selectedDstWells.length % selectedSrcWells.length !== 0 &&
                    !treatIdentical && (
                     <span className="text-danger ms-1">(size mismatch)</span>
                   )}

@@ -116,7 +116,7 @@ export function analyzeDilutionPatterns(patternRows: any[]) {
     const concentrations: number[] = [];
     for (let i = 1; i <= 20; i++) {
       const concKey = `Conc${i}`;
-      if (row[concKey] !== undefined && row[concKey] !== null) {
+      if (row[concKey] !== undefined && row[concKey] != null) {
         concentrations.push(parseFloat(row[concKey]));
       }
     }
@@ -182,7 +182,7 @@ function getPriority(sourceRole: string, destRole: string): number {
 }
 
 function getRole(barcode: string, plateArr: Plate[]) {
-  const plate = plateArr.find((plt) => plt.barcode == barcode);
+  const plate = plateArr.find((plt) => plt.barcode === barcode);
   if (plate) return plate.plateRole;
   return 'Unknown';
 }
@@ -462,11 +462,11 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
     for (const [_, compoundGroup] of patternMap) {
       for (const location of compoundGroup.locations) {
         const srcBarcode = location.barcode;
-        let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
+        let srcPlate = srcPlates.find((plate) => plate.barcode === srcBarcode);
         if (!srcPlate) {
           let deadVolume: number | undefined = undefined;
           if (existingSrcPlates && existingSrcPlates.length > 0) {
-            const existingPlate = existingSrcPlates.find(p => p.barcode == srcBarcode);
+            const existingPlate = existingSrcPlates.find(p => p.barcode === srcBarcode);
             if (existingPlate) {
               deadVolume = existingPlate.deadVolume;
             }
@@ -479,7 +479,7 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
         //only support DMSO as solvent, though could eventually move to
         if (well && well.getContents().length === 0) {
           const pattern = dilutionPatterns.get(patternNameCombined); //only works if solvent pattern name is solo without another name included
-          if (pattern && pattern.type == 'Solvent') {
+          if (pattern && pattern.type === 'Solvent') {
             well.addSolvent({ name: pattern.patternName, volume: location.volume });
           } else {
             well.addContent(
@@ -502,7 +502,7 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
 
     if (isDMSOWithEmptyPattern) {
       const srcBarcode = compound['Source Barcode'];
-      let srcPlate = srcPlates.find((plate) => plate.barcode == srcBarcode);
+      let srcPlate = srcPlates.find((plate) => plate.barcode === srcBarcode);
       if (!srcPlate) {
         srcPlate = new Plate({ barcode: srcBarcode, plateSize: plateSize, plateRole: 'source' });
         srcPlates.push(srcPlate);
@@ -519,8 +519,8 @@ export function prepareSrcPlates(srcCompoundInventory: CompoundInventory, plateS
 }
 
 export function executeAndRecordTransfer(transferStep: TransferStepExport, transferInfo: TransferInfo, sourcePlates: Plate[], intermediatePlates: Plate[], destinationPlates: Plate[]): boolean {
-  const srcPlate = [...sourcePlates, ...intermediatePlates].find(plate => plate.barcode == transferStep.sourceBarcode);
-  const destPlate = [...intermediatePlates, ...destinationPlates].find(plate => plate.barcode == transferStep.destinationBarcode);
+  const srcPlate = [...sourcePlates, ...intermediatePlates].find(plate => plate.barcode === transferStep.sourceBarcode);
+  const destPlate = [...intermediatePlates, ...destinationPlates].find(plate => plate.barcode === transferStep.destinationBarcode);
 
   if (srcPlate && destPlate) {
     const srcWell = srcPlate.getWell(transferStep.sourceWellId);
@@ -532,7 +532,7 @@ export function executeAndRecordTransfer(transferStep: TransferStepExport, trans
         const wellContents = srcWell.getContents(); //for cases when there are multiple contents in one source well
         if (wellContents.length > 0) {
           for (const content of wellContents) { //perform one 'transfer' for each content, at volume/n_contents
-            const newConc = content.concentration === null ? null : content.concentration * wellContents.length;
+            const newConc = content.concentration == null ? null : content.concentration * wellContents.length;
             const newVol = transferStep.volume / wellContents.length;
 
             destWell.addContent(
@@ -787,7 +787,7 @@ export function calculateTransferConcentrations(
         if (!concentrationMap.has(conc)) {
           const intConcErrors: { srcConc: number, int2Conc: number, volToTsfr: number, error: number }[] = [];
           // find the intermediate concentration closest to the ideal
-          for (const [intConc, _] of [...intermediateConcentrations].filter(([_, v]) => v.sourceType == 'src')) {
+          for (const [intConc, _] of [...intermediateConcentrations].filter(([_, v]) => v.sourceType === 'src')) {
             for (const area of ['hi', 'mid', 'lo']) {
               const errorObj = calculateC4(conc, intConc, area, commonSettings);
               if (errorObj.volToTsfr < commonSettings.maxTransferVolume && errorObj.volToTsfr >= commonSettings.dropletSize) { // max src to int or int to int transfer volume of this.maxTransferVolume
@@ -795,7 +795,7 @@ export function calculateTransferConcentrations(
               }
             }
           }
-          const bestIntConc = intConcErrors.find((item) => item.error == Math.min(...intConcErrors.map(i => i.error)));
+          const bestIntConc = intConcErrors.find((item) => item.error === Math.min(...intConcErrors.map(i => i.error)));
           //a failsafe; need an "else" condition in case nothing worked
           if (bestIntConc) {
             intermediateConcRange = { 'max': calculateMissingValue({ v1: commonSettings.maxTransferVolume, c1: bestIntConc.srcConc, v2: (commonSettings.intermediateBackfillVolume + commonSettings.maxTransferVolume) }), 'min': calculateMissingValue({ v1: commonSettings.dropletSize, c1: bestIntConc.srcConc, v2: (commonSettings.intermediateBackfillVolume + commonSettings.dropletSize) }) };
@@ -925,7 +925,7 @@ export function calculateTransferVolumes(
     const r = pattern.fold; //if combination, should be at least two
     comboModifier = numberCombinations(n - 1, r - 1); //nCr; each entity will be used (n-1)C(r-1) times
   }
-  const specificSlots = pattern.type == 'Control'
+  const specificSlots = pattern.type === 'Control'
     ? calculateControlSlots(inputData, destinationPlatesCount, pattern.patternName)
     : inputData.CommonData.destReplicates * comboModifier;
 
@@ -956,7 +956,7 @@ export function calculateTransferVolumes(
 }
 
 export function calculateControlSlots(inputData: InputDataType, destinationPlatesCount: number, patternName: string): number {
-  const totalSlots = inputData.Layout.filter((row) => row.Pattern == patternName).length * destinationPlatesCount;
+  const totalSlots = inputData.Layout.filter((row) => row.Pattern === patternName).length * destinationPlatesCount;
   const uniqueCompounds = new Set(inputData.Compounds.filter((row) => (row.Pattern && row.Pattern.includes(patternName))).map(row => row['Compound ID']));
   return totalSlots / uniqueCompounds.size;
 }
@@ -996,7 +996,7 @@ export function checkSourceVolumes(srcCompoundInventory: CompoundInventory, srcP
     }
     for (const [patternName, compoundGroup] of patternMap) {
       const pattern = dilutionPatterns.get(patternName);
-      if (pattern && pattern.type != 'Solvent') {
+      if (pattern && pattern.type !== 'Solvent') {
         const volumeMap = totalVolumes.get(compoundId)?.get(patternName);
         if (!volumeMap) {
           checkpointMessages.push(`Couldn't find volume requirements for combination ${patternName}-${compoundId}`);

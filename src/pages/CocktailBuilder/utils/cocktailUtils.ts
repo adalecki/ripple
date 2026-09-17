@@ -152,7 +152,7 @@ export function buildInputData(recipes: Pattern[], srcPlates: Plate[], cocktails
     });
     return row as InputDataType['Cocktails'][number];
   });
-  if (Recipes.length == 0 && SourceLayout.length == 0 && Cocktails.length == 0) return null;
+  if (Recipes.length === 0 && SourceLayout.length === 0 && Cocktails.length === 0) return null;
   return { Recipes, SourceLayout, Cocktails };
 }
 
@@ -339,8 +339,8 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
 
     const dstBlock = findNextAvailableBlock(dstPlates, inputData.Recipes, recipeName);
 
-    if (dstBlock.barcode == '') continue;
-    const dstPlate = dstPlates.find(p => p.barcode == dstBlock.barcode);
+    if (dstBlock.barcode === '') continue;
+    const dstPlate = dstPlates.find(p => p.barcode === dstBlock.barcode);
     if (!dstPlate) continue;
     const dstWells = dstPlate.getSomeWells(dstBlock.wellBlock);
 
@@ -388,7 +388,7 @@ function findSourceLocation(locations: SourceWellLocation[], plates: Plate[], vo
   for (const loc of locations) {
     const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate);
     if (!well) continue;
-    if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
+    if (!plate || well.parentBarcode !== plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
     const srcDeadVolume = plate?.getDeadVolume() ?? 2500;
     if (well.getTotalVolume() >= (volume + srcDeadVolume)) {
       return { barcode: well.parentBarcode, wellId: well.id };
@@ -403,7 +403,7 @@ function calculateDestinationPlates(inputData: InputDataType, testPlate: Plate):
     const wells = testPlate.getSomeWells(row['Well Block']);
     if (!wells || wells.length < 1) return maxDestPlatesNeeded;
     const slotsPerPlate = Math.floor(wells.length / row['Replicates']);
-    const slotsNeeded = inputData['Cocktails'].filter(combo => combo['Recipe'] == row['Name']).length;
+    const slotsNeeded = inputData['Cocktails'].filter(combo => combo['Recipe'] === row['Name']).length;
     maxDestPlatesNeeded = Math.max(maxDestPlatesNeeded, Math.ceil(slotsNeeded / slotsPerPlate));
   }
 
@@ -420,10 +420,10 @@ function findNextAvailableBlock(plates: Plate[], recipeRows: InputDataType['Reci
       const replicates = patternRow['Replicates'];
       const wellBlock = patternRow['Well Block'];
       const wells = plate.getSomeWells(wellBlock);
-      const availableWellIds = wells.filter(w => w.getContents().length == 0).map(w => w.id);
+      const availableWellIds = wells.filter(w => w.getContents().length === 0).map(w => w.id);
       for (let i = 0; i < availableWellIds.length; i += replicates) {
         const block = availableWellIds.slice(i, i + replicates);
-        if (block.length == replicates) availableBlocks.push(formatWellBlock(block));
+        if (block.length === replicates) availableBlocks.push(formatWellBlock(block));
       }
     }
     possibleLocs.push({ barcode: plate.barcode, blocks: availableBlocks });

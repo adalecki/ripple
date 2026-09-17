@@ -106,7 +106,7 @@ const PlateDesigner: React.FC = () => {
 
   const handleAddPattern = () => {
     let iter = patterns.length + 1;
-    while (patterns.find(p => p.name == `Pattern ${iter}`)) {
+    while (patterns.find(p => p.name === `Pattern ${iter}`)) {
       iter += 1;
     }
     const name = `Pattern ${iter}`;
@@ -140,7 +140,7 @@ const PlateDesigner: React.FC = () => {
 
   const handleAddPlate = () => {
     let iter = designSrcPlates.length + 1;
-    while (designSrcPlates.find(p => p.barcode == `SRC${iter.toString().padStart(3, '0')}`) != undefined) {
+    while (designSrcPlates.find(p => p.barcode === `SRC${iter.toString().padStart(3, '0')}`) !== undefined) {
       iter += 1;
     }
     const barcode = `SRC${iter.toString().padStart(3, '0')}`;
@@ -187,7 +187,7 @@ const PlateDesigner: React.FC = () => {
   };
 
   const handleSelect = (k: string | null) => {
-    if (k !== null) {
+    if (k != null) {
       setTabKey(k);
     }
   };

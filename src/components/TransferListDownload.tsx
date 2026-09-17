@@ -20,7 +20,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
         }
 
         if (steps.length > 0) {
-          const hasPlateType = steps.some(s => s.sourcePlateType != undefined);
+          const hasPlateType = steps.some(s => s.sourcePlateType !== undefined);
           const rows = steps.map(step => rowColExport(step, hasPlateType));
           const csvContent = generateTransferListCSV(rows);
 
@@ -62,7 +62,7 @@ const TransferListDownload = (settings: { transferMap: Map<number, TransferStepE
         allSteps = allSteps.concat(steps);
       }
 
-      const hasPlateType = allSteps.some(s => s.sourcePlateType != undefined);
+      const hasPlateType = allSteps.some(s => s.sourcePlateType !== undefined);
       const rows = allSteps.map(step => rowColExport(step, hasPlateType));
       const csvContent = generateTransferListCSV(rows);
 

@@ -159,7 +159,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       .y(d => yScale(d.index));
 
     g.append('path')
-      .datum(points.filter(p => (p.concentration != 0)))
+      .datum(points.filter(p => (p.concentration !== 0)))
       .attr('fill', 'none')
       .attr('stroke', '#2c3e50')
       .attr('stroke-width', 2)
@@ -194,7 +194,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       const legendRow = legend.append('g')
         .attr('transform', `translate(0, ${i * 20})`);
 
-      if (item.type == 'line') {
+      if (item.type === 'line') {
         legendRow.append('line')
         .attr('x1', 0)
         .attr('x2', 20)
@@ -202,7 +202,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
         .attr('y2', 0)
         .attr('stroke', item.color)
         .attr('stroke-width', 2);
-      } else if (item.type == 'dot') {
+      } else if (item.type === 'dot') {
         legendRow.append('circle')
         .attr('cx', 10)
         .attr('cy', 0)

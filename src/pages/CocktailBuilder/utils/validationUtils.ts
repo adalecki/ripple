@@ -16,7 +16,7 @@ export function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
   const headers = [];
   for (const key in ws) {
     const regEx = new RegExp('^\(\\w\)\(1\){1}$');
-    if (regEx.test(key) == true) {
+    if (regEx.test(key) === true) {
       headers.push(ws[key].v);
     }
   }
@@ -60,7 +60,7 @@ export function echoInputValidation(wb: WorkBook, srcPlateSize: PlateSize, dstPl
   } else {
     errors.push('Error in Cocktails headers');
   }
-  if (errors.length == 0) {
+  if (errors.length === 0) {
     inputData = stringConversion(inputData);
   }
   errors.push(...validateInputData(inputData, srcPlateSize, dstPlateSize, dropletSize));

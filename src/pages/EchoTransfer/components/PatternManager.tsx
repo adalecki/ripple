@@ -31,7 +31,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ isEditing, setIsEditing
 
   const handleAddPattern = () => {
     let iter = patterns.length + 1;
-    while (patterns.find(p => p.name == `Pattern ${iter}`)) {
+    while (patterns.find(p => p.name === `Pattern ${iter}`)) {
       iter += 1;
     }
     const name = `Pattern ${iter}`;
@@ -52,7 +52,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ isEditing, setIsEditing
 
   const handleEditPattern = () => {
     setIsEditing(true);
-    if (editingPattern && editingPattern.concentrations.length == 0) {
+    if (editingPattern && editingPattern.concentrations.length === 0) {
       setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }));
     }
   };

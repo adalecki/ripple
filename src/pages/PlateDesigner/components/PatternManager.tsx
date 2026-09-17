@@ -55,7 +55,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
 
   const handleEditPattern = () => {
     setPatternState({ ...patternState, isEditing: true });
-    if (editingPattern && editingPattern.concentrations.length == 0) {
+    if (editingPattern && editingPattern.concentrations.length === 0) {
       setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }));
     }
   };
@@ -163,7 +163,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
     setApplyPopup({ event: null, msgArr: [] });
   };
 
-  const duplicateName = (editingPattern ? patterns.filter(p => p.name == editingPattern.name && p.id != editingPattern.id).length > 0 : false);
+  const duplicateName = (editingPattern ? patterns.filter(p => p.name === editingPattern.name && p.id !== editingPattern.id).length > 0 : false);
   const isMatrixPattern = editingPattern ? (isCombinationType(editingPattern.type) && editingPattern.direction.length === 2) : false;
   const matrixDirectionsInvalid = isMatrixPattern && editingPattern ? !isPerpendicularDirections(editingPattern.direction[0], editingPattern.direction[1]) : false;
   return (

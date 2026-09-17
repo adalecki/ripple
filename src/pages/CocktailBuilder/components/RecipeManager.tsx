@@ -64,7 +64,7 @@ const RecipeManager: React.FC<RecipeManagerProps> = ({
 
   const handleEditRecipe = () => {
     setRecipeState({ ...recipeState, isEditing: true });
-    if (editingRecipe && editingRecipe.volumes.length == 0) {
+    if (editingRecipe && editingRecipe.volumes.length === 0) {
       setEditingRecipe(new Pattern({ ...editingRecipe, volumes: [null] }));
     }
   };

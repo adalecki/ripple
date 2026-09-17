@@ -86,7 +86,7 @@ describe('EchoForm', () => {
     render(<EchoForm {...defaultProps} />);
     expect(screen.getByLabelText(/Ripple Input/i)).toBeInTheDocument();
     mockFields.forEach(field => {
-      if (field.prefId != 'useSurveyVols') expect(screen.getByLabelText(field.name)).toBeInTheDocument();
+      if (field.prefId !== 'useSurveyVols') expect(screen.getByLabelText(field.name)).toBeInTheDocument();
     });
   });
 

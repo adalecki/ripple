@@ -35,7 +35,7 @@ const DataParser: React.FC = () => {
 
   useEffect(() => {
     if (selectedProtocol) {
-      const curPro = protocols.find(p => p.id == selectedProtocol!.id);
+      const curPro = protocols.find(p => p.id === selectedProtocol!.id);
       if (curPro) setSelectedProtocol(curPro);
     } else if (protocols.length > 0 && !selectedProtocol) {
       setSelectedProtocol(protocols[0]);
@@ -103,7 +103,7 @@ const DataParser: React.FC = () => {
       selectedProtocol.metadataFields.forEach(field => {
         if (field.required) {
           const value = metadataValues[field.name];
-          if (value === undefined || value === null || value === '') {
+          if (value === undefined || value == null || value === '') {
             validationErrors.push(`${field.name} is required`);
           }
         }
@@ -152,7 +152,7 @@ const DataParser: React.FC = () => {
 
         if (currentParsedBarcodes.has(plateCopy.barcode)) {
           const hasResponseData = Object.values(plateCopy.getWells()).some(well =>
-            well && well.rawResponse !== null
+            well && well.rawResponse != null
           );
 
           if (hasResponseData) {
@@ -200,7 +200,7 @@ const DataParser: React.FC = () => {
   };
 
   const hasResponseDataForPlate = plate && Object.values(plate.getWells()).some(well =>
-    well.rawResponse !== null || well.normalizedResponse !== null
+    well.rawResponse != null || well.normalizedResponse != null
   );
 
   function renderFileInformation() {

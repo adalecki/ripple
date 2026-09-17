@@ -479,7 +479,7 @@ const ProtocolManager: React.FC = () => {
                       />
                     </Form.Group>
                     <Row>{renderBarcodeLocationFields()}</Row>
-                    {isEditing && editingProtocol.parseStrategy.format == 'Matrix' && !editingProtocol.parseStrategy.autoParse && (
+                    {isEditing && editingProtocol.parseStrategy.format === 'Matrix' && !editingProtocol.parseStrategy.autoParse && (
                       <Button
                         variant="outline-primary"
                         size="sm"

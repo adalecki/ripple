@@ -28,9 +28,9 @@ const StringListField: React.FC<StringListFieldProps> = ({ id, label, value, onC
   };
 
   const handleShift = (item: string, dir: 'up' | 'down') => {
-    const itemIdx = value.findIndex(i => i == item);
+    const itemIdx = value.findIndex(i => i === item);
     if (itemIdx < 0) return;
-    const newIdx = dir == 'up' ? itemIdx - 1 : itemIdx + 1;
+    const newIdx = dir === 'up' ? itemIdx - 1 : itemIdx + 1;
     const arr = [...value];
     arr.splice(newIdx, 0, arr.splice(itemIdx, 1)[0]);
 
@@ -71,10 +71,10 @@ const StringListField: React.FC<StringListFieldProps> = ({ id, label, value, onC
             <Button variant="link" size="sm" className="text-danger p-0" onClick={() => handleRemove(item)} title={`Remove ${item}`} disabled={value.length < 2}>
               <X size={16} />
             </Button>
-            <Button variant="link" size="sm" onClick={() => handleShift(item,'up')} disabled={idx == 0}>
+            <Button variant="link" size="sm" onClick={() => handleShift(item,'up')} disabled={idx === 0}>
               <ArrowUp />
             </Button>
-            <Button variant="link" size="sm" onClick={() => handleShift(item,'down')} disabled={idx == value.length - 1}>
+            <Button variant="link" size="sm" onClick={() => handleShift(item,'down')} disabled={idx === value.length - 1}>
               <ArrowDown />
             </Button>
             </span>

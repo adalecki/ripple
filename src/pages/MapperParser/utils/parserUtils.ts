@@ -27,10 +27,10 @@ export function mapEquality(map1: Map<string, number>, map2: Map<string, number>
   const keys1 = [...map1.keys()];
   const keys2 = [...map2.keys()];
 
-  if (keys1.length != keys2.length) return false;
+  if (keys1.length !== keys2.length) return false;
 
   for (const key of keys1) {
-    if (map1.get(key) != map2.get(key)) {
+    if (map1.get(key) !== map2.get(key)) {
       console.log(key);
       return false;
     }
@@ -42,7 +42,7 @@ export function hasResponseData(plates: Plate[]): boolean {
   const destinationPlates = getDestinationPlates(plates);
   return destinationPlates.some(plate =>
     Object.values(plate.getWells()).some((well: Well) =>
-      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+      well && (well.rawResponse != null || well.normalizedResponse != null)
     )
   );
 }
@@ -51,7 +51,7 @@ export function getPlatesWithResponseData(plates: Plate[]) {
   const destinationPlates = getDestinationPlates(plates);
   return destinationPlates.filter(plate =>
     Object.values(plate.getWells()).some((well: Well) =>
-      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+      well && (well.rawResponse != null || well.normalizedResponse != null)
     )
   );
 }
@@ -198,7 +198,7 @@ function parseExplicitRangeMatrixFile(sheet: WorkSheet, protocol: Protocol): Map
   for (let row = dataRange.s.r; row <= dataRange.e.r; row++) {
     for (let col = dataRange.s.c; col <= dataRange.e.c; col++) {
       const cell = sheet[utils.encode_cell({ r: row, c: col })];
-      if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+      if (cell && cell.v !== undefined && cell.v != null && cell.v !== '') {
         const xIndex = col - dataRange.s.c;
         const yIndex = row - dataRange.s.r;
 
@@ -249,7 +249,7 @@ function parseTableFormat(sheet: WorkSheet, protocol: Protocol): { wellData: Map
     const wellIDCell = sheet[utils.encode_cell({ r: wellIDRange.s.r + i, c: wellIDRange.s.c })];
     const dataCell = sheet[utils.encode_cell({ r: dataRange.s.r + i, c: dataRange.s.c })];
 
-    if (wellIDCell && wellIDCell.v && dataCell && dataCell.v !== undefined && dataCell.v !== null && dataCell.v !== '') {
+    if (wellIDCell && wellIDCell.v && dataCell && dataCell.v !== undefined && dataCell.v != null && dataCell.v !== '') {
       const wellId = String(wellIDCell.v);
       const value = parseFloat(String(dataCell.v));
 
@@ -618,7 +618,7 @@ export function calculateNormalization(
         let normMinValue = 0;
         let normMaxValue = 100;
         for (const well of recalculatedPlate) {
-          if (well && well.rawResponse !== null) {
+          if (well && well.rawResponse != null) {
             //((raw - blank) - min) / (max - min) * 100
             const adjustedRaw = well.rawResponse - blankValue;
             const normalizedValue = ((adjustedRaw - minValue) / range) * 100;
@@ -653,7 +653,7 @@ function extractControlValuesWithExclusions(
       const responses = wells
         .filter(well => !excludeWells || !excludeWells.has(well.id))
         .map(well => well.rawResponse)
-        .filter((response): response is number => response !== null);
+        .filter((response): response is number => response != null);
       if (responses.length === 0) continue;
 
       const meanResponse = responses.reduce((sum, val) => sum + val, 0) / responses.length;

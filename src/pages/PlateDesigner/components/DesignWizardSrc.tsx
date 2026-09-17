@@ -84,11 +84,11 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     ((wellContentsForm.dmsoWells) ||
       (activeAccordion === 'basic'
         ? (
-          wellContentsForm.compoundId != '' &&
+          wellContentsForm.compoundId !== '' &&
           typeof (wellContentsForm.concentration) === 'number' &&
           wellContentsForm.patternNames.length > 0)
         : (
-          currentCompound !== null &&
+          currentCompound != null &&
           validConcentrations.length > 0 &&
           wellContentsForm.patternNames.length > 0))
     );
@@ -120,7 +120,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
         if (wellContentsForm.compoundId === '') reasons.push('No compound ID');
         if (typeof wellContentsForm.concentration !== 'number') reasons.push('No concentration set');
       } else {
-        if (currentCompound === null) reasons.push('No compounds in list');
+        if (currentCompound == null) reasons.push('No compounds in list');
         if (validConcentrations.length === 0) reasons.push('No valid concentrations');
       }
     }

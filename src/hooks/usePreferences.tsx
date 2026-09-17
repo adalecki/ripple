@@ -49,7 +49,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   };
 
 const resetPreferences = (categoryId: string) => {
-  const category = PREFERENCES_CONFIG.find(cat => cat.id == categoryId);
+  const category = PREFERENCES_CONFIG.find(cat => cat.id === categoryId);
   if (!category) return;
   const defaults = getDefaultPreferences();
   const next = { ...preferences };

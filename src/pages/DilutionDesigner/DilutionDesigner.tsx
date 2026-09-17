@@ -26,10 +26,10 @@ const DilutionDesigner: React.FC = () => {
   });
 
   useEffect(() => {
-    if (preferences.maxTransferVolume != settings.maxTransferVolume) {
+    if (preferences.maxTransferVolume !== settings.maxTransferVolume) {
       handleSettingChange('maxTransferVolume', preferences.maxTransferVolume);
     }
-    if (preferences.dropletSize != settings.dropletSize) {
+    if (preferences.dropletSize !== settings.dropletSize) {
       handleSettingChange('dropletSize', preferences.dropletSize);
     }
   }, [preferences]);

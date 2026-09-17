@@ -124,9 +124,9 @@ export function getPlateColorAndBorders(plate: Plate, transferBlocks: TransferBl
   const borderMap = new Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }>();
 
   transferBlocks.forEach((transfer, idx) => {
-    const plateId = (type == 'source' ? transfer.sourcePlateId : transfer.destinationPlateId);
-    const block = (type == 'source' ? transfer.sourceBlock : transfer.destinationBlock);
-    let colorHsl = (type == 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)') as HslStringType;
+    const plateId = (type === 'source' ? transfer.sourcePlateId : transfer.destinationPlateId);
+    const block = (type === 'source' ? transfer.sourceBlock : transfer.destinationBlock);
+    let colorHsl = (type === 'source' ? 'hsl(210, 44%, 56%)' : 'hsl(30, 70%, 85%)') as HslStringType;
     if (transfer.color) {colorHsl = transfer.color;} else {colorHsl = generateSingleColor(0.75638, idx+1);}
     if (plateId === plate.id) {
       const wells = plate.getSomeWells(block);

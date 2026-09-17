@@ -332,7 +332,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
                 <Button size="sm" variant="outline-primary" onClick={() => assignSelection('rawData')} disabled={!selection.start || !selection.end}>
                   Set as Raw Data ({definedRanges.rawData || 'Not set'})
                 </Button>
-                {currentParseStrategy.format == 'Matrix' ?
+                {currentParseStrategy.format === 'Matrix' ?
                   <>
                     <Button size="sm" variant="outline-secondary" onClick={() => assignSelection('xLabels')} disabled={!selection.start || !selection.end}>
                       Set as X Labels ({definedRanges.xLabels || 'Not set'})
@@ -347,7 +347,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
                 }
 
 
-                {currentParseStrategy.plateBarcodeLocation == 'cell' ? <Button size="sm" variant="outline-info" onClick={() => assignSelection('plateBarcodeCell')} disabled={!selection.start || !selection.end}>
+                {currentParseStrategy.plateBarcodeLocation === 'cell' ? <Button size="sm" variant="outline-info" onClick={() => assignSelection('plateBarcodeCell')} disabled={!selection.start || !selection.end}>
                   Set as Barcode Cell ({definedRanges.plateBarcodeCell || 'Not set'})
                 </Button> : ''}
               </div>

@@ -191,7 +191,7 @@ export class EchoPreCalculator {
       }
     }
     if (this.inputData.CommonData.dmsoNormalization) { this.totalDMSOBackfillVol += calculateFinalDMSONeeded(this.inputData, commonSettings, this.destinationPlatesCount, this.destinationWellsCount, this.dilutionPatterns, this.maxDMSOVol); }
-    if (this.checkpointTracker.getCheckpoint(checkpointNames.step3)?.status == 'Pending') {
+    if (this.checkpointTracker.getCheckpoint(checkpointNames.step3)?.status === 'Pending') {
       this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Passed');
     }
     try {

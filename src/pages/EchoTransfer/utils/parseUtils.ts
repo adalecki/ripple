@@ -35,13 +35,13 @@ export function constructPlatesFromTransfers(inputData: InputDataType, transfers
   };
 
   for (const barcode of transferBarcodes) {
-    if (newPlates['source'].some(p => p.barcode == barcode)) continue;
+    if (newPlates['source'].some(p => p.barcode === barcode)) continue;
     if (possibleBarcodes.destination.has(barcode) || (barcode.startsWith('DestPlate_') && !possibleBarcodes.intermediate.has(barcode))) {
       actualBarcodes.destination.add(barcode);
     } else if (possibleBarcodes.intermediate.has(barcode) || barcode.startsWith('IntPlate_')) {
       actualBarcodes.intermediate1.add(barcode); //by default assume int1
-      for (const row of transfers.filter(r => r.destinationBarcode == barcode)) {
-        if (!newPlates['source'].some(p => p.barcode == row.sourceBarcode)) {
+      for (const row of transfers.filter(r => r.destinationBarcode === barcode)) {
+        if (!newPlates['source'].some(p => p.barcode === row.sourceBarcode)) {
           actualBarcodes.intermediate1.delete(barcode);
           actualBarcodes.intermediate2.add(barcode);
         }
@@ -108,7 +108,7 @@ export function performTransfers(newPlates: { 'source': Plate[], 'intermediate':
   const failures: string[] = [];
 
   for (const transfer of transfers) {
-    const sourcePlate = allPlates.find(p => p.barcode == transfer.sourceBarcode);
+    const sourcePlate = allPlates.find(p => p.barcode === transfer.sourceBarcode);
     if (!sourcePlate) continue;
     const sourceWell = sourcePlate.getWell(transfer.sourceWellId);
     if (!sourceWell) continue;
@@ -132,7 +132,7 @@ export function performTransfers(newPlates: { 'source': Plate[], 'intermediate':
     for (const well of allPlates[i]) {
       if (!well) continue;
       for (const content of well.getContents()) {
-        if (content.compoundId && content.concentration !== null) { maxConcentration = Math.max(maxConcentration, content.concentration); }
+        if (content.compoundId && content.concentration != null) { maxConcentration = Math.max(maxConcentration, content.concentration); }
       }
     }
     allPlates[i].metadata.globalMaxConcentration = maxConcentration;
@@ -150,7 +150,7 @@ export async function parseTransferLog(file: File): Promise<{ transfers: Transfe
     throw new Error('Transfer log file is empty or invalid');
   }
 
-  const startIdx = lines.findIndex(l => l.split(',')[0].trim() == '[DETAILS]');
+  const startIdx = lines.findIndex(l => l.split(',')[0].trim() === '[DETAILS]');
   const headers = lines[startIdx + 1].split(',').map(h => h.trim());
   const sourceBarcodeIdx = headers.findIndex(h => h === 'Source Plate Barcode');
   const sourceWellIdx = headers.findIndex(h => h === 'Source Well');
@@ -203,7 +203,7 @@ export async function generateNewExcelTemplate(originalFile: File | null, mapped
   if (!sheetNames.includes('Compounds')) return;
   const xWs = utils.sheet_to_json(xWb.Sheets['Compounds']) as InputDataType['Compounds'];
   for (const line of xWs) {
-    const plate = mappedPlates.find(p => p.barcode == line['Source Barcode']);
+    const plate = mappedPlates.find(p => p.barcode === line['Source Barcode']);
     if (!plate) continue;
     const newWells: Map<number, string[]> = new Map(); //tracking volumes within a well block
     const wells = plate.getSomeWells(line['Well ID']);

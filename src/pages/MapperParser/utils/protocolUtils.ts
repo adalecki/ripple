@@ -67,7 +67,7 @@ export function loadProtocols(): Protocol[] {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      if (parsed.length == 0) return defaultProtocols;
+      if (parsed.length === 0) return defaultProtocols;
 
       const migrated = parsed.map((p: any) => {
         const protocol = {
@@ -79,7 +79,7 @@ export function loadProtocols(): Protocol[] {
                                  protocol.parseStrategy.barcodeDelimiter === '';
           protocol.parseStrategy.useFullFilename = wasFullFilename;
 
-          if (!protocol.parseStrategy.barcodeDelimiter || protocol.parseStrategy.barcodeDelimiter === null) {
+          if (!protocol.parseStrategy.barcodeDelimiter || protocol.parseStrategy.barcodeDelimiter == null) {
             protocol.parseStrategy.barcodeDelimiter = '_';
           }
           if (protocol.parseStrategy.barcodeChunk == null) {

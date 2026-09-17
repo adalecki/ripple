@@ -38,7 +38,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
     const retainedSettingsNames = ['Well Volume (µL)', 'Backfill (µL)', 'Use Source Survey Volumes'];
     fields = fields.filter(s => retainedSettingsNames.includes(s.name));
   } else {
-    fields = fields.filter(s => s.name != 'Use Source Survey Volumes');
+    fields = fields.filter(s => s.name !== 'Use Source Survey Volumes');
   }
 
   const transferSettingNames = ['Max Transfer Volume', 'Echo Droplet Size', 'Source Plate Size', 'Destination Plate Size'];
@@ -87,7 +87,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
       if (wb && wb.Sheets['Assay'] && fileHeaders(wb.Sheets['Assay'], ['Setting', 'Value'])) {
         const assayNumbers: { 'Setting': string, 'Value': number }[] = utils.sheet_to_json(wb.Sheets['Assay']);
         for (const line of assayNumbers) {
-          if (fieldNames.includes(line.Setting) && !isNaN(line.Value) && formValues[line.Setting] != line.Value) {
+          if (fieldNames.includes(line.Setting) && !isNaN(line.Value) && formValues[line.Setting] !== line.Value) {
             handleFieldChange(line.Setting, line.Value);
             changedFields.push(line.Setting);
           }

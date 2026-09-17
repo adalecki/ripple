@@ -17,7 +17,7 @@ export function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
   const headers = [];
   for (const key in ws) {
     const regEx = new RegExp('^\(\\w\)\(1\){1}$');
-    if (regEx.test(key) == true) {
+    if (regEx.test(key) === true) {
       headers.push(ws[key].v);
     }
   }
@@ -56,10 +56,10 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
     errors.push('Error in Barcodes headers');
   }
 
-  if (errors.length == 0) {
+  if (errors.length === 0) {
     inputData = stringConversion(inputData);
     const availablePatternNames = patternsTabValidation(inputData, errors);
-    if (errors.length == 0) {
+    if (errors.length === 0) {
       layoutTabValidation(inputData, dstTestPlate, availablePatternNames, errors);
       const srcBarcodes = compoundsTabValidation(inputData, srcTestPlate, availablePatternNames, errors);
       barcodesTabValidation(inputData, srcBarcodes, errors);
@@ -121,7 +121,7 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
       errors.push(`${row.Type} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be Control, Treatment, Solvent, Unused, or Combination-N)`);
     }
     const pattern = availablePatternNames.get(patternName)!;
-    if (row.Type != 'Solvent' && row.Type != 'Unused') {
+    if (row.Type !== 'Solvent' && row.Type !== 'Unused') {
       if (isCombination) {
         const fold = getCombinationFold(row.Type);
         if (!(Number.isInteger(fold) && fold >= 2)) {
@@ -153,7 +153,7 @@ function patternsTabValidation(inputData: InputDataType, errors: string[]): Map<
           errors.push(`${row.Direction} on line ${parseInt(idx) + 2} of Patterns tab is not valid (must be LR, RL, TB, or BT)`);
         }
       }
-      if (!(parseInt(row.Replicates.toString()) == row.Replicates)) {
+      if (!(parseInt(row.Replicates.toString()) === row.Replicates)) {
         errors.push(`${row.Replicates} on line ${parseInt(idx) + 2} of Patterns tab is not a valid integer`);
       } else { pattern.replicates = row.Replicates; }
       for (let i = 1; i <= 20; i++) {
@@ -198,7 +198,7 @@ function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availab
             const numConcs = pattern!.concentrations!.length;
             const replicates = pattern!.replicates!;
             const expectedWells = pattern!.isMatrix ? (numConcs * numConcs * replicates) : (numConcs * replicates);
-            if (!(wells.length == expectedWells)) {
+            if (!(wells.length === expectedWells)) {
               const formula = pattern!.isMatrix ? `${numConcs} concentrations² x ${replicates} replicates` : `${numConcs} concentrations x ${replicates} replicates`;
               errors.push(`Well block size in line ${parseInt(idx) + 2} of Layout tab does not match with number of concentrations and replicates on Patterns tab (expected ${expectedWells} wells: ${formula})`);
             }
@@ -268,7 +268,7 @@ function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, avai
     const hasEmptyPattern = !cpd['Pattern'] || cpd['Pattern'].trim() === '';
 
     if (isDMSO && hasEmptyPattern) {
-    } else if (cpd['Compound ID'] != 'DMSO') {
+    } else if (cpd['Compound ID'] !== 'DMSO') {
       try {
         if (isNaN(cpd['Concentration (µM)'])) { errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab has a non-number Concentration`); } else if (!(cpd['Concentration (µM)'] > 0)) { errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab has a negative Concentration`); }
       } catch (err) {
@@ -317,7 +317,7 @@ function validPatternName(patternName: string, errors: string[]): boolean {
   let substringIdx = 7;
   if (patternName.startsWith('Treatment')) { substringIdx = 9; }
   const numString = patternName.substring(substringIdx);
-  if (!(parseInt(numString).toString() == numString)) {
+  if (!(parseInt(numString).toString() === numString)) {
     errors.push(`${patternName} iterator ${numString} is not an integer`);
     return false;
   }
@@ -330,7 +330,7 @@ export type timeObj = {
   }[]
 
 export function timeIt(timeObj: timeObj, step: string) {
-  if (timeObj.length == 0) {timeObj.push({ name: 'start',time: performance.now() });}
+  if (timeObj.length === 0) {timeObj.push({ name: 'start',time: performance.now() });}
   const nowPoint = { name: step, time: performance.now() };
   const lastPointIdx = timeObj.length - 1;
   timeObj.push(nowPoint);

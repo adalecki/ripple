@@ -64,7 +64,7 @@ const CheckpointSummary: React.FC<CheckpointSummaryProps> = ({ echoPreCalc }) =>
   let totalCompounds = 0;
   for (const [_,patternGroup] of echoPreCalc.srcCompoundInventory) {
     for (const [_,compoundGroup] of patternGroup) {
-      if (compoundGroup.locations.some(l => l.concentration != 0)) {
+      if (compoundGroup.locations.some(l => l.concentration !== 0)) {
         totalCompounds += 1;
         break;
       }
@@ -125,8 +125,8 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
     const newEchoPreCalcInstance = Object.assign(Object.create(Object.getPrototypeOf(echoPreCalc)), echoPreCalc) as EchoPreCalculator;
     newEchoPreCalcInstance.checkpointTracker = echoPreCalc.checkpointTracker.clone();
     deadVolumeEdits.forEach((newVolumeNL, barcode) => {
-      const plate = newEchoPreCalcInstance.sourcePlates.find(p => p.barcode == barcode);
-      if (plate && plate.getDeadVolume() != newVolumeNL) {
+      const plate = newEchoPreCalcInstance.sourcePlates.find(p => p.barcode === barcode);
+      if (plate && plate.getDeadVolume() !== newVolumeNL) {
         newEchoPreCalcInstance.updateDeadVolume(barcode, newVolumeNL);
         hasChanges = true;
       }

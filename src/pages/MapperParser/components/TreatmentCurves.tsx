@@ -32,7 +32,7 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({
   const [isExporting, setIsExporting] = useState(false);
 
   const curvesRef = useCallback((node: HTMLDivElement) => {
-    if (node !== null) {
+    if (node != null) {
       setCurvesNode(node);
     }
   }, []);
@@ -41,7 +41,7 @@ const TreatmentCurves: React.FC<TreatmentCurvesProps> = ({
     if (curvesNode) {
       const updateDimensions = () => {
         const rect = curvesNode.getBoundingClientRect();
-        if (rect.height != 0 && rect.width != 0) {
+        if (rect.height !== 0 && rect.width !== 0) {
           setDimensions({
             width: rect.width,
             height: rect.height

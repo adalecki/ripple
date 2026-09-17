@@ -73,7 +73,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
     for (const pattern of patterns) {
       for (const concentration of pattern.concentrations) {
         if (typeof concentration === 'number') {
-          if (maxConcentration === null || concentration > maxConcentration) {
+          if (maxConcentration == null || concentration > maxConcentration) {
             maxConcentration = concentration;
           }
         }
@@ -89,7 +89,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   const handleMouseEnter = (e: React.MouseEvent) => {
     const msgArr: string[] = [];
     if (patternState.isEditing) msgArr.push('Save the pattern before applying to plate');
-    const curPattern = patterns.find(p => p.id == curPatternId);
+    const curPattern = patterns.find(p => p.id === curPatternId);
     if (selectedWellIds.length > 0 && curPattern && curPattern.concentrations.filter(c => c != null).length > 0) {
       msgArr.push(...sensibleWellSelection(selectedWellIds, curPattern, designDstPlates[0]));
     }
@@ -121,7 +121,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
 
   function applyPatternToWells() {
     if (curPatternId && selectedWellIds.length > 0) {
-      const pattern = patterns.find(p => p.id == curPatternId);
+      const pattern = patterns.find(p => p.id === curPatternId);
       if (pattern) {
         const newPattern = pattern.clone();
         const newPlate = designDstPlates[0].clone();
@@ -206,13 +206,13 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
 
       for (const patternName of patternNamesToCheck) {
         if (!unusedPatternNames.includes(patternName)) {
-          const pattern = patterns.find(p => p.name == patternName);
+          const pattern = patterns.find(p => p.name === patternName);
           if (pattern) {
             const newPattern = pattern.clone();
             for (const loc of pattern.locations) {
               if (isBlockOverlapping(newPlate, wellSelection.join(';'), [loc])) {
                 newPlate.removePattern(loc, patternName);
-                newPattern.locations = newPattern.locations.filter(l => !(l == loc));
+                newPattern.locations = newPattern.locations.filter(l => !(l === loc));
               }
             }
             newPatternArr.push(newPattern);
@@ -220,7 +220,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
         }
       }
 
-      setPatterns(patterns.map(p => newPatternArr.some(nP => nP.id == p.id) ? newPatternArr.find(nP => nP.id == p.id) as Pattern : p));
+      setPatterns(patterns.map(p => newPatternArr.some(nP => nP.id === p.id) ? newPatternArr.find(nP => nP.id === p.id) as Pattern : p));
       setDesignDstPlates([newPlate]);
     }
   }

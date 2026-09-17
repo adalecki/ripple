@@ -101,9 +101,9 @@ export class EchoCalculator {
           const concInnerMap = volumeMap.get(intConc);
           if (concInnerMap) {
             const newWellsNeeded = Math.ceil(concInnerMap / ((this.intermediateBackfillVolume + concInfo.volToTsfr) - echoIntDeadVolume));
-            if (concInfo.sourceType == 'src') {
+            if (concInfo.sourceType === 'src') {
               totalIntWellsNeeded.level1 += newWellsNeeded;
-            } else if (concInfo.sourceType == 'int1') {
+            } else if (concInfo.sourceType === 'int1') {
               totalIntWellsNeeded.level2 += newWellsNeeded;
             }
           }
@@ -253,7 +253,7 @@ export class EchoCalculator {
       for (const loc of locations) {
         const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate);
         if (!well) continue;
-        if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
+        if (!plate || well.parentBarcode !== plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
         if (!plate) continue;
         //const srcDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plate.barcode) || (well.getTotalVolume() < 15000 ? 2500 : 15000) //might as well check volumes in first pass
         const srcDeadVolume = plate.getDeadVolume();
@@ -269,7 +269,7 @@ export class EchoCalculator {
       for (const loc of locations) {
         const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate);
         if (!well) continue;
-        if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
+        if (!plate || well.parentBarcode !== plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
         if (!plate) continue;
         //const srcDeadVolume = this.echoPreCalc.plateDeadVolumes.get(well.parentBarcode) || (well.getTotalVolume() < 15000 ? 2500 : 15000)
         const srcDeadVolume = plate.getDeadVolume();
@@ -360,7 +360,7 @@ export class EchoCalculator {
 
     const controlCompounds: ControlCompounds = new Map();
     for (const [_, pattern] of this.echoPreCalc.dilutionPatterns) {
-      if (pattern.type == 'Control' && !controlCompounds.has(pattern.patternName)) {
+      if (pattern.type === 'Control' && !controlCompounds.has(pattern.patternName)) {
         const controlSlots = this.inputData.Layout.filter((block) => block.Pattern === pattern.patternName);
         controlCompounds.set(pattern.patternName, { memberCompounds: [], destSlots: controlSlots.length });
       }
@@ -381,10 +381,10 @@ export class EchoCalculator {
       for (const [compoundId, compoundGroups] of this.echoPreCalc.srcCompoundInventory) {
         for (const [patternName, compoundGroup] of compoundGroups) {
           const dilutionPattern = this.echoPreCalc.dilutionPatterns.get(patternName);
-          if (dilutionPattern && dilutionPattern.type == 'Treatment') {
+          if (dilutionPattern && dilutionPattern.type === 'Treatment') {
             const destLocation = this.findNextAvailableBlock(plateGroup, this.inputData.Layout, patternName);
             this.transferCompound(plateGroup, destLocation, compoundId, dilutionPattern, compoundGroup);
-          } else if (dilutionPattern && dilutionPattern.type == 'Control') {
+          } else if (dilutionPattern && dilutionPattern.type === 'Control') {
             const controlPatternInfo = controlCompounds.get(patternName)!;
             if (!controlPatternInfo.memberCompounds.includes(compoundId)) {
               controlPatternInfo.memberCompounds.push(compoundId);
@@ -431,7 +431,7 @@ export class EchoCalculator {
 
   dmsoNormalization() {
     const possibleLocs: { barcode: string, wellId: string }[] = [];
-    const failedNorms: Map<string,Set<string>> = new Map();
+    const failedNorms: Map<string, Set<string>> = new Map();
     for (const plate of [...this.sourcePlates, ...this.intermediatePlates]) {
       for (const well of plate) {
         if (well && well.isSolventOnlyWell('DMSO')) { possibleLocs.push({ barcode: well.parentBarcode, wellId: well.id }); }
@@ -440,7 +440,7 @@ export class EchoCalculator {
     const treatmentWellIds = new Set<string>();
     if (this.inputData.CommonData.skipUnusedBlocks) {
       const treatmentPatternNames = new Set<string>();
-      this.echoPreCalc.dilutionPatterns.forEach((v, k) => { if (v.type == 'Treatment') treatmentPatternNames.add(k); });
+      this.echoPreCalc.dilutionPatterns.forEach((v, k) => { if (v.type === 'Treatment') treatmentPatternNames.add(k); });
 
       for (const line of this.echoPreCalc.inputData.Layout) {
         if (treatmentPatternNames.has(line.Pattern)) {
@@ -458,7 +458,7 @@ export class EchoCalculator {
         }
       }
       for (const well of plate) {
-        if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length == 0)) {
+        if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length === 0)) {
           const volToAdd = (maxVolume - well.getTotalVolume());
           if (volToAdd > 0) {
             const srcWell = this.findSourceWell(possibleLocs, volToAdd, this.evenDepletion);
@@ -488,7 +488,7 @@ export class EchoCalculator {
       }
     }
     if (failedNorms.size > 0) {
-      failedNorms.forEach((v,k) => {
+      failedNorms.forEach((v, k) => {
         const wellBlock = formatWellBlock(Array.from(v));
         this.errors.push(`Insufficient DMSO to normalize ${k} - ${wellBlock}`);
       });
@@ -509,8 +509,8 @@ export class EchoCalculator {
       if (!concInfo) continue;
       for (const wellId of wellsToTransferTo) {
         let possibleSrcLocs: { barcode: string, wellId: string }[];
-        if (concInfo.sourceType == 'src') {
-          possibleSrcLocs = this.echoPreCalc.srcCompoundInventory.get(compoundId)!.get(dilutionPattern.patternName)!.locations.filter((inv) => inv.concentration == concInfo.sourceConc).map(loc => { return { barcode: loc.barcode, wellId: loc.wellId }; });
+        if (concInfo.sourceType === 'src') {
+          possibleSrcLocs = this.echoPreCalc.srcCompoundInventory.get(compoundId)!.get(dilutionPattern.patternName)!.locations.filter((inv) => inv.concentration === concInfo.sourceConc).map(loc => { return { barcode: loc.barcode, wellId: loc.wellId }; });
         } else {
           const possibleIntLocs = this.intermediateWellCache.get(compoundId)!.get(concInfo.sourceConc)!;
           possibleSrcLocs = possibleIntLocs.flatMap(item => {
@@ -541,7 +541,7 @@ export class EchoCalculator {
 
   hasWellsAvailable(wells: Well[]): boolean {
     for (const well of wells) {
-      if (well.getContents().length != 0 && !well.getIsUnused()) {
+      if (well.getContents().length !== 0 && !well.getIsUnused()) {
         return false;
       }
     }
@@ -552,18 +552,17 @@ export class EchoCalculator {
     //hard coded solvent name for now, could expand to aqueous later
     const solventName = 'DMSO';
     //check if last used well is still fine
-    const plateIdx = plates.findIndex(plate => plate.barcode == lastUsed.barcode);
+    const plateIdx = plates.findIndex(plate => plate.barcode === lastUsed.barcode);
     if (plateIdx > -1) {
       //const echoDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plates[plateIdx].barcode) as number
       const echoDeadVolume = plates[plateIdx].getDeadVolume();
       const well = plates[plateIdx].getWell(lastUsed.wellId);
       if (well && well.isSolventOnlyWell(solventName) && well.getTotalVolume() > (volume + echoDeadVolume)) {
         return lastUsed;
-      }
-      //iterate through remaining wells on plate
-      else if (lastUsed.wellId) {
+        //iterate through remaining wells on plate
+      } else if (lastUsed.wellId) {
         let wellIds = plates[plateIdx].getWellIds();
-        const wellIdIdx = wellIds.findIndex(wellId => wellId == lastUsed.wellId);
+        const wellIdIdx = wellIds.findIndex(wellId => wellId === lastUsed.wellId);
         if (wellIdIdx !== -1) {
           wellIds = wellIds.slice(wellIdIdx + 1);
           for (const wellId of wellIds) {
@@ -582,9 +581,8 @@ export class EchoCalculator {
           }
         }
       }
-    }
-    //start from the beginning and check every well of every plate
-    else {
+      //start from the beginning and check every well of every plate
+    } else {
       for (const plate of plates) {
         //const echoDeadVolume = this.echoPreCalc.plateDeadVolumes.get(plate.barcode) as number
         const echoDeadVolume = plate.getDeadVolume();
@@ -667,16 +665,16 @@ export class EchoCalculator {
   findPlateWithNumWellsAvailable(plates: Plate[], numberWells: number): { barcode: string, wellBlock: string } {
     for (const plate of plates) {
       const availableWells = Object.values(plate.wells)
-        .filter(well => (well.getContents().length == 0 && !well.getIsUnused()))
+        .filter(well => (well.getContents().length === 0 && !well.getIsUnused()))
         .map(well => well.id)
         .sort();
 
       if (availableWells.length >= numberWells) {
         if (this.inputData.CommonData.fillIntColumnwise) {
-          availableWells.sort((a,b) => {
-          const coordsA = getCoordsFromWellId(a);
-          const coordsB = getCoordsFromWellId(b);
-          return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
+          availableWells.sort((a, b) => {
+            const coordsA = getCoordsFromWellId(a);
+            const coordsB = getCoordsFromWellId(b);
+            return coordsA.col === coordsB.col ? coordsA.row - coordsB.row : coordsA.col - coordsB.col;
           });
         }
         const wellBlock = formatWellBlock(availableWells.slice(0, numberWells));

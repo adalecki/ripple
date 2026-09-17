@@ -6,14 +6,14 @@ import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNum
 export function currentItem(items: any[], curItemId: number | null) {
   let item = null;
   if (curItemId != null) {
-    item = items.find((item) => item.id == curItemId) || null;
+    item = items.find((item) => item.id === curItemId) || null;
   }
   return item;
 }
 
 export function generateId(items: {id: number; [key: string]: any}[]): number {
   let newId = Date.now();
-  while (items.find(i => i.id == newId)) {
+  while (items.find(i => i.id === newId)) {
     newId += 1;
   }
   return newId;
@@ -68,14 +68,14 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
     let dmsoPatternAdded: boolean = false;
     for (const plate of srcPlates) {
       const sortedWells = Object.values(plate.getWells())
-        .filter(well => well.getContents().length != 0)
+        .filter(well => well.getContents().length !== 0)
         .sort((a, b) => a.id.localeCompare(b.id));
 
       const compoundInventory = new Map<string, { concentration: number, compoundId: string, volume: number, patternName: string, wellIds: string[] }>();
 
       for (const well of sortedWells) {
         const content = well.getContents()[0];
-        if (!content.compoundId || content.concentration === null) continue;
+        if (!content.compoundId || content.concentration == null) continue;
 
         const volume = well.getTotalVolume() / 1000;
         const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
@@ -186,7 +186,7 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
   if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
     const numConcs = pattern.concentrations.length;
     const requiredTotal = numConcs * numConcs * pattern.replicates;
-    if (selectedWellIds.length % requiredTotal != 0) {
+    if (selectedWellIds.length % requiredTotal !== 0) {
       return [`Matrix pattern requires a multiple of ${requiredTotal} wells (${numConcs}² x ${pattern.replicates} replicates)`];
     }
     try {
@@ -196,8 +196,8 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
     }
     return msgArr;
   }
-  if (selectedWellIds.length % pattern.concentrations.length != 0) return ['The number of wells must be divisible by the number of concentrations'];
-  if (selectedWellIds.length % (pattern.replicates * pattern.concentrations.length) != 0) return ['The number of wells must be divisible by the number of replicates x concentrations'];
+  if (selectedWellIds.length % pattern.concentrations.length !== 0) return ['The number of wells must be divisible by the number of concentrations'];
+  if (selectedWellIds.length % (pattern.replicates * pattern.concentrations.length) !== 0) return ['The number of wells must be divisible by the number of replicates x concentrations'];
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
 
   for (const block of blocks) {
@@ -219,11 +219,11 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
 
       switch (pattern.direction[0]) {
         case 'LR': case 'RL': {
-          if (rectWidth != pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number`); }
+          if (rectWidth !== pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number`); }
           break;
         }
         case 'TB': case 'BT': {
-          if (rectHeight != pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number`); }
+          if (rectHeight !== pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number`); }
           break;
         }
       }
@@ -387,7 +387,7 @@ export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
     const blockEndWellCoords = getCoordsFromWellId(blockEndWellId);
     const blockSize = { x: blockEndWellCoords.col - blockStartWellCoords.col + 1, y: blockEndWellCoords.row - blockStartWellCoords.row + 1 };
 
-    if (blockSize.x % srcSize.x != 0 || blockSize.y % srcSize.y != 0) {
+    if (blockSize.x % srcSize.x !== 0 || blockSize.y % srcSize.y !== 0) {
       return tileScheme;
     }
     const tilesHorizontal = blockSize.x / tileScheme.srcSize.x;
@@ -400,7 +400,7 @@ export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
         const tileEndX = tileOriginX + tileScheme.srcSize.x - 1;
         const tileOriginWellId = getWellIdFromCoords(tileOriginY, tileOriginX);
         const tileEndWellId = getWellIdFromCoords(tileEndY, tileEndX);
-        if (tileOriginWellId == tileEndWellId) { validBlocks.push(tileOriginWellId); } else { validBlocks.push(tileOriginWellId + ':' + tileEndWellId); }
+        if (tileOriginWellId === tileEndWellId) { validBlocks.push(tileOriginWellId); } else { validBlocks.push(tileOriginWellId + ':' + tileEndWellId); }
       }
     }
   }
@@ -475,7 +475,7 @@ export function labelDrag(startEl: Element | null, endEl: Element | null, plate:
   const newSelected: string[] = [];
   if (!(startEl instanceof HTMLDivElement) || !(endEl instanceof HTMLDivElement)) return newSelected;
   if (startEl === endEl) return newSelected;
-  if (startEl.parentElement != endEl.parentElement) return newSelected;
+  if (startEl.parentElement !== endEl.parentElement) return newSelected;
   const startLabel = startEl.innerText;
   const endLabel = endEl.innerText;
   const rowRange = { start: 0, end: 0 };
@@ -528,7 +528,7 @@ export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: 
     if (plate.getWell(newWellId)) {
       newSelectedWellIdsSet.add(newWellId);
     }
-    if (e.shiftKey && e.shiftKey == true) {
+    if (e.shiftKey && e.shiftKey === true) {
       newSelectedWellIdsSet.add(wellId);
     }
   }
