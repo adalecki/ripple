@@ -12,10 +12,11 @@ export interface ChangeEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.0.2',
-    date: '2026-09-17',
+    date: '2026-09-18',
     changes: [
       { type: 'Backend', text: 'Fixed Plate Designer bugs selecting wells with different sized plates, and edge case deleting a pattern after changing plate size' },
-      { type: 'Backend', text: 'Changed default option for "Split Output CSVs" to "False"' }
+      { type: 'Backend', text: 'Changed default option for "Split Output CSVs" to "False"' },
+      { type: 'UI', text: 'Changed font scaling based on window size to account for Windows default 150% scaling' }
     ]
   },
   {
