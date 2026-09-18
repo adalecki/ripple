@@ -1,11 +1,11 @@
-import React, { useRef, useEffect, useState } from "react";
-import { Plate } from "../classes/PlateClass";
-import { Well } from "../classes/WellClass";
-import { wellColors, ColorConfig } from "../utils/wellColors";
-import { getCoordsFromWellId, numberToLetters, WellTransferMap } from "../utils/plateUtils";
-import WellTooltip, { HoveredWellData } from "./WellTooltip";
-import '../css/PlateComponent.css'
-import { canvasCoordsToWell } from "../utils/designUtils";
+import React, { useRef, useEffect, useState } from 'react';
+import { Plate } from '../classes/PlateClass';
+import { Well } from '../classes/WellClass';
+import { wellColors, ColorConfig } from '../utils/wellColors';
+import { getCoordsFromWellId, numberToLetters, WellTransferMap } from '../utils/plateUtils';
+import WellTooltip, { HoveredWellData } from './WellTooltip';
+import '../css/PlateComponent.css';
+import { canvasCoordsToWell } from '../utils/designUtils';
 
 interface PlateViewCanvasProps {
   plate: Plate;
@@ -29,25 +29,10 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wellsContainerRef = useRef<HTMLDivElement | null>(null);
-  const gridContainerRef = useRef<HTMLDivElement | null>(null);
   const [hoveredWell, setHoveredWell] = useState<HoveredWellData | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0, dpr: 1, wellSize: 0, gap: 0 });
 
   const wellColorArr = wellColors(plate, colorConfig);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = wellsContainerRef.current;
-    const grid = gridContainerRef.current
-    if (!canvas || !container || !grid) return;
-    const observer = new ResizeObserver(drawPlate);
-
-    observer.observe(grid);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [plate, colorConfig, selectedWells, blockBorderMap, canvasSize.dpr]);
 
   function drawPlate() {
     const canvas = canvasRef.current;
@@ -56,38 +41,55 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     const dpr = window.devicePixelRatio;
 
     if (!canvas || !container) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     const availableWidth = container.clientWidth;
     const availableHeight = container.clientHeight;
 
     if (availableWidth === 0 || availableHeight === 0) return;
-    const gap = 96 / plate.columns
-    const wellSize = Math.floor((availableWidth - ((plate.columns - 1) * gap)) / plate.columns)
+    const gap = 96 / plate.columns;
+    const wellSizeByWidth = (availableWidth - 1 - ((plate.columns - 1) * gap)) / plate.columns
+    const wellSizeByHeight = (availableHeight - 1 - ((plate.rows - 1) * gap)) / plate.rows
+    const wellSize = Math.floor(Math.min(wellSizeByWidth, wellSizeByHeight))
+    if (wellSize <= 0) return;
 
-    const canvasWidth = (wellSize * plate.columns) + (plate.columns - 1) * gap + 1
-    const canvasHeight = (wellSize * plate.rows) + (plate.rows - 1) * gap + 1
+    const canvasWidth = (wellSize * plate.columns) + (plate.columns - 1) * gap + 1;
+    const canvasHeight = (wellSize * plate.rows) + (plate.rows - 1) * gap + 1;
     canvas.width = Math.ceil(canvasWidth * dpr);
     canvas.height = Math.ceil(canvasHeight * dpr);
     ctx.scale(dpr, dpr);
     canvas.style.width = `${canvasWidth}px`;
     canvas.style.height = `${canvasHeight}px`;
 
-    setCanvasSize({ width: canvas.width, height: canvas.height, dpr: dpr, wellSize: wellSize, gap: gap });
+    setCanvasSize({ width: canvasWidth, height: canvasHeight, dpr: dpr, wellSize: wellSize, gap: gap });
 
     for (const { wellId, colors, dividers } of wellColorArr) {
       const { row, col } = getCoordsFromWellId(wellId);
-      const x = (wellSize + gap) * col
-      const y = (wellSize + gap) * row
+      const x = (wellSize + gap) * col;
+      const y = (wellSize + gap) * row;
 
       const well = plate.getWell(wellId)!;
       const isSelected = selectedWells.includes(wellId);
       const borders = blockBorderMap?.get(wellId);
 
-      drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders, dividers)
+      drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders, dividers);
     }
   };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = wellsContainerRef.current;
+    if (!canvas || !container) return;
+    const observer = new ResizeObserver(drawPlate);
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plate, colorConfig, selectedWells, blockBorderMap, canvasSize.dpr]);
 
   function drawWell(
     ctx: CanvasRenderingContext2D,
@@ -101,15 +103,15 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     dividers?: boolean
   ) {
 
-    ctx.strokeStyle = "#000";
+    ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, size, size)
+    ctx.strokeRect(x + 0.5, y + 0.5, size, size);
 
     if (colors.length > 0) {
       drawSegments(ctx, x + 1, y + 1, size - 1, colors, dividers);
     }
 
-    if (well.getSolvents().some(s => s.name === "DMSO" && s.volume > 0) && !well.getIsUnused()) {
+    if (well.getSolvents().some(s => s.name === 'DMSO' && s.volume > 0) && !well.getIsUnused()) {
       drawDmso(ctx, x, y);
     }
 
@@ -117,16 +119,16 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       drawUnused(ctx, x, y, size);
     }
     if (borders) {
-      ctx.strokeStyle = "black";
+      ctx.strokeStyle = 'black';
       ctx.lineWidth = 2;
       if (borders.top) ctx.strokeRect(x + 1, y + 1, size - 1, 0);
       if (borders.bottom) ctx.strokeRect(x + 1, y + size - 0, size - 1, 0);
       if (borders.left) ctx.strokeRect(x + 1, y + 1, 0, size - 1);
       if (borders.right) ctx.strokeRect(x + size - 0, y + 1, 0, size - 1);
     }
-    
+
     if (isSelected) {
-      ctx.strokeStyle = "blue";
+      ctx.strokeStyle = 'blue';
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 1, y + 1, size - 1, size - 1);
     }
@@ -144,7 +146,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     const cy = y + size / 2;
     const r = size / 1;
     const seg = (2 * Math.PI) / colors.length;
-    ctx.save()
+    ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, size, size);
     ctx.clip();
@@ -157,12 +159,12 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       ctx.fillStyle = colors[i];
       ctx.fill();
       if (dividers && colors.length > 1) {
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = 'black';
         ctx.lineWidth = 1;
         ctx.stroke();
       }
     }
-    ctx.restore()
+    ctx.restore();
   };
 
   function drawDmso(
@@ -170,8 +172,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     x: number,
     y: number
   ) {
-    const triangleSize = 8 / canvasSize.dpr
-    ctx.fillStyle = "black";
+    const triangleSize = 8 / canvasSize.dpr;
+    ctx.fillStyle = 'black';
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x + triangleSize, y);
@@ -191,7 +193,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx.rect(x, y, size, size);
     ctx.clip();
 
-    ctx.strokeStyle = "rgba(0,0,0,0.4)";
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
     ctx.lineWidth = 1;
 
     for (let i = -size; i < size; i += 6) {
@@ -220,23 +222,23 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     let x = 0;
     let y = 0;
 
-    let tooltipX = (canvasSize.wellSize + canvasSize.gap) * wellCoords.col + canvas.getBoundingClientRect().x + canvasSize.wellSize
-    let tooltipY = (canvasSize.wellSize + canvasSize.gap) * wellCoords.row + canvas.getBoundingClientRect().y + canvasSize.wellSize
+    let tooltipX = (canvasSize.wellSize + canvasSize.gap) * wellCoords.col + canvas.getBoundingClientRect().x + canvasSize.wellSize;
+    let tooltipY = (canvasSize.wellSize + canvasSize.gap) * wellCoords.row + canvas.getBoundingClientRect().y + canvasSize.wellSize;
 
     if (plate.columns / 2 <= wellCoords.col + 1) {
       x = -100;
-      tooltipX -= canvasSize.wellSize
+      tooltipX -= canvasSize.wellSize;
     }
     if (plate.rows / 2 <= wellCoords.row + 1) {
       y = -100;
-      tooltipY -= canvasSize.wellSize
+      tooltipY -= canvasSize.wellSize;
     }
     setHoveredWell({
       well,
       position: { x: tooltipX, y: tooltipY },
       transform: `translate(${x}%, ${y}%)`,
       transferList: view.includes('reformat') && transferMap ? transferMap.get(wellId) || [] : undefined,
-      showPatternName: view == 'design'
+      showPatternName: view === 'design'
     });
   };
 
@@ -244,7 +246,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   const columnLabels = [];
 
   for (let rowIndex = 0; rowIndex < plate.rows; rowIndex++) {
-    const row = numberToLetters(rowIndex)
+    const row = numberToLetters(rowIndex);
     rowLabels.push(
       <div
         key={`plate-row-label-${row}`}
@@ -260,8 +262,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     columnLabels.push(
       <div
         key={`plate-col-label-${colIndex + 1}`}
-        className='plate-grid-label'
-        style={{paddingBottom: 5}}
+        className="plate-grid-label"
+        style={{ paddingBottom: 5 }}
         onClick={handleLabelClick}
       >
         {(colIndex + 1)}
@@ -269,34 +271,34 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     );
   }
 
-  const rowHeight = (canvasSize.height / plate.rows) / canvasSize.dpr;
+  const rowHeight = (canvasSize.height / plate.rows);
 
   return (
-    <div className="grid-container" ref={gridContainerRef} data-view={view}>
+    <div className="grid-container" data-view={view} style={{ aspectRatio: `${plate.columns} / ${plate.rows}` }}>
 
       <div
-        className={handleLabelClick ? "all-wells-container" : ""}
+        className={handleLabelClick ? 'all-wells-container' : ''}
         style={{ height: `${15 / canvasSize.dpr}px` }}
         onClick={handleLabelClick}
       />
-        <div
-          className="col-labels-container"
-          style={{
-            gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
-            maxWidth: canvasSize.width / canvasSize.dpr
-          }}>
-          {columnLabels}
-        </div>
+      <div
+        className="col-labels-container"
+        style={{
+          gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
+          maxWidth: canvasSize.width
+        }}>
+        {columnLabels}
+      </div>
       <div
         className="row-labels-container"
-        
+
         style={{
           gridTemplateRows: `repeat(${plate.rows}, ${rowHeight}px)`,
         }}>
         {rowLabels}
       </div>
 
-      <div className="wells-container" ref={wellsContainerRef} style={{ aspectRatio: `${plate.columns} / ${plate.rows}` }}>
+      <div className="wells-container" ref={wellsContainerRef} >
         <canvas
           ref={canvasRef}
           onMouseMove={handleHoveredWellMove}

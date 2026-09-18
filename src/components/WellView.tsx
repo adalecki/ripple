@@ -16,7 +16,7 @@ const WellView = React.forwardRef<HTMLDivElement, WellProps>(
   ({ well, bgColors, wellId, onMouseEnter, onMouseLeave, onClickMask, isSelected, blockBorders }, ref) => {
     const classNames = `well ${isSelected ? 'well-highlighted' : ''} ${well.getIsUnused() ? 'well-unused' : ''}`;
 
-    const style = '3px solid rgb(0, 0, 0) '
+    const style = '3px solid rgb(0, 0, 0) ';
 
     const borderStyle = {
       borderTop: blockBorders?.top ? style : undefined,
@@ -24,18 +24,18 @@ const WellView = React.forwardRef<HTMLDivElement, WellProps>(
       borderBottom: blockBorders?.bottom ? style : undefined,
       borderLeft: blockBorders?.left ? style : undefined,
     };
-    
+
     const renderSegments = () => {
       const segmentCount = bgColors.length;
-      
+
       if (segmentCount === 1) {
         return <div className="well-segment" style={{ backgroundColor: bgColors[0], width: '100%', height: '100%' }} />;
       }
-      
+
       return bgColors.map((color, index) => {
         const angle = 360 / segmentCount;
         const startAngle = index * angle;
-        
+
         return (
           <div
             key={index}
@@ -63,7 +63,7 @@ const WellView = React.forwardRef<HTMLDivElement, WellProps>(
         onClick={(e) => onClickMask(wellId, e)}
         data-wellid={wellId}
       >
-        {(well.getSolvents().some(s => s.name == 'DMSO' && s.volume > 0) && !well.getIsUnused() ? <div className='dmso'></div> : '')}
+        {(well.getSolvents().some(s => s.name === 'DMSO' && s.volume > 0) && !well.getIsUnused() ? <div className="dmso"></div> : '')}
         {renderSegments()}
       </div>
     );

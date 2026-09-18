@@ -1,7 +1,7 @@
-import { Plate } from "../classes/PlateClass";
-import { Well, WellContent } from "../classes/WellClass";
-import { HslStringType, Pattern, isCombinationType } from "../classes/PatternClass";
-import * as d3 from 'd3'
+import { Plate } from '../classes/PlateClass';
+import { Well, WellContent } from '../classes/WellClass';
+import { HslStringType, Pattern, isCombinationType } from '../classes/PatternClass';
+import * as d3 from 'd3';
 
 export interface HslType {
   h: number;
@@ -17,14 +17,14 @@ export interface ColorConfig {
 }
 
 export function generateEntityColors(entities: string[], hSeed: number = Math.random()): Map<string, HslStringType> {
-  const saturation = '100'
-  const lightness = '80'
+  const saturation = '100';
+  const lightness = '80';
   const colorMap = new Map<string, HslStringType>();
   const n = entities.length;
-  const hues = buildHues(n,hSeed)
+  const hues = buildHues(n,hSeed);
   entities.forEach((entity, index) => {
-    let color = `hsl(${hues[index]},${saturation}%,${lightness}%)` as HslStringType
-    colorMap.set(entity, color)
+    const color = `hsl(${hues[index]},${saturation}%,${lightness}%)` as HslStringType;
+    colorMap.set(entity, color);
   });
 
   return colorMap;
@@ -33,12 +33,12 @@ export function generateEntityColors(entities: string[], hSeed: number = Math.ra
 export function generateSingleColor(hSeed: number = Math.random(), start: number = 1){
   const goldenRatioConjugate = 0.618033988749895;
   let h = hSeed;
-  const iter = Math.trunc((start-1)/8) * 0.23 //golden ratio wraps around at 8, so offset every 8 colors
+  const iter = Math.trunc((start-1)/8) * 0.23; //golden ratio wraps around at 8, so offset every 8 colors
   h += (goldenRatioConjugate * start + iter);
   h %= 1;
-  h = h*360
+  h = h*360;
 
-  const color = `hsl(${h},100%,67%)` as HslStringType
+  const color = `hsl(${h},100%,67%)` as HslStringType;
 
   return color;
 }
@@ -46,17 +46,16 @@ export function generateSingleColor(hSeed: number = Math.random(), start: number
 export function generatePatternColors(patterns: Pattern[]) {
   const colorMap = new Map<string, HslStringType>();
   patterns.forEach((Pattern,_) => {
-    colorMap.set(Pattern.name,Pattern.color)
-  })
+    colorMap.set(Pattern.name,Pattern.color);
+  });
   return colorMap;
 }
 
 export function wellColors(plate: Plate, config: ColorConfig): { wellId: string; colors: HslStringType[]; dividers?: boolean }[] {
   if (config.scheme === 'rawResponse') {
     return wellColorsResponse(plate, false);
-  }
-  else if (config.scheme === 'normalizedResponse') {
-    return wellColorsResponse(plate, true)
+  } else if (config.scheme === 'normalizedResponse') {
+    return wellColorsResponse(plate, true);
   }
   const wellColors = [];
 
@@ -75,7 +74,7 @@ export function wellColors(plate: Plate, config: ColorConfig): { wellId: string;
         dividers = well.getContents().some(content => !content.compoundId && isCombinationType(plate.patterns[content.patternName]?.type ?? ''));
         break;
       case 'custom':
-        colors = config.colorMap.get(well.id) ? [config.colorMap.get(well.id)!] : []
+        colors = config.colorMap.get(well.id) ? [config.colorMap.get(well.id)!] : [];
     }
 
     wellColors.push({
@@ -92,22 +91,21 @@ function getCompoundColor(well: Well, config: ColorConfig): HslStringType[] {
   if (well.getIsUnused()) {
     return ['hsl(0,0%,95%)' as HslStringType];
   }
-  
+
   const regex = /(\d+\.?\d*)%?/g;
-  const contents = well.getContents().filter(content => content.compoundId)
-  let colors = ['hsl(0,0%,100%)' as HslStringType]
+  const contents = well.getContents().filter(content => content.compoundId);
+  let colors = ['hsl(0,0%,100%)' as HslStringType];
   if (contents.length > 0) {
     colors = contents.map(content => {
       const baseColor = config.colorMap.get(content.compoundId!) || 'hsl(0,0%,80%)';
-      let nums = baseColor.match(regex)
-      let lightness = wellLightness(well, content, config.maxConcentration || 0)
-      return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` as HslStringType : 'hsl(0,0%,100%)' as HslStringType)
+      const nums = baseColor.match(regex);
+      const lightness = wellLightness(well, content, config.maxConcentration || 0);
+      return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` as HslStringType : 'hsl(0,0%,100%)' as HslStringType);
     });
+  } else if (well.getTotalVolume() > 0 && well.getSolventFraction('Assay Buffer') > 0) {
+    colors = ['hsl(0,0%,90%)' as HslStringType];
   }
-  else if (well.getTotalVolume() > 0 && well.getSolventFraction('Assay Buffer') > 0) {
-    colors = ['hsl(0,0%,90%)' as HslStringType]
-  }
-  return colors
+  return colors;
 }
 
 
@@ -115,35 +113,35 @@ function getPatternColor(well: Well, config: ColorConfig): HslStringType[] {
   if (well.getIsUnused()) {
     return ['hsl(0,0%,95%)' as HslStringType];
   }
-  
+
   const regex = /(\d+\.?\d*)%?/g;
-  const contents = well.getContents().filter(content => !(content.compoundId))
+  const contents = well.getContents().filter(content => !(content.compoundId));
   const colors = contents.map(content => {
     const baseColor = config.colorMap.get(content.patternName) || 'hsl(0,0%,80%)';
-    let nums = baseColor.match(regex)
-    let lightness = wellLightness(well, content, config.maxConcentration || 0)
-    return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` as HslStringType : 'hsl(0,0%,100%)' as HslStringType)
+    const nums = baseColor.match(regex);
+    const lightness = wellLightness(well, content, config.maxConcentration || 0);
+    return (nums ? `hsl(${nums[0]},${nums[1]},${lightness}%)` as HslStringType : 'hsl(0,0%,100%)' as HslStringType);
   });
-  return colors
+  return colors;
 }
 
 function wellLightness(well: Well, content: WellContent, maxValue: number) {
-  let start = 40
-  let end = 95
-  let lightness = end
+  const start = 40;
+  const end = 95;
+  let lightness = end;
   if (content.concentration === null) {
     const plannedVolume = well.getContents().reduce(
-      (sum, c) => (c.concentration === null ? sum + c.volume : sum), 0)
-    const denominator = well.getTotalVolume() > 0 ? well.getTotalVolume() : plannedVolume
-    const ratio = denominator > 0 ? content.volume / denominator : 0
-    return end - (Math.floor(ratio * (end - start)))
+      (sum, c) => (c.concentration === null ? sum + c.volume : sum), 0);
+    const denominator = well.getTotalVolume() > 0 ? well.getTotalVolume() : plannedVolume;
+    const ratio = denominator > 0 ? content.volume / denominator : 0;
+    return end - (Math.floor(ratio * (end - start)));
   }
-  if (maxValue === 0) { maxValue = 1 }
+  if (maxValue === 0) { maxValue = 1; }
   if (well.getContents()) {
-    lightness = end - (Math.floor(content.concentration / maxValue * (end - start)))
+    lightness = end - (Math.floor(content.concentration / maxValue * (end - start)));
   }
 
-  return lightness
+  return lightness;
 }
 
 function buildHues(count: number, hSeed: number): number[] {
@@ -173,40 +171,39 @@ function parseHSL(color: `hsl(${number},${number}%,${number}%)`): { h: number, s
 }
 
 export function hslToString(hsl: HslType): `hsl(${number},${number}%,${number}%)` {
-  return `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`
+  return `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`;
 }
 
 export function wellColorsResponse(plate: Plate, normalized: Boolean): { wellId: string; colors: HslStringType[] }[] {
   const wellColorArr: { wellId: string; colors: HslStringType[] }[] = [];
-  
+
   const minResponse = (normalized ? 0 : plate.metadata.globalMinResponse);
   const maxResponse = (normalized ? 100 : plate.metadata.globalMaxResponse);
-  
+
   const colorScale = d3
     .scaleSequential()
     .interpolator(d3.interpolateViridis)
     .domain([minResponse, maxResponse]);
-  
+
   for (const well of plate) {
     if (!well) continue;
-    
+
     let colors: HslStringType[] = [];
-    
+
     if (well.getIsUnused()) {
       colors = ['hsl(0,0%,95%)' as HslStringType];
     } else if (!normalized && well.rawResponse !== null) {
       const color = colorScale(well.rawResponse);
-      colors = [d3.color(color)?.formatHsl() as HslStringType]
+      colors = [d3.color(color)?.formatHsl() as HslStringType];
     } else if (normalized && well.normalizedResponse !== null) {
-      const color = colorScale(well.normalizedResponse)
-      colors = [d3.color(color)?.formatHsl() as HslStringType]
-    } 
-    else {
+      const color = colorScale(well.normalizedResponse);
+      colors = [d3.color(color)?.formatHsl() as HslStringType];
+    } else {
       colors = ['hsl(0,0%,100%)'];
     }
-    
+
     wellColorArr.push({ wellId: well.id, colors });
   }
-  
+
   return wellColorArr;
 }

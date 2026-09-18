@@ -15,7 +15,7 @@ const Instructions: React.FC = () => {
                 <Card.Title as="h4" className="mb-4 text-center">Quick Start</Card.Title>
                 <p>
                   The Plate Designer lets you lay out your destination and source plates visually,
-                  then export a ready-to-use template for the Echo Transfer Calculator. 
+                  then export a ready-to-use template for the Echo Transfer Calculator.
                 </p>
                 <ul className="template-card">
                   <li><strong>1. </strong>On the <b>Design - Destination</b> tab, create one or more patterns in the sidebar and set their type, dilution direction, replicates, and concentrations.</li>

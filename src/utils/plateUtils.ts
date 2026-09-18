@@ -1,7 +1,7 @@
-import { HslStringType, isCombinationType, Pattern } from "../classes/PatternClass";
-import { Plate } from "../classes/PlateClass";
-import { Well } from "../classes/WellClass";
-import type { PlatesContextType } from "../contexts/Context";
+import { HslStringType, isCombinationType, Pattern } from '../classes/PatternClass';
+import { Plate } from '../classes/PlateClass';
+import { Well } from '../classes/WellClass';
+import type { PlatesContextType } from '../contexts/Context';
 
 export type Direction = 'LR' | 'RL' | 'TB' | 'BT';
 
@@ -35,8 +35,8 @@ export interface TransferBlock {
 }
 
 export function rowColExport(step: TransferStepExport, injectPlateType: boolean) {
-  const sourceCoords = getCoordsFromWellId(step.sourceWellId)
-  const destCoords = getCoordsFromWellId(step.destinationWellId)
+  const sourceCoords = getCoordsFromWellId(step.sourceWellId);
+  const destCoords = getCoordsFromWellId(step.destinationWellId);
 
   return {
     'Source Plate Barcode': step.sourceBarcode,
@@ -98,27 +98,27 @@ export function getCoordsFromWellId(wellId: string): { row: number, col: number 
 //zero indexed
 export function getWellIndex(wellId: string, plate: Plate): number | null {
   if (plate.getWell(wellId) == null) return null;
-  const coords = getCoordsFromWellId(wellId)
-  return (coords.row * plate.columns + coords.col)
+  const coords = getCoordsFromWellId(wellId);
+  return (coords.row * plate.columns + coords.col);
 }
 
 export function currentPlate(plates: Plate[], curPlateId: PlatesContextType['curPlateId']) {
-  let plate = null
+  let plate = null;
   if (curPlateId != null) {
-    plate = plates.find((plate) => plate.id == curPlateId) || null
+    plate = plates.find((plate) => plate.id === curPlateId) || null;
   }
-  return plate
+  return plate;
 }
 
 export function clonePlate(plate: Plate) {
-  return plate.clone()
+  return plate.clone();
 }
 
 export function modifyPlate(clonePlate: Plate, plates: Plate[], setPlates: PlatesContextType['setPlates'], curPlateId: PlatesContextType['curPlateId']) {
-  let plateIdx = plates.findIndex((plate) => plate.id == curPlateId)
-  let newPlates = [...plates]
-  newPlates[plateIdx] = clonePlate
-  setPlates(newPlates)
+  const plateIdx = plates.findIndex((plate) => plate.id === curPlateId);
+  const newPlates = [...plates];
+  newPlates[plateIdx] = clonePlate;
+  setPlates(newPlates);
 }
 
 export function formatWellBlock(wellIds: string[]): string {
@@ -129,8 +129,8 @@ export function formatWellBlock(wellIds: string[]): string {
   const wells = [...new Set(wellIds)].sort((a, b) => {
     const coordsA = getCoordsFromWellId(a);
     const coordsB = getCoordsFromWellId(b);
-    maxRow = Math.max(maxRow, coordsA.row, coordsB.row)
-    maxCol = Math.max(maxCol, coordsA.col, coordsB.col)
+    maxRow = Math.max(maxRow, coordsA.row, coordsB.row);
+    maxCol = Math.max(maxCol, coordsA.col, coordsB.col);
     return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsA.row - coordsB.row;
   });
 
@@ -309,7 +309,7 @@ export function mapWellsToConcentrations(
         case 'BT':
           return coordsA.row === coordsB.row ? coordsA.col - coordsB.col : coordsB.row - coordsA.row;
       }
-    })
+    });
   }
 
   return result;
@@ -347,9 +347,9 @@ export function calculateBlockBorders(plate: Plate): Map<string, { top: boolean,
     }
   }
 
-  const patternIds = Object.keys(plate.patterns)
+  const patternIds = Object.keys(plate.patterns);
   for (const patternId of patternIds) {
-    const pattern = plate.patterns[patternId]
+    const pattern = plate.patterns[patternId];
     for (const block of pattern.locations) {
       const wells = plate.getSomeWells(block);
       const wellIds = wells.map(w => w.id);
@@ -395,22 +395,22 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     return [formatWellBlock(wells)];
   }
 
-  if (pattern.type == 'Recipe') {
+  if (pattern.type === 'Recipe') {
     const blocks: string[] = [];
     for (let i = 0; i + pattern.replicates <= wells.length; i += pattern.replicates) {
       blocks.push(formatWellBlock(wells.slice(i, i + pattern.replicates)));
     }
     return blocks;
   }
-  const concentrations = pattern.concentrations.filter(c => c != null)
+  const concentrations = pattern.concentrations.filter(c => c != null);
 
   if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
-    const patternReplicates = wells.length / ((concentrations.length * concentrations.length) * pattern.replicates)
-    const blocks: string[] = []
+    const patternReplicates = wells.length / ((concentrations.length * concentrations.length) * pattern.replicates);
+    const blocks: string[] = [];
     for (let i = 0; i < patternReplicates; i++) {
       const startIndex = i * ((concentrations.length * concentrations.length) * pattern.replicates);
       const endIndex = startIndex + ((concentrations.length * concentrations.length) * pattern.replicates);
-      blocks.push(formatWellBlock(wells.slice(startIndex, endIndex)))
+      blocks.push(formatWellBlock(wells.slice(startIndex, endIndex)));
     }
     return blocks;
   }
@@ -418,13 +418,13 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
   const wellsPerConcentration = wells.length / concentrations.length;
 
   if (wellsPerConcentration % 1 !== 0) {
-    throw new Error("The number of wells must be divisible by the number of concentrations.");
+    throw new Error('The number of wells must be divisible by the number of concentrations.');
   }
 
   const patternReplicates = wellsPerConcentration / pattern.replicates;
 
   if (patternReplicates % 1 !== 0) {
-    throw new Error("The number of wells per concentration must be divisible by the original number of replicates.");
+    throw new Error('The number of wells per concentration must be divisible by the original number of replicates.');
   }
 
   const wellConcentrationArr = mapWellsToConcentrations(
@@ -441,7 +441,7 @@ export function splitIntoBlocks(wells: string[], pattern: Pattern, plate: Plate)
     for (const concIdx in concentrations) {
       const startIndex = i * pattern.replicates;
       const endIndex = startIndex + pattern.replicates;
-      block.push(...wellConcentrationArr[concIdx].slice(startIndex, endIndex))
+      block.push(...wellConcentrationArr[concIdx].slice(startIndex, endIndex));
     }
     blocks.push(formatWellBlock(block));
   }
@@ -481,11 +481,11 @@ export function getWellIdsFromRange(rawRange: string): string[] {
 
 export function getWellFromBarcodeAndId(barcode: string, wellId: string, plates: Plate[], curPlate?: Plate): Well | null {
   if (curPlate && curPlate.barcode === barcode) {
-    return curPlate.getWell(wellId)
+    return curPlate.getWell(wellId);
   }
-  const plate = plates.find(p => p.barcode === barcode)
-  if (!plate) return null
-  return plate.getWell(wellId)
+  const plate = plates.find(p => p.barcode === barcode);
+  if (!plate) return null;
+  return plate.getWell(wellId);
 }
 
 export interface WellTransferSummary {

@@ -1,19 +1,19 @@
-import { Route, createHashRouter, RouterProvider, createRoutesFromElements } from "react-router-dom";
-import Navigation from "./components/Navigation";
-import NavbarHeightAdjuster from "./components/NavbarHeightAdjuster";
-import Home from "./pages/Home";
-import NoPage from "./pages/NoPage";
-import Changelog from "./pages/Changelog";
-import EchoTransfer from "./pages/EchoTransfer/EchoTransfer";
-import DilutionDesigner from "./pages/DilutionDesigner/DilutionDesigner";
-import MobileCheck from "./components/MobileCheck";
-import { PreferencesProvider } from "./hooks/usePreferences";
-import MapperParser from "./pages/MapperParser/MapperParser";
+import { Route, createHashRouter, RouterProvider, createRoutesFromElements } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import NavbarHeightAdjuster from './components/NavbarHeightAdjuster';
+import Home from './pages/Home';
+import NoPage from './pages/NoPage';
+import Changelog from './pages/Changelog';
+import EchoTransfer from './pages/EchoTransfer/EchoTransfer';
+import DilutionDesigner from './pages/DilutionDesigner/DilutionDesigner';
+import MobileCheck from './components/MobileCheck';
+import { PreferencesProvider } from './hooks/usePreferences';
+import MapperParser from './pages/MapperParser/MapperParser';
 
-import './css/router.css'
-import PlateReformat from "./pages/PlateReformat/PlateReformat";
-import PlateDesigner from "./pages/PlateDesigner/PlateDesigner";
-import CocktailBuilder from "./pages/CocktailBuilder/CocktailBuilder";
+import './css/router.css';
+import PlateReformat from './pages/PlateReformat/PlateReformat';
+import PlateDesigner from './pages/PlateDesigner/PlateDesigner';
+import CocktailBuilder from './pages/CocktailBuilder/CocktailBuilder';
 
 const Layout = () => (
   <PreferencesProvider>

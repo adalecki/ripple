@@ -204,7 +204,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
 
       if (totalNonEmptyCells > 0 && (numericCells / totalNonEmptyCells >= MIN_NUMERIC_PERCENT) && (lastNonEmptyCol - firstNonEmptyCol + 1 >= MIN_COLS_IN_MATRIX)) {
         //row looks like a data row
-        let currentBlockStartRow = r;
+        const currentBlockStartRow = r;
         let currentBlockEndRow = r;
         let blockFirstCol = firstNonEmptyCol;
         let blockLastCol = lastNonEmptyCol;
@@ -245,7 +245,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
         const numRows = currentBlockEndRow - currentBlockStartRow + 1;
         const numCols = blockLastCol - blockFirstCol + 1;
         const density = blockNumericCells / (numRows * numCols);
-        let score = (numRows * numCols) * density;
+        const score = (numRows * numCols) * density;
 
         if (numRows >= MIN_ROWS_IN_MATRIX && numCols >= MIN_COLS_IN_MATRIX && score > (bestBlock.numRows * bestBlock.numCols * bestBlock.density)) {
           bestBlock = { startRow: currentBlockStartRow, endRow: currentBlockEndRow, startCol: blockFirstCol, endCol: blockLastCol, numRows, numCols, density };
@@ -305,11 +305,11 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
       setIsSelecting(false);
       setError(null);
     } else {
-      setError("Could not automatically detect a data matrix. Please select manually.");
+      setError('Could not automatically detect a data matrix. Please select manually.');
     }
   };
 
-  const numColumns = parsedData.length > 0 ? parsedData.slice().sort((a, b) => b.length - a.length)[0].length : 0
+  const numColumns = parsedData.length > 0 ? parsedData.slice().sort((a, b) => b.length - a.length)[0].length : 0;
   return (
     <Modal show={show} onHide={onHide} dialogClassName="interactive-data-mapper-modal" onExited={handleExited} size="xl">
       <Modal.Header closeButton>
@@ -332,7 +332,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
                 <Button size="sm" variant="outline-primary" onClick={() => assignSelection('rawData')} disabled={!selection.start || !selection.end}>
                   Set as Raw Data ({definedRanges.rawData || 'Not set'})
                 </Button>
-                {currentParseStrategy.format == 'Matrix' ?
+                {currentParseStrategy.format === 'Matrix' ?
                   <>
                     <Button size="sm" variant="outline-secondary" onClick={() => assignSelection('xLabels')} disabled={!selection.start || !selection.end}>
                       Set as X Labels ({definedRanges.xLabels || 'Not set'})
@@ -347,7 +347,7 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
                 }
 
 
-                {currentParseStrategy.plateBarcodeLocation == 'cell' ? <Button size="sm" variant="outline-info" onClick={() => assignSelection('plateBarcodeCell')} disabled={!selection.start || !selection.end}>
+                {currentParseStrategy.plateBarcodeLocation === 'cell' ? <Button size="sm" variant="outline-info" onClick={() => assignSelection('plateBarcodeCell')} disabled={!selection.start || !selection.end}>
                   Set as Barcode Cell ({definedRanges.plateBarcodeCell || 'Not set'})
                 </Button> : ''}
               </div>

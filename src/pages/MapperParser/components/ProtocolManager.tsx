@@ -34,7 +34,7 @@ const ProtocolManager: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showInteractiveMapper, setShowInteractiveMapper] = useState(false);
   const [showInteractiveControlMapper, setShowInteractiveControlMapper] = useState(false);
-  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
+  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
   useEffect(() => {
     const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
@@ -218,7 +218,7 @@ const ProtocolManager: React.FC = () => {
 
   function getApplyDisabledReasons(): string[] {
     const reasons: string[] = [];
-    if (!editingProtocol) return reasons
+    if (!editingProtocol) return reasons;
     const plate = new Plate({ plateSize: editingProtocol.parseStrategy.plateSize as PlateSize });
     for (const control of editingProtocol.dataProcessing.controls) {
       if (!control.wells) continue;
@@ -260,7 +260,7 @@ const ProtocolManager: React.FC = () => {
       </Col>
     );
 
-    let additionalCols: JSX.Element[] = [];
+    const additionalCols: JSX.Element[] = [];
 
     if (parseStrategy.plateBarcodeLocation === 'cell') {
       additionalCols.push(
@@ -309,7 +309,7 @@ const ProtocolManager: React.FC = () => {
             <Form.Label>Delimiter</Form.Label>
             <Form.Control
               type="text"
-              placeholder={parseStrategy.useFullFilename ? '' : "e.g., _"}
+              placeholder={parseStrategy.useFullFilename ? '' : 'e.g., _'}
               value={parseStrategy.useFullFilename ? '' : (parseStrategy.barcodeDelimiter || '')}
               onChange={(e) => setEditingProtocol({
                 ...editingProtocol,
@@ -350,15 +350,15 @@ const ProtocolManager: React.FC = () => {
 
   return (
     <Container fluid className="protocol-manager h-100 pb-2">
-      <Row className='h-100'>
-        <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
+      <Row className="h-100">
+        <Col md={8} className="d-flex flex-column h-100 overflow-auto" style={{ scrollbarGutter: 'stable' }}>
           {editingProtocol ? (
             <>
               <div className="d-flex justify-content-between align-items-center">
                 <h4>{editingProtocol.name}</h4>
                 <div>
                   {isEditing ? (
-                    <div className='edit-button-row'>
+                    <div className="edit-button-row">
                       <div
                         onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
@@ -451,7 +451,7 @@ const ProtocolManager: React.FC = () => {
                       </Col>
                       <Col md={2}>
                         <Form.Group className="mb-3">
-                          <Form.Label>Auto-Parse?</Form.Label><span style={{ float: 'right' }}><InfoTooltip text='Attempts to find the most likely matrix present in a file, biasing toward full plates and proportion of numeric cells.' /></span>
+                          <Form.Label>Auto-Parse?</Form.Label><span style={{ float: 'right' }}><InfoTooltip text="Attempts to find the most likely matrix present in a file, biasing toward full plates and proportion of numeric cells." /></span>
                           <Form.Switch
                             checked={editingProtocol.parseStrategy.autoParse}
                             onChange={(e) => setEditingProtocol({
@@ -479,7 +479,7 @@ const ProtocolManager: React.FC = () => {
                       />
                     </Form.Group>
                     <Row>{renderBarcodeLocationFields()}</Row>
-                    {isEditing && editingProtocol.parseStrategy.format == 'Matrix' && !editingProtocol.parseStrategy.autoParse && (
+                    {isEditing && editingProtocol.parseStrategy.format === 'Matrix' && !editingProtocol.parseStrategy.autoParse && (
                       <Button
                         variant="outline-primary"
                         size="sm"
@@ -512,7 +512,7 @@ const ProtocolManager: React.FC = () => {
                           <Row>
                             <Col md={6}>
                               <Form.Group className="mb-3">
-                                <Form.Label>X Labels (Columns)</Form.Label><span style={{ float: 'right' }}><InfoTooltip text='Only necessary if reading a partial plate' /></span>
+                                <Form.Label>X Labels (Columns)</Form.Label><span style={{ float: 'right' }}><InfoTooltip text="Only necessary if reading a partial plate" /></span>
                                 <Form.Control
                                   type="text"
                                   placeholder="e.g., A09:X09"
@@ -530,7 +530,7 @@ const ProtocolManager: React.FC = () => {
                             </Col>
                             <Col md={6}>
                               <Form.Group className="mb-3">
-                                <Form.Label>Y Labels (Rows)</Form.Label><span style={{ float: 'right' }}><InfoTooltip text='Only necessary if reading a partial plate' /></span>
+                                <Form.Label>Y Labels (Rows)</Form.Label><span style={{ float: 'right' }}><InfoTooltip text="Only necessary if reading a partial plate" /></span>
                                 <Form.Control
                                   type="text"
                                   placeholder="e.g., A10:A25"

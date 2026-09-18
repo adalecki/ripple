@@ -21,13 +21,13 @@ const TransferList: React.FC<TransferListProps> = ({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingVolume, setEditingVolume] = useState<string>('');
 
-  const transferMap: Map<number, TransferStepExport[]> = new Map()
-  const plateBarcodeCache: Map<number, string> = new Map()
+  const transferMap: Map<number, TransferStepExport[]> = new Map();
+  const plateBarcodeCache: Map<number, string> = new Map();
 
   for (const plate of plates) {
-    plateBarcodeCache.set(plate.id, plate.barcode)
+    plateBarcodeCache.set(plate.id, plate.barcode);
   }
-  const transferSteps: TransferStepExport[] = []
+  const transferSteps: TransferStepExport[] = [];
   for (const block of transferBlocks) {
     const exportSteps = block.transferSteps.map((step) => ({
       sourceBarcode: plateBarcodeCache.get(step.sourcePlateId)!,
@@ -35,10 +35,10 @@ const TransferList: React.FC<TransferListProps> = ({
       destinationBarcode: plateBarcodeCache.get(step.destinationPlateId)!,
       destinationWellId: step.destinationWellId,
       volume: step.volume
-    }))
-    transferSteps.push(...exportSteps)
+    }));
+    transferSteps.push(...exportSteps);
   }
-  if (transferSteps.length > 0) transferMap.set(3, transferSteps)
+  if (transferSteps.length > 0) transferMap.set(3, transferSteps);
 
   const handleStartEdit = (index: number, currentVolume: number) => {
     setEditingIndex(index);
@@ -70,8 +70,8 @@ const TransferList: React.FC<TransferListProps> = ({
     setEditingIndex(null);
     setEditingVolume('');
   };
-  const volumeFloat = parseFloat(editingVolume)
-  const invalidEditingVolume = (isNaN(volumeFloat) || volumeFloat % 2.5 !== 0 || volumeFloat <= 0)
+  const volumeFloat = parseFloat(editingVolume);
+  const invalidEditingVolume = (isNaN(volumeFloat) || volumeFloat % 2.5 !== 0 || volumeFloat <= 0);
 
   return (
     <Card className="mb-3">
@@ -106,7 +106,7 @@ const TransferList: React.FC<TransferListProps> = ({
                         }}
                         step={2.5}
                         className={`form-control form-control-sm ms-2 ${invalidEditingVolume ? 'is-invalid': ''}`}
-                        style={{ width: '100px', display: 'inline-block' }}
+                        style={{ width: '6.25rem', display: 'inline-block' }}
                         autoFocus
                       />
                     ) : (
@@ -115,7 +115,7 @@ const TransferList: React.FC<TransferListProps> = ({
                   </div>
                   <div className="text-muted d-flex align-items-center gap-1">
                     <span className="transfer-list-item">{block.sourceBlock}</span>
-                    <MoveRight size={10} strokeWidth={1.5} className='transfer-list-item'/>
+                    <MoveRight size={10} strokeWidth={1.5} className="transfer-list-item"/>
                     <span className="transfer-list-item">{block.destinationBlock}</span>
                   </div>
                 </div>

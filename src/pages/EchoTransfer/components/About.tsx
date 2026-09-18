@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Button, Container, Row, Col } from 'react-bootstrap';
-import '../../../css/EchoInstructions.css'
+import '../../../css/EchoInstructions.css';
 
 const exampleData = [
   {
@@ -67,7 +67,7 @@ const About: React.FC = () => {
           </Col>
         </Row>
         <Row>
-          <Col className='echo-instructions'>
+          <Col className="echo-instructions">
             <Card className="shadow-sm">
               <Card.Body className="p-0">
                 <Card.Title as="h4" className="my-4 text-center">Examples</Card.Title>

@@ -90,7 +90,7 @@ export class Well {
         concentration: newContent.concentration === null ? null : (newContent.concentration * newContent.volume) / newTotalVolume
       });
     }
-    this.updateSolvent({name: solventInfo.name, volume: solventVolume})
+    this.updateSolvent({ name: solventInfo.name, volume: solventVolume });
     this.totalVolume = newTotalVolume;
   }
 
@@ -103,7 +103,7 @@ export class Well {
       this.solvents.push({ ...solvent });
     }
   }
-  
+
   //crude update of overall volume, used for echo survey
   //only for updating solvents, content volumes and totalVolume, doesn't touch concentrations
   updateVolume(volume: number): void {
@@ -111,13 +111,13 @@ export class Well {
       this.totalVolume = volume;
       return;
     }
-    const solventCorrectionFactor = volume/this.getTotalVolume()
+    const solventCorrectionFactor = volume/this.getTotalVolume();
     for (const solvent of this.getSolvents()) {
-      solvent.volume = (solvent.volume * solventCorrectionFactor)
+      solvent.volume = (solvent.volume * solventCorrectionFactor);
     }
     for (const content of this.contents) {
       if (content.compoundId) {
-        content.volume = content.volume * solventCorrectionFactor
+        content.volume = content.volume * solventCorrectionFactor;
       }
     }
     this.totalVolume = volume;
@@ -133,7 +133,7 @@ export class Well {
       ...content,
       concentration: content.concentration === null ? null : (content.concentration * this.totalVolume) / newTotalVolume
     }));
-    this.updateSolvent(newSolvent)
+    this.updateSolvent(newSolvent);
     this.totalVolume = newTotalVolume;
   }
 
@@ -169,7 +169,7 @@ export class Well {
   }
 
   getPatterns(): string[] {
-    return [...new Set(this.contents.map(content => content.patternName))]
+    return [...new Set(this.contents.map(content => content.patternName))];
   }
 
   applyPattern(patternName: string, concentration: number | null): void {
@@ -177,9 +177,9 @@ export class Well {
       console.warn(`Attempting to apply pattern to unused well ${this.id}`);
       return;
     }
-    const content = this.contents.find(c => c.patternName == patternName)
+    const content = this.contents.find(c => c.patternName === patternName);
     if (!content) {
-      this.contents.push({concentration: concentration, volume: 0, patternName: patternName})
+      this.contents.push({ concentration: concentration, volume: 0, patternName: patternName });
     }
   }
 
@@ -206,12 +206,12 @@ export class Well {
   }
 
   removePattern(patternName: string): void {
-    this.contents = this.contents.filter( c => !(c.patternName == patternName))
+    this.contents = this.contents.filter( c => !(c.patternName === patternName));
   }
 
   getConcentrationFromCompound(compoundName: string): number {
     const content = this.contents.find(c => c.compoundId === compoundName);
-    return content?.concentration ?? 0
+    return content?.concentration ?? 0;
   }
 
   getSolventVolume(solventName: string): number {
@@ -236,10 +236,10 @@ export class Well {
   }
 
   isSolventOnlyWell(solventName: string): boolean {
-    const solvents = this.getSolvents()
-    const solvent = solvents.find(s => s.name == solventName)
+    const solvents = this.getSolvents();
+    const solvent = solvents.find(s => s.name === solventName);
     //no contents, one solvent, and that solvent has correct name = true
-    return (this.getContents().length === 0 && this.getSolvents().length === 1 && solvent != undefined)
+    return (this.getContents().length === 0 && this.getSolvents().length === 1 && solvent !== undefined);
   }
 
   applyRawResponse(response: number) {

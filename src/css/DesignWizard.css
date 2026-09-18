@@ -46,6 +46,10 @@
   width: 100%;
 }
 
+kbd {
+  display: inline-block;
+}
+
 .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */

@@ -45,7 +45,7 @@ export class Pattern {
     locations: string[];
     fold?: number;
   }) {
-    this.id = data.id || Date.now()
+    this.id = data.id || Date.now();
     this.name = data.name;
     this.type = data.type;
     this.replicates = data.replicates;
@@ -53,14 +53,14 @@ export class Pattern {
     this.concentrations = (data.type === 'Unused' || data.type === 'Recipe') ? [] : data.concentrations;
     this.volumes = data.type === 'Recipe' ? (data.volumes ?? []) : [];
     this.color = data.color || this.generateRandomColor();
-    this.locations = data.locations || []
+    this.locations = data.locations || [];
     this.fold = data.fold || 1;
   }
 
   generateRandomColor(): HslStringType {
     const hex = '#' + Math.floor(Math.random() * 16777215).toString(16);
-    const hsl = convert.hex.hsl(hex)
-    return `hsl(${hsl[0]},${hsl[1]}%,${hsl[2]}%)`
+    const hsl = convert.hex.hsl(hex);
+    return `hsl(${hsl[0]},${hsl[1]}%,${hsl[2]}%)`;
   }
 
   clone(): Pattern {

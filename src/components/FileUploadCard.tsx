@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Card } from 'react-bootstrap';
 import { Upload } from 'lucide-react';
-import '../css/FileUploadCard.css'
+import '../css/FileUploadCard.css';
 
 interface FileUploadCardProps {
   onFilesSelected: (files: File[]) => void;
@@ -15,9 +15,9 @@ interface FileUploadCardProps {
 
 function FileUploadCard({
   onFilesSelected,
-  acceptedTypes = ".csv,.tsv,.txt",
-  title = "File Upload",
-  description = "Drag and drop files here or click to browse",
+  acceptedTypes = '.csv,.tsv,.txt',
+  title = 'File Upload',
+  description = 'Drag and drop files here or click to browse',
   multiple = true,
   name = 'fileUploadCard',
   children
@@ -73,7 +73,7 @@ function FileUploadCard({
   };
 
   return (
-    <Card className='mb-3'>
+    <Card className="mb-3">
       <Card.Header>{title}</Card.Header>
       <Card.Body>
         <div

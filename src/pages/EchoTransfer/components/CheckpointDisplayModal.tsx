@@ -46,7 +46,7 @@ const CheckpointSection: React.FC<CheckpointSectionProps> = ({ checkpoint, event
       <Accordion.Header>
         {getStatusIcon(checkpoint[1].status)} {checkpoint[0]}
       </Accordion.Header>
-      {checkpoint[1].message.length > 0 ? 
+      {checkpoint[1].message.length > 0 ?
       <Accordion.Body>
         <ul>
           {checkpoint[1].message.map((m, idx) => <li key={idx}>{m}</li>)}
@@ -64,9 +64,9 @@ const CheckpointSummary: React.FC<CheckpointSummaryProps> = ({ echoPreCalc }) =>
   let totalCompounds = 0;
   for (const [_,patternGroup] of echoPreCalc.srcCompoundInventory) {
     for (const [_,compoundGroup] of patternGroup) {
-      if (compoundGroup.locations.some(l => l.concentration != 0)) {
-        totalCompounds += 1
-        break
+      if (compoundGroup.locations.some(l => l.concentration !== 0)) {
+        totalCompounds += 1;
+        break;
       }
     }
   }
@@ -125,8 +125,8 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
     const newEchoPreCalcInstance = Object.assign(Object.create(Object.getPrototypeOf(echoPreCalc)), echoPreCalc) as EchoPreCalculator;
     newEchoPreCalcInstance.checkpointTracker = echoPreCalc.checkpointTracker.clone();
     deadVolumeEdits.forEach((newVolumeNL, barcode) => {
-      const plate = newEchoPreCalcInstance.sourcePlates.find(p => p.barcode == barcode)
-      if (plate && plate.getDeadVolume() != newVolumeNL) {
+      const plate = newEchoPreCalcInstance.sourcePlates.find(p => p.barcode === barcode);
+      if (plate && plate.getDeadVolume() !== newVolumeNL) {
         newEchoPreCalcInstance.updateDeadVolume(barcode, newVolumeNL);
         hasChanges = true;
       }
@@ -141,7 +141,7 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
 
   const handleAccordionToggle = (eventKey: string | string[] | undefined | null) => {
     if (typeof eventKey === 'string') {
-      setActiveKeys(prevKeys => 
+      setActiveKeys(prevKeys =>
         prevKeys.includes(eventKey)
           ? prevKeys.filter(key => key !== eventKey)
           : [...prevKeys, eventKey]
@@ -159,10 +159,10 @@ const CheckpointDisplayModal: React.FC<CheckpointDisplayProps> = ({
         <h5>Checkpoint Results</h5>
         <Accordion activeKey={activeKeys} onSelect={handleAccordionToggle}>
           {Array.from(checkpointTracker.checkpoints).map((checkpoint, index) => (
-            <CheckpointSection 
-              key={checkpoint[0]} 
-              checkpoint={checkpoint} 
-              eventKey={index.toString()} 
+            <CheckpointSection
+              key={checkpoint[0]}
+              checkpoint={checkpoint}
+              eventKey={index.toString()}
             />
           ))}
         </Accordion>

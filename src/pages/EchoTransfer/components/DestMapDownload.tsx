@@ -7,7 +7,7 @@ interface DestMapDownloadProps {
   destinationPlates: Plate[]
 }
 
-const DestMapDownload: React.FC<DestMapDownloadProps> = ({destinationPlates}) => {
+const DestMapDownload: React.FC<DestMapDownloadProps> = ({ destinationPlates }) => {
 
   function generateDestinationMapCSV(plates: Plate[]): string {
     let maxContents = 0;
@@ -82,7 +82,7 @@ const DestMapDownload: React.FC<DestMapDownloadProps> = ({destinationPlates}) =>
   }
 
   return (
-    <Button onClick={exportDestinationMap} variant='outline-success'>
+    <Button onClick={exportDestinationMap} variant="outline-success">
       Export Destination {destinationPlates.length > 1 ? 'Plates' : 'Plate'} Map
     </Button>
   );

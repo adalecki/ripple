@@ -1,4 +1,4 @@
-import { PlateSize } from "../classes/PlateClass";
+import { PlateSize } from '../classes/PlateClass';
 
 //export const PARSE_FORMATS = ['Matrix', 'Table'] as const;
 export const PARSE_FORMATS = ['Matrix'] as const;
@@ -58,6 +58,6 @@ export interface Protocol {
 
 export const CONTROL_TYPE_DESCRIPTIONS: Record<ControlType, string> = {
   'MaxCtrl': 'Maximum Control (100% response)',
-  'MinCtrl': 'Minimum Control (0% response)', 
+  'MinCtrl': 'Minimum Control (0% response)',
   'Blank': 'Blank (for subtraction)'
 } as const;

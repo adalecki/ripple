@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { usePreferences } from '../../hooks/usePreferences';
 import { analyzeDilutionPoints } from './utils/dilutionUtils';
@@ -8,12 +8,12 @@ import DilutionStocksInput from './components/DilutionStocks';
 import DilutionPointsInput from './components/DilutionPoints';
 import DilutionGraph from './components/DilutionGraph';
 
-import './css/DilutionDesigner.css'
+import './css/DilutionDesigner.css';
 
 const DilutionDesigner: React.FC = () => {
   const { preferences } = usePreferences();
 
-  const [settings, setSettings] = useState<DilutionSettings>({
+  const [localSettings, setLocalSettings] = useState<DilutionSettings>({
     stockConcentrations: [10000],
     maxTransferVolume: preferences.maxTransferVolume as number,
     dropletSize: preferences.dropletSize as number,
@@ -24,18 +24,7 @@ const DilutionDesigner: React.FC = () => {
     useIntConcs: preferences.useIntermediatePlates as boolean,
     numIntConcs: 5 as number
   });
-
-  useEffect(() => {
-    if (preferences.maxTransferVolume != settings.maxTransferVolume) {
-      handleSettingChange('maxTransferVolume', preferences.maxTransferVolume)
-    }
-    if (preferences.dropletSize != settings.dropletSize) {
-      handleSettingChange('dropletSize', preferences.dropletSize)
-    }
-  }, [preferences]);
-
   const [errors, setErrors] = useState<DilutionSettingsErrors>({});
-
   const [points, setPoints] = useState<Point[]>([
     { concentration: 30, index: 0 },
     { concentration: 10, index: 1 },
@@ -44,6 +33,8 @@ const DilutionDesigner: React.FC = () => {
     { concentration: 0.3, index: 4 },
     { concentration: 0.1, index: 5 }
   ]);
+
+  const settings = { ...localSettings, maxTransferVolume: preferences.maxTransferVolume, dropletSize: preferences.dropletSize } as DilutionSettings
 
   const validateSettings = (newSettings: Partial<DilutionSettings>, key: keyof DilutionSettings): string | undefined => {
     switch (key) {
@@ -96,14 +87,14 @@ const DilutionDesigner: React.FC = () => {
           [key]: error,
         };
       } else {
-        const { [key as keyof DilutionSettingsErrors]: removedKey, ...rest } =
+        const { [key as keyof DilutionSettingsErrors]: _removedKey, ...rest } =
           prevErrors;
         return rest;
       }
     });
 
     if (!error || typeof value === 'boolean') {
-      setSettings(newSettings);
+      setLocalSettings(newSettings);
     }
   };
 
@@ -134,7 +125,7 @@ const DilutionDesigner: React.FC = () => {
             />
             <DilutionStocksInput
               settings={settings}
-              onSettingsChange={setSettings}
+              onSettingsChange={setLocalSettings}
             />
             <DilutionPointsInput
               points={points}

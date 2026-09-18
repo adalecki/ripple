@@ -41,7 +41,7 @@ const Results: React.FC = () => {
 
   function handleOptionsChange(updates: Partial<PlateResultsOptions>) {
     if (updates.responseRangeMin && Number.isNaN(updates.responseRangeMin)) {
-      updates.responseRangeMin = 7
+      updates.responseRangeMin = 7;
     }
     setOptions(prev => ({ ...prev, ...updates }));
   }
@@ -64,7 +64,7 @@ const Results: React.FC = () => {
       console.error('Export failed:', error);
       alert('Export failed. Please check the console for details.');
     }
-  }
+  };
 
   const maskedWells = getMaskedWells(plate);
   const platesWithData = getPlatesWithData(mappedPlates);
@@ -76,7 +76,7 @@ const Results: React.FC = () => {
 
   const { yLo: autoYLo, yHi: autoYHi } = (options.showAllPlates && platesWithData.length > 0) ?
     yAxisDomainsMultiPlate(platesWithData, options.normalized) :
-    yAxisDomains(plate, options.normalized)
+    yAxisDomains(plate, options.normalized);
 
   const yLo = (options.responseRangeMin !== '' && options.responseRangeMin !== null) ? Number(options.responseRangeMin) : autoYLo;
   const yHi = (options.responseRangeMax !== '' && options.responseRangeMax !== null) ? Number(options.responseRangeMax) : autoYHi;

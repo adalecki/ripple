@@ -23,7 +23,7 @@ const VolumeTable: React.FC<VolumeTableProps> = ({
   }));
 
   const handleValuesChange = (newValues: TableValue[]) => {
-    console.log(newValues)
+    console.log(newValues);
     onChange(newValues.map(v => v.value));
   };
 
@@ -32,8 +32,8 @@ const VolumeTable: React.FC<VolumeTableProps> = ({
       ...volumes,
       null
     ]
-    )
-  }
+    );
+  };
 
   return (
     <EditableValueTable

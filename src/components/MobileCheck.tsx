@@ -1,14 +1,9 @@
-import { useState, useEffect } from 'react';
 import { Container, Row, Col, Alert } from 'react-bootstrap';
 
-const MobileCheck = ({ children }: {children: React.ReactNode}) => {
-  const [isMobile, setIsMobile] = useState(false);
+const MobileCheck = ({ children }: { children: React.ReactNode }) => {
 
-  useEffect(() => {
-    const userAgent = typeof window.navigator === 'undefined' ? '' : navigator.userAgent;
-    const mobile = Boolean(userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i));
-    setIsMobile(mobile);
-  }, []);
+  const userAgent = typeof window.navigator === 'undefined' ? '' : navigator.userAgent;
+  const isMobile = Boolean(userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i));
 
   return isMobile ? (
     <Container className="mt-5">
@@ -23,7 +18,7 @@ const MobileCheck = ({ children }: {children: React.ReactNode}) => {
         </Col>
       </Row>
     </Container>
-  ) : children; 
+  ) : children;
 };
 
 export default MobileCheck;

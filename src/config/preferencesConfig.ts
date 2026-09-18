@@ -72,7 +72,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         prefId: 'splitOutputCSVs',
         name: 'Split Output CSVs',
         type: 'switch',
-        defaultValue: true
+        defaultValue: false
       }
     ]
   },

@@ -6,17 +6,17 @@ import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNum
 export function currentItem(items: any[], curItemId: number | null) {
   let item = null;
   if (curItemId != null) {
-    item = items.find((item) => item.id == curItemId) || null
+    item = items.find((item) => item.id === curItemId) || null;
   }
-  return item
+  return item;
 }
 
 export function generateId(items: {id: number; [key: string]: any}[]): number {
   let newId = Date.now();
-  while (items.find(i => i.id == newId)) {
-    newId += 1
+  while (items.find(i => i.id === newId)) {
+    newId += 1;
   }
-  return newId
+  return newId;
 }
 
 export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) {
@@ -40,42 +40,42 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
   const patternsWs = utils.json_to_sheet(patternsData);
 
   const patternsHeaders = [
-    "Pattern", "Type", "Direction", "Replicates",
+    'Pattern', 'Type', 'Direction', 'Replicates',
     ...Array.from({ length: 20 }, (_, i) => `Conc${i + 1}`)
   ];
-  utils.sheet_add_aoa(patternsWs, [patternsHeaders], { origin: "A1" });
+  utils.sheet_add_aoa(patternsWs, [patternsHeaders], { origin: 'A1' });
 
-  utils.book_append_sheet(wb, patternsWs, "Patterns");
+  utils.book_append_sheet(wb, patternsWs, 'Patterns');
 
   const layoutData = patterns.flatMap(pattern =>
     pattern.locations.map(location => ({
       Pattern: pattern.name,
-      "Well Block": location
+      'Well Block': location
     }))
   );
   const layoutWs = utils.json_to_sheet(layoutData);
-  utils.sheet_add_aoa(layoutWs, [['Pattern', 'Well Block']], { origin: 'A1' })
-  utils.book_append_sheet(wb, layoutWs, "Layout");
+  utils.sheet_add_aoa(layoutWs, [['Pattern', 'Well Block']], { origin: 'A1' });
+  utils.book_append_sheet(wb, layoutWs, 'Layout');
 
-  const compoundsHeaders = ["Source Barcode", "Well ID", "Concentration (µM)", "Compound ID", "Volume (µL)", "Pattern"];
+  const compoundsHeaders = ['Source Barcode', 'Well ID', 'Concentration (µM)', 'Compound ID', 'Volume (µL)', 'Pattern'];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
   if (srcPlates && srcPlates.length > 0) {
     //uuid used as delimiter to avoid weird edge cases
     //e.g. 'test1' + '10' would be the same as 'test11' + '1' without delims
     //could use a bar or something else, but uuid avoids all naming conflicts
-    const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02'
+    const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02';
     const compoundRows = [];
     let dmsoPatternAdded: boolean = false;
     for (const plate of srcPlates) {
       const sortedWells = Object.values(plate.getWells())
-        .filter(well => well.getContents().length != 0)
+        .filter(well => well.getContents().length !== 0)
         .sort((a, b) => a.id.localeCompare(b.id));
 
       const compoundInventory = new Map<string, { concentration: number, compoundId: string, volume: number, patternName: string, wellIds: string[] }>();
 
       for (const well of sortedWells) {
         const content = well.getContents()[0];
-        if (!content.compoundId || content.concentration === null) continue;
+        if (!content.compoundId || content.concentration == null) continue;
 
         const volume = well.getTotalVolume() / 1000;
         const key = `${content.concentration}${delimiter}${content.compoundId}${delimiter}${volume}${delimiter}${content.patternName}`;
@@ -98,38 +98,38 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
 
       const solventWells = Object.values(plate.getWells())
         .filter(well => well.isSolventOnlyWell('DMSO'))
-        .sort((a, b) => a.id.localeCompare(b.id))
+        .sort((a, b) => a.id.localeCompare(b.id));
       if (solventWells.length > 0) {
-        const solventInventory = new Map<number, string[]>()
+        const solventInventory = new Map<number, string[]>();
         for (const well of solventWells) {
           const volume = well.getTotalVolume() / 1000;
           if (!solventInventory.has(volume)) {
-            solventInventory.set(volume, [])
+            solventInventory.set(volume, []);
           }
-          solventInventory.get(volume)!.push(well.id)
+          solventInventory.get(volume)!.push(well.id);
         }
         for (const [vol, wellIds] of solventInventory) {
-          compoundRows.push([plate.barcode, formatWellBlock(wellIds), 0, 'DMSO', vol, 'DMSO'])
+          compoundRows.push([plate.barcode, formatWellBlock(wellIds), 0, 'DMSO', vol, 'DMSO']);
         }
         if (!dmsoPatternAdded) {
-          const patternsWs = wb.Sheets["Patterns"]
-          utils.sheet_add_aoa(patternsWs, [['DMSO', 'Solvent']], { origin: -1 })
-          dmsoPatternAdded = true
+          const patternsWs = wb.Sheets['Patterns'];
+          utils.sheet_add_aoa(patternsWs, [['DMSO', 'Solvent']], { origin: -1 });
+          dmsoPatternAdded = true;
         }
       }
     }
-    utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: "A2" })
+    utils.sheet_add_aoa(compoundsWs, compoundRows, { origin: 'A2' });
   }
 
-  utils.book_append_sheet(wb, compoundsWs, "Compounds");
+  utils.book_append_sheet(wb, compoundsWs, 'Compounds');
 
-  const barcodesHeaders = ["Intermediate Plate Barcodes", "Destination Plate Barcodes"];
+  const barcodesHeaders = ['Intermediate Plate Barcodes', 'Destination Plate Barcodes'];
   const barcodesWs = utils.aoa_to_sheet([barcodesHeaders]);
-  utils.book_append_sheet(wb, barcodesWs, "Barcodes");
+  utils.book_append_sheet(wb, barcodesWs, 'Barcodes');
 
-  const assayHeaders = ["Setting", "Value"];
+  const assayHeaders = ['Setting', 'Value'];
   const assayWs = utils.aoa_to_sheet([assayHeaders]);
-  utils.book_append_sheet(wb, assayWs, "Assay");
+  utils.book_append_sheet(wb, assayWs, 'Assay');
 
   const fileName = `Echo_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
   writeFile(wb, fileName);
@@ -151,12 +151,12 @@ export function mergeUnusedPatternLocations(pattern: Pattern, plate: Plate, newW
 };
 
 export function isBlockOverlapping(plate: Plate, newBlock: string, existingLocations: string[]): boolean {
-  const newWells = plate.getSomeWells(newBlock)
+  const newWells = plate.getSomeWells(newBlock);
   for (const location of existingLocations) {
-    const existingWells = plate.getSomeWells(location)
+    const existingWells = plate.getSomeWells(location);
     for (const well of existingWells) {
       if (newWells.includes(well)) {
-        return true
+        return true;
       }
     }
   }
@@ -182,35 +182,35 @@ export function sensibleRecipeSelection(selectedWellIds: string[], pattern: Patt
 
 export function sensibleWellSelection(selectedWellIds: string[], pattern: Pattern, plate: Plate): string[] {
   const msgArr: string[] = [];
-  if (pattern.type === 'Unused') return msgArr
+  if (pattern.type === 'Unused') return msgArr;
   if (isCombinationType(pattern.type) && pattern.direction.length === 2) {
     const numConcs = pattern.concentrations.length;
     const requiredTotal = numConcs * numConcs * pattern.replicates;
-    if (selectedWellIds.length % requiredTotal != 0) {
-      return [`Matrix pattern requires a multiple of ${requiredTotal} wells (${numConcs}² x ${pattern.replicates} replicates)`]
+    if (selectedWellIds.length % requiredTotal !== 0) {
+      return [`Matrix pattern requires a multiple of ${requiredTotal} wells (${numConcs}² x ${pattern.replicates} replicates)`];
     }
     try {
       splitIntoBlocks(selectedWellIds, pattern, plate);
     } catch (e) {
-      return [(e as Error).message]
+      return [(e as Error).message];
     }
-    return msgArr
+    return msgArr;
   }
-  if (selectedWellIds.length % pattern.concentrations.length != 0) return ['The number of wells must be divisible by the number of concentrations']
-  if (selectedWellIds.length % (pattern.replicates * pattern.concentrations.length) != 0) return ['The number of wells must be divisible by the number of replicates x concentrations']
+  if (selectedWellIds.length % pattern.concentrations.length !== 0) return ['The number of wells must be divisible by the number of concentrations'];
+  if (selectedWellIds.length % (pattern.replicates * pattern.concentrations.length) !== 0) return ['The number of wells must be divisible by the number of replicates x concentrations'];
   const blocks = splitIntoBlocks(selectedWellIds, pattern, plate);
 
   for (const block of blocks) {
-    const rects = block.split(";");
+    const rects = block.split(';');
     if (rects.length > 1) {
       msgArr.push(`Non-contiguous rectangles in block ${block}`);
-      continue
+      continue;
     }
     for (const rect of rects) {
       const startWell = rect.split(':')[0];
       const endWell = rect.split(':')[1];
       if (!startWell || !endWell) {
-        continue
+        continue;
       }
       const startCoords = getCoordsFromWellId(startWell);
       const endCoords = getCoordsFromWellId(endWell);
@@ -218,18 +218,18 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
       const rectHeight = endCoords.row - startCoords.row + 1;
 
       switch (pattern.direction[0]) {
-        case "LR": case "RL": {
-          if (rectWidth != pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number`) }
-          break
+        case 'LR': case 'RL': {
+          if (rectWidth !== pattern.concentrations.length) { msgArr.push(`${rect} width doesn't match concentration number`); }
+          break;
         }
-        case "TB": case "BT": {
-          if (rectHeight != pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number`) }
-          break
+        case 'TB': case 'BT': {
+          if (rectHeight !== pattern.concentrations.length) { msgArr.push(`${rect} height doesn't match concentration number`); }
+          break;
         }
       }
     }
   }
-  return msgArr
+  return msgArr;
 }
 
 export interface Point {
@@ -352,16 +352,16 @@ export interface TileScheme {
 }
 
 export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
-  const tileScheme: TileScheme = { canTile: false, srcSize: { x: 0, y: 0 }, srcStartWellId: '', srcEndWellId: '' }
-  if (srcBlock.length === 0 || dstBlock.length === 0) return tileScheme
+  const tileScheme: TileScheme = { canTile: false, srcSize: { x: 0, y: 0 }, srcStartWellId: '', srcEndWellId: '' };
+  if (srcBlock.length === 0 || dstBlock.length === 0) return tileScheme;
   //handle src first, as it's straightforward
   //can't be noncontiguous blocks, but can be a single well
   if (srcBlock.includes(';')) return tileScheme;
 
   const srcCornerWellIds = srcBlock.split(':');
   if (srcCornerWellIds.length > 2 || srcCornerWellIds.length < 1) return tileScheme;
-  const srcStartWellId = srcCornerWellIds[0]
-  const srcEndWellId = (srcCornerWellIds.length === 1 ? srcCornerWellIds[0] : srcCornerWellIds[1])
+  const srcStartWellId = srcCornerWellIds[0];
+  const srcEndWellId = (srcCornerWellIds.length === 1 ? srcCornerWellIds[0] : srcCornerWellIds[1]);
 
   const srcStartWellCoords = getCoordsFromWellId(srcStartWellId);
   const srcEndWellCoords = getCoordsFromWellId(srcEndWellId);
@@ -373,35 +373,34 @@ export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
 
   //dst plate is complicated
   //can be noncontiguous blocks, but each must be exactly the same size as source tile
-  const dstBlocks = dstBlock.split(';')
-  if (dstBlocks.length < 1) return tileScheme
+  const dstBlocks = dstBlock.split(';');
+  if (dstBlocks.length < 1) return tileScheme;
 
   const validBlocks: string[] = [];
 
   for (const block of dstBlocks) {
     const blockWellIds = block.split(':');
-    if (blockWellIds.length > 2 || blockWellIds.length < 1) return tileScheme
-    const blockStartWellId = blockWellIds[0]
-    const blockEndWellId = (blockWellIds.length === 1 ? blockWellIds[0] : blockWellIds[1])
+    if (blockWellIds.length > 2 || blockWellIds.length < 1) return tileScheme;
+    const blockStartWellId = blockWellIds[0];
+    const blockEndWellId = (blockWellIds.length === 1 ? blockWellIds[0] : blockWellIds[1]);
     const blockStartWellCoords = getCoordsFromWellId(blockStartWellId);
     const blockEndWellCoords = getCoordsFromWellId(blockEndWellId);
     const blockSize = { x: blockEndWellCoords.col - blockStartWellCoords.col + 1, y: blockEndWellCoords.row - blockStartWellCoords.row + 1 };
 
-    if (blockSize.x % srcSize.x != 0 || blockSize.y % srcSize.y != 0) {
+    if (blockSize.x % srcSize.x !== 0 || blockSize.y % srcSize.y !== 0) {
       return tileScheme;
     }
-    const tilesHorizontal = blockSize.x / tileScheme.srcSize.x
-    const tilesVertical = blockSize.y / tileScheme.srcSize.y
+    const tilesHorizontal = blockSize.x / tileScheme.srcSize.x;
+    const tilesVertical = blockSize.y / tileScheme.srcSize.y;
     for (let tileRow = 0; tileRow < tilesVertical; tileRow++) {
       for (let tileCol = 0; tileCol < tilesHorizontal; tileCol++) {
         const tileOriginY = blockStartWellCoords.row + (tileRow * tileScheme.srcSize.y);
         const tileOriginX = blockStartWellCoords.col + (tileCol * tileScheme.srcSize.x);
-        const tileEndY = tileOriginY + tileScheme.srcSize.y - 1
-        const tileEndX = tileOriginX + tileScheme.srcSize.x - 1
-        const tileOriginWellId = getWellIdFromCoords(tileOriginY, tileOriginX)
-        const tileEndWellId = getWellIdFromCoords(tileEndY, tileEndX)
-        if (tileOriginWellId == tileEndWellId) { validBlocks.push(tileOriginWellId) }
-        else { validBlocks.push(tileOriginWellId + ":" + tileEndWellId) }
+        const tileEndY = tileOriginY + tileScheme.srcSize.y - 1;
+        const tileEndX = tileOriginX + tileScheme.srcSize.x - 1;
+        const tileOriginWellId = getWellIdFromCoords(tileOriginY, tileOriginX);
+        const tileEndWellId = getWellIdFromCoords(tileEndY, tileEndX);
+        if (tileOriginWellId === tileEndWellId) { validBlocks.push(tileOriginWellId); } else { validBlocks.push(tileOriginWellId + ':' + tileEndWellId); }
       }
     }
   }
@@ -414,21 +413,21 @@ export function getTileScheme(srcBlock: string, dstBlock: string): TileScheme {
 export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pairs: [string, string][]; tiles: string[] } {
 
   const fillFromOffset = (srcOffsets: Map<string, string>, originX: number, originY: number) => {
-    const tileTsfrs: string[] = []
+    const tileTsfrs: string[] = [];
     for (const [offsetKey, srcWellId] of srcOffsets) {
       const [rowOffset, colOffset] = offsetKey.split(',').map(Number);
       const dstRow = originY + rowOffset;
       const dstCol = originX + colOffset;
       const dstWellId = getWellIdFromCoords(dstRow, dstCol);
       transfers.pairs.push([srcWellId, dstWellId]);
-      tileTsfrs.push(dstWellId)
+      tileTsfrs.push(dstWellId);
     }
-    return tileTsfrs
-  }
+    return tileTsfrs;
+  };
 
-  const transfers: { pairs: [string, string][], tiles: string[] } = { pairs: [], tiles: [] }
+  const transfers: { pairs: [string, string][], tiles: string[] } = { pairs: [], tiles: [] };
   const srcOffsets = new Map<string, string>();
-  const srcStartWellCoords = getCoordsFromWellId(tileScheme.srcStartWellId)
+  const srcStartWellCoords = getCoordsFromWellId(tileScheme.srcStartWellId);
   for (const wellId of srcWells) {
     const { row, col } = getCoordsFromWellId(wellId);
     const offsetKey = `${row - srcStartWellCoords.row},${col - srcStartWellCoords.col}`;
@@ -439,7 +438,7 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pai
     for (const block of tileScheme.explicitDestBlocks) {
       const blockWellIds = block.split(':');
       const blockStartCoords = getCoordsFromWellId(blockWellIds[0]);
-      const tileTsfrs = fillFromOffset(srcOffsets, blockStartCoords.col, blockStartCoords.row)
+      const tileTsfrs = fillFromOffset(srcOffsets, blockStartCoords.col, blockStartCoords.row);
       transfers.tiles.push(formatWellBlock(tileTsfrs));
     }
   }
@@ -447,51 +446,48 @@ export function tileTransfers(srcWells: string[], tileScheme: TileScheme): { pai
 }
 
 export function selectorHelper(e: React.MouseEvent, newSelected: string[], selectedWells: string[], setSelectedWells: React.Dispatch<React.SetStateAction<string[]>>) {
-  let newSelection = [...selectedWells]
+  const newSelection = [...selectedWells];
   if (!e.ctrlKey) {
-    setSelectedWells(newSelected)
-  }
-  else {
-    for (let wellId of newSelected) {
-      let idx = newSelection.indexOf(wellId)
+    setSelectedWells(newSelected);
+  } else {
+    for (const wellId of newSelected) {
+      const idx = newSelection.indexOf(wellId);
       if (idx > -1) {
-        newSelection.splice(idx, 1)
-      }
-      else {
-        newSelection.push(wellId)
+        newSelection.splice(idx, 1);
+      } else {
+        newSelection.push(wellId);
       }
     }
     newSelection.sort((a, b) => {
-      const aCoords = getCoordsFromWellId(a)
-      const bCoords = getCoordsFromWellId(b)
-      const rowComp = aCoords.row - bCoords.row
+      const aCoords = getCoordsFromWellId(a);
+      const bCoords = getCoordsFromWellId(b);
+      const rowComp = aCoords.row - bCoords.row;
       if (rowComp === 0) {
-        return aCoords.col - bCoords.col
+        return aCoords.col - bCoords.col;
       }
-      return rowComp
-    })
-    setSelectedWells(newSelection)
+      return rowComp;
+    });
+    setSelectedWells(newSelection);
   }
 }
 
 export function labelDrag(startEl: Element | null, endEl: Element | null, plate: Plate): string[] {
-  const newSelected: string[] = []
-  if (!(startEl instanceof HTMLDivElement) || !(endEl instanceof HTMLDivElement)) return newSelected
-  if (startEl === endEl) return newSelected
-  if (startEl.parentElement != endEl.parentElement) return newSelected
-  const startLabel = startEl.innerText
-  const endLabel = endEl.innerText
-  const rowRange = { start: 0, end: 0 }
-  const colRange = { start: 0, end: 0 }
+  const newSelected: string[] = [];
+  if (!(startEl instanceof HTMLDivElement) || !(endEl instanceof HTMLDivElement)) return newSelected;
+  if (startEl === endEl) return newSelected;
+  if (startEl.parentElement !== endEl.parentElement) return newSelected;
+  const startLabel = startEl.innerText;
+  const endLabel = endEl.innerText;
+  const rowRange = { start: 0, end: 0 };
+  const colRange = { start: 0, end: 0 };
   if (isNaN(parseInt(startLabel))) {
-    rowRange.start = lettersToNumber(startLabel)
-    rowRange.end = lettersToNumber(endLabel)
-    colRange.end = plate.columns - 1
-  }
-  else {
-    rowRange.end = plate.rows - 1
-    colRange.start = parseInt(startLabel) - 1
-    colRange.end = parseInt(endLabel) - 1
+    rowRange.start = lettersToNumber(startLabel);
+    rowRange.end = lettersToNumber(endLabel);
+    colRange.end = plate.columns - 1;
+  } else {
+    rowRange.end = plate.rows - 1;
+    colRange.start = parseInt(startLabel) - 1;
+    colRange.end = parseInt(endLabel) - 1;
   }
   for (let r = rowRange.start; r < rowRange.end + 1; r++) {
     for (let c = colRange.start; c < colRange.end + 1; c++) {
@@ -499,42 +495,42 @@ export function labelDrag(startEl: Element | null, endEl: Element | null, plate:
       newSelected.push(wellId);
     }
   }
-  return newSelected
+  return newSelected;
 }
 
 export function plateMaxConcentration(plate: Plate): number {
-  const wells = Array.from(plate)
-  const concs = wells.flatMap(w => w.getContents().map(c => c.concentration)).filter(c => typeof c === 'number')
-  if (concs.length < 1) return 0
-  return Math.max(...concs)
+  const wells = Array.from(plate);
+  const concs = wells.flatMap(w => w.getContents().map(c => c.concentration)).filter(c => typeof c === 'number');
+  if (concs.length < 1) return 0;
+  return Math.max(...concs);
 }
 
-export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", e: KeyboardEvent): string[] {
-  const newSelectedWellIdsSet: Set<string> = new Set()
+export function moveWellSelection(plate: Plate, selectedWellIds: string[], key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', e: KeyboardEvent): string[] {
+  const newSelectedWellIdsSet: Set<string> = new Set();
   for (const wellId of selectedWellIds) {
     const oldWellCoords = getCoordsFromWellId(wellId);
-    const newWellCords = { row: oldWellCoords.row, col: oldWellCoords.col }
+    const newWellCords = { row: oldWellCoords.row, col: oldWellCoords.col };
     switch (key) {
-      case "ArrowUp":
-        newWellCords.row -= 1
-        break
-      case "ArrowDown":
-        newWellCords.row += 1
-        break
-      case "ArrowLeft":
-        newWellCords.col -= 1
-        break
-      case "ArrowRight":
-        newWellCords.col += 1
-        break
+      case 'ArrowUp':
+        newWellCords.row -= 1;
+        break;
+      case 'ArrowDown':
+        newWellCords.row += 1;
+        break;
+      case 'ArrowLeft':
+        newWellCords.col -= 1;
+        break;
+      case 'ArrowRight':
+        newWellCords.col += 1;
+        break;
     }
-    const newWellId = getWellIdFromCoords(newWellCords.row, newWellCords.col)
+    const newWellId = getWellIdFromCoords(newWellCords.row, newWellCords.col);
     if (plate.getWell(newWellId)) {
-      newSelectedWellIdsSet.add(newWellId)
+      newSelectedWellIdsSet.add(newWellId);
     }
-    if (e.shiftKey && e.shiftKey == true) {
-      newSelectedWellIdsSet.add(wellId)
+    if (e.shiftKey && e.shiftKey === true) {
+      newSelectedWellIdsSet.add(wellId);
     }
   }
-  return Array.from(newSelectedWellIdsSet)
+  return Array.from(newSelectedWellIdsSet);
 }

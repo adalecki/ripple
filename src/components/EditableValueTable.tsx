@@ -49,7 +49,7 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
       }
       setFocusIndex(null);
     }
-  }, [focusIndex]);
+  }, [focusIndex, tableId]);
 
   const handleChange = (id: number, inputValue: string) => {
     setEditingValues(prev => ({ ...prev, [id]: inputValue }));
@@ -172,7 +172,7 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
               </td>
               {showDelete && (
                 <td>
-                  <button 
+                  <button
                     onClick={() => handleDelete(item.id)}
                     className={`delete-btn ${disabled ? 'disabled' : ''}`}
                     disabled={disabled}

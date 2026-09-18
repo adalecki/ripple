@@ -1,10 +1,10 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link } from 'react-router-dom';
 import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useState } from 'react';
-import { PreferencesButton, PreferencesModal } from "./PreferencesModal";
-import { ChangelogButton } from "../pages/Changelog";
-import Logo from "./Logo";
+import { PreferencesButton, PreferencesModal } from './PreferencesModal';
+import { ChangelogButton } from '../pages/Changelog';
+import Logo from './Logo';
 
 function Navigation() {
   const [showPreferences, setShowPreferences] = useState(false);

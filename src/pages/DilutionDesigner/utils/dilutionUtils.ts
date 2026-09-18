@@ -19,7 +19,7 @@ function getIntermediateConcs({
 }): number[] {
 
   function volToConc(volume: number): number {
-    return (sourceConc * volume) / (volume + backfillVolume)
+    return (sourceConc * volume) / (volume + backfillVolume);
   }
 
   const result: number[] = [];
@@ -32,7 +32,7 @@ function getIntermediateConcs({
     return result;
   }
 
-  let adjustedMaxTransferVolume = Math.floor(maxTransferVolume / dropletSize) * dropletSize;
+  const adjustedMaxTransferVolume = Math.floor(maxTransferVolume / dropletSize) * dropletSize;
   if (adjustedMaxTransferVolume < dropletSize || volNumber === 1) {
     return result;
   }

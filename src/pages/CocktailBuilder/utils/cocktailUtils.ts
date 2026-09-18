@@ -48,7 +48,7 @@ export const COCKTAIL_HEADERS: { [key: string]: string[] } = {
   Recipes: ['Name', 'Replicates', 'Well Block', ...Array.from({ length: MAX_RECIPE_SLOTS }, (_, i) => `CompVol${i + 1}`)],
   SourceLayout: ['Source Barcode', 'Well ID', 'Content', 'Volume (µL)', 'Plate Type'],
   Cocktails: ['Recipe', ...Array.from({ length: MAX_RECIPE_SLOTS }, (_, i) => `Comp${i + 1}`)]
-}
+};
 
 export const PLATE_TYPE_OPTIONS = [
   { value: '384PP_DMSO2', label: '384PP_DMSO2' },
@@ -116,7 +116,7 @@ export function buildInputData(recipes: Pattern[], srcPlates: Plate[], cocktails
   const SourceLayout: InputDataType['SourceLayout'] = [];
   for (const plate of srcPlates) {
     //uuid delimiter so 'test1' + '10' can't collide with 'test11' + '1'
-    const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02'
+    const delimiter = 'e6c80df5-9d71-465a-837a-b25d5e9f4d02';
     const inventory = new Map<string, { content: string; volume: number; plateType: string; wellIds: string[] }>();
     const wells = Object.values(plate.getWells())
       .filter(well => well.getContents().length > 0)
@@ -152,7 +152,7 @@ export function buildInputData(recipes: Pattern[], srcPlates: Plate[], cocktails
     });
     return row as InputDataType['Cocktails'][number];
   });
-  if (Recipes.length == 0 && SourceLayout.length == 0 && Cocktails.length == 0) return null
+  if (Recipes.length === 0 && SourceLayout.length === 0 && Cocktails.length === 0) return null;
   return { Recipes, SourceLayout, Cocktails };
 }
 
@@ -205,9 +205,9 @@ export function buildDesignFromInputData(
     }
     const solventName = row['Plate Type'];
     for (const well of plate.getSomeWells(row['Well ID'])) {
-      well.addContent({ 
-          compoundId: row.Content, 
-          concentration: null, 
+      well.addContent({
+          compoundId: row.Content,
+          concentration: null,
           volume: row['Volume (µL)'] * 1000,
           patternName: row.Content
         },
@@ -260,7 +260,7 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
     const barcode = row['Source Barcode'];
     let srcPlate = srcPlates.find(p => p.barcode === barcode);
     if (!srcPlate) {
-      srcPlate = new Plate({ id: srcPlates.length + 1, barcode, plateSize, plateRole: 'source'});
+      srcPlate = new Plate({ id: srcPlates.length + 1, barcode, plateSize, plateRole: 'source' });
       srcPlates.push(srcPlate);
     }
 
@@ -269,21 +269,21 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
     if (!srcPlateInventory.has(row['Content'])) {
       srcPlateInventory.set(row['Content'], []);
     }
-    const srcWellLocs = srcPlateInventory.get(row['Content'])!
+    const srcWellLocs = srcPlateInventory.get(row['Content'])!;
 
     const solventName = row['Plate Type'];
     for (const well of wells) {
       const srcWell = srcPlate.getWell(well.id);
-      if (!srcWell) continue
-      srcWell.addContent({ 
-        compoundId: row['Content'], 
+      if (!srcWell) continue;
+      srcWell.addContent({
+        compoundId: row['Content'],
         concentration: null,
         volume: row['Volume (µL)'] * 1000,
-        patternName: row['Content'] 
+        patternName: row['Content']
       },
         { name: solventName, fraction: 1 }
-      )
-      srcWellLocs.push({ barcode: srcPlate.barcode, wellId: well.id })
+      );
+      srcWellLocs.push({ barcode: srcPlate.barcode, wellId: well.id });
     }
   }
 
@@ -298,7 +298,7 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
     recipeVolumes.set(row['Name'], compVols);
   }
 
-  const dstPlateCount = calculateDestinationPlates(inputData, testPlate)
+  const dstPlateCount = calculateDestinationPlates(inputData, testPlate);
   for (let i = 0; i < dstPlateCount; i++) {
     const barcode = `DstPlate_${(i + 1).toString().padStart(2, '0')}`;
     const plate = new Plate({ id: srcPlates.length + i + 1, barcode, plateSize, plateRole: 'destination' });
@@ -337,32 +337,32 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
       continue;
     }
 
-    const dstBlock = findNextAvailableBlock(dstPlates, inputData.Recipes, recipeName)
+    const dstBlock = findNextAvailableBlock(dstPlates, inputData.Recipes, recipeName);
 
-    if (dstBlock.barcode == '') continue
-    const dstPlate = dstPlates.find(p => p.barcode == dstBlock.barcode)
-    if (!dstPlate) continue
-    const dstWells = dstPlate.getSomeWells(dstBlock.wellBlock)
+    if (dstBlock.barcode === '') continue;
+    const dstPlate = dstPlates.find(p => p.barcode === dstBlock.barcode);
+    if (!dstPlate) continue;
+    const dstWells = dstPlate.getSomeWells(dstBlock.wellBlock);
 
     for (const dstWell of dstWells) {
       for (const { contentName, volume } of compoundEntries) {
-        const srcLocations = srcPlateInventory.get(contentName)
-        if (!srcLocations) continue
-        const srcLoc = findSourceLocation(srcLocations, srcPlates, volume)
+        const srcLocations = srcPlateInventory.get(contentName);
+        if (!srcLocations) continue;
+        const srcLoc = findSourceLocation(srcLocations, srcPlates, volume);
         if (!srcLoc) {
           warnings.push(`No source well available for "${contentName}"`);
           continue;
         }
-        const srcWell = getWellFromBarcodeAndId(srcLoc.barcode, srcLoc.wellId, srcPlates)
-        if (!srcWell) continue
+        const srcWell = getWellFromBarcodeAndId(srcLoc.barcode, srcLoc.wellId, srcPlates);
+        if (!srcWell) continue;
         if (srcWell.getTotalVolume() < volume) {
           warnings.push(`Transfer of ${volume} nL of "${contentName}" from ${srcLoc.barcode} ${srcLoc.wellId} failed`);
           continue;
         }
-        const solventName = srcWell.getSolvents()[0].name ?? 'ERROR'
-        dstWell.addContent({ 
-          compoundId: contentName, 
-          concentration: null, 
+        const solventName = srcWell.getSolvents()[0].name ?? 'ERROR';
+        dstWell.addContent({
+          compoundId: contentName,
+          concentration: null,
           volume: volume,
           patternName: recipeName
         },
@@ -376,7 +376,7 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
           destinationBarcode: dstPlate.barcode,
           destinationWellId: dstWell.id,
           volume: volume
-        })
+        });
       }
     }
   }
@@ -386,47 +386,47 @@ export function processInputData(inputData: InputDataType, plateSize: PlateSize)
 function findSourceLocation(locations: SourceWellLocation[], plates: Plate[], volume: number): SourceWellLocation | null {
   let plate: Plate | undefined;
   for (const loc of locations) {
-    const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate)
-    if (!well) continue
-    if (!plate || well.parentBarcode != plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode) }
-    const srcDeadVolume = plate?.getDeadVolume() ?? 2500
+    const well = getWellFromBarcodeAndId(loc.barcode, loc.wellId, plates, plate);
+    if (!well) continue;
+    if (!plate || well.parentBarcode !== plate.barcode) { plate = plates.find(p => p.barcode === well.parentBarcode); }
+    const srcDeadVolume = plate?.getDeadVolume() ?? 2500;
     if (well.getTotalVolume() >= (volume + srcDeadVolume)) {
-      return { barcode: well.parentBarcode, wellId: well.id }
+      return { barcode: well.parentBarcode, wellId: well.id };
     }
   }
-  return null
+  return null;
 }
 
 function calculateDestinationPlates(inputData: InputDataType, testPlate: Plate): number {
   let maxDestPlatesNeeded = 0;
   for (const row of inputData['Recipes']) {
-    const wells = testPlate.getSomeWells(row['Well Block'])
-    if (!wells || wells.length < 1) return maxDestPlatesNeeded
-    const slotsPerPlate = Math.floor(wells.length / row['Replicates'])
-    const slotsNeeded = inputData['Cocktails'].filter(combo => combo['Recipe'] == row['Name']).length
-    maxDestPlatesNeeded = Math.max(maxDestPlatesNeeded, Math.ceil(slotsNeeded / slotsPerPlate))
+    const wells = testPlate.getSomeWells(row['Well Block']);
+    if (!wells || wells.length < 1) return maxDestPlatesNeeded;
+    const slotsPerPlate = Math.floor(wells.length / row['Replicates']);
+    const slotsNeeded = inputData['Cocktails'].filter(combo => combo['Recipe'] === row['Name']).length;
+    maxDestPlatesNeeded = Math.max(maxDestPlatesNeeded, Math.ceil(slotsNeeded / slotsPerPlate));
   }
 
-  return maxDestPlatesNeeded
+  return maxDestPlatesNeeded;
 }
 
 function findNextAvailableBlock(plates: Plate[], recipeRows: InputDataType['Recipes'], recipeName: string): { barcode: string, wellBlock: string } {
-  const possibleLocs: { barcode: string, blocks: string[] }[] = []
+  const possibleLocs: { barcode: string, blocks: string[] }[] = [];
   for (const plate of plates) {
     const availableBlocks: string[] = [];
     const possibleLocations = recipeRows.filter((row) => row.Name === recipeName);
 
     for (const patternRow of possibleLocations) {
-      const replicates = patternRow['Replicates']
+      const replicates = patternRow['Replicates'];
       const wellBlock = patternRow['Well Block'];
       const wells = plate.getSomeWells(wellBlock);
-      const availableWellIds = wells.filter(w => w.getContents().length == 0).map(w => w.id)
+      const availableWellIds = wells.filter(w => w.getContents().length === 0).map(w => w.id);
       for (let i = 0; i < availableWellIds.length; i += replicates) {
-        const block = availableWellIds.slice(i, i + replicates)
-        if (block.length == replicates) availableBlocks.push(formatWellBlock(block))
+        const block = availableWellIds.slice(i, i + replicates);
+        if (block.length === replicates) availableBlocks.push(formatWellBlock(block));
       }
     }
-    possibleLocs.push({ barcode: plate.barcode, blocks: availableBlocks })
+    possibleLocs.push({ barcode: plate.barcode, blocks: availableBlocks });
   }
 
   for (const { barcode, blocks } of possibleLocs) {

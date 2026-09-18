@@ -120,7 +120,7 @@ const ImportProtocolsModal: React.FC<ImportProtocolsModalProps> = ({
           title="Protocols"
           description="Exported from Ripple"
           multiple={false}
-          name='protocolsFile'
+          name="protocolsFile"
         >
           {selectedFile && (
             <div className="mt-2">

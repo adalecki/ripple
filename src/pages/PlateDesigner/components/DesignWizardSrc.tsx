@@ -11,7 +11,7 @@ import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
 import { currentItem, generateExcelTemplate, plateMaxConcentration } from '../../../utils/designUtils';
 import { formatWellBlock, mapWellsToConcentrations } from '../../../utils/plateUtils';
 
-import '../../../css/DesignWizard.css'
+import '../../../css/DesignWizard.css';
 import { Link } from 'react-router-dom';
 
 export interface WellContentsForm {
@@ -65,9 +65,9 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     concentrations: [null],
     direction: 'LR',
     currentIdx: 0
-  })
+  });
   const [activeAccordion, setActiveAccordion] = useState<string | null>('basic');
-  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
+  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
   const compoundList = wellContentsForm.compoundListText
     .split('\n')
@@ -84,24 +84,24 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     ((wellContentsForm.dmsoWells) ||
       (activeAccordion === 'basic'
         ? (
-          wellContentsForm.compoundId != '' &&
-          typeof (wellContentsForm.concentration) == 'number' &&
+          wellContentsForm.compoundId !== '' &&
+          typeof (wellContentsForm.concentration) === 'number' &&
           wellContentsForm.patternNames.length > 0)
         : (
-          currentCompound !== null &&
+          currentCompound != null &&
           validConcentrations.length > 0 &&
           wellContentsForm.patternNames.length > 0))
-    )
+    );
 
-  const plate = currentItem(designSrcPlates, curDesignSrcPlateId) as Plate
-  if (!plate) return (<div>Please select a source plate</div>)
+  const plate = currentItem(designSrcPlates, curDesignSrcPlateId) as Plate;
+  if (!plate) return (<div>Please select a source plate</div>);
 
   enterCallbackRef.current = canApply ? () => applyContentsToWells() : null;
 
-  const compoundIdsSet = new Set<string>()
+  const compoundIdsSet = new Set<string>();
   for (const plate of designSrcPlates) {
-    const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)))//filters out empty strings
-    compoundIds.forEach((id) => compoundIdsSet.add(id))
+    const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)));//filters out empty strings
+    compoundIds.forEach((id) => compoundIdsSet.add(id));
   }
 
   const colorConfig: ColorConfig = {
@@ -120,7 +120,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
         if (wellContentsForm.compoundId === '') reasons.push('No compound ID');
         if (typeof wellContentsForm.concentration !== 'number') reasons.push('No concentration set');
       } else {
-        if (currentCompound === null) reasons.push('No compounds in list');
+        if (currentCompound == null) reasons.push('No compounds in list');
         if (validConcentrations.length === 0) reasons.push('No valid concentrations');
       }
     }
@@ -129,7 +129,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
 
   function applyContentsToWells() {
     const newPlate = plate.clone();
-    const patternName = wellContentsForm.patternNames.join(';')
+    const patternName = wellContentsForm.patternNames.join(';');
     if (wellContentsForm.dmsoWells) {
       for (const wellId of selectedWellIds) {
         const well = newPlate.getWell(wellId);
@@ -149,7 +149,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           patternName
         },
           { name: 'DMSO', fraction: 1 }
-        )
+        );
       }
     } else {
       const wellBlock = formatWellBlock(selectedWellIds);
@@ -185,35 +185,35 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
       const well = newPlate.getWell(wellId);
       if (well) well.clearContents();
     }
-    newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate)
-    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
+    newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate);
+    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p));
   };
 
   function clearContentsFromAllWells() {
-    if (!plate) return
-    const newPlate = new Plate({ id: plate.id, barcode: plate.barcode, plateSize: (plate.rows * plate.columns).toString() as PlateSize })
-    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
+    if (!plate) return;
+    const newPlate = new Plate({ id: plate.id, barcode: plate.barcode, plateSize: (plate.rows * plate.columns).toString() as PlateSize });
+    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p));
   }
 
   const handleBarcodeChange = (value: string) => {
     const newPlate = plate.clone();
     newPlate.barcode = value;
-    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p))
+    setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p));
   };
 
   const handlePlateSizeChange = (value: PlateSize) => {
-    if (value === designSrcPlateSize) return
-    const filledWells = Object.values(designSrcPlates[0].getWells()).filter(well => well.getTotalVolume() > 0)
+    if (value === designSrcPlateSize) return;
+    const filledWells = Object.values(designSrcPlates[0].getWells()).filter(well => well.getTotalVolume() > 0);
     if (filledWells.length > 0 || designSrcPlates.length > 1) {
-      if (!window.confirm("Changing plate size will delete all existing plates. Continue?")) {
-        return
+      if (!window.confirm('Changing plate size will delete all existing plates. Continue?')) {
+        return;
       }
     }
-    const newPlate = new Plate({ barcode: 'SRC001', plateSize: value })
-    setDesignSrcPlateSize(value)
-    setDesignSrcPlates([newPlate])
-    setCurDesignSrcPlateId(newPlate.id)
-  }
+    const newPlate = new Plate({ barcode: 'SRC001', plateSize: value });
+    setDesignSrcPlateSize(value);
+    setDesignSrcPlates([newPlate]);
+    setCurDesignSrcPlateId(newPlate.id);
+  };
 
   const handleMouseEnter = (e: React.MouseEvent) => {
     const reasons = getApplyDisabledReasons();
@@ -225,42 +225,42 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   };
 
   return (
-    <Container fluid className='noselect design-wizard-container'>
-      <Row className='design-wizard-row'>
-        <Col md={3} className='design-wizard-col'>
-          <div className='design-wizard-button-grid'>
+    <Container fluid className="noselect design-wizard-container">
+      <Row className="design-wizard-row">
+        <Col md={3} className="design-wizard-col">
+          <div className="design-wizard-button-grid">
             <div
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
               <Button
-                onClick={(e) => { applyContentsToWells(); e.currentTarget.blur() }}
+                onClick={(e) => { applyContentsToWells(); e.currentTarget.blur(); }}
                 disabled={!canApply}
-                size='sm'
+                size="sm"
               >
                 Apply to Wells
               </Button>
             </div>
             <Button
-              onClick={(e) => { clearContentsFromWells(); e.currentTarget.blur() }}
+              onClick={(e) => { clearContentsFromWells(); e.currentTarget.blur(); }}
               disabled={selectedWellIds.length === 0}
-              variant='danger'
-              size='sm'
+              variant="danger"
+              size="sm"
             >
               Clear from Wells
             </Button>
             <Button
-              onClick={(e) => { clearContentsFromAllWells(); e.currentTarget.blur() }}
-              variant='danger'
-              size='sm'
+              onClick={(e) => { clearContentsFromAllWells(); e.currentTarget.blur(); }}
+              variant="danger"
+              size="sm"
             >
               Clear from All Wells
             </Button>
             <Button
-              onClick={(e) => { generateExcelTemplate(patterns, designSrcPlates); e.currentTarget.blur() }}
+              onClick={(e) => { generateExcelTemplate(patterns, designSrcPlates); e.currentTarget.blur(); }}
               disabled={patterns.length < 1}
-              variant='success'
-              size='sm'
+              variant="success"
+              size="sm"
             >
               Generate Template
             </Button>
@@ -281,7 +281,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
         </Col>
         <Col
           md={9}
-          className='design-wizard-col'
+          className="design-wizard-col"
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}
           onDoubleClick={onDoubleClick}
@@ -313,7 +313,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
           </span>
           <PlateViewCanvas
             plate={plate}
-            view='design'
+            view="design"
             colorConfig={colorConfig}
             selectedWells={selectedWellIds}
             handleLabelClick={handleLabelClick}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ListGroup, Form } from 'react-bootstrap';
 
-import '../css/Sidebar.css'
+import '../css/Sidebar.css';
 import { Plus, X } from 'lucide-react';
 
 interface SidebarItem {
@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {title && (
         <div>
-          <div className='item-list-header'>
+          <div className="item-list-header">
             <h5>{title}</h5>
             {onAddItem &&
               <button
@@ -102,8 +102,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className="item-name">{item.name}</span>
                 {onDeleteItem && (
                   <button
-                    type='button'
-                    className='item-list-btn item-list-btn-delete'
+                    type="button"
+                    className="item-list-btn item-list-btn-delete"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteItem(item.id);

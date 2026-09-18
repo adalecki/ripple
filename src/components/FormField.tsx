@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
-import '../css/FormField.css'
+import '../css/FormField.css';
 import InfoTooltip from './InfoTooltip';
 
 export type FormFieldType = 'text' | 'number' | 'select' | 'switch';
@@ -84,8 +84,8 @@ export const FormField: React.FC<FormFieldProps> =
       const displayValue = debounce ? internalValue : value;
 
       switch (type) {
-        case 'number':
-          const displayFloat = parseFloat(displayValue)
+        case 'number': {
+          const displayFloat = parseFloat(displayValue);
           const remainder = Math.abs(displayFloat % (step || 1));
           const isStepValid = step === undefined || Math.abs(remainder) < 1e-10 || Math.abs(remainder - step) < 1e-10;
           const isEmpty = displayValue === '' || displayValue === undefined || displayValue === null;
@@ -106,7 +106,7 @@ export const FormField: React.FC<FormFieldProps> =
               className={`form-control ${isInvalid ? 'is-invalid text-start' : ''}`}
             />
           );
-
+        }
         case 'select':
           return (
             <select
@@ -128,21 +128,21 @@ export const FormField: React.FC<FormFieldProps> =
 
         case 'switch':
           return (
-              <div className="form-check form-switch">
-                <input
-                  type="checkbox"
-                  id={id}
-                  name={name}
-                  checked={Boolean(displayValue)}
-                  onChange={handleInputChange}
-                  disabled={disabled}
-                  className="form-check-input"
-                />
-                <label className="form-check-label" htmlFor={id}>
-                  {label}
-                </label>
-                {tooltip && <InfoTooltip text={tooltip} />}
-              </div>
+            <div className="form-check form-switch">
+              <input
+                type="checkbox"
+                id={id}
+                name={name}
+                checked={Boolean(displayValue)}
+                onChange={handleInputChange}
+                disabled={disabled}
+                className="form-check-input"
+              />
+              <label className="form-check-label" htmlFor={id}>
+                {label}
+              </label>
+              {tooltip && <InfoTooltip text={tooltip} />}
+            </div>
           );
 
         default:
@@ -171,7 +171,7 @@ export const FormField: React.FC<FormFieldProps> =
       </div>
     ) : (
       <div className={baseClassName}>
-        <label htmlFor={id} className={className.includes('default-label-text') ? '' : "form-label"}>
+        <label htmlFor={id} className={className.includes('default-label-text') ? '' : 'form-label'}>
           {label}
           {tooltip && <InfoTooltip text={tooltip} />}
         </label>

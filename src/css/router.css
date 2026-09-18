@@ -22,3 +22,12 @@
 .page-card .card-header {
   padding: 0.25rem;
 }
+
+/* Steps target 1080p at 125% and 150% Windows scaling; :root outranks any theme :root font-size */
+@media (max-width: 1599.98px), (max-height: 799.98px) {
+  :root { font-size: 87.5%; }
+}
+
+@media (max-width: 1365.98px), (max-height: 679.98px) {
+  :root { font-size: 75%; }
+}

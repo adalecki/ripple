@@ -25,24 +25,24 @@ interface NormalizationParams {
 //utility function used for testing
 export function mapEquality(map1: Map<string, number>, map2: Map<string, number>) {
   const keys1 = [...map1.keys()];
-  const keys2 = [...map2.keys()]
+  const keys2 = [...map2.keys()];
 
-  if (keys1.length != keys2.length) return false;
+  if (keys1.length !== keys2.length) return false;
 
-  for (let key of keys1) { 
-    if (map1.get(key) != map2.get(key)) {
-      console.log(key)
-      return false
+  for (const key of keys1) {
+    if (map1.get(key) !== map2.get(key)) {
+      console.log(key);
+      return false;
     }
   }
-  return true
+  return true;
 }
 
 export function hasResponseData(plates: Plate[]): boolean {
   const destinationPlates = getDestinationPlates(plates);
   return destinationPlates.some(plate =>
     Object.values(plate.getWells()).some((well: Well) =>
-      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+      well && (well.rawResponse != null || well.normalizedResponse != null)
     )
   );
 }
@@ -51,7 +51,7 @@ export function getPlatesWithResponseData(plates: Plate[]) {
   const destinationPlates = getDestinationPlates(plates);
   return destinationPlates.filter(plate =>
     Object.values(plate.getWells()).some((well: Well) =>
-      well && (well.rawResponse !== null || well.normalizedResponse !== null)
+      well && (well.rawResponse != null || well.normalizedResponse != null)
     )
   );
 }
@@ -63,16 +63,16 @@ export async function parseDataFile(file: File, protocol: Protocol): Promise<Par
   try {
     const arrayBuffer = await file.arrayBuffer();
     const wb = read(arrayBuffer, { type: 'array' });
-    let ws = wb.Sheets[wb.SheetNames[0]]
+    const ws = wb.Sheets[wb.SheetNames[0]];
     const result = parseSheet(ws, protocol, file.name);
     if (result.errors.length > 0) {
       errors.push(...result.errors.map(e => `${wb.SheetNames[0]}: ${e}`));
     }
-      
+
     if (result.data) {
       parsedData.push(result.data);
     }
-    
+
     return {
       success: errors.length === 0,
       data: parsedData,
@@ -89,31 +89,31 @@ export async function parseDataFile(file: File, protocol: Protocol): Promise<Par
 function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { data?: ParsedData; errors: string[] } {
   const errors: string[] = [];
   const wellData = new Map<string, number>();
-  
+
   let barcode = '';
   if (protocol.parseStrategy.plateBarcodeLocation === 'filename') {
     const filenameWithoutExtension = filename.replace(/\.[^/.]+$/, '');
-    
+
     if (protocol.parseStrategy.useFullFilename) {
       barcode = filenameWithoutExtension;
     } else {
       const delimiter = protocol.parseStrategy.barcodeDelimiter;
       const chunkIndex = protocol.parseStrategy.barcodeChunk - 1;
-      
+
       if (!delimiter) {
         errors.push('Delimiter is required when not using full filename');
         return { errors };
       }
-      
+
       const chunks = filenameWithoutExtension.split(delimiter);
-      
+
       if (chunkIndex < 0 || chunkIndex >= chunks.length) {
         errors.push(`Barcode chunk index ${chunkIndex + 1} is out of range. Filename "${filenameWithoutExtension}" split by "${delimiter}" has ${chunks.length} chunks (1-${chunks.length}).`);
         return { errors };
       }
-      
+
       barcode = chunks[chunkIndex].trim();
-      
+
       if (barcode === '') {
         errors.push(`Barcode chunk ${chunkIndex + 1} is empty after splitting filename "${filenameWithoutExtension}" by delimiter "${delimiter}".`);
         return { errors };
@@ -128,15 +128,14 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
       return { errors };
     }
   }
-  
+
   if (protocol.parseStrategy.format === 'Matrix') {
-    const dataArr: (string | number)[][] = utils.sheet_to_json(sheet, {header: 1})
-    let result = new Map<string, number>()
+    const dataArr: (string | number)[][] = utils.sheet_to_json(sheet, { header: 1 });
+    let result = new Map<string, number>();
     if (protocol.parseStrategy.autoParse) {
-      result = autoParseMatrixFile(dataArr, protocol.parseStrategy.plateSize)
-    }
-    else {
-      result = parseExplicitRangeMatrixFile(sheet, protocol)
+      result = autoParseMatrixFile(dataArr, protocol.parseStrategy.plateSize);
+    } else {
+      result = parseExplicitRangeMatrixFile(sheet, protocol);
     }
     result.forEach((value, wellId) => wellData.set(wellId, value));
   } else if (protocol.parseStrategy.format === 'Table') {
@@ -146,11 +145,11 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
     }
     result.wellData.forEach((value, wellId) => wellData.set(wellId, value));
   }
-  
+
   if (errors.length > 0) {
     return { errors };
   }
-  
+
   return {
     data: {
       barcode,
@@ -162,7 +161,7 @@ function parseSheet(sheet: WorkSheet, protocol: Protocol, filename: string): { d
 
 function parseExplicitRangeMatrixFile(sheet: WorkSheet, protocol: Protocol): Map<string, number> {
   const wellData = new Map<string, number>();
-  
+
   const xLabels: string[] = [];
   if (protocol.parseStrategy.xLabels) {
     const xRange = utils.decode_range(protocol.parseStrategy.xLabels);
@@ -172,13 +171,12 @@ function parseExplicitRangeMatrixFile(sheet: WorkSheet, protocol: Protocol): Map
         xLabels.push(String(cell.v));
       }
     }
-  }
-  else {
+  } else {
     for (let xIdx = 0; xIdx <= PLATE_CONFIGS[protocol.parseStrategy.plateSize].cols; xIdx++) {
-      xLabels.push((xIdx+1).toString())
+      xLabels.push((xIdx+1).toString());
     }
   }
-  
+
   const yLabels: string[] = [];
   if (protocol.parseStrategy.yLabels) {
     const yRange = utils.decode_range(protocol.parseStrategy.yLabels);
@@ -188,23 +186,22 @@ function parseExplicitRangeMatrixFile(sheet: WorkSheet, protocol: Protocol): Map
         yLabels.push(String(cell.v));
       }
     }
-  }
-  else {
+  } else {
     for (let yIdx = 0; yIdx <= PLATE_CONFIGS[protocol.parseStrategy.plateSize].rows; yIdx++) {
-      yLabels.push(numberToLetters(yIdx))
+      yLabels.push(numberToLetters(yIdx));
     }
   }
-  
+
   const dataRange = utils.decode_range(protocol.parseStrategy.rawData);
-  console.log(dataRange)
-  console.log(protocol.parseStrategy.rawData)
+  console.log(dataRange);
+  console.log(protocol.parseStrategy.rawData);
   for (let row = dataRange.s.r; row <= dataRange.e.r; row++) {
     for (let col = dataRange.s.c; col <= dataRange.e.c; col++) {
       const cell = sheet[utils.encode_cell({ r: row, c: col })];
-      if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+      if (cell && cell.v !== undefined && cell.v != null && cell.v !== '') {
         const xIndex = col - dataRange.s.c;
         const yIndex = row - dataRange.s.r;
-        
+
         let wellId = '';
         if (xLabels.length > xIndex && yLabels.length > yIndex) {
           const colNum = parseInt(xLabels[xIndex]);
@@ -224,38 +221,38 @@ function parseExplicitRangeMatrixFile(sheet: WorkSheet, protocol: Protocol): Map
       }
     }
   }
-  
+
   return wellData;
 }
 
 function parseTableFormat(sheet: WorkSheet, protocol: Protocol): { wellData: Map<string, number>; errors: string[] } {
   const errors: string[] = [];
   const wellData = new Map<string, number>();
-  
+
   const wellIDRange = protocol.parseStrategy.wellIDs ? utils.decode_range(protocol.parseStrategy.wellIDs) : null;
   const dataRange = utils.decode_range(protocol.parseStrategy.rawData);
-  
+
   if (!wellIDRange) {
     errors.push('Well IDs range not specified for Table format');
     return { wellData, errors };
   }
-  
+
   const wellIDRows = wellIDRange.e.r - wellIDRange.s.r + 1;
   const dataRows = dataRange.e.r - dataRange.s.r + 1;
-  
+
   if (wellIDRows !== dataRows) {
     errors.push(`Well ID rows (${wellIDRows}) don't match data rows (${dataRows})`);
     return { wellData, errors };
   }
-  
+
   for (let i = 0; i < wellIDRows; i++) {
     const wellIDCell = sheet[utils.encode_cell({ r: wellIDRange.s.r + i, c: wellIDRange.s.c })];
     const dataCell = sheet[utils.encode_cell({ r: dataRange.s.r + i, c: dataRange.s.c })];
-    
-    if (wellIDCell && wellIDCell.v && dataCell && dataCell.v !== undefined && dataCell.v !== null && dataCell.v !== '') {
+
+    if (wellIDCell && wellIDCell.v && dataCell && dataCell.v !== undefined && dataCell.v != null && dataCell.v !== '') {
       const wellId = String(wellIDCell.v);
       const value = parseFloat(String(dataCell.v));
-      
+
       if (!isNaN(value)) {
         const match = wellId.match(/^([A-Z]+)(\d+)$/);
         if (match) {
@@ -265,35 +262,35 @@ function parseTableFormat(sheet: WorkSheet, protocol: Protocol): { wellData: Map
       }
     }
   }
-  
+
   return { wellData, errors };
 }
 
 export function applyParsedDataToPlates(
-  plates: Plate[], 
-  parsedData: ParsedData[], 
+  plates: Plate[],
+  parsedData: ParsedData[],
   protocol: Protocol
 ): { updatedPlates: Plate[], errors: string[] } {
   const errors: string[] = [];
   let updatedPlates: Plate[] = [];
-  
+
   const dataByBarcode = new Map<string, ParsedData>();
   parsedData.forEach(data => {
     dataByBarcode.set(data.barcode, data);
   });
-  
+
   for (const plate of plates) {
     const plateData = dataByBarcode.get(plate.barcode);
     if (!plateData) {
       updatedPlates.push(plate);
       continue;
     }
-    
+
     const updatedPlate = plate.clone();
-    
+
     let minResponse = Infinity;
     let maxResponse = -Infinity;
-    
+
     plateData.wellData.forEach((value, wellId) => {
       const well = updatedPlate.getWell(wellId);
       if (well) {
@@ -304,19 +301,19 @@ export function applyParsedDataToPlates(
         errors.push(`Well ${wellId} not found on plate ${plate.barcode}`);
       }
     });
-    
+
     updatedPlate.metadata.globalMinResponse = minResponse;
     updatedPlate.metadata.globalMaxResponse = maxResponse;
     updatedPlate.metadata.protocolId = protocol.id;
-    
+
     updatedPlates.push(updatedPlate);
   }
   if (protocol.dataProcessing.normalization ===  'PctOfCtrl') {
-    const {recalculatedPlates, errors: normError} = calculateNormalization(updatedPlates,protocol)
-    updatedPlates = recalculatedPlates
-    if (normError.length > 0) errors.push.apply(errors,normError)
+    const { recalculatedPlates, errors: normError } = calculateNormalization(updatedPlates,protocol);
+    updatedPlates = recalculatedPlates;
+    if (normError.length > 0) errors.push.apply(errors,normError);
   }
-  
+
   return { updatedPlates, errors };
 }
 
@@ -370,7 +367,7 @@ function scoreMatrix(
 
   // Basic validation: all rows must have the same number of columns.
   // If not, it's not a valid rectangular matrix.
-  for (let row of matrixData) {
+  for (const row of matrixData) {
     if (row.length !== cols) {
       console.warn(`Skipping candidate matrix from line ${startLine} due to inconsistent column count. Expected ${cols}, got ${row.length}.`);
       return null;
@@ -389,18 +386,17 @@ function scoreMatrix(
         numericCount++;
       } else if (typeof value === 'string' && value.trim() !== '') {
         stringCount++;
-      }
-      else {
-        otherCount++
+      } else {
+        otherCount++;
       }
     }
   }
 
   let score = 0;
 
-  const total = (numericCount + stringCount + otherCount)
-  const typeScore = ((numericCount - otherCount)/total) * 1000
-  score += typeScore
+  const total = (numericCount + stringCount + otherCount);
+  const typeScore = ((numericCount - otherCount)/total) * 1000;
+  score += typeScore;
 
   // Dimension match scoring: Prioritize matrices whose dimensions are exact or common fractions
   // of the expected plate size.
@@ -409,7 +405,7 @@ function scoreMatrix(
   const expectedCols = expectedDims.cols;
 
   const dimensionScore = (rows / expectedRows) * (cols / expectedCols) * 1000;
-  score += dimensionScore
+  score += dimensionScore;
 
   let hasHeaderRow = false;
   let hasHeaderCol = false;
@@ -576,92 +572,92 @@ export function autoParseMatrixFile(
 }
 
 export function calculateNormalization(
-  plates: Plate[], 
+  plates: Plate[],
   protocol: Protocol,
   excludeWells?: Set<string>
 ): { recalculatedPlates: Plate[], errors: string[] } {
   const errors: string[] = [];
   const recalculatedPlates: Plate[] = [];
-  
+
   for (const plate of plates) {
     const recalculatedPlate = plate.clone();
-    
+
     if (protocol.dataProcessing.normalization === 'PctOfCtrl') {
       const controlParams = extractControlValuesWithExclusions(
-        recalculatedPlate, 
+        recalculatedPlate,
         protocol.dataProcessing.controls,
         excludeWells
       );
-      
+
       if (controlParams.maxCtrl === undefined && controlParams.minCtrl === undefined) {
         recalculatedPlates.push(recalculatedPlate);
         continue;
       }
-      
+
       const minValue = controlParams.minCtrl ?? 0;
-      
+
       let maxValue = controlParams.maxCtrl;
       if (maxValue === undefined) {
         const allRawResponses = Object.values(recalculatedPlate.getWells())
           .filter(well => ((excludeWells && !excludeWells.has(well.id)) && well.rawResponse != null))
-          .map(well => well.rawResponse as number)
-        
+          .map(well => well.rawResponse as number);
+
         if (allRawResponses.length > 0) {
           maxValue = Math.max(...allRawResponses);
         } else {
           maxValue = 100;
         }
       }
-      
+
       const blankValue = controlParams.blank ?? 0;
       const range = maxValue - minValue;
-      
+
       if (range <= 0) {
         errors.push(`Plate ${plate.barcode}: Invalid control range after recalculation (max: ${maxValue}, min: ${minValue})`);
       } else {
         let normMinValue = 0;
         let normMaxValue = 100;
         for (const well of recalculatedPlate) {
-          if (well && well.rawResponse !== null) {
+          if (well && well.rawResponse != null) {
             //((raw - blank) - min) / (max - min) * 100
             const adjustedRaw = well.rawResponse - blankValue;
             const normalizedValue = ((adjustedRaw - minValue) / range) * 100;
             well.applyNormalizedResponse(normalizedValue);
-            normMinValue = Math.min(normMinValue, normalizedValue)
-            normMaxValue = Math.max(normMaxValue, normalizedValue)
+            normMinValue = Math.min(normMinValue, normalizedValue);
+            normMaxValue = Math.max(normMaxValue, normalizedValue);
           }
         }
         recalculatedPlate.metadata.normalizedMinValue = normMinValue;
         recalculatedPlate.metadata.normalizedMaxValue = normMaxValue;
       }
     }
-    
+
     recalculatedPlates.push(recalculatedPlate);
   }
-  
+
   return { recalculatedPlates, errors };
 }
 
 function extractControlValuesWithExclusions(
-  plate: Plate, 
+  plate: Plate,
   controls: ControlDefinition[],
   excludeWells?: Set<string>
 ): NormalizationParams {
   const params: NormalizationParams = {};
-  
+
   for (const control of controls) {
     if (!control.wells) continue;
-    
+
     try {
       const wells = plate.getSomeWells(control.wells);
       const responses = wells
         .filter(well => !excludeWells || !excludeWells.has(well.id))
         .map(well => well.rawResponse)
-        .filter((response): response is number => response !== null);
+        .filter((response): response is number => response != null);
       if (responses.length === 0) continue;
-      
+
       const meanResponse = responses.reduce((sum, val) => sum + val, 0) / responses.length;
-      
+
       switch (control.type) {
         case 'MaxCtrl':
           params.maxCtrl = meanResponse;
@@ -677,6 +673,6 @@ function extractControlValuesWithExclusions(
       console.warn(`Invalid well range for ${control.type}: ${control.wells}`, error);
     }
   }
-  
+
   return params;
 }

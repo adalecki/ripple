@@ -11,7 +11,7 @@ interface DilutionGraphProps {
 }
 
 const generateLogTicks = (min: number, max: number): number[] => {
-  const logs = [Math.floor(Math.log10(min)), Math.ceil(Math.log10(max))]; 
+  const logs = [Math.floor(Math.log10(min)), Math.ceil(Math.log10(max))];
   const ticks: number[] = [];
 
   for (let i = logs[0]; i <= logs[1]; i++) {
@@ -44,13 +44,13 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
   allowableError
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const cardNode = useRef(null)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const cardNode = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     if (cardNode.current) {
       const observer = new ResizeObserver((entries) => {
-        for (let entry of entries) {
+        for (const entry of entries) {
           setDimensions({
             width: entry.contentRect.width,
             height: entry.contentRect.height,
@@ -69,7 +69,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
   const chartMargins = { top: 20, right: 100, bottom: 40, left: 60 };
 
   useEffect(() => {
-    console.log(dimensions)
+    console.log(dimensions);
     if (!svgRef.current || dimensions.width === 0 || points.length === 0) return;
 
     const svg = select(svgRef.current);
@@ -120,8 +120,8 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     const rangesGroup = g.append('g').attr('class', 'ranges');
     points.forEach((point, _) => {
       if (point.concentration !== 0) {
-        console.log(point.concentration, xScale(point.concentration * (1 + allowableError)), xScale(point.concentration * (1 - allowableError)))
-        console.log(allowableError)
+        console.log(point.concentration, xScale(point.concentration * (1 + allowableError)), xScale(point.concentration * (1 - allowableError)));
+        console.log(allowableError);
         rangesGroup.append('rect')
           .attr('x', xScale(point.concentration * (1 - allowableError)))
           .attr('y', 0)
@@ -159,7 +159,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
       .y(d => yScale(d.index));
 
     g.append('path')
-      .datum(points.filter(p => (p.concentration != 0)))
+      .datum(points.filter(p => (p.concentration !== 0)))
       .attr('fill', 'none')
       .attr('stroke', '#2c3e50')
       .attr('stroke-width', 2)
@@ -167,14 +167,14 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
 
     points.filter(p => p.concentration !== 0).forEach((point, _) => {
       const transfers = analysisResults.get(point.concentration) || [];
-      const hasValidTransfer = transfers.length > 0 && 
+      const hasValidTransfer = transfers.length > 0 &&
         transfers.some(t => t.possibleConcs.length > 0);
 
       g.append('circle')
         .attr('cx', xScale(point.concentration))
         .attr('cy', yScale(point.index))
         .attr('r', 5)
-        .attr('fill', hasValidTransfer ? '#2c3e50' : '#c0392b')
+        .attr('fill', hasValidTransfer ? '#2c3e50' : '#c0392b');
 
     });
 
@@ -193,8 +193,8 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     legendData.forEach((item, i) => {
       const legendRow = legend.append('g')
         .attr('transform', `translate(0, ${i * 20})`);
-      
-      if (item.type == 'line') {
+
+      if (item.type === 'line') {
         legendRow.append('line')
         .attr('x1', 0)
         .attr('x2', 20)
@@ -202,13 +202,12 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
         .attr('y2', 0)
         .attr('stroke', item.color)
         .attr('stroke-width', 2);
-      }
-      else if (item.type == 'dot') {
+      } else if (item.type === 'dot') {
         legendRow.append('circle')
         .attr('cx', 10)
         .attr('cy', 0)
         .attr('r', 5)
-        .attr('fill',item.color)
+        .attr('fill',item.color);
       }
 
       legendRow.append('text')
@@ -221,7 +220,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
   }, [dimensions, points, analysisResults]);
 
   return (
-    <Card style={{width: '100%', maxHeight: 900}}>
+    <Card style={{ width: '100%', maxHeight: 900 }}>
       <Card.Header>
         <Row>
           <h5 className="mb-0">Dilution Curve</h5>

@@ -31,14 +31,13 @@ const DataParser: React.FC = () => {
   const [errors, setErrors] = useState<string[]>([]);
   const [metadataValues, setMetadataValues] = useState<MetadataValues>({});
   const plate = currentPlate(mappedPlates, curMappedPlateId);
-  const [normalizedResponse, setNormalizedResponse] = useState<Boolean>(false)
+  const [normalizedResponse, setNormalizedResponse] = useState<Boolean>(false);
 
   useEffect(() => {
     if (selectedProtocol) {
-      const curPro = protocols.find(p => p.id == selectedProtocol!.id)
-      if (curPro) setSelectedProtocol(curPro)
-    }
-    else if (protocols.length > 0 && !selectedProtocol) {
+      const curPro = protocols.find(p => p.id === selectedProtocol!.id);
+      if (curPro) setSelectedProtocol(curPro);
+    } else if (protocols.length > 0 && !selectedProtocol) {
       setSelectedProtocol(protocols[0]);
     }
   }, [protocols]);
@@ -96,7 +95,7 @@ const DataParser: React.FC = () => {
       ...prev,
       [fieldName]: value
     }));
-  }
+  };
 
   function validateMetadata(): string[] {
     const validationErrors: string[] = [];
@@ -104,7 +103,7 @@ const DataParser: React.FC = () => {
       selectedProtocol.metadataFields.forEach(field => {
         if (field.required) {
           const value = metadataValues[field.name];
-          if (value === undefined || value === null || value === '') {
+          if (value === undefined || value == null || value === '') {
             validationErrors.push(`${field.name} is required`);
           }
         }
@@ -153,7 +152,7 @@ const DataParser: React.FC = () => {
 
         if (currentParsedBarcodes.has(plateCopy.barcode)) {
           const hasResponseData = Object.values(plateCopy.getWells()).some(well =>
-            well && well.rawResponse !== null
+            well && well.rawResponse != null
           );
 
           if (hasResponseData) {
@@ -168,7 +167,7 @@ const DataParser: React.FC = () => {
       setMappedPlates(platesCopy);
       setUploadedFiles([]);
     }
-  }
+  };
 
   const handleExportCSV = () => {
     if (!selectedProtocol) {
@@ -183,7 +182,7 @@ const DataParser: React.FC = () => {
     }
 
     exportDestinationPlatesCSV(platesWithData, selectedProtocol);
-  }
+  };
 
   function removeFile(index: number) {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
@@ -201,7 +200,7 @@ const DataParser: React.FC = () => {
   };
 
   const hasResponseDataForPlate = plate && Object.values(plate.getWells()).some(well =>
-    well.rawResponse !== null || well.normalizedResponse !== null
+    well.rawResponse != null || well.normalizedResponse != null
   );
 
   function renderFileInformation() {
@@ -245,7 +244,7 @@ const DataParser: React.FC = () => {
           Apply Data to Plates
         </Button>
       </div>
-    )
+    );
   }
 
   function renderMetadataForm() {
@@ -300,9 +299,9 @@ const DataParser: React.FC = () => {
   };
 
   return (
-    <Container fluid className='h-100'>
-      <Row className='h-100'>
-        <Col md={4} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
+    <Container fluid className="h-100">
+      <Row className="h-100">
+        <Col md={4} className="d-flex flex-column h-100 overflow-auto" style={{ scrollbarGutter: 'stable' }}>
           <h4>Data Parser</h4>
           <p>Upload data files and parse them according to the selected protocol</p>
           <Row className="mb-3" >
@@ -336,12 +335,12 @@ const DataParser: React.FC = () => {
 
           {renderMetadataForm()}
 
-          <FileUploadCard onFilesSelected={handleFiles} title='Raw Data Files'>{renderFileInformation()}</FileUploadCard>
+          <FileUploadCard onFilesSelected={handleFiles} title="Raw Data Files">{renderFileInformation()}</FileUploadCard>
 
           {showExportButton && (
             <Card className="mb-3">
               <Card.Body className="p-2">
-                <div className='d-flex justify-content-between align-items-center'>
+                <div className="d-flex justify-content-between align-items-center">
                   <Form>
                     <Form.Check
                       type="radio"
@@ -404,7 +403,7 @@ const DataParser: React.FC = () => {
             </Alert>
           )}
         </Col>
-        <Col md={8} className='d-flex flex-column h-100 overflow-auto' style={{ scrollbarGutter: 'stable' }}>
+        <Col md={8} className="d-flex flex-column h-100 overflow-auto" style={{ scrollbarGutter: 'stable' }}>
           {plate ? (
             <PlateViewCanvas
               plate={plate}

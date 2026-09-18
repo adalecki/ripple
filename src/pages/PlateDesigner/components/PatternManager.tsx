@@ -4,7 +4,7 @@ import { Pattern, isCombinationType, getCombinationFold, CombinationType } from 
 import ConcentrationTable from './ConcentrationTable';
 import { HslStringColorPicker } from 'react-colorful';
 
-import '../../../css/PatternManager.css'
+import '../../../css/PatternManager.css';
 import { FormField } from '../../../components/FormField';
 import ApplyTooltip from '../../../components/ApplyTooltip';
 
@@ -21,14 +21,15 @@ interface PatternManagerProps {
     isEditing: boolean;
     isNewPattern: boolean;
     isPickingColor: boolean;
-  }>>
+  }>>;
+  selectedPattern: Pattern | null;
 }
 
 const DIRECTION_OPTIONS = [
-  { label: "LR", value: "LR" },
-  { label: "RL", value: "RL" },
-  { label: "TB", value: "TB" },
-  { label: "BT", value: "BT" }
+  { label: 'LR', value: 'LR' },
+  { label: 'RL', value: 'RL' },
+  { label: 'TB', value: 'TB' },
+  { label: 'BT', value: 'BT' }
 ];
 
 function defaultPerpendicular(dir: string): 'LR' | 'RL' | 'TB' | 'BT' {
@@ -41,31 +42,30 @@ function isPerpendicularDirections(a: string, b: string): boolean {
   return (horizontal.includes(a) && vertical.includes(b)) || (vertical.includes(a) && horizontal.includes(b));
 }
 
-const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState }) => {
+const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, curPatternId, patternState, setPatternState, selectedPattern }) => {
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
-  const [prevPatternId, setPrevPatternId] = useState<number | null>(null)
-  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
-  const [showAlert, setShowAlert] = useState<string[]>([])
+  const [prevPatternId, setPrevPatternId] = useState<number | null>(null);
+  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
+  const [showAlert, setShowAlert] = useState<string[]>([]);
 
   if (curPatternId !== prevPatternId) {
-    setPrevPatternId(curPatternId)
-    const selectedPattern = patterns ? patterns.find(p => p.id === curPatternId) : undefined;
+    setPrevPatternId(curPatternId);
     setEditingPattern(selectedPattern ? selectedPattern.clone() : null);
   }
 
   const handleEditPattern = () => {
-    setPatternState({ ...patternState, isEditing: true })
-    if (editingPattern && editingPattern.concentrations.length == 0) {
-      setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }))
+    setPatternState({ ...patternState, isEditing: true });
+    if (editingPattern && editingPattern.concentrations.length === 0) {
+      setEditingPattern(new Pattern({ ...editingPattern, concentrations: [null] }));
     }
   };
 
   const handleSavePattern = () => {
     if (editingPattern) {
-      const concentrations = editingPattern.concentrations.filter(c => c != null)
-      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations })
+      const concentrations = editingPattern.concentrations.filter(c => c != null);
+      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations });
       setPatterns(patterns.map(p => p.id === savePattern.id ? savePattern : p));
-      setPatternState({ ...patternState, isEditing: false, isPickingColor: false })
+      setPatternState({ ...patternState, isEditing: false, isPickingColor: false });
     }
   };
 
@@ -91,13 +91,13 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
       } else if (fieldName === 'type' && editingPattern.type === 'Unused') {
         setEditingPattern(new Pattern({
           ...editingPattern,
-          [fieldName]: value as "Treatment" | "Control" | "Solvent" | "Unused",
+          [fieldName]: value as 'Treatment' | 'Control' | 'Solvent' | 'Unused',
           concentrations: [null]
         }));
       } else if (fieldName === 'type' && isCombinationType(editingPattern.type)) {
         setEditingPattern(new Pattern({
           ...editingPattern,
-          [fieldName]: value as "Treatment" | "Control" | "Solvent" | "Unused",
+          [fieldName]: value as 'Treatment' | 'Control' | 'Solvent' | 'Unused',
           direction: [editingPattern.direction[0]]
         }));
       } else {
@@ -131,8 +131,8 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
   const handleConcentrationChange = (newConcentrations: (number | null)[]) => {
     if (editingPattern) {
       if (newConcentrations.length > 20) {
-        setShowAlert(['Only 20'])
-        return
+        setShowAlert(['Only 20']);
+        return;
       }
       setEditingPattern(new Pattern({ ...editingPattern, concentrations: newConcentrations }));
     }
@@ -151,9 +151,9 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
     const msgArr: string[] = [];
     if (duplicateName) msgArr.push('Pattern names must be unique');
     if (editingPattern) {
-      if (!editingPattern.replicates) msgArr.push('Must define replicates')
-      if (!editingPattern.name) msgArr.push('Must enter a pattern name')
-      if (matrixDirectionsInvalid) msgArr.push('Matrix directions must be perpendicular (one LR/RL, one TB/BT)')
+      if (!editingPattern.replicates) msgArr.push('Must define replicates');
+      if (!editingPattern.name) msgArr.push('Must enter a pattern name');
+      if (matrixDirectionsInvalid) msgArr.push('Matrix directions must be perpendicular (one LR/RL, one TB/BT)');
     }
 
     setApplyPopup({ event: msgArr.length > 0 ? e : null, msgArr });
@@ -163,7 +163,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
     setApplyPopup({ event: null, msgArr: [] });
   };
 
-  const duplicateName = (editingPattern ? patterns.filter(p => p.name == editingPattern.name && p.id != editingPattern.id).length > 0 : false)
+  const duplicateName = (editingPattern ? patterns.filter(p => p.name === editingPattern.name && p.id !== editingPattern.id).length > 0 : false);
   const isMatrixPattern = editingPattern ? (isCombinationType(editingPattern.type) && editingPattern.direction.length === 2) : false;
   const matrixDirectionsInvalid = isMatrixPattern && editingPattern ? !isPerpendicularDirections(editingPattern.direction[0], editingPattern.direction[1]) : false;
   return (
@@ -190,11 +190,11 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   variant="primary"
                   size="sm"
                   onClick={handleEditPattern}
-                  disabled={editingPattern.locations.length > 0}
+                  disabled={!selectedPattern || selectedPattern.locations.length > 0}
                 >
                   Edit
                 </Button>
-                {editingPattern.locations.length > 0 && (
+                {!selectedPattern || selectedPattern.locations.length > 0 && (
                   <small className="text-muted fst-italic ms-2">Can't edit when present on plate</small>
                 )}
               </>
@@ -202,55 +202,55 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
           </div>
           <Form className="pattern-form">
             <FormField
-              key='pattern-name'
-              id='pattern-name'
-              name='name'
-              type='text'
-              label='Name'
+              key="pattern-name"
+              id="pattern-name"
+              name="name"
+              type="text"
+              label="Name"
               value={editingPattern.name}
-              onChange={(value) => handleFieldChange("name", value)}
+              onChange={(value) => handleFieldChange('name', value)}
               required={true}
               disabled={!patternState.isEditing}
             />
             <FormField
-              key='pattern-type'
-              id='pattern-type'
-              name='type'
-              type='select'
-              label='Type'
+              key="pattern-type"
+              id="pattern-type"
+              name="type"
+              type="select"
+              label="Type"
               value={isCombinationType(editingPattern.type) ? 'Combination' : editingPattern.type}
-              onChange={(value) => handleFieldChange("type", value)}
+              onChange={(value) => handleFieldChange('type', value)}
               required={true}
               disabled={!patternState.isEditing}
               options={[
-                { label: "Control", value: "Control" },
-                { label: "Treatment", value: "Treatment" },
-                { label: "Combination (all N-way)", value: "Combination" },
-                { label: "Unused", value: "Unused" }
+                { label: 'Control', value: 'Control' },
+                { label: 'Treatment', value: 'Treatment' },
+                { label: 'Combination (all N-way)', value: 'Combination' },
+                { label: 'Unused', value: 'Unused' }
               ]}
             />
             {editingPattern.type !== 'Unused' && (
               <div className="pattern-fields">
                 <FormField
-                  key='pattern-replicates'
-                  id='pattern-replicates'
-                  name='replicates'
-                  type='number'
-                  label='Replicates'
+                  key="pattern-replicates"
+                  id="pattern-replicates"
+                  name="replicates"
+                  type="number"
+                  label="Replicates"
                   value={editingPattern.replicates}
-                  onChange={(value) => handleFieldChange("replicates", value)}
+                  onChange={(value) => handleFieldChange('replicates', value)}
                   required={true}
                   disabled={!patternState.isEditing}
                   step={1}
-                  tooltip={isMatrixPattern ? "Number of numConcs x numConcs squares tiled across the applied selection" : undefined}
+                  tooltip={isMatrixPattern ? 'Number of numConcs x numConcs squares tiled across the applied selection' : undefined}
                 />
                 {isCombinationType(editingPattern.type) && (
                   <FormField
-                    key='pattern-fold'
-                    id='pattern-fold'
-                    name='fold'
-                    type='number'
-                    label='Fold'
+                    key="pattern-fold"
+                    id="pattern-fold"
+                    name="fold"
+                    type="number"
+                    label="Fold"
                     value={getCombinationFold(editingPattern.type as CombinationType)}
                     onChange={(value) => handleFoldChange(value)}
                     required={true}
@@ -262,11 +262,11 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                 )}
                 {isCombinationType(editingPattern.type) && getCombinationFold(editingPattern.type as CombinationType) === 2 && (
                   <FormField
-                    key='pattern-matrix'
-                    id='pattern-matrix'
-                    name='matrix'
-                    type='switch'
-                    label='Matrix layout'
+                    key="pattern-matrix"
+                    id="pattern-matrix"
+                    name="matrix"
+                    type="switch"
+                    label="Matrix layout"
                     value={editingPattern.direction.length === 2}
                     onChange={(checked) => handleMatrixToggle(checked)}
                     disabled={!patternState.isEditing}
@@ -276,25 +276,25 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                 {isMatrixPattern ? (
                   <>
                     <FormField
-                      key='pattern-direction-1'
-                      id='pattern-direction-1'
-                      name='direction1'
-                      type='select'
-                      label='Direction (Axis 1)'
+                      key="pattern-direction-1"
+                      id="pattern-direction-1"
+                      name="direction1"
+                      type="select"
+                      label="Direction (Axis 1)"
                       value={editingPattern.direction[0]}
-                      onChange={(value) => handleFieldChange("direction", [value, editingPattern.direction[1]])}
+                      onChange={(value) => handleFieldChange('direction', [value, editingPattern.direction[1]])}
                       required={true}
                       disabled={!patternState.isEditing}
                       options={DIRECTION_OPTIONS}
                     />
                     <FormField
-                      key='pattern-direction-2'
-                      id='pattern-direction-2'
-                      name='direction2'
-                      type='select'
-                      label='Direction (Axis 2)'
+                      key="pattern-direction-2"
+                      id="pattern-direction-2"
+                      name="direction2"
+                      type="select"
+                      label="Direction (Axis 2)"
                       value={editingPattern.direction[1]}
-                      onChange={(value) => handleFieldChange("direction", [editingPattern.direction[0], value])}
+                      onChange={(value) => handleFieldChange('direction', [editingPattern.direction[0], value])}
                       required={true}
                       disabled={!patternState.isEditing}
                       options={DIRECTION_OPTIONS}
@@ -302,20 +302,20 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   </>
                 ) : (
                   <FormField
-                    key='pattern-direction'
-                    id='pattern-direction'
-                    name='direction'
-                    type='select'
-                    label='Direction'
+                    key="pattern-direction"
+                    id="pattern-direction"
+                    name="direction"
+                    type="select"
+                    label="Direction"
                     value={editingPattern.direction[0]}
-                    onChange={(value) => handleFieldChange("direction", [value])}
+                    onChange={(value) => handleFieldChange('direction', [value])}
                     required={true}
                     disabled={!patternState.isEditing}
                     options={DIRECTION_OPTIONS}
                   />
                 )}
-                <div className='form-field'>
-                  <div className='form-label'>Color</div>
+                <div className="form-field">
+                  <div className="form-label">Color</div>
                   <div
                     className="color-preview form-field-input"
                     style={{ backgroundColor: editingPattern.color }}
@@ -331,7 +331,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   </div>
                 )}
                 <Form.Label>Concentrations</Form.Label>
-                <Alert variant='danger' show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
+                <Alert variant="danger" show={showAlert.length > 0} onClose={() => setShowAlert([])} dismissible transition>
                   A maximum of 20 concentrations is allowed
                 </Alert>
                 <div className="concentration-table-container">

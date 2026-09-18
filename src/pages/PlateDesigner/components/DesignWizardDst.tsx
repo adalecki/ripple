@@ -11,7 +11,7 @@ import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping
 import ApplyTooltip from '../../../components/ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
 
-import '../../../css/DesignWizard.css'
+import '../../../css/DesignWizard.css';
 import { FormField } from '../../../components/FormField';
 import { Link } from 'react-router-dom';
 
@@ -63,9 +63,9 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   setPatternState,
   onDoubleClick
 }) => {
-  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] })
+  const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
-  const selectedPattern = currentItem(patterns, curPatternId) as Pattern
+  const selectedPattern = currentItem(patterns, curPatternId) as Pattern;
   const colorConfig = buildColorConfig(patterns);
 
   function buildColorConfig(patterns: Pattern[]): ColorConfig {
@@ -73,7 +73,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
     for (const pattern of patterns) {
       for (const concentration of pattern.concentrations) {
         if (typeof concentration === 'number') {
-          if (maxConcentration === null || concentration > maxConcentration) {
+          if (maxConcentration == null || concentration > maxConcentration) {
             maxConcentration = concentration;
           }
         }
@@ -89,7 +89,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   const handleMouseEnter = (e: React.MouseEvent) => {
     const msgArr: string[] = [];
     if (patternState.isEditing) msgArr.push('Save the pattern before applying to plate');
-    const curPattern = patterns.find(p => p.id == curPatternId);
+    const curPattern = patterns.find(p => p.id === curPatternId);
     if (selectedWellIds.length > 0 && curPattern && curPattern.concentrations.filter(c => c != null).length > 0) {
       msgArr.push(...sensibleWellSelection(selectedWellIds, curPattern, designDstPlates[0]));
     }
@@ -101,29 +101,29 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   };
 
   const handlePlateSizeChange = (value: PlateSize) => {
-    if (value === designDstPlateSize) return
-    const filledWells = Object.values(designDstPlates[0].getWells()).filter(well => well.getTotalVolume() > 0)
+    if (value === designDstPlateSize) return;
+    const filledWells = Object.values(designDstPlates[0].getWells()).filter(well => well.getTotalVolume() > 0);
     if (filledWells.length > 0 || designDstPlates.length > 1) {
-      if (!window.confirm("Changing plate size will reset the destination plate. Continue?")) {
-        return
+      if (!window.confirm('Changing plate size will reset the destination plate. Continue?')) {
+        return;
       }
     }
-    const newPlate = new Plate({ barcode: 'DST001', plateSize: value })
-    setDesignDstPlateSize(value)
-    setDesignDstPlates([newPlate])
-    setCurDesignDstPlateId(newPlate.id)
+    const newPlate = new Plate({ barcode: 'DST001', plateSize: value });
+    setDesignDstPlateSize(value);
+    setDesignDstPlates([newPlate]);
+    setCurDesignDstPlateId(newPlate.id);
     setPatterns(patterns.map(p => {
-      const newPattern = p.clone()
-      newPattern.locations = []
-      return newPattern
-    }))
-  }
+      const newPattern = p.clone();
+      newPattern.locations = [];
+      return newPattern;
+    }));
+  };
 
   function applyPatternToWells() {
     if (curPatternId && selectedWellIds.length > 0) {
-      const pattern = patterns.find(p => p.id == curPatternId)
+      const pattern = patterns.find(p => p.id === curPatternId);
       if (pattern) {
-        const newPattern = pattern.clone()
+        const newPattern = pattern.clone();
         const newPlate = designDstPlates[0].clone();
         if (pattern.type === 'Unused') {
           for (const wellId of selectedWellIds) {
@@ -171,17 +171,17 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
 
   function clearPatternFromWells(clearAll?: boolean) {
     if (clearAll || selectedWellIds.length > 0) {
-      const wellSelection = clearAll ? designDstPlates[0].getWellIds() : [...selectedWellIds]
+      const wellSelection = clearAll ? designDstPlates[0].getWellIds() : [...selectedWellIds];
       const newPlate = designDstPlates[0].clone();
-      const wellsToCheck = designDstPlates[0].getSomeWells(wellSelection.join(';'))
-      const patternNamesToCheck = [...new Set(wellsToCheck.flatMap(w => w.getPatterns()))]
+      const wellsToCheck = designDstPlates[0].getSomeWells(wellSelection.join(';'));
+      const patternNamesToCheck = [...new Set(wellsToCheck.flatMap(w => w.getPatterns()))];
 
-      const unusedPatterns = patterns.filter(p => p.type === 'Unused')
+      const unusedPatterns = patterns.filter(p => p.type === 'Unused');
       const unusedPatternNames = unusedPatterns.map(p => p.name);
 
       const hasUnusedWells = wellsToCheck.some(w => w.getIsUnused());
 
-      const newPatternArr: Pattern[] = []
+      const newPatternArr: Pattern[] = [];
 
       for (const unusedPattern of unusedPatterns) {
         if (hasUnusedWells) {
@@ -206,32 +206,32 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
 
       for (const patternName of patternNamesToCheck) {
         if (!unusedPatternNames.includes(patternName)) {
-          const pattern = patterns.find(p => p.name == patternName)
+          const pattern = patterns.find(p => p.name === patternName);
           if (pattern) {
-            const newPattern = pattern.clone()
+            const newPattern = pattern.clone();
             for (const loc of pattern.locations) {
               if (isBlockOverlapping(newPlate, wellSelection.join(';'), [loc])) {
-                newPlate.removePattern(loc, patternName)
-                newPattern.locations = newPattern.locations.filter(l => !(l == loc))
+                newPlate.removePattern(loc, patternName);
+                newPattern.locations = newPattern.locations.filter(l => !(l === loc));
               }
             }
-            newPatternArr.push(newPattern)
+            newPatternArr.push(newPattern);
           }
         }
       }
 
-      setPatterns(patterns.map(p => newPatternArr.some(nP => nP.id == p.id) ? newPatternArr.find(nP => nP.id == p.id) as Pattern : p));
-      setDesignDstPlates([newPlate])
+      setPatterns(patterns.map(p => newPatternArr.some(nP => nP.id === p.id) ? newPatternArr.find(nP => nP.id === p.id) as Pattern : p));
+      setDesignDstPlates([newPlate]);
     }
   }
 
   const blockBorderMap = calculateBlockBorders(designDstPlates[0]);
 
   return (
-    <Container fluid className='noselect design-wizard-container'>
-      <Row className='design-wizard-row'>
-        <Col md={3} className='design-wizard-col design-wizard-col-left'>
-          <div className='design-wizard-button-grid'>
+    <Container fluid className="noselect design-wizard-container">
+      <Row className="design-wizard-row">
+        <Col md={3} className="design-wizard-col design-wizard-col-left">
+          <div className="design-wizard-button-grid">
             <div
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
@@ -245,7 +245,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
                   (isCombinationType(selectedPattern.type) && selectedPattern.direction.length === 2 && sensibleWellSelection(selectedWellIds, selectedPattern, designDstPlates[0]).length > 0) ||
                   patternState.isEditing
                 }
-                size='sm'
+                size="sm"
               >
                 Apply to Wells
               </Button>
@@ -253,23 +253,23 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             <Button
               onClick={() => clearPatternFromWells()}
               disabled={selectedWellIds.length === 0}
-              variant='danger'
-              size='sm'
+              variant="danger"
+              size="sm"
             >
               Clear from Wells
             </Button>
             <Button
               onClick={() => clearPatternFromWells(true)}
-              variant='danger'
-              size='sm'
+              variant="danger"
+              size="sm"
             >
               Clear from All Wells
             </Button>
             <Button
               onClick={() => generateExcelTemplate(patterns, designSrcPlates)}
               disabled={patterns.length < 1}
-              variant='success'
-              size='sm'
+              variant="success"
+              size="sm"
             >
               Generate Template
             </Button>
@@ -281,11 +281,12 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             patterns={patterns}
             setPatterns={setPatterns}
             curPatternId={curPatternId}
+            selectedPattern={selectedPattern}
           />
         </Col>
         <Col
           md={9}
-          className='design-wizard-col'
+          className="design-wizard-col"
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}
           onDoubleClick={onDoubleClick}
@@ -308,16 +309,16 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
           </span>
           <PlateViewCanvas
             plate={designDstPlates[0]}
-            view='design'
+            view="design"
             colorConfig={colorConfig}
             selectedWells={selectedWellIds}
             handleLabelClick={handleLabelClick}
             blockBorderMap={blockBorderMap}
           />
-          <small className="text-muted">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem' }}>
+          <small className="text-muted mb-2">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem'}}>
               <span><kbd>LeftClick</kbd> to select wells, drag to select groups</span>
-              <span><kbd>LeftClick</kbd> on labels or All Plate square to select groups of wells</span>
+              <span><kbd>LeftClick</kbd> on labels to select groups of wells</span>
               <span><kbd>LeftClick</kbd> + <kbd>Ctrl</kbd> to add to current selection</span>
               <span><kbd>ArrowKey</kbd> to move current selection</span>
               <span><kbd>Shift</kbd> + <kbd>ArrowKey</kbd> expands well selection</span>

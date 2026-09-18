@@ -66,8 +66,10 @@ function CocktailBuilder() {
     }
   }
 
-  //assigned during render so the once-registered keydown listener never reads a stale plate
-  activePlateRef.current = activePlate();
+  //assigned immediately after render so the once-registered keydown listener never reads a stale plate
+  useEffect(() => { 
+    activePlateRef.current = activePlate(); 
+  });
 
   const handleKeyDown = (e: KeyboardEvent) => {
     const tag = (document.activeElement as HTMLElement)?.tagName;
@@ -114,9 +116,9 @@ function CocktailBuilder() {
     if (el) {
       el.style.left = `${start.x}px`;
       el.style.top = `${start.y}px`;
-      el.style.width = "0px";
-      el.style.height = "0px";
-      el.className = "selection-rectangle";
+      el.style.width = '0px';
+      el.style.height = '0px';
+      el.className = 'selection-rectangle';
     }
   };
 
@@ -134,7 +136,7 @@ function CocktailBuilder() {
 
     const el = selectionRef.current;
     if (el) {
-      el.style.display = "block"
+      el.style.display = 'block';
       el.style.left = `${left}px`;
       el.style.top = `${top}px`;
       el.style.width = `${width}px`;
@@ -147,9 +149,9 @@ function CocktailBuilder() {
     dragState.current.mouseDown = false;
     dragState.current.dragging = false;
     const el = selectionRef.current;
-    if (el) el.style.display = "none";
+    if (el) el.style.display = 'none';
 
-    const parent = (e.target as HTMLElement).closest("[data-view]");
+    const parent = (e.target as HTMLElement).closest('[data-view]');
     if (!parent) return;
     const plate = activePlate();
     if (!plate) return;
@@ -164,10 +166,9 @@ function CocktailBuilder() {
     const endEl = document.elementFromPoint(region.x2, region.y2);
     const labelWells = labelDrag(startEl, endEl, plate);
     if (labelWells.length > 0) {
-      selectorHelper(e, labelWells, selectedWellIds, setSelectedWellIds)
-    }
-    else {
-      const canvas = parent.getElementsByTagName('canvas')[0]
+      selectorHelper(e, labelWells, selectedWellIds, setSelectedWellIds);
+    } else {
+      const canvas = parent.getElementsByTagName('canvas')[0];
       const rect = canvas.getBoundingClientRect();
       const cx = region.x1 - rect.left;
       const cy = region.y1 - rect.top;
@@ -209,7 +210,7 @@ function CocktailBuilder() {
 
     const newSelected: string[] = [];
 
-    if (target.className.includes("all-wells-container")) {
+    if (target.className.includes('all-wells-container')) {
       for (let r = 0; r < plate.rows; r++) {
         for (let c = 0; c < plate.columns; c++) {
           newSelected.push(getWellIdFromCoords(r, c));
@@ -233,7 +234,7 @@ function CocktailBuilder() {
         if (shouldSelect) newSelected.push(wellId);
       }
     }
-    selectorHelper(e, newSelected, selectedWellIds, setSelectedWellIds)
+    selectorHelper(e, newSelected, selectedWellIds, setSelectedWellIds);
   };
 
   const handleAddRecipe = () => {
@@ -313,7 +314,7 @@ function CocktailBuilder() {
     if (importErrors.length > 0) return;
 
     const design = buildDesignFromInputData(inputData, dstPlateSize, srcPlateSize);
-    console.log(design)
+    console.log(design);
     setRecipes(design.recipes);
     setPreviewPlate(design.previewPlate);
     setSrcPlates(design.srcPlates);
@@ -329,9 +330,9 @@ function CocktailBuilder() {
   const handleClear = () => {
     setBuiltPlates([]);
     setRecipes([]);
-    setSrcPlates([new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source'})]);
+    setSrcPlates([new Plate({ barcode: 'SRC001', plateSize: srcPlateSize, plateRole: 'source' })]);
     setCocktails([]);
-    setPreviewPlate(new Plate({ barcode: 'PREVIEW', plateSize: dstPlateSize }))
+    setPreviewPlate(new Plate({ barcode: 'PREVIEW', plateSize: dstPlateSize }));
     setCurBuiltPlateId(null);
     setTransferSteps([]);
     setErrors([]);
@@ -396,7 +397,7 @@ function CocktailBuilder() {
     }
   };
 
-  if (recipes.length === 0) handleAddRecipe()
+  if (recipes.length === 0) handleAddRecipe();
 
   return (
     <div>
