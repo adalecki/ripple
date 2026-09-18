@@ -66,8 +66,10 @@ function CocktailBuilder() {
     }
   }
 
-  //assigned during render so the once-registered keydown listener never reads a stale plate
-  activePlateRef.current = activePlate();
+  //assigned immediately after render so the once-registered keydown listener never reads a stale plate
+  useEffect(() => { 
+    activePlateRef.current = activePlate(); 
+  });
 
   const handleKeyDown = (e: KeyboardEvent) => {
     const tag = (document.activeElement as HTMLElement)?.tagName;

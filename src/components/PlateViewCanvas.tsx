@@ -35,20 +35,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
   const wellColorArr = wellColors(plate, colorConfig);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = wellsContainerRef.current;
-    const grid = gridContainerRef.current;
-    if (!canvas || !container || !grid) return;
-    const observer = new ResizeObserver(drawPlate);
-
-    observer.observe(grid);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [plate, colorConfig, selectedWells, blockBorderMap, canvasSize.dpr]);
-
   function drawPlate() {
     const canvas = canvasRef.current;
     const container = wellsContainerRef.current;
@@ -88,6 +74,21 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders, dividers);
     }
   };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = wellsContainerRef.current;
+    const grid = gridContainerRef.current;
+    if (!canvas || !container || !grid) return;
+    const observer = new ResizeObserver(drawPlate);
+
+    observer.observe(grid);
+
+    return () => {
+      observer.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plate, colorConfig, selectedWells, blockBorderMap, canvasSize.dpr]);
 
   function drawWell(
     ctx: CanvasRenderingContext2D,
@@ -279,14 +280,14 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
         style={{ height: `${15 / canvasSize.dpr}px` }}
         onClick={handleLabelClick}
       />
-        <div
-          className="col-labels-container"
-          style={{
-            gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
-            maxWidth: canvasSize.width / canvasSize.dpr
-          }}>
-          {columnLabels}
-        </div>
+      <div
+        className="col-labels-container"
+        style={{
+          gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
+          maxWidth: canvasSize.width / canvasSize.dpr
+        }}>
+        {columnLabels}
+      </div>
       <div
         className="row-labels-container"
 

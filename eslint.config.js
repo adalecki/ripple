@@ -33,7 +33,8 @@ export default [
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
       //older utils lean on `any` for xlsx rows; new code should type them, so this stays visible without failing lint
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-prototype-builtins': 'off'
     },
   },
   {

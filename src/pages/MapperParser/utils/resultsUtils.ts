@@ -51,7 +51,7 @@ export interface SinglePoint {
   wellId: string;
 }
 
-export function getPlateData(plate: Plate, normalized: Boolean, protocol?: Protocol): {curveData: CurveData[], sPData: SinglePoint[]} {
+export function getPlateData(plate: Plate, normalized: boolean, protocol?: Protocol): {curveData: CurveData[], sPData: SinglePoint[]} {
   if (!protocol) return { curveData: [], sPData: [] };
   const treatmentGroups = new Map<string, ConcentrationPoint[]>();
   const sPData: SinglePoint[] = [];
@@ -184,7 +184,7 @@ export function getTreatmentKey(well: Well): string {
   return compoundIds.join('+');
 }
 
-export function yAxisDomains(plate: Plate, normalized: Boolean): { yLo: number, yHi: number } {
+export function yAxisDomains(plate: Plate, normalized: boolean): { yLo: number, yHi: number } {
   let yLo = 0;
   let yHi = 100;
 
@@ -300,7 +300,7 @@ export function createLogTicks(min: number, max: number, gridSize: number) {
   return ticks;
 };
 
-export function plateZPrimeFactor(plate: Plate, protocol: Protocol, robust: Boolean = false): number {
+export function plateZPrimeFactor(plate: Plate, protocol: Protocol, robust: boolean = false): number {
   let zFactor = 0;
   const maxCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MaxCtrl');
   const minCtrl = protocol.dataProcessing.controls.find((c) => c.type === 'MinCtrl');

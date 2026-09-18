@@ -49,7 +49,7 @@ const EditableValueTable: React.FC<EditableValueTableProps> = ({
       }
       setFocusIndex(null);
     }
-  }, [focusIndex]);
+  }, [focusIndex, tableId]);
 
   const handleChange = (id: number, inputValue: string) => {
     setEditingValues(prev => ({ ...prev, [id]: inputValue }));
