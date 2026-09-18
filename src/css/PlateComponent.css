@@ -76,12 +76,13 @@
 
 .grid-container {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     "allWells colLabels"
     "rowLabels wells";
   gap: 2px;
+  min-height: 0;
 }
 
 .all-wells-container {
@@ -105,12 +106,10 @@
 
 .wells-container {
   grid-area: wells;
-  width: 100%;
   min-width: 0;
   min-height: 0;
   position: relative;
-  display: grid;
-  gap: 1px;
+  overflow: hidden;
 }
 
 .noselect {

@@ -29,7 +29,6 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wellsContainerRef = useRef<HTMLDivElement | null>(null);
-  const gridContainerRef = useRef<HTMLDivElement | null>(null);
   const [hoveredWell, setHoveredWell] = useState<HoveredWellData | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0, dpr: 1, wellSize: 0, gap: 0 });
 
@@ -50,7 +49,10 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
 
     if (availableWidth === 0 || availableHeight === 0) return;
     const gap = 96 / plate.columns;
-    const wellSize = Math.floor((availableWidth - ((plate.columns - 1) * gap)) / plate.columns);
+    const wellSizeByWidth = (availableWidth - 1 - ((plate.columns - 1) * gap)) / plate.columns
+    const wellSizeByHeight = (availableHeight - 1 - ((plate.rows - 1) * gap)) / plate.rows
+    const wellSize = Math.floor(Math.min(wellSizeByWidth, wellSizeByHeight))
+    if (wellSize <= 0) return;
 
     const canvasWidth = (wellSize * plate.columns) + (plate.columns - 1) * gap + 1;
     const canvasHeight = (wellSize * plate.rows) + (plate.rows - 1) * gap + 1;
@@ -60,7 +62,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     canvas.style.width = `${canvasWidth}px`;
     canvas.style.height = `${canvasHeight}px`;
 
-    setCanvasSize({ width: canvas.width, height: canvas.height, dpr: dpr, wellSize: wellSize, gap: gap });
+    setCanvasSize({ width: canvasWidth, height: canvasHeight, dpr: dpr, wellSize: wellSize, gap: gap });
 
     for (const { wellId, colors, dividers } of wellColorArr) {
       const { row, col } = getCoordsFromWellId(wellId);
@@ -78,11 +80,10 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = wellsContainerRef.current;
-    const grid = gridContainerRef.current;
-    if (!canvas || !container || !grid) return;
+    if (!canvas || !container) return;
     const observer = new ResizeObserver(drawPlate);
 
-    observer.observe(grid);
+    observer.observe(container);
 
     return () => {
       observer.disconnect();
@@ -270,10 +271,10 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     );
   }
 
-  const rowHeight = (canvasSize.height / plate.rows) / canvasSize.dpr;
+  const rowHeight = (canvasSize.height / plate.rows);
 
   return (
-    <div className="grid-container" ref={gridContainerRef} data-view={view}>
+    <div className="grid-container" data-view={view} style={{ aspectRatio: `${plate.columns} / ${plate.rows}` }}>
 
       <div
         className={handleLabelClick ? 'all-wells-container' : ''}
@@ -284,7 +285,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
         className="col-labels-container"
         style={{
           gridTemplateColumns: `repeat(${plate.columns}, minmax(0,1fr))`,
-          maxWidth: canvasSize.width / canvasSize.dpr
+          maxWidth: canvasSize.width
         }}>
         {columnLabels}
       </div>
@@ -297,7 +298,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
         {rowLabels}
       </div>
 
-      <div className="wells-container" ref={wellsContainerRef} style={{ aspectRatio: `${plate.columns} / ${plate.rows}` }}>
+      <div className="wells-container" ref={wellsContainerRef} >
         <canvas
           ref={canvasRef}
           onMouseMove={handleHoveredWellMove}
