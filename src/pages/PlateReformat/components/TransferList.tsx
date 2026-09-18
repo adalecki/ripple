@@ -106,7 +106,7 @@ const TransferList: React.FC<TransferListProps> = ({
                         }}
                         step={2.5}
                         className={`form-control form-control-sm ms-2 ${invalidEditingVolume ? 'is-invalid': ''}`}
-                        style={{ width: '100px', display: 'inline-block' }}
+                        style={{ width: '6.25rem', display: 'inline-block' }}
                         autoFocus
                       />
                     ) : (

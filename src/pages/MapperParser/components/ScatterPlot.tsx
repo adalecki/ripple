@@ -92,7 +92,7 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ sPData, yLo, yHi }) => {
           <span><strong>Well Data</strong> ({sPData.length} wells)</span>
         </div>
       </Card.Header>
-      <Card.Body ref={scatterNode} style={{ minHeight: 150 }}>
+      <Card.Body ref={scatterNode} style={{ minHeight: '9.375rem' }}>
         <PlotFigure
           options={{
             width: dimensions.width,
