@@ -315,7 +315,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
             handleLabelClick={handleLabelClick}
             blockBorderMap={blockBorderMap}
           />
-          <small className="text-muted">
+          <small className="text-muted mb-2">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem'}}>
               <span><kbd>LeftClick</kbd> to select wells, drag to select groups</span>
               <span><kbd>LeftClick</kbd> on labels to select groups of wells</span>
