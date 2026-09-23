@@ -40,7 +40,8 @@ function createMockInputData(compounds?: InputDataType['Compounds'], patterns?: 
       evenDepletion: false,
       updateFromSurveyVolumes: false,
       skipUnusedBlocks: false,
-      fillIntColumnwise: false
+      fillIntColumnwise: false,
+      targetDMSOVolume: null
     }
   };
 };
@@ -158,7 +159,8 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         evenDepletion: false,
         updateFromSurveyVolumes: false,
         skipUnusedBlocks: false,
-        fillIntColumnwise: false
+        fillIntColumnwise: false,
+        targetDMSOVolume: null
       };
 
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);

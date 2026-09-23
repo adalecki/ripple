@@ -178,6 +178,7 @@ export const FormField: React.FC<FormFieldProps> =
         <div className="form-field-input">
           {renderInput()}
         </div>
+        {disabled && <input type="hidden" name={name} value={value} />}
         {unit && <span className="unit-label">{unit}</span>}
         {error && <div className="form-field-error">{error}</div>}
       </div>

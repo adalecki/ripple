@@ -63,6 +63,7 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
       layoutTabValidation(inputData, dstTestPlate, availablePatternNames, errors);
       const srcBarcodes = compoundsTabValidation(inputData, srcTestPlate, availablePatternNames, errors);
       barcodesTabValidation(inputData, srcBarcodes, errors);
+      const targetDMSOVolume = parseFloat(formValues['Target DMSO Volume (nL)'])
       if (!isNaN(formValues['DMSO Tolerance']) && !isNaN(formValues['Well Volume (µL)']) && (!formValues.hasOwnProperty('Use Intermediate Plates') || !isNaN(formValues['Backfill (µL)'])) && !isNaN(formValues['Allowed Error'])) {
         const CommonData: InputDataType['CommonData'] = {
           maxDMSOFraction: parseFloat(formValues['DMSO Tolerance']),
@@ -75,7 +76,8 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
           evenDepletion: Boolean(formValues['Evenly Deplete Source Wells']),
           updateFromSurveyVolumes: Boolean(formValues['Use Source Survey Volumes']),
           skipUnusedBlocks: Boolean(formValues['Skip Unused Treatment Blocks']),
-          fillIntColumnwise: Boolean(formValues['Fill Intermediate Plates Column-wise'])
+          fillIntColumnwise: Boolean(formValues['Fill Intermediate Plates Column-wise']),
+          targetDMSOVolume: isNaN(targetDMSOVolume) ? null : targetDMSOVolume
         };
         inputData.CommonData = CommonData;
 

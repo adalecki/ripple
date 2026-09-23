@@ -60,6 +60,7 @@ export type InputDataType = {
     'updateFromSurveyVolumes': boolean;
     'skipUnusedBlocks': boolean;
     'fillIntColumnwise': boolean;
+    'targetDMSOVolume': number | null; //nL volume
   }
 }
 

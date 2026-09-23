@@ -28,6 +28,7 @@ export class EchoPreCalculator {
   dmsoSourceWells: number;
   dmsoUsableVolume: number;
   sourcePlates: Plate[];
+  targetDMSOVolume: number | null;
 
   constructor(
     inputData: InputDataType,
@@ -56,6 +57,7 @@ export class EchoPreCalculator {
     this.dmsoSourceWells = 0;
     this.dmsoUsableVolume = 0;
     this.sourcePlates = [];
+    this.targetDMSOVolume = inputData.CommonData.targetDMSOVolume;
 
     const maxVolumesPerPlate = new Map<string, number>();
     for (const compound of this.inputData.Compounds) {
@@ -84,7 +86,8 @@ export class EchoPreCalculator {
       maxTransferVolume: this.maxTransferVolume,
       dropletSize: this.dropletSize,
       intermediateBackfillVolume: this.intermediateBackfillVolume,
-      allowableError: this.allowableError
+      allowableError: this.allowableError,
+      targetDMSOVolume: this.targetDMSOVolume
     };
     return commonSettings;
   }

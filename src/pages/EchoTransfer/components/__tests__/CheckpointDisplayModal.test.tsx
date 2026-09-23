@@ -44,7 +44,8 @@ function buildInputData(): InputDataType {
       evenDepletion: false,
       updateFromSurveyVolumes: false,
       skipUnusedBlocks: true,
-      fillIntColumnwise: false
+      fillIntColumnwise: false,
+      targetDMSOVolume: null
     }
   };
 }

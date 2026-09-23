@@ -32,7 +32,8 @@ export interface CommonSettings {
   maxTransferVolume: number,
   dropletSize: number,
   intermediateBackfillVolume: number,
-  allowableError: number
+  allowableError: number,
+  targetDMSOVolume: number | null
 }
 
 export interface TransferVolumeResult {

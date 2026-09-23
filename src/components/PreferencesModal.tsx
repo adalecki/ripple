@@ -101,6 +101,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({ show, onHide
                   label={setting.name}
                   value={tempPreferences[setting.prefId]}
                   onChange={(value) => handleSettingChange(setting.prefId, value)}
+                  placeholder={setting.placeholder}
                   options={setting.options}
                   unit={setting.unit}
                   step={setting.step}

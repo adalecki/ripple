@@ -640,7 +640,8 @@ describe('echoInputValidation - Form Values Validation', () => {
       evenDepletion: false,
       skipUnusedBlocks: false,
       updateFromSurveyVolumes: false,
-      fillIntColumnwise: false
+      fillIntColumnwise: false,
+      targetDMSOVolume: null
     });
   });
 });

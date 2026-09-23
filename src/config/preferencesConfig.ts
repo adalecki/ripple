@@ -16,6 +16,8 @@ export interface Setting {
   min?: number;
   options?: SettingOption[];
   tooltip?: string;
+  placeholder?: string;
+  optional?: boolean;
 }
 
 export interface SettingCategory {
@@ -87,7 +89,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         defaultValue: 0.005,
         step: 0.0001,
         min: 0,
-        tooltip: 'Enter as a decimal, e.g. 0.005 = 0.5%'
+        tooltip: 'Enter as a decimal, e.g. 0.005 = 0.5%; not used when a target DMSO volume is set'
       },
       {
         prefId: 'defaultAssayVolume',
@@ -95,7 +97,8 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'number',
         defaultValue: 25,
         min: 0,
-        unit: 'µL'
+        unit: 'µL',
+        tooltip: 'Total final volume in destination plate after addition of media/buffer/etc'
       },
       {
         prefId: 'defaultBackfill',
@@ -104,7 +107,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         defaultValue: 10,
         min: 0,
         unit: 'µL',
-        tooltip: 'Volume added to intermediate plates'
+        tooltip: 'Volume added to intermediate Echo plates; these are NOT final destination plates'
       },
       {
         prefId: 'defaultAllowedError',
@@ -120,7 +123,8 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         name: 'Destination Replicates',
         type: 'number',
         defaultValue: 1,
-        min: 0
+        min: 1,
+        tooltip: 'Number of complete copies of the destination plate set to make'
       },
       {
         prefId: 'useIntermediatePlates',
@@ -138,7 +142,19 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         prefId: 'dmsoNormalization',
         name: 'DMSO Normalization',
         type: 'switch',
-        defaultValue: true
+        defaultValue: true,
+        tooltip: 'Adds DMSO to each well such that all end up at same final DMSO percentage; calculator will create DMSO-only plates if no DMSO wells are on provided source plates'
+      },
+      {
+        prefId: 'targetDMSOVol',
+        name: 'Target DMSO Volume (nL)',
+        type: 'number',
+        defaultValue: '',
+        step: 2.5,
+        min: 0,
+        tooltip: 'DMSO volume every destination well is brought up to, to keep DMSO consistent between assays; must be at least the largest transfer into any well',
+        placeholder: 'auto',
+        optional: true
       },
       {
         prefId: 'skipUnusedBlocks',
