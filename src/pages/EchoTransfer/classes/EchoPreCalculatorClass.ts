@@ -101,6 +101,7 @@ export class EchoPreCalculator {
       step5: 'DMSO Source Detection'
     };
     const commonSettings: CommonSettings = this.getCommonSettings();
+    console.log(commonSettings)
 
     try {
       this.dilutionPatterns = analyzeDilutionPatterns(this.inputData.Patterns);
@@ -150,7 +151,7 @@ export class EchoPreCalculator {
       this.checkpointTracker.updateCheckpoint(checkpointNames.step5, 'Passed', ['No DMSO source wells detected']);
     }
     this.destinationPlatesCount = calculateDestinationPlates(this.srcCompoundInventory, this.dilutionPatterns, this.inputData);
-    this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.dilutionPatterns, this.inputData, commonSettings);
+    this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.concentrationCache, this.dilutionPatterns, this.inputData, commonSettings);
     this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
       if (!this.totalVolumes.get(compoundId)) {
