@@ -457,6 +457,9 @@ export class EchoCalculator {
           if (vol > maxVolume) { maxVolume = vol; }
         }
       }
+      if (this.echoPreCalc.targetDMSOVolume && this.echoPreCalc.targetDMSOVolume > 0) {
+        maxVolume = Math.max(maxVolume, this.echoPreCalc.targetDMSOVolume + this.finalAssayVolume)
+      }
       for (const well of plate) {
         if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length === 0)) {
           const volToAdd = (maxVolume - well.getTotalVolume());
@@ -487,6 +490,7 @@ export class EchoCalculator {
         }
       }
     }
+    console.log(this.transferSteps)
     if (failedNorms.size > 0) {
       failedNorms.forEach((v, k) => {
         const wellBlock = formatWellBlock(Array.from(v));

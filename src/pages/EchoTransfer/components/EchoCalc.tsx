@@ -38,9 +38,8 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
   const [showAlert, setShowAlert] = useState<string[]>([]);
   const { preferences } = usePreferences();
 
-  const handleClose = () => setShowModal(false);
-
   const handleCancel = () => {
+    setCheckpointTracker(new CheckpointTracker());
     setEchoPreCalc(null);
     setShowModal(false);
   };
@@ -57,7 +56,6 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
   };
 
   const handleSubmit = async (formData: FormData) => {
-
     const formValues: { [key: string]: any } = {};
     for (const [key, value] of formData.entries()) {
       formValues[key] = value;
@@ -76,7 +74,7 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
     const ab = await formValues.excelFile.arrayBuffer();
 
     const fileCheckpointName = 'File Validation';
-    const mutableCheckpointTracker = checkpointTracker.clone();
+    const mutableCheckpointTracker = new CheckpointTracker();
     if (!mutableCheckpointTracker.getCheckpoints().has(fileCheckpointName)) {
       mutableCheckpointTracker.addCheckpoint(fileCheckpointName);
     }
@@ -143,7 +141,7 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
         showModal={showModal}
         checkpointTracker={checkpointTracker}
         echoPreCalc={echoPreCalc}
-        handleClose={handleClose}
+        handleClose={handleCancel}
         handleCancel={handleCancel}
         handleContinue={handleContinue}
         setEchoPreCalc={setEchoPreCalc}

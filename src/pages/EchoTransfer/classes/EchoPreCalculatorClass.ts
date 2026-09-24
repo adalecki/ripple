@@ -59,6 +59,10 @@ export class EchoPreCalculator {
     this.sourcePlates = [];
     this.targetDMSOVolume = inputData.CommonData.targetDMSOVolume;
 
+    if (this.targetDMSOVolume && this.targetDMSOVolume > 0) {
+      this.maxDMSOFraction = this.targetDMSOVolume / this.finalAssayVolume
+    } 
+
     const maxVolumesPerPlate = new Map<string, number>();
     for (const compound of this.inputData.Compounds) {
       const barcode = compound['Source Barcode'];
@@ -152,6 +156,7 @@ export class EchoPreCalculator {
     this.destinationPlatesCount = calculateDestinationPlates(this.srcCompoundInventory, this.dilutionPatterns, this.inputData);
     this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.concentrationCache, this.dilutionPatterns, this.inputData, commonSettings);
 
+    this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
     if (commonSettings.targetDMSOVolume && commonSettings.targetDMSOVolume > 0) {
       if (commonSettings.targetDMSOVolume > this.maxDMSOVol) { 
         this.maxDMSOVol = commonSettings.targetDMSOVolume
@@ -161,7 +166,6 @@ export class EchoPreCalculator {
       }
     }
 
-    this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
       if (!this.totalVolumes.get(compoundId)) {
         this.totalVolumes.set(compoundId, new Map());

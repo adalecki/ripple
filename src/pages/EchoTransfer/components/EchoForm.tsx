@@ -18,7 +18,7 @@ interface FormValues {
 const DMSO_MODE_OPTIONS = [
   { value: 'off', label: 'Off', description: 'No DMSO is added; each well keeps only the DMSO its transfers bring' },
   { value: 'auto', label: 'Match Highest', description: 'Every well is backfilled with DMSO up to the largest transfer volume in this run' },
-  { value: 'fixed', label: 'Fixed Volume', description: 'Every well is backfilled with DMSO up to a set volume, keeping DMSO consistent between assays' }
+  { value: 'fixed', label: 'Fixed Volume', description: 'Every well is backfilled with DMSO up to a set volume, keeping DMSO consistent between assays. Overrides DMSO Tolerance setting.' }
 ];
 
 const TRANSFER_LOG_PREF_IDS = ['defaultAssayVolume', 'defaultBackfill', 'useSurveyVols'];
@@ -105,9 +105,11 @@ const EchoForm: React.FC<EchoFormProps> = ({
   const wellVolume = formValues['Well Volume (µL)'];
   const targetVolume = formValues['Target DMSO Volume (nL)'];
   const tolerance = formValues['DMSO Tolerance'];
+  const maxTransfer = formValues['Max Transfer Volume'];
   //convert µL to nL
   const finalDMSOFraction = (typeof wellVolume === 'number' && wellVolume > 0 && typeof targetVolume === 'number') ? targetVolume / (wellVolume * 1000) : null;
   const isOverTolerance = finalDMSOFraction !== null && typeof tolerance === 'number' && finalDMSOFraction > tolerance;
+  const isOverMaxTransfer = finalDMSOFraction !== null && targetVolume > maxTransfer;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -331,8 +333,13 @@ const EchoForm: React.FC<EchoFormProps> = ({
                   tooltip={getSetting('targetDMSOVol').tooltip}
                 />
                 {finalDMSOFraction !== null && (
-                  <small className={`echo-form-hint ${isOverTolerance ? 'text-danger' : ''}`}>
+                  <small className={`echo-form-hint ${isOverTolerance ? 'text-warning' : ''}`}>
                     = {(finalDMSOFraction * 100).toFixed(2)}% final DMSO in a {wellVolume} µL well{isOverTolerance ? ' (above DMSO Tolerance)' : ''}
+                  </small>
+                )}
+                {finalDMSOFraction !== null && isOverMaxTransfer && (
+                  <small className='echo-form-hint text-danger'>
+                    Target volume is above listed {maxTransfer} maximum transfer volume!
                   </small>
                 )}
               </>
