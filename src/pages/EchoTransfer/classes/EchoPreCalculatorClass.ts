@@ -101,7 +101,6 @@ export class EchoPreCalculator {
       step5: 'DMSO Source Detection'
     };
     const commonSettings: CommonSettings = this.getCommonSettings();
-    console.log(commonSettings)
 
     try {
       this.dilutionPatterns = analyzeDilutionPatterns(this.inputData.Patterns);
@@ -152,6 +151,16 @@ export class EchoPreCalculator {
     }
     this.destinationPlatesCount = calculateDestinationPlates(this.srcCompoundInventory, this.dilutionPatterns, this.inputData);
     this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.concentrationCache, this.dilutionPatterns, this.inputData, commonSettings);
+
+    if (commonSettings.targetDMSOVolume && commonSettings.targetDMSOVolume > 0) {
+      if (commonSettings.targetDMSOVolume > this.maxDMSOVol) { 
+        this.maxDMSOVol = commonSettings.targetDMSOVolume
+      }
+      if (commonSettings.targetDMSOVolume < this.maxDMSOVol) { 
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [`Target DMSO volume ${commonSettings.targetDMSOVolume} below max DMSO in well after transfers of ${this.maxDMSOVol}`]) 
+      }
+    }
+
     this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
       if (!this.totalVolumes.get(compoundId)) {
@@ -176,19 +185,13 @@ export class EchoPreCalculator {
           for (const conc of pattern.concentrations) {
             if (!(transferConcentrations.destinationConcentrations.get(conc))) {
               const msg = `Couldn't build ${compoundId} concentration ${conc} in ${patternName}`;
-              const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
-              if (checkpoint) {
-                this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [...checkpoint.message, msg]);
-              }
+              this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [msg]);
             }
           }
         } catch (err) {
           if (err instanceof Error) {
-            const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
             const msg = `${compoundId} failed: ${err}`;
-            if (checkpoint) {
-              this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [...checkpoint.message, msg]);
-            }
+            this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [msg]);
             console.log(err.stack);
           }
         }
@@ -208,9 +211,8 @@ export class EchoPreCalculator {
       }
     } catch (err) {
       if (err instanceof Error) {
-        const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step4);
         const msg = `Volume checking failed failed: ${err}`;
-        if (checkpoint) { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [...checkpoint.message, msg]); } else { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg]); }
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg])
       }
     }
   }
