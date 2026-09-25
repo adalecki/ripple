@@ -457,40 +457,43 @@ export class EchoCalculator {
           if (vol > maxVolume) { maxVolume = vol; }
         }
       }
-      if (this.echoPreCalc.targetDMSOVolume && this.echoPreCalc.targetDMSOVolume > 0) {
-        maxVolume = Math.max(maxVolume, this.echoPreCalc.targetDMSOVolume + this.finalAssayVolume)
+      if (this.echoPreCalc.targetDMSOVolume !== null) {
+        maxVolume = Math.max(maxVolume, this.echoPreCalc.targetDMSOVolume + this.finalAssayVolume);
       }
       for (const well of plate) {
         if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length === 0)) {
-          const volToAdd = (maxVolume - well.getTotalVolume());
-          if (volToAdd > 0) {
-            const srcWell = this.findSourceWell(possibleLocs, volToAdd, this.evenDepletion);
-            if (srcWell) {
-              const transferStep: TransferStepExport = {
-                sourceBarcode: srcWell.barcode,
-                sourceWellId: srcWell.wellId,
-                destinationBarcode: plate.barcode,
-                destinationWellId: well.id,
-                volume: volToAdd
-              };
-              const transferInfo: TransferInfo = {
-                transferType: 'solvent',
-                solventName: 'DMSO'
-              };
-              executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
-            } else {
+          let volToAdd = maxVolume - well.getTotalVolume();
+          //backfills above the max transfer volume are split into chunks no larger than it
+          while (volToAdd > 0) {
+            const chunkVol = Math.min(volToAdd, this.echoPreCalc.maxTransferVolume);
+            const srcWell = this.findSourceWell(possibleLocs, chunkVol, this.evenDepletion);
+            if (!srcWell) {
               let plateFails = failedNorms.get(plate.barcode);
               if (!plateFails) {
                 failedNorms.set(plate.barcode, new Set<string>());
                 plateFails = failedNorms.get(plate.barcode);
               }
               plateFails!.add(well.id);
+              break;
             }
+            const transferStep: TransferStepExport = {
+              sourceBarcode: srcWell.barcode,
+              sourceWellId: srcWell.wellId,
+              destinationBarcode: plate.barcode,
+              destinationWellId: well.id,
+              volume: chunkVol
+            };
+            const transferInfo: TransferInfo = {
+              transferType: 'solvent',
+              solventName: 'DMSO'
+            };
+            if (!executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates)) break;
+            this.transferSteps.push(transferStep);
+            volToAdd -= chunkVol;
           }
         }
       }
     }
-    console.log(this.transferSteps)
     if (failedNorms.size > 0) {
       failedNorms.forEach((v, k) => {
         const wellBlock = formatWellBlock(Array.from(v));

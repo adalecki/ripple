@@ -59,9 +59,9 @@ export class EchoPreCalculator {
     this.sourcePlates = [];
     this.targetDMSOVolume = inputData.CommonData.targetDMSOVolume;
 
-    if (this.targetDMSOVolume && this.targetDMSOVolume > 0) {
-      this.maxDMSOFraction = this.targetDMSOVolume / this.finalAssayVolume
-    } 
+    if (this.targetDMSOVolume !== null) {
+      this.maxDMSOFraction = this.targetDMSOVolume / (this.finalAssayVolume + this.targetDMSOVolume);
+    }
 
     const maxVolumesPerPlate = new Map<string, number>();
     for (const compound of this.inputData.Compounds) {
@@ -105,6 +105,11 @@ export class EchoPreCalculator {
       step5: 'DMSO Source Detection'
     };
     const commonSettings: CommonSettings = this.getCommonSettings();
+    for (const name of Object.values(checkpointNames)) {
+      this.checkpointTracker.addCheckpoint(name);
+    }
+    this.totalDMSOBackfillVol = 0;
+    this.destinationWellsCount = 0;
 
     try {
       this.dilutionPatterns = analyzeDilutionPatterns(this.inputData.Patterns);
@@ -157,13 +162,14 @@ export class EchoPreCalculator {
     this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.concentrationCache, this.dilutionPatterns, this.inputData, commonSettings);
 
     this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
-    if (commonSettings.targetDMSOVolume && commonSettings.targetDMSOVolume > 0) {
-      if (commonSettings.targetDMSOVolume > this.maxDMSOVol) { 
-        this.maxDMSOVol = commonSettings.targetDMSOVolume
+    if (this.targetDMSOVolume !== null) {
+      if (this.targetDMSOVolume < this.maxDMSOVol) {
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [`Target DMSO volume ${this.targetDMSOVolume.toFixed(1)} nL is below the ${this.maxDMSOVol.toFixed(1)} nL some wells receive; those plates will be normalized to the higher volume`]);
       }
-      if (commonSettings.targetDMSOVolume < this.maxDMSOVol) { 
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [`Target DMSO volume ${commonSettings.targetDMSOVolume} below max DMSO in well after transfers of ${this.maxDMSOVol}`]) 
+      if (this.targetDMSOVolume > this.maxTransferVolume) {
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [`Target DMSO volume ${this.targetDMSOVolume.toFixed(1)} nL is above the ${this.maxTransferVolume} nL max transfer volume; DMSO backfills will be split into multiple transfers`]);
       }
+      this.maxDMSOVol = Math.max(this.maxDMSOVol, this.targetDMSOVolume);
     }
 
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
@@ -216,7 +222,7 @@ export class EchoPreCalculator {
     } catch (err) {
       if (err instanceof Error) {
         const msg = `Volume checking failed failed: ${err}`;
-        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg])
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg]);
       }
     }
   }

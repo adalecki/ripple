@@ -4,6 +4,7 @@ import { InputDataType } from './echoUtils';
 import { PreferencesState } from '../../../hooks/usePreferences';
 import { getCoordsFromWellId } from '../../../utils/plateUtils';
 import { isCombinationType, getCombinationFold } from '../../../classes/PatternClass';
+import { isDropletMultiple } from '../../CocktailBuilder/utils/validationUtils';
 
 function arraysMatch(arr1: any[], arr2: any[]) {
   if (arr1.length !== arr2.length) return false;
@@ -63,7 +64,11 @@ export function echoInputValidation(wb: WorkBook, formValues: { [key: string]: a
       layoutTabValidation(inputData, dstTestPlate, availablePatternNames, errors);
       const srcBarcodes = compoundsTabValidation(inputData, srcTestPlate, availablePatternNames, errors);
       barcodesTabValidation(inputData, srcBarcodes, errors);
-      const targetDMSOVolume = parseFloat(formValues['Target DMSO Volume (nL)'])
+      //a target only means something while normalization is on
+      const targetDMSOVolume = formValues['DMSO Normalization'] ? parseFloat(formValues['Target DMSO Volume (nL)']) : NaN;
+      if (!isNaN(targetDMSOVolume) && (targetDMSOVolume <= 0 || !isDropletMultiple(targetDMSOVolume, preferences.dropletSize as number))) {
+        errors.push(`Target DMSO Volume of ${targetDMSOVolume} nL must be a positive multiple of the ${preferences.dropletSize} nL droplet size`);
+      }
       if (!isNaN(formValues['DMSO Tolerance']) && !isNaN(formValues['Well Volume (µL)']) && (!formValues.hasOwnProperty('Use Intermediate Plates') || !isNaN(formValues['Backfill (µL)'])) && !isNaN(formValues['Allowed Error'])) {
         const CommonData: InputDataType['CommonData'] = {
           maxDMSOFraction: parseFloat(formValues['DMSO Tolerance']),

@@ -646,6 +646,30 @@ describe('echoInputValidation - Form Values Validation', () => {
   });
 });
 
+describe('echoInputValidation - Target DMSO Volume', () => {
+  test('a droplet-multiple target is parsed into CommonData when normalization is on', () => {
+    const result = echoInputValidation(createValidWorkbook(), { ...mockFormValues, 'Target DMSO Volume (nL)': '150' }, mockPreferences);
+    expect(result.errors).toEqual([]);
+    expect(result.inputData.CommonData.targetDMSOVolume).toBe(150);
+  });
+
+  test('an empty target means match highest, so CommonData carries null', () => {
+    const result = echoInputValidation(createValidWorkbook(), { ...mockFormValues, 'Target DMSO Volume (nL)': '' }, mockPreferences);
+    expect(result.inputData.CommonData.targetDMSOVolume).toBeNull();
+  });
+
+  test('a target is dropped when normalization is off, since nothing would backfill to it', () => {
+    const result = echoInputValidation(createValidWorkbook(), { ...mockFormValues, 'DMSO Normalization': false, 'Target DMSO Volume (nL)': '150' }, mockPreferences);
+    expect(result.errors).toEqual([]);
+    expect(result.inputData.CommonData.targetDMSOVolume).toBeNull();
+  });
+
+  test.each(['0', '-5', '151'])('a target of %s nL is rejected instead of silently falling back to match highest', (target) => {
+    const result = echoInputValidation(createValidWorkbook(), { ...mockFormValues, 'Target DMSO Volume (nL)': target }, mockPreferences);
+    expect(result.errors.some(e => e.includes('Target DMSO Volume'))).toBe(true);
+  });
+});
+
 describe('echoInputValidation - String Conversion', () => {
   test('converts numeric values to strings where needed', () => {
     const wb = createValidWorkbook();

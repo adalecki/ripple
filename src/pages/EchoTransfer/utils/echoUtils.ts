@@ -690,9 +690,8 @@ export function maxDMSOVolume(srcCompoundInventory: CompoundInventory, concentra
     const compoundsUsingPattern = compoundIdsWithPattern(srcCompoundInventory, pattern.patternName);
     let maxVolOfPattern = 0;
     for (const compoundId of compoundsUsingPattern) {
-      const cGroup = srcCompoundInventory.get(compoundId)!.get(pattern.patternName)!
-      const transferInfo = calculateTransferConcentrations(inputData, concentrationCache, pattern, cGroup, commonSettings)
-      if (!transferInfo) continue;
+      const cGroup = srcCompoundInventory.get(compoundId)!.get(pattern.patternName)!;
+      const transferInfo = calculateTransferConcentrations(inputData, concentrationCache, pattern, cGroup, commonSettings);
       for (const conc of pattern.concentrations) {
         const patternDestConc = transferInfo.destinationConcentrations.get(conc);
         if (patternDestConc) { maxVolOfPattern = Math.max(patternDestConc.volToTsfr, maxVolOfPattern); }

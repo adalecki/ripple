@@ -17,7 +17,6 @@ export interface Setting {
   options?: SettingOption[];
   tooltip?: string;
   placeholder?: string;
-  optional?: boolean;
 }
 
 export interface SettingCategory {
@@ -153,8 +152,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         step: 2.5,
         min: 0,
         tooltip: 'DMSO volume every destination well is brought up to, to keep DMSO consistent between assays; must be at least the largest transfer into any well',
-        placeholder: 'auto',
-        optional: true
+        placeholder: 'auto'
       },
       {
         prefId: 'skipUnusedBlocks',

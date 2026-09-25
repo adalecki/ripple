@@ -75,9 +75,7 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
 
     const fileCheckpointName = 'File Validation';
     const mutableCheckpointTracker = new CheckpointTracker();
-    if (!mutableCheckpointTracker.getCheckpoints().has(fileCheckpointName)) {
-      mutableCheckpointTracker.addCheckpoint(fileCheckpointName);
-    }
+    mutableCheckpointTracker.addCheckpoint(fileCheckpointName);
 
     const wb = read(ab, { type: 'array' }) as WorkBook;
     const input = echoInputValidation(wb, formValues, effectivePreferences);

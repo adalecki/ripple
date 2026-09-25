@@ -20,7 +20,7 @@ export class CheckpointTracker {
     if (!this.checkpoints.has(name)) {
       this.addCheckpoint(name);
     }
-    const checkpointMsgs = [...this.getCheckpoint(name)!.message, ...message]
+    const checkpointMsgs = [...this.getCheckpoint(name)!.message, ...message];
     this.checkpoints.set(name, { status, message: checkpointMsgs });
   }
 

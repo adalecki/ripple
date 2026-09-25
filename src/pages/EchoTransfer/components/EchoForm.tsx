@@ -17,7 +17,7 @@ interface FormValues {
 
 const DMSO_MODE_OPTIONS = [
   { value: 'off', label: 'Off', description: 'No DMSO is added; each well keeps only the DMSO its transfers bring' },
-  { value: 'auto', label: 'Match Highest', description: 'Every well is backfilled with DMSO up to the largest transfer volume in this run' },
+  { value: 'auto', label: 'Match Highest', description: 'Every well is backfilled with DMSO up to the highest DMSO volume in any well of its destination plate' },
   { value: 'fixed', label: 'Fixed Volume', description: 'Every well is backfilled with DMSO up to a set volume, keeping DMSO consistent between assays. Overrides DMSO Tolerance setting.' }
 ];
 
@@ -188,7 +188,6 @@ const EchoForm: React.FC<EchoFormProps> = ({
   };
 
   const handleResetForm = () => {
-    console.log(formValues, buildFormValues(settings, preferences))
     setFormValues(buildFormValues(settings, preferences));
     setIsFixedTarget(typeof preferences.targetDMSOVol === 'number');
     setShowAlert([]);
@@ -214,7 +213,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
         label={setting.name}
         value={formValues[setting.name]}
         onChange={(value) => handleFieldChange(setting.name, value)}
-        required={!setting.optional}
+        required
         disabled={isDisabled}
         unit={unit ?? setting.unit}
         step={setting.step}
@@ -294,6 +293,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
             <div className="echo-form-group-label">ASSAY</div>
             {renderField('defaultAssayVolume')}
             {renderField('defaultDMSOTolerance', dmsoMode === 'fixed', getPercentUnit('DMSO Tolerance'))}
+            {dmsoMode === 'fixed' && <input type="hidden" name="DMSO Tolerance" value={tolerance as number} />}
             {renderField('defaultAllowedError', false, getPercentUnit('Allowed Error'))}
             {renderField('defaultDestinationReplicates')}
           </div>
@@ -329,7 +329,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
                   onChange={(value) => handleFieldChange('Target DMSO Volume (nL)', value)}
                   required
                   step={formValues['Echo Droplet Size'] as number}
-                  min={0}
+                  min={formValues['Echo Droplet Size'] as number}
                   tooltip={getSetting('targetDMSOVol').tooltip}
                 />
                 {finalDMSOFraction !== null && (
