@@ -171,6 +171,11 @@ export class EchoPreCalculator {
       }
       this.maxDMSOVol = Math.max(this.maxDMSOVol, this.targetDMSOVolume);
     }
+    const intDeadVol = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000;
+    if (this.inputData.CommonData.createIntConcs && this.intermediateBackfillVolume <= intDeadVol) {
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [`Backfill volume of ${this.intermediateBackfillVolume} must be greater than intermediate plate dead volume of ${intDeadVol}`]);
+      return
+    }
 
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
       if (!this.totalVolumes.get(compoundId)) {

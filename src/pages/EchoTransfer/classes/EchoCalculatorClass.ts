@@ -227,19 +227,21 @@ export class EchoCalculator {
             compoundName: compoundId
           };
 
-          const cacheArr = this.intermediateWellCache.get(compoundId)!.get(intConc) || [];
-          const arrIdx = cacheArr.findIndex(e => e.barcode === transferStep.destinationBarcode);
-          if (arrIdx > -1) {
-            cacheArr[arrIdx].wellIds.push(transferStep.destinationWellId);
-          } else {
-            cacheArr.push({
-              barcode: transferStep.destinationBarcode,
-              wellIds: [transferStep.destinationWellId]
-            });
+          const success = executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates)
+          if (success) {
+            const cacheArr = this.intermediateWellCache.get(compoundId)!.get(intConc) || [];
+            const arrIdx = cacheArr.findIndex(e => e.barcode === transferStep.destinationBarcode);
+            if (arrIdx > -1) {
+              cacheArr[arrIdx].wellIds.push(transferStep.destinationWellId);
+            } else {
+              cacheArr.push({
+                barcode: transferStep.destinationBarcode,
+                wellIds: [transferStep.destinationWellId]
+              });
+            }
+            this.intermediateWellCache.get(compoundId)!.set(intConc, cacheArr);
+            this.transferSteps.push(transferStep)
           }
-          this.intermediateWellCache.get(compoundId)!.set(intConc, cacheArr);
-
-          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
         }
       }
     }

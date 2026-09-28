@@ -531,6 +531,7 @@ export function executeAndRecordTransfer(transferStep: TransferStepExport, trans
       if (srcWell.getTotalVolume() < transferStep.volume) return false;
       if (transferInfo.transferType === 'compound') {
         const wellContents = srcWell.getContents(); //for cases when there are multiple contents in one source well
+        if (wellContents.length === 0) return false; //shouldn't be here, but as a guard
         if (wellContents.length > 0) {
           for (const content of wellContents) { //perform one 'transfer' for each content, at volume/n_contents
             const newConc = content.concentration == null ? null : content.concentration * wellContents.length;
