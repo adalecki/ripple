@@ -129,7 +129,7 @@ export class EchoCalculator {
     const intPlatesCount2 = Math.ceil(totalIntWellsNeeded.level2 / 384);
     const intPlates: Plate[] = [];
 
-    const barcodes = this.inputData.Barcodes.map(row => row['Intermediate Plate Barcodes']);
+    const barcodes = this.inputData.Barcodes.map(row => row['Intermediate Plate Barcodes']).filter(barcode => barcode);
     const totalPlatesNeeded = intPlatesCount1 + intPlatesCount2;
 
     if (totalPlatesNeeded > barcodes.length) {
@@ -227,19 +227,21 @@ export class EchoCalculator {
             compoundName: compoundId
           };
 
-          const cacheArr = this.intermediateWellCache.get(compoundId)!.get(intConc) || [];
-          const arrIdx = cacheArr.findIndex(e => e.barcode === transferStep.destinationBarcode);
-          if (arrIdx > -1) {
-            cacheArr[arrIdx].wellIds.push(transferStep.destinationWellId);
-          } else {
-            cacheArr.push({
-              barcode: transferStep.destinationBarcode,
-              wellIds: [transferStep.destinationWellId]
-            });
+          const success = executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates)
+          if (success) {
+            const cacheArr = this.intermediateWellCache.get(compoundId)!.get(intConc) || [];
+            const arrIdx = cacheArr.findIndex(e => e.barcode === transferStep.destinationBarcode);
+            if (arrIdx > -1) {
+              cacheArr[arrIdx].wellIds.push(transferStep.destinationWellId);
+            } else {
+              cacheArr.push({
+                barcode: transferStep.destinationBarcode,
+                wellIds: [transferStep.destinationWellId]
+              });
+            }
+            this.intermediateWellCache.get(compoundId)!.set(intConc, cacheArr);
+            this.transferSteps.push(transferStep)
           }
-          this.intermediateWellCache.get(compoundId)!.set(intConc, cacheArr);
-
-          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
         }
       }
     }
@@ -323,10 +325,8 @@ export class EchoCalculator {
 
   prepareDestPlates(): Plate[] {
     const destPlates: Plate[] = [];
-    const barcodes = [];
-    for (const row of this.inputData.Barcodes) {
-      barcodes.push(row['Destination Plate Barcodes']);
-    }
+    const barcodes = this.inputData.Barcodes.map(row => row['Destination Plate Barcodes']).filter(barcode => barcode);
+
     if (this.echoPreCalc.destinationPlatesCount > barcodes.length) {
       const extraNumNeeded = this.echoPreCalc.destinationPlatesCount - barcodes.length;
       for (let i = 1; i <= extraNumNeeded; i++) {
@@ -457,32 +457,39 @@ export class EchoCalculator {
           if (vol > maxVolume) { maxVolume = vol; }
         }
       }
+      if (this.echoPreCalc.targetDMSOVolume !== null) {
+        maxVolume = Math.max(maxVolume, this.echoPreCalc.targetDMSOVolume + this.finalAssayVolume);
+      }
       for (const well of plate) {
         if (well && !well.getIsUnused() && !(treatmentWellIds.has(well.id) && well.getContents().length === 0)) {
-          const volToAdd = (maxVolume - well.getTotalVolume());
-          if (volToAdd > 0) {
-            const srcWell = this.findSourceWell(possibleLocs, volToAdd, this.evenDepletion);
-            if (srcWell) {
-              const transferStep: TransferStepExport = {
-                sourceBarcode: srcWell.barcode,
-                sourceWellId: srcWell.wellId,
-                destinationBarcode: plate.barcode,
-                destinationWellId: well.id,
-                volume: volToAdd
-              };
-              const transferInfo: TransferInfo = {
-                transferType: 'solvent',
-                solventName: 'DMSO'
-              };
-              executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
-            } else {
+          let volToAdd = maxVolume - well.getTotalVolume();
+          //backfills above the max transfer volume are split into chunks no larger than it
+          while (volToAdd > 0) {
+            const chunkVol = Math.min(volToAdd, this.echoPreCalc.maxTransferVolume);
+            const srcWell = this.findSourceWell(possibleLocs, chunkVol, this.evenDepletion);
+            if (!srcWell) {
               let plateFails = failedNorms.get(plate.barcode);
               if (!plateFails) {
                 failedNorms.set(plate.barcode, new Set<string>());
                 plateFails = failedNorms.get(plate.barcode);
               }
               plateFails!.add(well.id);
+              break;
             }
+            const transferStep: TransferStepExport = {
+              sourceBarcode: srcWell.barcode,
+              sourceWellId: srcWell.wellId,
+              destinationBarcode: plate.barcode,
+              destinationWellId: well.id,
+              volume: chunkVol
+            };
+            const transferInfo: TransferInfo = {
+              transferType: 'solvent',
+              solventName: 'DMSO'
+            };
+            if (!executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates)) break;
+            this.transferSteps.push(transferStep);
+            volToAdd -= chunkVol;
           }
         }
       }

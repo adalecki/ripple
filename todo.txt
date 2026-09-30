@@ -45,3 +45,4 @@
 # combinator block borders not respecting replicates
 #x cocktailbuilder edit button doesn't match plate designer style
 # give better input when concs can't be calculated, such as increase max tsfr vol or increase dmso limit
+# add barcodes and assay tabs to plate designer

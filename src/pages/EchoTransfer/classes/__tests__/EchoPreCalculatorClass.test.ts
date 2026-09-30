@@ -1,6 +1,6 @@
 import { EchoPreCalculator } from '../EchoPreCalculatorClass';
 import { CheckpointTracker } from '../CheckpointTrackerClass';
-import { buildSrcCompoundInventory, calculateTransferConcentrations, checkSourceVolumes, InputDataType, prepareSrcPlates } from '../../utils/echoUtils';
+import { buildSrcCompoundInventory, calculateTransferConcentrations, checkSourceVolumes, concentrationsFilter, InputDataType, prepareSrcPlates } from '../../utils/echoUtils';
 import { PreferencesState } from '../../../../hooks/usePreferences';
 import { Plate, PlateSize } from '../../../../classes/PlateClass';
 import { DilutionPattern } from '../../../../classes/PatternClass';
@@ -40,7 +40,8 @@ function createMockInputData(compounds?: InputDataType['Compounds'], patterns?: 
       evenDepletion: false,
       updateFromSurveyVolumes: false,
       skipUnusedBlocks: false,
-      fillIntColumnwise: false
+      fillIntColumnwise: false,
+      targetDMSOVolume: null
     }
   };
 };
@@ -158,7 +159,8 @@ describe('EchoPreCalculatorClass - Dead Volume Logic', () => {
         evenDepletion: false,
         updateFromSurveyVolumes: false,
         skipUnusedBlocks: false,
-        fillIntColumnwise: false
+        fillIntColumnwise: false,
+        targetDMSOVolume: null
       };
 
       const preCalc = new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
@@ -862,6 +864,28 @@ describe('buildSrcCompoundInventory', () => {
       const compoundBTreatment2 = compoundBPatterns.get('Treatment2')!;
       expect(compoundBTreatment2.locations).toHaveLength(2);
     });
+  });
+});
+
+describe('EchoPreCalculator target DMSO volume', () => {
+  function makeTargetPreCalc(targetDMSOVolume: number): EchoPreCalculator {
+    const mockInput = createMockInputData();
+    mockInput.CommonData.targetDMSOVolume = targetDMSOVolume;
+    return new EchoPreCalculator(mockInput, new CheckpointTracker(), mockPreferences);
+  }
+
+  test('the target sets the DMSO fraction against assay plus target volume, matching how concentrationPasses measures it', () => {
+    expect(makeTargetPreCalc(250).maxDMSOFraction).toBeCloseTo(250 / 25250, 12);
+  });
+
+  test('a transfer whose ideal volume rounds just above the target is held to the target', () => {
+    //100 µM from 10 mM into 25 µL ideally needs 252.5 nL, which the old target / assay fraction allowed
+    const transferMap = concentrationsFilter([100], 10000, 'src', makeTargetPreCalc(250).getCommonSettings());
+    expect(transferMap.get(100)!.volToTsfr).toBe(250);
+  });
+
+  test('a target at or above the assay volume still yields a fraction below one', () => {
+    expect(makeTargetPreCalc(25000).maxDMSOFraction).toBe(0.5);
   });
 });
 

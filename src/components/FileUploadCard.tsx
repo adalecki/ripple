@@ -73,9 +73,9 @@ function FileUploadCard({
   };
 
   return (
-    <Card className="mb-3">
-      <Card.Header>{title}</Card.Header>
-      <Card.Body>
+    <Card className="mb-1">
+      <Card.Header className="p-1">{title}</Card.Header>
+      <Card.Body className="p-1">
         <div
           className={`drop-zone ${isDragging ? 'dragging' : ''}`}
           onDragEnter={handleDragEnter}
@@ -84,7 +84,7 @@ function FileUploadCard({
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload size={24} />
+          <Upload size={20} />
           <p>{description}</p>
           <small className="text-muted">{acceptedTypes}</small>
         </div>

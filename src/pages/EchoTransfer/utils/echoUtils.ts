@@ -60,6 +60,7 @@ export type InputDataType = {
     'updateFromSurveyVolumes': boolean;
     'skipUnusedBlocks': boolean;
     'fillIntColumnwise': boolean;
+    'targetDMSOVolume': number | null; //nL volume
   }
 }
 
@@ -530,6 +531,7 @@ export function executeAndRecordTransfer(transferStep: TransferStepExport, trans
       if (srcWell.getTotalVolume() < transferStep.volume) return false;
       if (transferInfo.transferType === 'compound') {
         const wellContents = srcWell.getContents(); //for cases when there are multiple contents in one source well
+        if (wellContents.length === 0) return false; //shouldn't be here, but as a guard
         if (wellContents.length > 0) {
           for (const content of wellContents) { //perform one 'transfer' for each content, at volume/n_contents
             const newConc = content.concentration == null ? null : content.concentration * wellContents.length;
@@ -681,31 +683,16 @@ export function calculateDestinationPlates(srcCompoundInventory: CompoundInvento
   return maxPlates;
 }
 
-export function maxDMSOVolume(srcCompoundInventory: CompoundInventory, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType, commonSettings: CommonSettings): number {
-  const transferConcentrations = new Map<string, {
-    intermediateConcentrations: Map<number, ConcentrationObj>,
-    destinationConcentrations: Map<number, ConcentrationObj>
-  }>();
-
-  for (const [compoundId, patternMap] of srcCompoundInventory) {
-    for (const [patternName, compoundGroup] of patternMap) {
-      const pattern = dilutionPatterns.get(patternName);
-      if (pattern && pattern.type !== 'Unused') {
-        const concentrations = calculateTransferConcentrations(inputData, transferConcentrations, pattern, compoundGroup, commonSettings);
-        transferConcentrations.set(compoundId, concentrations);
-      }
-    }
-  }
+export function maxDMSOVolume(srcCompoundInventory: CompoundInventory, concentrationCache: ConcentrationCache, dilutionPatterns: Map<string, DilutionPattern>, inputData: InputDataType, commonSettings: CommonSettings): number {
   const testPlate = new Plate({ plateSize: commonSettings.dstPltSize });
-
   for (const layoutBlock of inputData.Layout) {
     const pattern = dilutionPatterns.get(layoutBlock.Pattern);
     if (!pattern || pattern.type === 'Unused') continue;
     const compoundsUsingPattern = compoundIdsWithPattern(srcCompoundInventory, pattern.patternName);
     let maxVolOfPattern = 0;
     for (const compoundId of compoundsUsingPattern) {
-      const transferInfo = transferConcentrations.get(compoundId);
-      if (!transferInfo) continue;
+      const cGroup = srcCompoundInventory.get(compoundId)!.get(pattern.patternName)!;
+      const transferInfo = calculateTransferConcentrations(inputData, concentrationCache, pattern, cGroup, commonSettings);
       for (const conc of pattern.concentrations) {
         const patternDestConc = transferInfo.destinationConcentrations.get(conc);
         if (patternDestConc) { maxVolOfPattern = Math.max(patternDestConc.volToTsfr, maxVolOfPattern); }

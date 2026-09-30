@@ -28,6 +28,7 @@ export class EchoPreCalculator {
   dmsoSourceWells: number;
   dmsoUsableVolume: number;
   sourcePlates: Plate[];
+  targetDMSOVolume: number | null;
 
   constructor(
     inputData: InputDataType,
@@ -56,6 +57,11 @@ export class EchoPreCalculator {
     this.dmsoSourceWells = 0;
     this.dmsoUsableVolume = 0;
     this.sourcePlates = [];
+    this.targetDMSOVolume = inputData.CommonData.targetDMSOVolume;
+
+    if (this.targetDMSOVolume !== null) {
+      this.maxDMSOFraction = this.targetDMSOVolume / (this.finalAssayVolume + this.targetDMSOVolume);
+    }
 
     const maxVolumesPerPlate = new Map<string, number>();
     for (const compound of this.inputData.Compounds) {
@@ -84,7 +90,8 @@ export class EchoPreCalculator {
       maxTransferVolume: this.maxTransferVolume,
       dropletSize: this.dropletSize,
       intermediateBackfillVolume: this.intermediateBackfillVolume,
-      allowableError: this.allowableError
+      allowableError: this.allowableError,
+      targetDMSOVolume: this.targetDMSOVolume
     };
     return commonSettings;
   }
@@ -98,6 +105,11 @@ export class EchoPreCalculator {
       step5: 'DMSO Source Detection'
     };
     const commonSettings: CommonSettings = this.getCommonSettings();
+    for (const name of Object.values(checkpointNames)) {
+      this.checkpointTracker.addCheckpoint(name);
+    }
+    this.totalDMSOBackfillVol = 0;
+    this.destinationWellsCount = 0;
 
     try {
       this.dilutionPatterns = analyzeDilutionPatterns(this.inputData.Patterns);
@@ -147,8 +159,24 @@ export class EchoPreCalculator {
       this.checkpointTracker.updateCheckpoint(checkpointNames.step5, 'Passed', ['No DMSO source wells detected']);
     }
     this.destinationPlatesCount = calculateDestinationPlates(this.srcCompoundInventory, this.dilutionPatterns, this.inputData);
-    this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.dilutionPatterns, this.inputData, commonSettings);
+    this.maxDMSOVol = maxDMSOVolume(this.srcCompoundInventory, this.concentrationCache, this.dilutionPatterns, this.inputData, commonSettings);
+
     this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Pending');
+    if (this.targetDMSOVolume !== null) {
+      if (this.targetDMSOVolume < this.maxDMSOVol) {
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [`Target DMSO volume ${this.targetDMSOVolume.toFixed(1)} nL is below the ${this.maxDMSOVol.toFixed(1)} nL some wells receive; those plates will be normalized to the higher volume`]);
+      }
+      if (this.targetDMSOVolume > this.maxTransferVolume) {
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [`Target DMSO volume ${this.targetDMSOVolume.toFixed(1)} nL is above the ${this.maxTransferVolume} nL max transfer volume; DMSO backfills will be split into multiple transfers`]);
+      }
+      this.maxDMSOVol = Math.max(this.maxDMSOVol, this.targetDMSOVolume);
+    }
+    const intDeadVol = this.intermediateBackfillVolume <= 15000 ? 2500 : 15000;
+    if (this.inputData.CommonData.createIntConcs && this.intermediateBackfillVolume <= intDeadVol) {
+      this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [`Backfill volume of ${this.intermediateBackfillVolume} must be greater than intermediate plate dead volume of ${intDeadVol}`]);
+      return
+    }
+
     for (const [compoundId, patternMap] of this.srcCompoundInventory) {
       if (!this.totalVolumes.get(compoundId)) {
         this.totalVolumes.set(compoundId, new Map());
@@ -172,19 +200,13 @@ export class EchoPreCalculator {
           for (const conc of pattern.concentrations) {
             if (!(transferConcentrations.destinationConcentrations.get(conc))) {
               const msg = `Couldn't build ${compoundId} concentration ${conc} in ${patternName}`;
-              const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
-              if (checkpoint) {
-                this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [...checkpoint.message, msg]);
-              }
+              this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Warning', [msg]);
             }
           }
         } catch (err) {
           if (err instanceof Error) {
-            const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step3);
             const msg = `${compoundId} failed: ${err}`;
-            if (checkpoint) {
-              this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [...checkpoint.message, msg]);
-            }
+            this.checkpointTracker.updateCheckpoint(checkpointNames.step3, 'Failed', [msg]);
             console.log(err.stack);
           }
         }
@@ -204,9 +226,8 @@ export class EchoPreCalculator {
       }
     } catch (err) {
       if (err instanceof Error) {
-        const checkpoint = this.checkpointTracker.getCheckpoint(checkpointNames.step4);
         const msg = `Volume checking failed failed: ${err}`;
-        if (checkpoint) { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [...checkpoint.message, msg]); } else { this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg]); }
+        this.checkpointTracker.updateCheckpoint(checkpointNames.step4, 'Failed', [msg]);
       }
     }
   }
