@@ -107,7 +107,7 @@ const EchoForm: React.FC<EchoFormProps> = ({
   const tolerance = formValues['DMSO Tolerance'];
   const maxTransfer = formValues['Max Transfer Volume'];
   //convert µL to nL
-  const finalDMSOFraction = (typeof wellVolume === 'number' && wellVolume > 0 && typeof targetVolume === 'number') ? targetVolume / (wellVolume * 1000) : null;
+  const finalDMSOFraction = (typeof wellVolume === 'number' && wellVolume > 0 && typeof targetVolume === 'number') ? targetVolume / (wellVolume * 1000 + targetVolume) : null;
   const isOverTolerance = finalDMSOFraction !== null && typeof tolerance === 'number' && finalDMSOFraction > tolerance;
   const isOverMaxTransfer = finalDMSOFraction !== null && targetVolume > maxTransfer;
 
