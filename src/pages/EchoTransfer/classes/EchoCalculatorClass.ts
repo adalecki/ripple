@@ -129,7 +129,7 @@ export class EchoCalculator {
     const intPlatesCount2 = Math.ceil(totalIntWellsNeeded.level2 / 384);
     const intPlates: Plate[] = [];
 
-    const barcodes = this.inputData.Barcodes.map(row => row['Intermediate Plate Barcodes']);
+    const barcodes = this.inputData.Barcodes.map(row => row['Intermediate Plate Barcodes']).filter(barcode => barcode);
     const totalPlatesNeeded = intPlatesCount1 + intPlatesCount2;
 
     if (totalPlatesNeeded > barcodes.length) {
@@ -325,10 +325,10 @@ export class EchoCalculator {
 
   prepareDestPlates(): Plate[] {
     const destPlates: Plate[] = [];
-    const barcodes = [];
-    for (const row of this.inputData.Barcodes) {
+    const barcodes = this.inputData.Barcodes.map(row => row['Destination Plate Barcodes']).filter(barcode => barcode);
+    /*for (const row of this.inputData.Barcodes) {
       barcodes.push(row['Destination Plate Barcodes']);
-    }
+    }*/
     if (this.echoPreCalc.destinationPlatesCount > barcodes.length) {
       const extraNumNeeded = this.echoPreCalc.destinationPlatesCount - barcodes.length;
       for (let i = 1; i <= extraNumNeeded; i++) {
