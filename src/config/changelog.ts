@@ -12,11 +12,11 @@ export interface ChangeEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.0.3',
-    date: '2026-09-28',
+    date: '2026-09-30',
     changes: [
       { type: 'UI', text: 'Reorganized Echo Transfer input form for better clarity'},
       { type: 'UI', text: 'Added a "Fixed DMSO" option to keep DMSO constant between assay runs' },
-      { type: 'Backend', text: 'When DMSO normalization volumes are higher than listed max transfer volumes, they will be chunked to max transfer volume (slightly more accuracy than one bulk transfer).'},
+      { type: 'Backend', text: 'When DMSO normalization volumes are higher than listed max transfer volumes, they will be chunked to max transfer volume (slightly more accuracy than one bulk transfer)'},
       { type: 'Backend', text: 'Fixed bug if intermediate backfill is less than assumed intermediate plate dead volume'}
     ]
   },
