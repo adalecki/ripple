@@ -326,9 +326,7 @@ export class EchoCalculator {
   prepareDestPlates(): Plate[] {
     const destPlates: Plate[] = [];
     const barcodes = this.inputData.Barcodes.map(row => row['Destination Plate Barcodes']).filter(barcode => barcode);
-    /*for (const row of this.inputData.Barcodes) {
-      barcodes.push(row['Destination Plate Barcodes']);
-    }*/
+
     if (this.echoPreCalc.destinationPlatesCount > barcodes.length) {
       const extraNumNeeded = this.echoPreCalc.destinationPlatesCount - barcodes.length;
       for (let i = 1; i <= extraNumNeeded; i++) {

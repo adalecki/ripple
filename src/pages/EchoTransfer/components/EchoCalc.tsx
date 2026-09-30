@@ -80,7 +80,6 @@ const EchoCalc: React.FC<EchoCalcProps> = ({ showExamples }) => {
     const wb = read(ab, { type: 'array' }) as WorkBook;
     const input = echoInputValidation(wb, formValues, effectivePreferences);
 
-
     if (input.errors.length === 0) {
       setInput(input);
       mutableCheckpointTracker.updateCheckpoint(fileCheckpointName, 'Passed');

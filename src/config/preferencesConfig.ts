@@ -96,6 +96,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'number',
         defaultValue: 25,
         min: 0,
+        step: 0.1,
         unit: 'µL',
         tooltip: 'Total final volume in destination plate after addition of media/buffer/etc'
       },
@@ -105,6 +106,7 @@ export const PREFERENCES_CONFIG: SettingCategory[] = [
         type: 'number',
         defaultValue: 10,
         min: 0,
+        step: 0.1,
         unit: 'µL',
         tooltip: 'Volume added to intermediate Echo plates; these are NOT final destination plates'
       },
