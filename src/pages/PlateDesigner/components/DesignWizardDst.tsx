@@ -6,7 +6,7 @@ import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern, isCombinationType } from '../../../classes/PatternClass';
 import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
-import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
+import { currentItem, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
 
 import ApplyTooltip from '../../../components/ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
@@ -20,7 +20,6 @@ interface DesignWizardDstProps {
   setDesignDstPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
   curDesignDstPlateId: number | null;
   setCurDesignDstPlateId: React.Dispatch<React.SetStateAction<number | null>>;
-  designSrcPlates: Plate[];
   designDstPlateSize: PlateSize;
   setDesignDstPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>;
   patterns: Pattern[];
@@ -40,6 +39,7 @@ interface DesignWizardDstProps {
     isPickingColor: boolean;
   }>>
   onDoubleClick: (e: React.MouseEvent<Element, MouseEvent>) => void;
+  onGenerateTemplate: () => void;
 }
 
 const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
@@ -50,7 +50,6 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   curDesignDstPlateId,
   //@ts-ignore
   setCurDesignDstPlateId,
-  designSrcPlates,
   designDstPlateSize,
   setDesignDstPlateSize,
   patterns,
@@ -61,7 +60,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   handleMouseDown = (() => { }),
   patternState,
   setPatternState,
-  onDoubleClick
+  onDoubleClick,
+  onGenerateTemplate
 }) => {
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
@@ -266,7 +266,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
               Clear from All Wells
             </Button>
             <Button
-              onClick={() => generateExcelTemplate(patterns, designSrcPlates)}
+              onClick={onGenerateTemplate}
               disabled={patterns.length < 1}
               variant="success"
               size="sm"

@@ -4,11 +4,12 @@ import { Plate, PlateSize } from '../../classes/PlateClass.ts';
 import { Pattern } from '../../classes/PatternClass.ts';
 import { usePreferences } from '../../hooks/usePreferences';
 import DesignWizardDst from './components/DesignWizardDst.tsx';
-import { labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils.ts';
+import { generateExcelTemplate, labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils.ts';
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils.ts';
 import DesignWizardSrc from './components/DesignWizardSrc.tsx';
 import Sidebar from '../../components/Sidebar.tsx';
 import Instructions from './components/Instructions.tsx';
+import DesignWizardAsy, { AssayForm, ImportedDesign, buildAssayRows, parseBarcodeList } from './components/DesignWizardAsy.tsx';
 
 const PlateDesigner: React.FC = () => {
   const { preferences } = usePreferences();
@@ -24,6 +25,7 @@ const PlateDesigner: React.FC = () => {
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([]);
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false });
+  const [assayForm, setAssayForm] = useState<AssayForm>({ values: {}, dmsoMode: '', intBarcodes: '', dstBarcodes: '' });
 
   if (curPatternId !== prevPatternId) {
     setPrevPatternId(curPatternId);
@@ -161,6 +163,27 @@ const PlateDesigner: React.FC = () => {
     if (curDesignSrcPlateId === plateId) {
       setCurDesignSrcPlateId(null);
     }
+  };
+
+  const handleGenerateTemplate = () => {
+    generateExcelTemplate(patterns, designSrcPlates, buildAssayRows(assayForm), {
+      intermediate: parseBarcodeList(assayForm.intBarcodes),
+      destination: parseBarcodeList(assayForm.dstBarcodes)
+    });
+  };
+
+  const handleImportDesign = (design: ImportedDesign) => {
+    setPatterns(design.patterns);
+    setCurPatternId(design.patterns[0]?.id ?? null);
+    setPatternState({ isEditing: false, isNewPattern: false, isPickingColor: false });
+    setDesignDstPlateSize(design.dstPlateSize);
+    setDesignDstPlates([design.dstPlate]);
+    setCurDesignDstPlateId(design.dstPlate.id);
+    setDesignSrcPlateSize(design.srcPlateSize);
+    setDesignSrcPlates(design.srcPlates);
+    setCurDesignSrcPlateId(design.srcPlates[0].id);
+    setAssayForm(design.assayForm);
+    setSelectedWellIds([]);
   };
 
   const handlePageDblClick = (e: React.MouseEvent<Element, MouseEvent>) => {
@@ -365,7 +388,6 @@ const PlateDesigner: React.FC = () => {
                   setDesignDstPlates={setDesignDstPlates}
                   curDesignDstPlateId={curDesignDstPlateId}
                   setCurDesignDstPlateId={setCurDesignDstPlateId}
-                  designSrcPlates={designSrcPlates}
                   designDstPlateSize={designDstPlateSize}
                   setDesignDstPlateSize={setDesignDstPlateSize}
                   patterns={patterns}
@@ -377,6 +399,7 @@ const PlateDesigner: React.FC = () => {
                   patternState={patternState}
                   setPatternState={setPatternState}
                   onDoubleClick={handlePageDblClick}
+                  onGenerateTemplate={handleGenerateTemplate}
                 />
               </Tab>
               <Tab eventKey="designSrc" title="Design - Source">
@@ -393,6 +416,19 @@ const PlateDesigner: React.FC = () => {
                   handleMouseDown={handleMouseDown}
                   enterCallbackRef={enterCallbackRef}
                   onDoubleClick={handlePageDblClick}
+                  onGenerateTemplate={handleGenerateTemplate}
+                />
+              </Tab>
+              <Tab eventKey="designAsy" title="Design - Assay">
+                <DesignWizardAsy
+                  assayForm={assayForm}
+                  setAssayForm={setAssayForm}
+                  patterns={patterns}
+                  designSrcPlates={designSrcPlates}
+                  designDstPlateSize={designDstPlateSize}
+                  designSrcPlateSize={designSrcPlateSize}
+                  onImportDesign={handleImportDesign}
+                  onGenerateTemplate={handleGenerateTemplate}
                 />
               </Tab>
             </Tabs>

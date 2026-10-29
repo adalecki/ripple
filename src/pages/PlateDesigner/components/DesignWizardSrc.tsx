@@ -8,7 +8,7 @@ import { FormField } from '../../../components/FormField';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern } from '../../../classes/PatternClass';
 import { ColorConfig, generateEntityColors } from '../../../utils/wellColors';
-import { currentItem, generateExcelTemplate, plateMaxConcentration } from '../../../utils/designUtils';
+import { currentItem, plateMaxConcentration } from '../../../utils/designUtils';
 import { formatWellBlock, mapWellsToConcentrations } from '../../../utils/plateUtils';
 
 import '../../../css/DesignWizard.css';
@@ -39,6 +39,7 @@ interface DesignWizardSrcProps {
   handleMouseDown?: (e: React.MouseEvent<Element, MouseEvent>) => void;
   enterCallbackRef: React.RefObject<(() => void) | null>
   onDoubleClick: (e: React.MouseEvent<Element, MouseEvent>) => void;
+  onGenerateTemplate: () => void;
 }
 
 const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
@@ -53,7 +54,8 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
   handleLabelClick = (() => { }),
   handleMouseDown = (() => { }),
   enterCallbackRef,
-  onDoubleClick
+  onDoubleClick,
+  onGenerateTemplate
 }) => {
   const [wellContentsForm, setWellContentsForm] = useState<WellContentsForm>({
     compoundId: '',
@@ -257,7 +259,7 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
               Clear from All Wells
             </Button>
             <Button
-              onClick={(e) => { generateExcelTemplate(patterns, designSrcPlates); e.currentTarget.blur(); }}
+              onClick={(e) => { onGenerateTemplate(); e.currentTarget.blur(); }}
               disabled={patterns.length < 1}
               variant="success"
               size="sm"

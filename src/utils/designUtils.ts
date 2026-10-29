@@ -19,7 +19,7 @@ export function generateId(items: {id: number; [key: string]: any}[]): number {
   return newId;
 }
 
-export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) {
+export function generateExcelTemplate(patterns: Pattern[], srcPlates: Plate[], assayRows: { 'Setting': string, 'Value': number }[], barcodes: { intermediate: string[], destination: string[] }) {
   const wb: WorkBook = utils.book_new();
 
   const patternsData = patterns.map(pattern => {
@@ -59,7 +59,7 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
 
   const compoundsHeaders = ['Source Barcode', 'Well ID', 'Concentration (µM)', 'Compound ID', 'Volume (µL)', 'Pattern'];
   const compoundsWs = utils.aoa_to_sheet([compoundsHeaders]);
-  if (srcPlates && srcPlates.length > 0) {
+  if (srcPlates.length > 0) {
     //uuid used as delimiter to avoid weird edge cases
     //e.g. 'test1' + '10' would be the same as 'test11' + '1' without delims
     //could use a bar or something else, but uuid avoids all naming conflicts
@@ -124,11 +124,15 @@ export function generateExcelTemplate(patterns: Pattern[], srcPlates?: Plate[]) 
   utils.book_append_sheet(wb, compoundsWs, 'Compounds');
 
   const barcodesHeaders = ['Intermediate Plate Barcodes', 'Destination Plate Barcodes'];
-  const barcodesWs = utils.aoa_to_sheet([barcodesHeaders]);
+  const barcodeRows = [];
+  for (let i = 0; i < Math.max(barcodes.intermediate.length, barcodes.destination.length); i++) {
+    barcodeRows.push([barcodes.intermediate[i] ?? null, barcodes.destination[i] ?? null]);
+  }
+  const barcodesWs = utils.aoa_to_sheet([barcodesHeaders, ...barcodeRows]);
   utils.book_append_sheet(wb, barcodesWs, 'Barcodes');
 
   const assayHeaders = ['Setting', 'Value'];
-  const assayWs = utils.aoa_to_sheet([assayHeaders]);
+  const assayWs = utils.aoa_to_sheet([assayHeaders, ...assayRows.map(row => [row.Setting, row.Value])]);
   utils.book_append_sheet(wb, assayWs, 'Assay');
 
   const fileName = `Echo_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
