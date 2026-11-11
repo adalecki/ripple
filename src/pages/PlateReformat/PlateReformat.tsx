@@ -41,13 +41,6 @@ function PlateReformat() {
   const selectionRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
 
-  useEffect(() => {
-    document.addEventListener('mousedown', handlePageDblClick);
-    return () => {
-      document.removeEventListener('mousedown', handlePageDblClick);
-    };
-  }, []);
-
   const handleMouseDown = (e: React.MouseEvent) => {
     //e.preventDefault();
     const start = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
@@ -153,6 +146,13 @@ function PlateReformat() {
       setSelectedDstWells(prev => (prev.length ? [] : prev));
     }
   };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handlePageDblClick);
+    return () => {
+      document.removeEventListener('mousedown', handlePageDblClick);
+    };
+  }, []);
 
   const handleLoadScheme = (scheme: ReformatScheme) => {
     const result = applyScheme(scheme);

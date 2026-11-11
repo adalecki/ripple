@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Col, Container, Row } from 'react-bootstrap';
 
 import { Plate, PlateSize } from '../../../classes/PlateClass';
@@ -98,7 +98,9 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
     }
   };
 
-  enterCallbackRef.current = canApply ? applyContentsToWells : null;
+  useEffect(() => {
+    enterCallbackRef.current = canApply ? applyContentsToWells : null;
+  });
 
   function clearContentsFromWells() {
     if (!plate) return;

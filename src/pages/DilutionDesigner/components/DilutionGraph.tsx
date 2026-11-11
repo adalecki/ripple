@@ -38,6 +38,8 @@ const generateLogTicks = (min: number, max: number): number[] => {
   return ticks.sort((a, b) => a - b).filter(t => t >= min && t <= max);
 };
 
+const chartMargins = { top: 20, right: 100, bottom: 40, left: 60 };
+
 const DilutionGraph: React.FC<DilutionGraphProps> = ({
   points,
   analysisResults,
@@ -66,10 +68,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
     }
   }, []);
 
-  const chartMargins = { top: 20, right: 100, bottom: 40, left: 60 };
-
   useEffect(() => {
-    console.log(dimensions);
     if (!svgRef.current || dimensions.width === 0 || points.length === 0) return;
 
     const svg = select(svgRef.current);
@@ -217,7 +216,7 @@ const DilutionGraph: React.FC<DilutionGraphProps> = ({
         .attr('font-size', '12px');
     });
 
-  }, [dimensions, points, analysisResults]);
+  }, [dimensions, points, analysisResults, allowableError]);
 
   return (
     <Card style={{ width: '100%', maxHeight: 900 }}>

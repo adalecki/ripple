@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Modal, Button, Form, ListGroup, Col, Row, Alert } from 'react-bootstrap';
 import { AlertTriangle, ArrowLeft, Dot, Download, FileText, MoveRight, Save, Trash2, Upload } from 'lucide-react';
 import { ReformatScheme } from '../utils/reformatUtils';
@@ -55,13 +55,6 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
   const [selectAllExport, setSelectAllExport] = useState(false);
 
   const existingNames = schemes.flatMap(s => s.name);
-
-  useEffect(() => {
-    if (mode === 'export') {
-      setSelectedExportIds(new Set(schemes.map(s => s.id)));
-      setSelectAllExport(true);
-    }
-  }, [mode, schemes]);
 
   const handleSave = () => {
     if (!newName.trim()) return;
@@ -157,6 +150,12 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
       resetImportState();
       setMode('manage');
     }
+  };
+
+  const handleOpenExport = () => {
+    setSelectedExportIds(new Set(schemes.map(s => s.id)));
+    setSelectAllExport(true);
+    setMode('export');
   };
 
   const handleExportToggle = (schemeId: number) => {
@@ -437,7 +436,7 @@ const ReformatSchemesModal: React.FC<ReformatSchemesModalProps> = ({
             <Button
               variant="outline-success"
               size="sm"
-              onClick={() => setMode('export')}
+              onClick={handleOpenExport}
               disabled={schemes.length === 0}
             >
               <Download size={16} className="me-1" />

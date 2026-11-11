@@ -36,16 +36,7 @@ const PlateDesigner: React.FC = () => {
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
   //ref is used on DesignWizardSrc to get around stale state closure
   const enterCallbackRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
   const activePlateRef = useRef<Plate | null>(null);
-  activePlateRef.current = activePlate();
 
   function activePlate(): Plate | null {
     switch (tabKey) {
@@ -54,6 +45,11 @@ const PlateDesigner: React.FC = () => {
       default: return null;
     }
   }
+
+  //assigned immediately after render so the once-registered keydown listener never reads a stale plate
+  useEffect(() => {
+    activePlateRef.current = activePlate();
+  });
 
   const renderSidebar = () => {
     if (tabKey === 'designDst') {
@@ -208,6 +204,13 @@ const PlateDesigner: React.FC = () => {
       enterCallbackRef.current?.();
     }
   };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleSelect = (k: string | null) => {
     if (k != null) {

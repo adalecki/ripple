@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import ContentsManager from './ContentsManager';
@@ -96,38 +96,6 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     );
 
   const plate = currentItem(designSrcPlates, curDesignSrcPlateId) as Plate;
-  if (!plate) return (<div>Please select a source plate</div>);
-
-  enterCallbackRef.current = canApply ? () => applyContentsToWells() : null;
-
-  const compoundIdsSet = new Set<string>();
-  for (const plate of designSrcPlates) {
-    const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)));//filters out empty strings
-    compoundIds.forEach((id) => compoundIdsSet.add(id));
-  }
-
-  const colorConfig: ColorConfig = {
-    scheme: 'compound',
-    colorMap: generateEntityColors([...compoundIdsSet], 0.5),
-    maxConcentration: plate.metadata.globalMaxConcentration
-  };
-
-  function getApplyDisabledReasons(): string[] {
-    const reasons: string[] = [];
-    if (selectedWellIds.length === 0) reasons.push('No wells selected');
-    if (typeof wellContentsForm.volume !== 'number' || wellContentsForm.volume <= 0) reasons.push('No volume set');
-    if (!wellContentsForm.dmsoWells) {
-      if (wellContentsForm.patternNames.length === 0) reasons.push('No patterns linked');
-      if (activeAccordion === 'basic') {
-        if (wellContentsForm.compoundId === '') reasons.push('No compound ID');
-        if (typeof wellContentsForm.concentration !== 'number') reasons.push('No concentration set');
-      } else {
-        if (currentCompound == null) reasons.push('No compounds in list');
-        if (validConcentrations.length === 0) reasons.push('No valid concentrations');
-      }
-    }
-    return reasons;
-  }
 
   function applyContentsToWells() {
     const newPlate = plate.clone();
@@ -180,6 +148,41 @@ const DesignWizardSrc: React.FC<DesignWizardSrcProps> = ({
     newPlate.metadata.globalMaxConcentration = plateMaxConcentration(newPlate);
     setDesignSrcPlates(designSrcPlates.map(p => p.id === newPlate.id ? newPlate : p));
   };
+
+  useEffect(() => {
+    enterCallbackRef.current = canApply && plate ? applyContentsToWells : null;
+  });
+
+  if (!plate) return (<div>Please select a source plate</div>);
+
+  const compoundIdsSet = new Set<string>();
+  for (const plate of designSrcPlates) {
+    const compoundIds = Array.from(plate).flatMap(w => w.getContents().map(c => c.compoundId).filter((id): id is string => Boolean(id)));//filters out empty strings
+    compoundIds.forEach((id) => compoundIdsSet.add(id));
+  }
+
+  const colorConfig: ColorConfig = {
+    scheme: 'compound',
+    colorMap: generateEntityColors([...compoundIdsSet], 0.5),
+    maxConcentration: plate.metadata.globalMaxConcentration
+  };
+
+  function getApplyDisabledReasons(): string[] {
+    const reasons: string[] = [];
+    if (selectedWellIds.length === 0) reasons.push('No wells selected');
+    if (typeof wellContentsForm.volume !== 'number' || wellContentsForm.volume <= 0) reasons.push('No volume set');
+    if (!wellContentsForm.dmsoWells) {
+      if (wellContentsForm.patternNames.length === 0) reasons.push('No patterns linked');
+      if (activeAccordion === 'basic') {
+        if (wellContentsForm.compoundId === '') reasons.push('No compound ID');
+        if (typeof wellContentsForm.concentration !== 'number') reasons.push('No concentration set');
+      } else {
+        if (currentCompound == null) reasons.push('No compounds in list');
+        if (validConcentrations.length === 0) reasons.push('No valid concentrations');
+      }
+    }
+    return reasons;
+  }
 
   function clearContentsFromWells() {
     const newPlate = plate!.clone();

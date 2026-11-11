@@ -44,19 +44,6 @@ const PlateList: React.FC<PlateListProps> = ({
   const [reusedBarcodes, setReusedBarcodes] = useState<string[]>([]);
   const [alertMessage, setAlertMessage] = useState<string>('');
 
-  const BarcodeAlert = () => {
-    return (
-      <Alert show={reusedBarcodes.length > 0} variant="warning">
-        {reusedBarcodes.join(', ')} {alertMessage}
-        <div className="d-flex justify-content-end">
-          <Button onClick={() => { setReusedBarcodes([]); setAlertMessage(''); }}>
-            Clear
-          </Button>
-        </div>
-      </Alert>
-    );
-  };
-
   const renderList = (
     plates: Plate[],
     setPlates: React.Dispatch<React.SetStateAction<Plate[]>>,
@@ -319,7 +306,14 @@ const PlateList: React.FC<PlateListProps> = ({
           ) : (<div>{renderList(dstPlates, setDstPlates, 'dst', curDstPlateId, setCurDstPlateId, addDestPlate, updateDestBarcode, deleteDestPlate)}</div>)}
         </div>
       </Card.Body>
-      <BarcodeAlert />
+      <Alert show={reusedBarcodes.length > 0} variant="warning">
+        {reusedBarcodes.join(', ')} {alertMessage}
+        <div className="d-flex justify-content-end">
+          <Button onClick={() => { setReusedBarcodes([]); setAlertMessage(''); }}>
+            Clear
+          </Button>
+        </div>
+      </Alert>
     </Card>
   );
 };
