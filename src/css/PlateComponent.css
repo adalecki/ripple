@@ -71,7 +71,6 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  font-size: clamp(6px, 0.5vw, 12px);
 }
 
 .grid-container {
@@ -88,7 +87,6 @@
 .all-wells-container {
   display: grid;
   grid-area: allWells;
-  font-size: clamp(6px, 0.5vw, 12px);
   border: 1px solid #000;
   aspect-ratio: 1; 
   color: transparent;

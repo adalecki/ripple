@@ -20,6 +20,14 @@
   min-height: 0;
 }
 
+.pattern-form .form-field {
+  grid-template-columns: [label] 3fr [input] 3fr;
+}
+
+.pattern-fields > .form-label {
+  flex-shrink: 0;
+}
+
 .concentration-table-container {
   border: 1px solid #dee2e6;
   border-radius: 0.25rem;

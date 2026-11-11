@@ -153,7 +153,7 @@ const InventoryWizard: React.FC<InventoryWizardProps> = ({
   return (
     <Container fluid className="noselect design-wizard-container">
       <Row className="design-wizard-row">
-        <Col md={3} className="design-wizard-col design-wizard-col-left">
+        <Col md={3} className="design-wizard-col">
           <div className="design-wizard-button-grid">
             <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
               <Button onClick={applyContentsToWells} disabled={!canApply} size="sm">

@@ -13,7 +13,7 @@ import DesignWizardAsy, { AssayForm, ImportedDesign, buildAssayRows, parseBarcod
 
 const PlateDesigner: React.FC = () => {
   const { preferences } = usePreferences();
-  const [tabKey, setTabKey] = useState<string>('designDst');
+  const [tabKey, setTabKey] = useState<string>('instructions');
   const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize);
   const [designDstPlateSize, setDesignDstPlateSize] = useState(preferences.destinationPlateSize as PlateSize);
   const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize })]);
@@ -382,6 +382,18 @@ const PlateDesigner: React.FC = () => {
               <Tab eventKey="instructions" title="Instructions">
                 <Instructions />
               </Tab>
+              <Tab eventKey="designAsy" title="Design - Assay">
+                <DesignWizardAsy
+                  assayForm={assayForm}
+                  setAssayForm={setAssayForm}
+                  patterns={patterns}
+                  designSrcPlates={designSrcPlates}
+                  designDstPlateSize={designDstPlateSize}
+                  designSrcPlateSize={designSrcPlateSize}
+                  onImportDesign={handleImportDesign}
+                  onGenerateTemplate={handleGenerateTemplate}
+                />
+              </Tab>
               <Tab eventKey="designDst" title="Design - Destination">
                 <DesignWizardDst
                   designDstPlates={designDstPlates}
@@ -416,18 +428,6 @@ const PlateDesigner: React.FC = () => {
                   handleMouseDown={handleMouseDown}
                   enterCallbackRef={enterCallbackRef}
                   onDoubleClick={handlePageDblClick}
-                  onGenerateTemplate={handleGenerateTemplate}
-                />
-              </Tab>
-              <Tab eventKey="designAsy" title="Design - Assay">
-                <DesignWizardAsy
-                  assayForm={assayForm}
-                  setAssayForm={setAssayForm}
-                  patterns={patterns}
-                  designSrcPlates={designSrcPlates}
-                  designDstPlateSize={designDstPlateSize}
-                  designSrcPlateSize={designSrcPlateSize}
-                  onImportDesign={handleImportDesign}
                   onGenerateTemplate={handleGenerateTemplate}
                 />
               </Tab>

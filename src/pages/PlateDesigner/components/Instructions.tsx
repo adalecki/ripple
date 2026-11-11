@@ -18,11 +18,12 @@ const Instructions: React.FC = () => {
                   then export a ready-to-use template for the Echo Transfer Calculator.
                 </p>
                 <ul className="template-card">
-                  <li><strong>1. </strong>On the <b>Design - Destination</b> tab, create one or more patterns in the sidebar and set their type, dilution direction, replicates, and concentrations.</li>
-                  <li><strong>2. </strong>Select wells on the plate (click, drag, or click row/column labels), then click <b>Apply to Wells</b> to stamp the active pattern onto the layout.</li>
-                  <li><strong>3. </strong>On the <b>Design - Source</b> tab, select wells and assign the compounds, stock concentrations, and well volumes that feed your patterns.</li>
-                  <li><strong>4. </strong>Click <b>Generate Template</b> (on either design tab) to download a complete Echo template <code>.xlsx</code>.</li>
-                  <li><strong>5. </strong>Open the <b>Echo Transfer Calculator</b>, upload the template, and run the calculation.</li>
+                  <li><strong>1. </strong>On the <b>Design - Assay</b> tab, specify certain assay constraints to be recorded in the final template file (optional).</li>
+                  <li><strong>2. </strong>On the <b>Design - Destination</b> tab, create one or more patterns in the sidebar and set their type, dilution direction, replicates, and concentrations.</li>
+                  <li><strong>3. </strong>Select wells on the plate (click, drag, or click row/column labels), then click <b>Apply to Wells</b> to stamp the active pattern onto the layout.</li>
+                  <li><strong>4. </strong>On the <b>Design - Source</b> tab, select wells and assign the compounds, stock concentrations, and well volumes that feed your patterns.</li>
+                  <li><strong>5. </strong>Click <b>Generate Template</b> (on either design tab) to download a complete Echo template <code>.xlsx</code>.</li>
+                  <li><strong>6. </strong>Open the <b>Echo Transfer Calculator</b>, upload the template, and run the calculation.</li>
                 </ul>
                 <Card.Title as="h4" className="mb-4 text-center">Core Concept</Card.Title>
                 <p>

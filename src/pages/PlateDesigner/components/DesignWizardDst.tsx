@@ -230,7 +230,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   return (
     <Container fluid className="noselect design-wizard-container">
       <Row className="design-wizard-row">
-        <Col md={3} className="design-wizard-col design-wizard-col-left">
+        <Col md={4} xxl={3} className="design-wizard-col">
           <div className="design-wizard-button-grid">
             <div
               onMouseEnter={handleMouseEnter}
@@ -285,7 +285,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
           />
         </Col>
         <Col
-          md={9}
+          md={8}
+          xxl={9}
           className="design-wizard-col"
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}

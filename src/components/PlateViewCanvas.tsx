@@ -48,14 +48,14 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     const availableHeight = container.clientHeight;
 
     if (availableWidth === 0 || availableHeight === 0) return;
-    const gap = 96 / plate.columns;
+    const gap = Math.round(96 / plate.columns * dpr) / dpr;
     const wellSizeByWidth = (availableWidth - 1 - ((plate.columns - 1) * gap)) / plate.columns
     const wellSizeByHeight = (availableHeight - 1 - ((plate.rows - 1) * gap)) / plate.rows
-    const wellSize = Math.floor(Math.min(wellSizeByWidth, wellSizeByHeight))
+    const wellSize = Math.floor(Math.min(wellSizeByWidth, wellSizeByHeight) * dpr) / dpr;
     if (wellSize <= 0) return;
 
-    const canvasWidth = (wellSize * plate.columns) + (plate.columns - 1) * gap + 1;
-    const canvasHeight = (wellSize * plate.rows) + (plate.rows - 1) * gap + 1;
+    const canvasWidth = (wellSize * plate.columns) + (plate.columns - 1) * gap + 1 / dpr;
+    const canvasHeight = (wellSize * plate.rows) + (plate.rows - 1) * gap + 1 / dpr;
     canvas.width = Math.ceil(canvasWidth * dpr);
     canvas.height = Math.ceil(canvasHeight * dpr);
     ctx.scale(dpr, dpr);
@@ -73,7 +73,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       const isSelected = selectedWells.includes(wellId);
       const borders = blockBorderMap?.get(wellId);
 
-      drawWell(ctx, x, y, wellSize, colors, well, isSelected, borders, dividers);
+      drawWell(ctx, x, y, wellSize, 1 / dpr, colors, well, isSelected, borders, dividers);
     }
   };
 
@@ -96,6 +96,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     x: number,
     y: number,
     size: number,
+    px: number,
     colors: string[],
     well: Well,
     isSelected: boolean,
@@ -104,11 +105,11 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   ) {
 
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, size, size);
+    ctx.lineWidth = px;
+    ctx.strokeRect(x + px / 2, y + px / 2, size, size);
 
     if (colors.length > 0) {
-      drawSegments(ctx, x + 1, y + 1, size - 1, colors, dividers);
+      drawSegments(ctx, x + px, y + px, size - px, px, colors, dividers);
     }
 
     if (well.getSolvents().some(s => s.name === 'DMSO' && s.volume > 0) && !well.getIsUnused()) {
@@ -116,21 +117,21 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     }
 
     if (well.getIsUnused()) {
-      drawUnused(ctx, x, y, size);
+      drawUnused(ctx, x, y, size, px);
     }
     if (borders) {
       ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
-      if (borders.top) ctx.strokeRect(x + 1, y + 1, size - 1, 0);
-      if (borders.bottom) ctx.strokeRect(x + 1, y + size - 0, size - 1, 0);
-      if (borders.left) ctx.strokeRect(x + 1, y + 1, 0, size - 1);
-      if (borders.right) ctx.strokeRect(x + size - 0, y + 1, 0, size - 1);
+      ctx.lineWidth = 2 * px;
+      if (borders.top) ctx.strokeRect(x + px, y + px, size - px, 0);
+      if (borders.bottom) ctx.strokeRect(x + px, y + size, size - px, 0);
+      if (borders.left) ctx.strokeRect(x + px, y + px, 0, size - px);
+      if (borders.right) ctx.strokeRect(x + size, y + px, 0, size - px);
     }
 
     if (isSelected) {
       ctx.strokeStyle = 'blue';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x + 1, y + 1, size - 1, size - 1);
+      ctx.lineWidth = 2 * px;
+      ctx.strokeRect(x + px, y + px, size - px, size - px);
     }
   };
 
@@ -139,6 +140,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     x: number,
     y: number,
     size: number,
+    px: number,
     colors: string[],
     dividers?: boolean
   ) {
@@ -160,7 +162,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
       ctx.fill();
       if (dividers && colors.length > 1) {
         ctx.strokeStyle = 'black';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = px;
         ctx.stroke();
       }
     }
@@ -186,7 +188,8 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
-    size: number
+    size: number,
+    px: number
   ) {
     ctx.save();
     ctx.beginPath();
@@ -194,7 +197,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
     ctx.clip();
 
     ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = px;
 
     for (let i = -size; i < size; i += 6) {
       ctx.beginPath();
@@ -274,7 +277,7 @@ const PlateViewCanvas: React.FC<PlateViewCanvasProps> = ({
   const rowHeight = (canvasSize.height / plate.rows);
 
   return (
-    <div className="grid-container" data-view={view} style={{ aspectRatio: `${plate.columns} / ${plate.rows}` }}>
+    <div className="grid-container" data-view={view} style={{ aspectRatio: `${plate.columns} / ${plate.rows}`, fontSize: `${Math.min(12, Math.max(7, canvasSize.wellSize * 0.4))}px` }}>
 
       <div
         className={handleLabelClick ? 'all-wells-container' : ''}
