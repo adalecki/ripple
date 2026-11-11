@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 interface DesignWizardDstProps {
   designDstPlates: Plate[];
   setDesignDstPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
+  //unused until multiple dest design plates are supported, which needs a major rewrite of core calculator logic
   curDesignDstPlateId: number | null;
   setCurDesignDstPlateId: React.Dispatch<React.SetStateAction<number | null>>;
   designDstPlateSize: PlateSize;
@@ -45,10 +46,6 @@ interface DesignWizardDstProps {
 const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   designDstPlates,
   setDesignDstPlates,
-  //these are for a future with multiple dest design patterns, requiring a major rewrite of core calculator logic; don't worry about it anytime soon
-  //@ts-ignore
-  curDesignDstPlateId,
-  //@ts-ignore
   setCurDesignDstPlateId,
   designDstPlateSize,
   setDesignDstPlateSize,

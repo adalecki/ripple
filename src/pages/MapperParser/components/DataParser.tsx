@@ -31,7 +31,7 @@ const DataParser: React.FC = () => {
   const [errors, setErrors] = useState<string[]>([]);
   const [metadataValues, setMetadataValues] = useState<MetadataValues>({});
   const plate = currentPlate(mappedPlates, curMappedPlateId);
-  const [normalizedResponse, setNormalizedResponse] = useState<Boolean>(false);
+  const [normalizedResponse, setNormalizedResponse] = useState(false);
 
   useEffect(() => {
     if (selectedProtocol) {

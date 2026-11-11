@@ -314,8 +314,11 @@ export function plateZPrimeFactor(plate: Plate, protocol: Protocol, robust: bool
   const minStdev = getStandardDeviation(minResps) as number;
   const maxMAD = getMedianAbsoluteDeviation(maxResps);
   const minMAD = getMedianAbsoluteDeviation(minResps);
-  robust ? zFactor = 1 - ((3 * (maxMAD + minMAD))/Math.abs(getMedian(maxResps) - getMedian(minResps)))
-         : zFactor = 1 - ((3 * (maxStdev + minStdev))/Math.abs(maxMean - minMean));
+  if (robust) {
+    zFactor = 1 - ((3 * (maxMAD + minMAD))/Math.abs(getMedian(maxResps) - getMedian(minResps)));
+  } else {
+    zFactor = 1 - ((3 * (maxStdev + minStdev))/Math.abs(maxMean - minMean));
+  }
   return zFactor;
 }
 

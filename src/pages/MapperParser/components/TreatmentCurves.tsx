@@ -73,6 +73,8 @@ const exportToPDF = async () => {
 
     document.body.appendChild(clone);
 
+    //forces a reflow so html2canvas measures the clone at its full height
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     clone.offsetHeight;
     await new Promise(resolve => setTimeout(resolve, 100));
 

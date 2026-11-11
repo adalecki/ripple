@@ -547,7 +547,7 @@ export class EchoCalculator {
             transferType: 'compound',
             compoundName: compoundId
           };
-          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
+          if (executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates)) { this.transferSteps.push(transferStep); }
         }
       }
     }

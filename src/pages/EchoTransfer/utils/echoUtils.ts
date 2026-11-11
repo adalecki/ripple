@@ -870,16 +870,19 @@ export function calculateC4(
   // v3 = (backfill * c4)/(c2 - c4)
   let c4: number;
   switch (area) {
-    case 'hi':
+    case 'hi': {
       c4 = (targetConc * (commonSettings.finalAssayVolume * (1 + commonSettings.maxDMSOFraction))) / (commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction);
       break;
-    case 'mid':
+    }
+    case 'mid': {
       const midVol = ((commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction) + commonSettings.dropletSize) / 2;
       c4 = (targetConc * (commonSettings.finalAssayVolume + midVol) / midVol);
       break;
-    case 'lo':
+    }
+    case 'lo': {
       c4 = (targetConc * (commonSettings.finalAssayVolume + commonSettings.dropletSize)) / (commonSettings.dropletSize);
       break;
+    }
     default:
       c4 = (targetConc * (commonSettings.finalAssayVolume * (1 + commonSettings.maxDMSOFraction))) / (commonSettings.finalAssayVolume * commonSettings.maxDMSOFraction);
   }

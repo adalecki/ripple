@@ -17,8 +17,7 @@ function arraysMatch(arr1: any[], arr2: any[]) {
 export function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
   const headers = [];
   for (const key in ws) {
-    const regEx = new RegExp('^\(\\w\)\(1\){1}$');
-    if (regEx.test(key) === true) {
+    if (/^\w1$/.test(key)) {
       headers.push(ws[key].v);
     }
   }
@@ -276,8 +275,7 @@ function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, avai
     const isDMSO = cpd['Compound ID'] === 'DMSO';
     const hasEmptyPattern = !cpd['Pattern'] || cpd['Pattern'].trim() === '';
 
-    if (isDMSO && hasEmptyPattern) {
-    } else if (cpd['Compound ID'] !== 'DMSO') {
+    if (!isDMSO) {
       try {
         if (isNaN(cpd['Concentration (µM)'])) { errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab has a non-number Concentration`); } else if (!(cpd['Concentration (µM)'] > 0)) { errors.push(`${cpd['Compound ID']} on line ${parseInt(idx) + 2} of Compounds tab has a negative Concentration`); }
       } catch (err) {
@@ -289,7 +287,7 @@ function compoundsTabValidation(inputData: InputDataType, testPlate: Plate, avai
           errors.push(`${patternName} on line ${parseInt(idx) + 2} of Compounds tab not present on Patterns tab`);
         }
       }
-    } else if (isDMSO && !hasEmptyPattern) {
+    } else if (!hasEmptyPattern) {
       const patterns = cpd['Pattern'].split(';');
       for (const patternName of patterns) {
         if (!availablePatternNames.has(patternName)) {
@@ -314,23 +312,6 @@ function barcodesTabValidation(inputData: InputDataType, srcBarcodes: string[], 
       if (!barcodes.int.includes(row['Intermediate Plate Barcodes'])) { barcodes.int.push(row['Intermediate Plate Barcodes']); } else { errors.push(`Line ${parseInt(idx) + 2} of Barcodes tab has a repeated Intermediate barcode`); }
     }
   }
-}
-
-//@ts-ignore
-//TODO implmenent checking for valid pattern names now that they don't need to start with Control or Treatment
-function validPatternName(patternName: string, errors: string[]): boolean {
-  if (!(patternName.startsWith('Control') || patternName.startsWith('Treatment'))) {
-    errors.push('Pattern name ' + patternName + ' does not start with "Treatment" or "Control"');
-    return false;
-  }
-  let substringIdx = 7;
-  if (patternName.startsWith('Treatment')) { substringIdx = 9; }
-  const numString = patternName.substring(substringIdx);
-  if (!(parseInt(numString).toString() === numString)) {
-    errors.push(`${patternName} iterator ${numString} is not an integer`);
-    return false;
-  }
-  return true;
 }
 
 export type timeObj = {

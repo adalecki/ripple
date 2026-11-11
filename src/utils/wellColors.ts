@@ -158,23 +158,11 @@ function buildHues(count: number, hSeed: number): number[] {
   return hues;
 }
 
-//@ts-ignore
-function parseHSL(color: `hsl(${number},${number}%,${number}%)`): { h: number, s: number, l: number } | null {
-  const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-  if (!match) return null;
-
-  return {
-    h: parseInt(match[1]),
-    s: parseInt(match[2]),
-    l: parseInt(match[3])
-  };
-}
-
 export function hslToString(hsl: HslType): `hsl(${number},${number}%,${number}%)` {
   return `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`;
 }
 
-export function wellColorsResponse(plate: Plate, normalized: Boolean): { wellId: string; colors: HslStringType[] }[] {
+export function wellColorsResponse(plate: Plate, normalized: boolean): { wellId: string; colors: HslStringType[] }[] {
   const wellColorArr: { wellId: string; colors: HslStringType[] }[] = [];
 
   const minResponse = (normalized ? 0 : plate.metadata.globalMinResponse);
