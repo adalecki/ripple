@@ -2,7 +2,7 @@ import { utils, WorkBook, WorkSheet } from 'xlsx';
 import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { InputDataType } from './echoUtils';
 import { PreferencesState } from '../../../hooks/usePreferences';
-import { getCoordsFromWellId } from '../../../utils/plateUtils';
+import { getCoordsFromWellId, isMatrixBlockShape } from '../../../utils/plateUtils';
 import { isCombinationType, getCombinationFold } from '../../../classes/PatternClass';
 import { isDropletMultiple } from '../../CocktailBuilder/utils/validationUtils';
 
@@ -208,6 +208,8 @@ function layoutTabValidation(inputData: InputDataType, testPlate: Plate, availab
             if (!(wells.length === expectedWells)) {
               const formula = pattern!.isMatrix ? `${numConcs} concentrations² x ${replicates} replicates` : `${numConcs} concentrations x ${replicates} replicates`;
               errors.push(`Well block size in line ${parseInt(idx) + 2} of Layout tab does not match with number of concentrations and replicates on Patterns tab (expected ${expectedWells} wells: ${formula})`);
+            } else if (pattern!.isMatrix && !isMatrixBlockShape(inputData['Layout'][idx]['Well Block'], numConcs)) {
+              errors.push(`Well block in line ${parseInt(idx) + 2} of Layout tab needs to be one rectangle with a width or height that is a multiple of ${numConcs} (matrix pattern)`);
             }
           }
         } else {

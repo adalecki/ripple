@@ -417,6 +417,32 @@ describe('echoInputValidation - Layout Tab Validation', () => {
     expect(result.errors.some(e => e.includes('not present on Patterns tab'))).toBe(true);
   });
 
+  test('allows a matrix block that is not square when one side is a multiple of the concentration count', () => {
+    const wb = createValidWorkbook();
+    wb.Sheets.Patterns = createMockWorksheet(validHeaders.Patterns, [
+      { Pattern: 'Combo1', Type: 'Combination-2', Direction: 'LR-TB', Replicates: 1, Conc1: 100, Conc2: 50, Conc3: 25, Conc4: 12.5 }
+    ]);
+    wb.Sheets.Layout = createMockWorksheet(validHeaders.Layout, [
+      { Pattern: 'Combo1', 'Well Block': 'A01:B08' }
+    ]);
+
+    const result = echoInputValidation(wb, mockFormValues, mockPreferences);
+    expect(result.errors.some(e => e.includes('Layout tab'))).toBe(false);
+  });
+
+  test('detects a matrix block with the right well count but neither side a multiple of the concentration count', () => {
+    const wb = createValidWorkbook();
+    wb.Sheets.Patterns = createMockWorksheet(validHeaders.Patterns, [
+      { Pattern: 'Combo1', Type: 'Combination-2', Direction: 'LR-TB', Replicates: 1, Conc1: 100, Conc2: 50, Conc3: 25, Conc4: 12.5, Conc5: 6, Conc6: 3 }
+    ]);
+    wb.Sheets.Layout = createMockWorksheet(validHeaders.Layout, [
+      { Pattern: 'Combo1', 'Well Block': 'A01:D09' }
+    ]);
+
+    const result = echoInputValidation(wb, mockFormValues, mockPreferences);
+    expect(result.errors.some(e => e.includes('width or height that is a multiple of 6'))).toBe(true);
+  });
+
   test('detects well block size mismatch', () => {
     const wb = createValidWorkbook();
     // Treatment1 has 5 concs * 2 reps = 10 wells needed

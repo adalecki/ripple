@@ -1,7 +1,7 @@
 import { utils, writeFile, WorkBook } from 'xlsx';
 import { Pattern, isCombinationType } from '../classes/PatternClass';
 import { Plate } from '../classes/PlateClass';
-import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, lettersToNumber, splitIntoBlocks } from './plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellIdFromCoords, isMatrixBlockShape, lettersToNumber, splitIntoBlocks } from './plateUtils';
 
 export function currentItem(items: any[], curItemId: number | null) {
   let item = null;
@@ -193,10 +193,10 @@ export function sensibleWellSelection(selectedWellIds: string[], pattern: Patter
     if (selectedWellIds.length % requiredTotal !== 0) {
       return [`Matrix pattern requires a multiple of ${requiredTotal} wells (${numConcs}² x ${pattern.replicates} replicates)`];
     }
-    try {
-      splitIntoBlocks(selectedWellIds, pattern, plate);
-    } catch (e) {
-      return [(e as Error).message];
+    for (const block of splitIntoBlocks(selectedWellIds, pattern, plate)) {
+      if (!isMatrixBlockShape(block, numConcs)) {
+        msgArr.push(`Matrix block ${block} needs to be one rectangle with a width or height that is a multiple of ${numConcs}`);
+      }
     }
     return msgArr;
   }

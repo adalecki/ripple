@@ -49,8 +49,5 @@
 # source design picks up initial pattern before it's even saved
 # show summary of actual transfer scheme, i.e., how each concentration actually gets made
 # opening file dialog then canceling after already selecting a template throws file validation errors
-# loaded combination book, cleared N-4 pattern, reapplied, got "the selected wells overlap with existing patterns." Can be applied to other wells that didn't previously have that pattern.
-select > clear > switch to n-4 pattern > apply = fine
-select wells > select pattern > clear > edit > change color > save > apply = error
-select wells > clear > select pattern > edit > change color > save > apply = fine
-if pattern selected in sidebar, it doesn't clear from plate?
+#x patterns don't clear from designer if selected in sidebar from uploaded plate
+#x matrix combination doesn't generate wells if not a perfect nxn grid (e.g. 5x20 grid for 10 concs)
