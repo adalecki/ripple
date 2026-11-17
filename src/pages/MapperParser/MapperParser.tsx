@@ -37,6 +37,11 @@ const MapperParser: React.FC = () => {
     }
   };
 
+  const handleSelectProtocol = (id: number | null) => {
+    setSelectedProtocolId(id);
+    setIsEditing(false);
+  };
+
   const renderSidebar = () => {
     if (tabKey === 'mapper' || tabKey === 'parser' || tabKey === 'results') {
       const initialFilter = tabKey === 'mapper' ? 'all' : 'destination';
@@ -68,7 +73,7 @@ const MapperParser: React.FC = () => {
             type: protocol.parseStrategy.format,
           }))}
           selectedItemId={selectedProtocolId}
-          setSelectedItemId={setSelectedProtocolId}
+          setSelectedItemId={handleSelectProtocol}
           filterOptions={['Table', 'Matrix']}
           title="Protocols"
         />

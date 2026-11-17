@@ -51,3 +51,4 @@
 # opening file dialog then canceling after already selecting a template throws file validation errors
 #x patterns don't clear from designer if selected in sidebar from uploaded plate
 #x matrix combination doesn't generate wells if not a perfect nxn grid (e.g. 5x20 grid for 10 concs)
+# when uploading a template to the mapper, it will detect "DMSO Normalization" and flag it even though that's not relevant to the mapper

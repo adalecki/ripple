@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, JSX } from 'react';
+import React, { useState, useContext, JSX } from 'react';
 import { Button, Form, Card, Row, Col, Accordion, Container } from 'react-bootstrap';
 import { Plus, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
 import {
@@ -28,7 +28,7 @@ import ApplyTooltip from '../../../components/ApplyTooltip';
 
 const ProtocolManager: React.FC = () => {
   const { protocols, setProtocols, selectedProtocolId, setSelectedProtocolId, isEditing, setIsEditing } = useContext(ProtocolsContext);
-  const [isNewProtocol, setIsNewProtocol] = useState(false);
+  const [prevProtocol, setPrevProtocol] = useState<Protocol | null>(null);
   const [editingProtocol, setEditingProtocol] = useState<Protocol | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -36,21 +36,15 @@ const ProtocolManager: React.FC = () => {
   const [showInteractiveControlMapper, setShowInteractiveControlMapper] = useState(false);
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
-  useEffect(() => {
-    const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
-    if (selectedProtocol) {
-      setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol)));
-    } else {
-      setEditingProtocol(null);
-    }
-    if (!isNewProtocol) {
-      setIsEditing(false);
-    }
-    setIsNewProtocol(false);
-  }, [selectedProtocolId, protocols]);
+  const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
+
+  //compares the object, not the id, so saving the selected protocol also refreshes the editing copy
+  if (selectedProtocol !== prevProtocol) {
+    setPrevProtocol(selectedProtocol);
+    setEditingProtocol(selectedProtocol ? JSON.parse(JSON.stringify(selectedProtocol)) : null);
+  }
 
   const handleCancelEdit = () => {
-    const selectedProtocol = getCurrentProtocol(protocols, selectedProtocolId);
     if (selectedProtocol) {
       setEditingProtocol(JSON.parse(JSON.stringify(selectedProtocol)));
     }
@@ -61,7 +55,6 @@ const ProtocolManager: React.FC = () => {
     const newProtocol = createNewProtocol(protocols);
     setProtocols([...protocols, newProtocol]);
     setSelectedProtocolId(newProtocol.id);
-    setIsNewProtocol(true);
     setIsEditing(true);
   };
 
@@ -70,6 +63,7 @@ const ProtocolManager: React.FC = () => {
       const duplicated = duplicateProtocol(editingProtocol);
       setProtocols([...protocols, duplicated]);
       setSelectedProtocolId(duplicated.id);
+      setIsEditing(false);
     }
   };
 
@@ -83,6 +77,7 @@ const ProtocolManager: React.FC = () => {
   const handleDeleteProtocol = () => {
     if (editingProtocol && window.confirm(`Are you sure you want to delete "${editingProtocol.name}"?`)) {
       setProtocols(deleteProtocol(protocols, editingProtocol.id));
+      setIsEditing(false);
       if (selectedProtocolId === editingProtocol.id) {
         setSelectedProtocolId(null);
       }
