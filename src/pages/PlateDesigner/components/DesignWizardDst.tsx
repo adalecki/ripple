@@ -6,7 +6,7 @@ import { Plate, PlateSize } from '../../../classes/PlateClass';
 import { Pattern, isCombinationType } from '../../../classes/PatternClass';
 import { calculateBlockBorders, formatWellBlock, splitIntoBlocks } from '../../../utils/plateUtils';
 import { ColorConfig, generatePatternColors } from '../../../utils/wellColors';
-import { currentItem, generateExcelTemplate, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
+import { currentItem, getPatternWells, isBlockOverlapping, mergeUnusedPatternLocations, sensibleWellSelection } from '../../../utils/designUtils';
 
 import ApplyTooltip from '../../../components/ApplyTooltip';
 import PlateViewCanvas from '../../../components/PlateViewCanvas';
@@ -18,9 +18,9 @@ import { Link } from 'react-router-dom';
 interface DesignWizardDstProps {
   designDstPlates: Plate[];
   setDesignDstPlates: React.Dispatch<React.SetStateAction<Plate[]>>;
+  //unused until multiple dest design plates are supported, which needs a major rewrite of core calculator logic
   curDesignDstPlateId: number | null;
   setCurDesignDstPlateId: React.Dispatch<React.SetStateAction<number | null>>;
-  designSrcPlates: Plate[];
   designDstPlateSize: PlateSize;
   setDesignDstPlateSize: React.Dispatch<React.SetStateAction<PlateSize>>;
   patterns: Pattern[];
@@ -40,17 +40,13 @@ interface DesignWizardDstProps {
     isPickingColor: boolean;
   }>>
   onDoubleClick: (e: React.MouseEvent<Element, MouseEvent>) => void;
+  onGenerateTemplate: () => void;
 }
 
 const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   designDstPlates,
   setDesignDstPlates,
-  //these are for a future with multiple dest design patterns, requiring a major rewrite of core calculator logic; don't worry about it anytime soon
-  //@ts-ignore
-  curDesignDstPlateId,
-  //@ts-ignore
   setCurDesignDstPlateId,
-  designSrcPlates,
   designDstPlateSize,
   setDesignDstPlateSize,
   patterns,
@@ -61,7 +57,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   handleMouseDown = (() => { }),
   patternState,
   setPatternState,
-  onDoubleClick
+  onDoubleClick,
+  onGenerateTemplate
 }) => {
   const [applyPopup, setApplyPopup] = useState<{ event: React.MouseEvent | null, msgArr: string[] }>({ event: null, msgArr: [] });
 
@@ -230,7 +227,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
   return (
     <Container fluid className="noselect design-wizard-container">
       <Row className="design-wizard-row">
-        <Col md={3} className="design-wizard-col design-wizard-col-left">
+        <Col md={4} xxl={3} className="design-wizard-col">
           <div className="design-wizard-button-grid">
             <div
               onMouseEnter={handleMouseEnter}
@@ -266,7 +263,7 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
               Clear from All Wells
             </Button>
             <Button
-              onClick={() => generateExcelTemplate(patterns, designSrcPlates)}
+              onClick={onGenerateTemplate}
               disabled={patterns.length < 1}
               variant="success"
               size="sm"
@@ -285,7 +282,8 @@ const DesignWizardDst: React.FC<DesignWizardDstProps> = ({
           />
         </Col>
         <Col
-          md={9}
+          md={8}
+          xxl={9}
           className="design-wizard-col"
           style={{ scrollbarGutter: 'stable' }}
           onMouseDown={handleMouseDown}

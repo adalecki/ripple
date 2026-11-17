@@ -8,7 +8,7 @@
 }
 
 .echo-form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
 }
 
 .echo-form-group-label {
@@ -65,7 +65,7 @@
 
 .echo-form-hint {
   display: block;
-  margin: 0.35rem 0 ;
+  margin: 0.25rem 0 ;
   font-size: 0.8rem;
   color: var(--bs-secondary-color);
 }

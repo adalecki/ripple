@@ -1,6 +1,6 @@
 import { Plate } from '../../../classes/PlateClass';
 import { Well } from '../../../classes/WellClass';
-import { formatWellBlock, getCoordsFromWellId, getWellFromBarcodeAndId, mapWellsToConcentrations, TransferStepExport } from '../../../utils/plateUtils';
+import { formatWellBlock, getCoordsFromWellId, getWellFromBarcodeAndId, mapWellsToConcentrations, mapWellsToMatrixConcentrations, TransferStepExport } from '../../../utils/plateUtils';
 import { calculateTransferConcentrations, compoundIdsWithPattern, executeAndRecordTransfer, getCombinationsOfSizeR, InputDataType } from '../utils/echoUtils';
 import { EchoPreCalculator } from './EchoPreCalculatorClass';
 import { CheckpointTracker } from './CheckpointTrackerClass';
@@ -506,9 +506,16 @@ export class EchoCalculator {
     const transferMap = calculateTransferConcentrations(this.inputData, this.echoPreCalc.concentrationCache, dilutionPattern, compoundGroup, this.echoPreCalc.getCommonSettings());
     const destPlate = destPlates.find(plate => plate.barcode === destLocation.barcode);
     if (!destPlate) return;
-    // non-matrix combinations carry a single direction shared by every compound in the tuple
-    const direction = dilutionPattern.direction[dirIdx] ?? dilutionPattern.direction[0];
-    const wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, direction);
+    //non-matrix combinations carry a single direction shared by every compound in the tuple; a matrix gives each compound its own axis
+    let wellConcentrationArr: string[][];
+    if (dilutionPattern.direction.length === 2) {
+      wellConcentrationArr = dilutionPattern.concentrations.map(() => []);
+      for (const matrixConc of mapWellsToMatrixConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, dilutionPattern.direction)) {
+        wellConcentrationArr[matrixConc.concIdxs[dirIdx]].push(matrixConc.wellId);
+      }
+    } else {
+      wellConcentrationArr = mapWellsToConcentrations(destPlate, destLocation.wellBlock, dilutionPattern.concentrations, dilutionPattern.direction[0]);
+    }
     for (const concIdx in dilutionPattern.concentrations) {
       const conc = dilutionPattern.concentrations[concIdx];
       const concInfo = transferMap.destinationConcentrations.get(conc);
@@ -540,7 +547,7 @@ export class EchoCalculator {
             transferType: 'compound',
             compoundName: compoundId
           };
-          executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates) ? this.transferSteps.push(transferStep) : null;
+          if (executeAndRecordTransfer(transferStep, transferInfo, this.sourcePlates, this.intermediatePlates, this.destinationPlates)) { this.transferSteps.push(transferStep); }
         }
       }
     }

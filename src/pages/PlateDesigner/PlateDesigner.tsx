@@ -4,15 +4,16 @@ import { Plate, PlateSize } from '../../classes/PlateClass.ts';
 import { Pattern } from '../../classes/PatternClass.ts';
 import { usePreferences } from '../../hooks/usePreferences';
 import DesignWizardDst from './components/DesignWizardDst.tsx';
-import { labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils.ts';
+import { generateExcelTemplate, labelDrag, moveWellSelection, selectorHelper } from '../../utils/designUtils.ts';
 import { currentPlate, getCoordsFromWellId, getWellIdFromCoords, numberToLetters } from '../../utils/plateUtils.ts';
 import DesignWizardSrc from './components/DesignWizardSrc.tsx';
 import Sidebar from '../../components/Sidebar.tsx';
 import Instructions from './components/Instructions.tsx';
+import DesignWizardAsy, { AssayForm, ImportedDesign, buildAssayRows, parseBarcodeList } from './components/DesignWizardAsy.tsx';
 
 const PlateDesigner: React.FC = () => {
   const { preferences } = usePreferences();
-  const [tabKey, setTabKey] = useState<string>('designDst');
+  const [tabKey, setTabKey] = useState<string>('instructions');
   const [designSrcPlateSize, setDesignSrcPlateSize] = useState(preferences.sourcePlateSize as PlateSize);
   const [designDstPlateSize, setDesignDstPlateSize] = useState(preferences.destinationPlateSize as PlateSize);
   const [designSrcPlates, setDesignSrcPlates] = useState<Plate[]>([new Plate({ barcode: 'SRC001', plateSize: designSrcPlateSize })]);
@@ -24,6 +25,7 @@ const PlateDesigner: React.FC = () => {
   const [selectedWellIds, setSelectedWellIds] = useState<string[]>([]);
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [patternState, setPatternState] = useState({ isEditing: false, isNewPattern: false, isPickingColor: false });
+  const [assayForm, setAssayForm] = useState<AssayForm>({ values: {}, dmsoMode: '', intBarcodes: '', dstBarcodes: '' });
 
   if (curPatternId !== prevPatternId) {
     setPrevPatternId(curPatternId);
@@ -34,16 +36,7 @@ const PlateDesigner: React.FC = () => {
   const dragState = useRef({ mouseDown: false, dragging: false, startX: 0, startY: 0, endX: 0, endY: 0 });
   //ref is used on DesignWizardSrc to get around stale state closure
   const enterCallbackRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
   const activePlateRef = useRef<Plate | null>(null);
-  activePlateRef.current = activePlate();
 
   function activePlate(): Plate | null {
     switch (tabKey) {
@@ -52,6 +45,11 @@ const PlateDesigner: React.FC = () => {
       default: return null;
     }
   }
+
+  //assigned immediately after render so the once-registered keydown listener never reads a stale plate
+  useEffect(() => {
+    activePlateRef.current = activePlate();
+  });
 
   const renderSidebar = () => {
     if (tabKey === 'designDst') {
@@ -163,6 +161,27 @@ const PlateDesigner: React.FC = () => {
     }
   };
 
+  const handleGenerateTemplate = () => {
+    generateExcelTemplate(patterns, designSrcPlates, buildAssayRows(assayForm), {
+      intermediate: parseBarcodeList(assayForm.intBarcodes),
+      destination: parseBarcodeList(assayForm.dstBarcodes)
+    });
+  };
+
+  const handleImportDesign = (design: ImportedDesign) => {
+    setPatterns(design.patterns);
+    setCurPatternId(design.patterns[0]?.id ?? null);
+    setPatternState({ isEditing: false, isNewPattern: false, isPickingColor: false });
+    setDesignDstPlateSize(design.dstPlateSize);
+    setDesignDstPlates([design.dstPlate]);
+    setCurDesignDstPlateId(design.dstPlate.id);
+    setDesignSrcPlateSize(design.srcPlateSize);
+    setDesignSrcPlates(design.srcPlates);
+    setCurDesignSrcPlateId(design.srcPlates[0].id);
+    setAssayForm(design.assayForm);
+    setSelectedWellIds([]);
+  };
+
   const handlePageDblClick = (e: React.MouseEvent<Element, MouseEvent>) => {
     if (e.detail > 1) {
       e.preventDefault();
@@ -185,6 +204,13 @@ const PlateDesigner: React.FC = () => {
       enterCallbackRef.current?.();
     }
   };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleSelect = (k: string | null) => {
     if (k != null) {
@@ -359,13 +385,24 @@ const PlateDesigner: React.FC = () => {
               <Tab eventKey="instructions" title="Instructions">
                 <Instructions />
               </Tab>
+              <Tab eventKey="designAsy" title="Design - Assay">
+                <DesignWizardAsy
+                  assayForm={assayForm}
+                  setAssayForm={setAssayForm}
+                  patterns={patterns}
+                  designSrcPlates={designSrcPlates}
+                  designDstPlateSize={designDstPlateSize}
+                  designSrcPlateSize={designSrcPlateSize}
+                  onImportDesign={handleImportDesign}
+                  onGenerateTemplate={handleGenerateTemplate}
+                />
+              </Tab>
               <Tab eventKey="designDst" title="Design - Destination">
                 <DesignWizardDst
                   designDstPlates={designDstPlates}
                   setDesignDstPlates={setDesignDstPlates}
                   curDesignDstPlateId={curDesignDstPlateId}
                   setCurDesignDstPlateId={setCurDesignDstPlateId}
-                  designSrcPlates={designSrcPlates}
                   designDstPlateSize={designDstPlateSize}
                   setDesignDstPlateSize={setDesignDstPlateSize}
                   patterns={patterns}
@@ -377,6 +414,7 @@ const PlateDesigner: React.FC = () => {
                   patternState={patternState}
                   setPatternState={setPatternState}
                   onDoubleClick={handlePageDblClick}
+                  onGenerateTemplate={handleGenerateTemplate}
                 />
               </Tab>
               <Tab eventKey="designSrc" title="Design - Source">
@@ -393,6 +431,7 @@ const PlateDesigner: React.FC = () => {
                   handleMouseDown={handleMouseDown}
                   enterCallbackRef={enterCallbackRef}
                   onDoubleClick={handlePageDblClick}
+                  onGenerateTemplate={handleGenerateTemplate}
                 />
               </Tab>
             </Tabs>

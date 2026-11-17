@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import { Container, Row, Col, Form, Button, Alert, Card, Badge, Accordion } from 'react-bootstrap';
 import { FileText, CheckCircle, XCircle, AlertTriangle, Download, Settings } from 'lucide-react';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
@@ -26,31 +26,27 @@ const DataParser: React.FC = () => {
   const { mappedPlates, setMappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
   const { protocols } = useContext(ProtocolsContext);
 
-  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
+  const [curProtocolId, setCurProtocolId] = useState<number | null>(() => protocols[0]?.id ?? null);
+  const [prevProtocol, setPrevProtocol] = useState<Protocol | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadStatus[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [metadataValues, setMetadataValues] = useState<MetadataValues>({});
   const plate = currentPlate(mappedPlates, curMappedPlateId);
-  const [normalizedResponse, setNormalizedResponse] = useState<Boolean>(false);
+  const [normalizedResponse, setNormalizedResponse] = useState(false);
 
-  useEffect(() => {
-    if (selectedProtocol) {
-      const curPro = protocols.find(p => p.id === selectedProtocol!.id);
-      if (curPro) setSelectedProtocol(curPro);
-    } else if (protocols.length > 0 && !selectedProtocol) {
-      setSelectedProtocol(protocols[0]);
-    }
-  }, [protocols]);
+  const selectedProtocol = protocols.find(p => p.id === curProtocolId) ?? null;
 
-  useEffect(() => {
+  //compares the object, not the id, so editing the selected protocol also refills its metadata defaults
+  if (selectedProtocol !== prevProtocol) {
+    setPrevProtocol(selectedProtocol);
     if (selectedProtocol) {
       const newMetadataValues: MetadataValues = {};
-      selectedProtocol.metadataFields.forEach(field => {
+      for (const field of selectedProtocol.metadataFields) {
         newMetadataValues[field.name] = field.defaultValue || '';
-      });
+      }
       setMetadataValues(newMetadataValues);
     }
-  }, [selectedProtocol]);
+  }
 
   const handleNormalizationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNormalizedResponse(event.target.value === 'true');
@@ -311,10 +307,7 @@ const DataParser: React.FC = () => {
                 <Form.Select
                   size="sm"
                   value={selectedProtocol?.id || ''}
-                  onChange={(e) => {
-                    const protocol = protocols.find(p => p.id === parseInt(e.target.value));
-                    setSelectedProtocol(protocol || null);
-                  }}
+                  onChange={(e) => setCurProtocolId(e.target.value === '' ? null : parseInt(e.target.value))}
                   disabled={uploadedFiles.length > 0}
                 >
                   <option value="">Select protocol...</option>

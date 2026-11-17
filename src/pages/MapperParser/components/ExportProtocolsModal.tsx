@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal, Button, Form, ListGroup } from 'react-bootstrap';
 import { Download } from 'lucide-react';
 import { Protocol } from '../../../types/mapperTypes';
@@ -17,13 +17,15 @@ const ExportProtocolsModal: React.FC<ExportProtocolsModalProps> = ({
 }) => {
   const [selectedProtocols, setSelectedProtocols] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [prevShow, setPrevShow] = useState(false);
 
-  useEffect(() => {
+  if (show !== prevShow) {
+    setPrevShow(show);
     if (show) {
       setSelectedProtocols(new Set(protocols.map(p => p.id)));
       setSelectAll(true);
     }
-  }, [show, protocols]);
+  }
 
   const handleProtocolToggle = (protocolId: number) => {
     const newSelected = new Set(selectedProtocols);

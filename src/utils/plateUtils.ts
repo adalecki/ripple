@@ -320,22 +320,38 @@ export function mapWellsToMatrixConcentrations(
   wellBlock: string,
   concentrations: number[],
   directions: Direction[]
-): { wellId: string; concentrations: [number, number] }[] {
-  const horizontal = directions.find(d => d === 'LR' || d === 'RL') as Direction;
-  const vertical = directions.find(d => d === 'TB' || d === 'BT') as Direction;
-
-  const colGroups = mapWellsToConcentrations(plate, wellBlock, concentrations, horizontal);
-  const rowGroups = mapWellsToConcentrations(plate, wellBlock, concentrations, vertical);
-
-  const colConcByWell = new Map<string, number>();
-  colGroups.forEach((wellIds, i) => wellIds.forEach(id => colConcByWell.set(id, concentrations[i])));
-  const rowConcByWell = new Map<string, number>();
-  rowGroups.forEach((wellIds, j) => wellIds.forEach(id => rowConcByWell.set(id, concentrations[j])));
+): { wellId: string; concentrations: [number, number]; concIdxs: [number, number] }[] {
+  const numConcs = concentrations.length;
   const wells = plate.getSomeWells(wellBlock);
-  return wells.map(well => ({
-    wellId: well.id,
-    concentrations: directions.map(d => d === horizontal ? colConcByWell.get(well.id)! : rowConcByWell.get(well.id)!) as [number, number]
-  }));
+  const coordsList = wells.map(w => getCoordsFromWellId(w.id));
+  const uniqueRows = [...new Set(coordsList.map(c => c.row))].sort((a, b) => a - b);
+  const uniqueCols = [...new Set(coordsList.map(c => c.col))].sort((a, b) => a - b);
+  const height = uniqueRows.length;
+  const width = uniqueCols.length;
+
+  return coordsList.map((coords, i) => {
+    const rowIdx = directions.includes('BT') ? height - 1 - uniqueRows.indexOf(coords.row) : uniqueRows.indexOf(coords.row);
+    const colIdx = directions.includes('RL') ? width - 1 - uniqueCols.indexOf(coords.col) : uniqueCols.indexOf(coords.col);
+    //the axis whose length is a multiple of numConcs repeats its series; the other axis continues its series into each repeat, so a 5x20 block still holds a full 10x10 matrix
+    const isWidthMultiple = width % numConcs === 0;
+    const colConcIdx = isWidthMultiple ? colIdx % numConcs : (colIdx + width * Math.floor(rowIdx / numConcs)) % numConcs;
+    const rowConcIdx = isWidthMultiple ? (rowIdx + height * Math.floor(colIdx / numConcs)) % numConcs : rowIdx % numConcs;
+    const concIdxs = directions.map(d => ['LR', 'RL'].includes(d) ? colConcIdx : rowConcIdx) as [number, number];
+    return {
+      wellId: wells[i].id,
+      concentrations: concIdxs.map(concIdx => concentrations[concIdx]) as [number, number],
+      concIdxs
+    };
+  });
+}
+
+//a matrix block must be one rectangle with a side that can carry a whole concentration series
+export function isMatrixBlockShape(wellBlock: string, numConcs: number): boolean {
+  if (wellBlock.includes(';')) return false;
+  const [startWell, endWell = startWell] = wellBlock.split(':');
+  const startCoords = getCoordsFromWellId(startWell);
+  const endCoords = getCoordsFromWellId(endWell);
+  return (endCoords.col - startCoords.col + 1) % numConcs === 0 || (endCoords.row - startCoords.row + 1) % numConcs === 0;
 }
 
 export function calculateBlockBorders(plate: Plate): Map<string, { top: boolean, right: boolean, bottom: boolean, left: boolean }> {

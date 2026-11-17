@@ -10,6 +10,16 @@ export interface ChangeEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+    {
+    version: '1.0.4',
+    date: '2026-11-17',
+    changes: [
+      { type: 'UI', text: 'Added a "Design - Assay" tab on Plate Designer to read existing templates (instead of starting from scratch) and record metadata in new templates'},
+      { type: 'UI', text: 'Further improvements to UI while zooming at default Windows resolutions (150% on 1080p)' },
+      { type: 'Backend', text: 'Fixed bug with non-square matrix combinations not allocating all wells appropriately (e.g., 5x20 instead of 10x10)'},
+      { type: 'Backend', text: 'Fixed bug in Plate Designer when removing patterns already on a plate'}
+    ]
+  },
   {
     version: '1.0.3',
     date: '2026-09-30',
@@ -25,7 +35,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-09-18',
     changes: [
       { type: 'Backend', text: 'Fixed Plate Designer bugs selecting wells with different sized plates, and edge case deleting a pattern after changing plate size' },
-      { type: 'Backend', text: 'Changed default option for "Split Output CSVs" to "False"' },
+      { type: 'UI', text: 'Changed default option for "Split Output CSVs" to "False"' },
       { type: 'UI', text: 'Changed font scaling based on window size to account for Windows default 150% scaling' }
     ]
   },

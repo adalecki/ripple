@@ -46,3 +46,9 @@
 #x cocktailbuilder edit button doesn't match plate designer style
 # give better input when concs can't be calculated, such as increase max tsfr vol or increase dmso limit
 # add barcodes and assay tabs to plate designer
+# source design picks up initial pattern before it's even saved
+# show summary of actual transfer scheme, i.e., how each concentration actually gets made
+# opening file dialog then canceling after already selecting a template throws file validation errors
+#x patterns don't clear from designer if selected in sidebar from uploaded plate
+#x matrix combination doesn't generate wells if not a perfect nxn grid (e.g. 5x20 grid for 10 concs)
+# when uploading a template to the mapper, it will detect "DMSO Normalization" and flag it even though that's not relevant to the mapper

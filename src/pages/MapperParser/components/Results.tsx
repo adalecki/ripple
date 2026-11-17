@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { Col, Row, Container } from 'react-bootstrap';
 import { MappedPlatesContext, ProtocolsContext } from '../../../contexts/Context';
 import { currentPlate } from '../../../utils/plateUtils';
 import { Plate } from '../../../classes/PlateClass';
-import { Protocol } from '../../../types/mapperTypes';
 import { exportDestinationPlatesCSV } from '../utils/exportUtils';
 import TreatmentCurves from './TreatmentCurves';
 import ScatterPlot from './ScatterPlot';
@@ -14,7 +13,6 @@ import { usePreferences } from '../../../hooks/usePreferences';
 const Results: React.FC = () => {
   const { mappedPlates, curMappedPlateId } = useContext(MappedPlatesContext);
   const { protocols } = useContext(ProtocolsContext);
-  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const { preferences } = usePreferences();
   const [options, setOptions] = useState<PlateResultsOptions>({
     normalized: preferences.normalized as boolean,
@@ -28,16 +26,8 @@ const Results: React.FC = () => {
   let plate = currentPlate(mappedPlates, curMappedPlateId);
   if (plate == null) { plate = new Plate({}); }
 
-  useEffect(() => {
-    if (protocols.length === 1 && !selectedProtocol) {
-      setSelectedProtocol(protocols[0]);
-    } else if (plate?.metadata?.protocolId) {
-      const protocol = protocols.find(p => p.id === plate.metadata.protocolId);
-      if (protocol && (!selectedProtocol || selectedProtocol.id !== protocol.id)) {
-        setSelectedProtocol(protocol);
-      }
-    }
-  }, [protocols, plate?.metadata?.protocolId, selectedProtocol]);
+  //the plate's own protocol wins; a lone protocol is assumed for plates that have none recorded
+  const selectedProtocol = protocols.find(p => p.id === plate.metadata.protocolId) ?? (protocols.length === 1 ? protocols[0] : null);
 
   function handleOptionsChange(updates: Partial<PlateResultsOptions>) {
     if (updates.responseRangeMin && Number.isNaN(updates.responseRangeMin)) {

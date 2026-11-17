@@ -15,8 +15,7 @@ function arraysMatch(arr1: any[], arr2: any[]) {
 export function fileHeaders(ws: WorkSheet, validHeaders: string[]) {
   const headers = [];
   for (const key in ws) {
-    const regEx = new RegExp('^\(\\w\)\(1\){1}$');
-    if (regEx.test(key) === true) {
+    if (/^\w1$/.test(key)) {
       headers.push(ws[key].v);
     }
   }

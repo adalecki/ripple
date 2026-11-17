@@ -209,7 +209,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
         let blockFirstCol = firstNonEmptyCol;
         let blockLastCol = lastNonEmptyCol;
         let blockNumericCells = numericCells;
-        let blockTotalCells = (lastNonEmptyCol - firstNonEmptyCol + 1);
 
         //extend downwards
         for (let r2 = r + 1; r2 < data.length; r2++) {
@@ -236,7 +235,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
             blockFirstCol = Math.min(blockFirstCol, nextRowFirstCol);
             blockLastCol = Math.max(blockLastCol, nextRowLastCol);
             blockNumericCells += nextRowNumericCells;
-            blockTotalCells += (nextRowLastCol - nextRowFirstCol + 1);
           } else {
             break;
           }
@@ -255,33 +253,6 @@ const InteractiveDataMapper: React.FC<InteractiveDataMapperProps> = ({
     }
 
     if (bestBlock.startRow !== -1) {
-      if (bestBlock.startRow > 0) {
-        const potentialHeaderRow = data[bestBlock.startRow - 1];
-        let headerNonNumericCount = 0;
-        let headerCellCount = 0;
-        for (let c = bestBlock.startCol; c <= bestBlock.endCol; c++) {
-          if (potentialHeaderRow[c] && potentialHeaderRow[c].trim() !== '') {
-            headerCellCount++;
-            if (!isNumeric(potentialHeaderRow[c])) {
-              headerNonNumericCount++;
-            }
-          }
-        }
-      }
-      if (bestBlock.startCol > 0) {
-        let yLabelNonNumericCount = 0;
-        let yLabelCellCount = 0;
-        for (let r = bestBlock.startRow; r <= bestBlock.endRow; r++) {
-          if (data[r] && data[r][bestBlock.startCol - 1] && data[r][bestBlock.startCol - 1].trim() !== '') {
-            yLabelCellCount++;
-            if (!isNumeric(data[r][bestBlock.startCol - 1])) {
-              yLabelNonNumericCount++;
-            }
-          }
-        }
-      }
-
-
       return {
         range: getA1Notation({ row: bestBlock.startRow, col: bestBlock.startCol }, { row: bestBlock.endRow, col: bestBlock.endCol }),
         startRow: bestBlock.startRow,

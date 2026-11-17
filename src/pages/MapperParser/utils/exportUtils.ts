@@ -63,7 +63,7 @@ function generateDestinationPlatesCSV(
         }
       }
       row.push(well.rawResponse?.toString() || '');
-      if (hasNormData) row.push((+well.normalizedResponse?.toFixed(4)!).toString() || '');
+      if (hasNormData) row.push(well.normalizedResponse != null ? (+well.normalizedResponse.toFixed(4)).toString() : '');
 
       if (protocol) {
         for (const field of protocol.metadataFields) {

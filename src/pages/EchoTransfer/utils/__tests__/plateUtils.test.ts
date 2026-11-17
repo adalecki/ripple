@@ -17,6 +17,29 @@ import {
 import { Plate } from '../../../../classes/PlateClass';
 import { Pattern } from '../../../../classes/PatternClass';
 
+//applies a matrix pattern to a fresh plate the way the designer does (selection -> splitIntoBlocks -> applyPattern) and reads the pairs back off the wells
+function buildMatrixPairs(selection: string, concentrations: number[], directions: ('LR' | 'RL' | 'TB' | 'BT')[], replicates: number): Map<string, (number | null)[]> {
+  const plate = new Plate({ plateSize: '1536' });
+  const pattern = new Pattern({ name: 'M1', type: 'Combination-2', replicates, direction: directions, concentrations, locations: [] });
+  for (const block of splitIntoBlocks(plate.getSomeWells(selection).map(w => w.id), pattern, plate)) {
+    plate.applyPattern(block, pattern);
+  }
+  const pairs = new Map<string, (number | null)[]>();
+  for (const well of plate) {
+    if (well.getContents().length > 0) { pairs.set(well.id, well.getContents().map(c => c.concentration)); }
+  }
+  return pairs;
+}
+
+//number of wells holding each concentration pair, keyed 'axis1/axis2'
+function buildPairCounts(pairs: Map<string, (number | null)[]>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const pair of pairs.values()) {
+    counts.set(pair.join('/'), (counts.get(pair.join('/')) || 0) + 1);
+  }
+  return counts;
+}
+
 describe('numberToLetters', () => {
   test('converts numbers to single letters', () => {
     expect(numberToLetters(0)).toBe('A');
@@ -411,6 +434,112 @@ describe('mapWellsToConcentrations', () => {
     const direction = 'LR';
     const expectation = [['A01','B02'],['C01','A02'],['B01','C02']];
     expect(mapWellsToConcentrations(plate,wellBlock,concentrations,direction)).toStrictEqual(expectation);
+  });
+});
+
+describe('applyPattern with a matrix combination', () => {
+  const tenConcs = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+  test('a square block maps columns to the horizontal axis and rows to the vertical axis', () => {
+    const pairs = buildMatrixPairs('A01:J10', tenConcs, ['LR', 'TB'], 1);
+    expect(pairs.size).toBe(100);
+    expect(pairs.get('A01')).toEqual([10, 10]);
+    expect(pairs.get('A10')).toEqual([1, 10]);
+    expect(pairs.get('J01')).toEqual([10, 1]);
+    expect(pairs.get('D07')).toEqual([4, 7]);
+    expect(pairs.get('J10')).toEqual([1, 1]);
+    expect(buildPairCounts(pairs).size).toBe(100);
+  });
+
+  test('each pair is ordered like the directions array, so a vertical-first pattern lists the row concentration first', () => {
+    const pairs = buildMatrixPairs('A01:J10', tenConcs, ['TB', 'LR'], 1);
+    expect(pairs.get('A10')).toEqual([10, 1]);
+    expect(pairs.get('J01')).toEqual([1, 10]);
+  });
+
+  test('RL and BT start each axis from the far edge of a square block', () => {
+    const pairs = buildMatrixPairs('A01:J10', tenConcs, ['RL', 'BT'], 1);
+    expect(pairs.get('J10')).toEqual([10, 10]);
+    expect(pairs.get('A01')).toEqual([1, 1]);
+    expect(pairs.get('A10')).toEqual([10, 1]);
+  });
+
+  test('a block twice as wide as the matrix tiles two squares side by side', () => {
+    const pairs = buildMatrixPairs('A01:J20', tenConcs, ['LR', 'TB'], 2);
+    expect(pairs.get('A11')).toEqual([10, 10]);
+    expect(pairs.get('J20')).toEqual([1, 1]);
+    expect(pairs.get('D17')).toEqual([4, 7]);
+    const counts = buildPairCounts(pairs);
+    expect(counts.size).toBe(100);
+    expect([...counts.values()].every(count => count === 2)).toBe(true);
+  });
+
+  test('a block twice as tall as the matrix tiles two squares stacked', () => {
+    const pairs = buildMatrixPairs('A01:T10', tenConcs, ['LR', 'TB'], 2);
+    expect(pairs.get('K01')).toEqual([10, 10]);
+    expect(pairs.get('T10')).toEqual([1, 1]);
+    const counts = buildPairCounts(pairs);
+    expect(counts.size).toBe(100);
+    expect([...counts.values()].every(count => count === 2)).toBe(true);
+  });
+
+  test('a 5x20 block folds the vertical axis so the second 10 columns continue its series and every pair appears once', () => {
+    const pairs = buildMatrixPairs('A01:E20', tenConcs, ['LR', 'TB'], 1);
+    expect(pairs.size).toBe(100);
+    expect(pairs.get('A01')).toEqual([10, 10]);
+    expect(pairs.get('E10')).toEqual([1, 6]);
+    expect(pairs.get('A11')).toEqual([10, 5]);
+    expect(pairs.get('C14')).toEqual([7, 3]);
+    expect(pairs.get('E20')).toEqual([1, 1]);
+    const counts = buildPairCounts(pairs);
+    expect(counts.size).toBe(100);
+    expect([...counts.values()].every(count => count === 1)).toBe(true);
+  });
+
+  test('a 20x5 block folds the horizontal axis so the second 10 rows continue its series and every pair appears once', () => {
+    const pairs = buildMatrixPairs('A01:T05', tenConcs, ['LR', 'TB'], 1);
+    expect(pairs.size).toBe(100);
+    expect(pairs.get('A01')).toEqual([10, 10]);
+    expect(pairs.get('J05')).toEqual([6, 1]);
+    expect(pairs.get('K01')).toEqual([5, 10]);
+    expect(pairs.get('T05')).toEqual([1, 1]);
+    const counts = buildPairCounts(pairs);
+    expect(counts.size).toBe(100);
+    expect([...counts.values()].every(count => count === 1)).toBe(true);
+  });
+
+  test('a folded block with RL and BT mirrors both axes, starting the fold from the far corner', () => {
+    const pairs = buildMatrixPairs('A01:E20', tenConcs, ['RL', 'BT'], 1);
+    expect(pairs.get('E20')).toEqual([10, 10]);
+    expect(pairs.get('A11')).toEqual([1, 6]);
+    expect(pairs.get('E10')).toEqual([10, 5]);
+    expect(pairs.get('A01')).toEqual([1, 1]);
+    expect(buildPairCounts(pairs).size).toBe(100);
+  });
+
+  test('a folded block holding two replicates covers every pair exactly twice', () => {
+    //4 concs x 2 replicates = 32 wells laid out 2 rows x 16 columns
+    const pairs = buildMatrixPairs('A01:B16', [8, 4, 2, 1], ['LR', 'TB'], 2);
+    expect(pairs.get('A01')).toEqual([8, 8]);
+    expect(pairs.get('B04')).toEqual([1, 4]);
+    expect(pairs.get('A05')).toEqual([8, 2]);
+    expect(pairs.get('A09')).toEqual([8, 8]);
+    expect(pairs.get('B16')).toEqual([1, 1]);
+    const counts = buildPairCounts(pairs);
+    expect(counts.size).toBe(16);
+    expect([...counts.values()].every(count => count === 2)).toBe(true);
+  });
+
+  test('a 10x20 selection at one replicate splits into two stacked 5x20 blocks that each fold a full matrix', () => {
+    const pairs = buildMatrixPairs('A01:J20', tenConcs, ['LR', 'TB'], 1);
+    expect(pairs.size).toBe(200);
+    expect(pairs.get('E20')).toEqual([1, 1]);
+    expect(pairs.get('F01')).toEqual([10, 10]);
+    expect(pairs.get('F11')).toEqual([10, 5]);
+    expect(pairs.get('J20')).toEqual([1, 1]);
+    const counts = buildPairCounts(pairs);
+    expect(counts.size).toBe(100);
+    expect([...counts.values()].every(count => count === 2)).toBe(true);
   });
 });
 

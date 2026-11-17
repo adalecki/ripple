@@ -61,9 +61,9 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
   };
 
   const handleSavePattern = () => {
-    if (editingPattern) {
+    if (editingPattern && selectedPattern) {
       const concentrations = editingPattern.concentrations.filter(c => c != null);
-      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations });
+      const savePattern = new Pattern({ ...editingPattern, concentrations: concentrations, locations: selectedPattern.locations });
       setPatterns(patterns.map(p => p.id === savePattern.id ? savePattern : p));
       setPatternState({ ...patternState, isEditing: false, isPickingColor: false });
     }
@@ -225,7 +225,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
               options={[
                 { label: 'Control', value: 'Control' },
                 { label: 'Treatment', value: 'Treatment' },
-                { label: 'Combination (all N-way)', value: 'Combination' },
+                { label: 'Combination', value: 'Combination' },
                 { label: 'Unused', value: 'Unused' }
               ]}
             />
@@ -242,7 +242,7 @@ const PatternManager: React.FC<PatternManagerProps> = ({ patterns, setPatterns, 
                   required={true}
                   disabled={!patternState.isEditing}
                   step={1}
-                  tooltip={isMatrixPattern ? 'Number of numConcs x numConcs squares tiled across the applied selection' : undefined}
+                  tooltip={isMatrixPattern ? 'Number of full numConcs x numConcs matrices in each applied block' : undefined}
                 />
                 {isCombinationType(editingPattern.type) && (
                   <FormField

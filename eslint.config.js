@@ -31,14 +31,14 @@ export default [
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none', ignoreRestSiblings: true }],
       //older utils lean on `any` for xlsx rows; new code should type them, so this stays visible without failing lint
       '@typescript-eslint/no-explicit-any': 'off',
       'no-prototype-builtins': 'off'
     },
   },
   {
-    files: ['src/hooks/**', 'src/pages/Changelog.tsx', 'src/components/PreferencesModal.tsx'],
+    files: ['src/hooks/**', 'src/pages/Changelog.tsx', 'src/components/PreferencesModal.tsx', 'src/pages/PlateDesigner/components/DesignWizardAsy.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
 ];
